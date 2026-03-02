@@ -529,3 +529,23 @@ def break_promise(state: GameState, player: PlayerState, text: str) -> str:
     msg = f'{player.name} broke their promise: "{text}" -2 Rep.'
     state.add_log(msg)
     return msg
+
+
+def apologize(
+    state: GameState, player: PlayerState, target: PlayerState,
+) -> str:
+    """Once per game, apologize for a broken promise. Pay 1 coin, regain +1 Rep."""
+    if player.apology_used:
+        return f"{player.name} has already used their apology this game."
+    if player.coins < 1:
+        return f"{player.name} can't afford to apologize (need 1 coin)."
+    player.apology_used = True
+    player.adjust_coins(-1)
+    target.adjust_coins(1)
+    player.adjust_rep(1)
+    msg = (
+        f"{player.name} apologizes to {target.name}. "
+        f"-1 coin to {target.name}, +1 Rep for {player.name}."
+    )
+    state.add_log(msg)
+    return msg

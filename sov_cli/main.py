@@ -14,6 +14,7 @@ from rich.table import Table
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
 from sov_engine.models import GameState, WinCondition
 from sov_engine.rules.campfire import (
+    apologize,
     break_promise,
     check_deal_deadlines,
     check_voucher_deadlines,
@@ -82,6 +83,7 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
         p.promises = p_data.get("promises", [])
         p.helped_last_round = p_data.get("helped_last_round", False)
         p.skip_next_move = p_data.get("skip_next_move", False)
+        p.apology_used = p_data.get("apology_used", False)
 
     state.current_round = data["current_round"]
     state.current_player_index = data["current_player_index"]
@@ -139,6 +141,81 @@ def new(
         title="Gather 'round",
     ))
     _print_status(state)
+
+
+@app.command()
+def tutorial() -> None:
+    """Learn to play in 60 seconds. Sets up a quick demo game."""
+    from time import sleep
+
+    console.print(Panel(
+        "[bold green]Sovereignty: Campfire[/bold green]\n\n"
+        "  A quick walkthrough. Two players, one round.\n"
+        "  Takes about a minute.",
+        title="Learn by doing",
+    ))
+    sleep(1)
+
+    # Set up a 2-player demo game
+    state, rng = new_game(seed=1, player_names=["You", "Friend"])
+    SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    RNG_SEED_FILE.write_text("1", encoding="utf-8")
+
+    console.print("\n  You and Friend sit down with 5 coins and 3 reputation each.")
+    console.print("  [dim]Goal: be the first to reach 20 coins (Prosperity).[/dim]\n")
+    sleep(1)
+
+    # Step 1: Roll and move
+    console.print("  [bold]Step 1: Roll and move[/bold]")
+    roll = roll_and_move(state, rng)
+    space = state.board[state.current_player.position]
+    console.print(f"  You rolled a {roll} and landed on {space.name}.")
+    console.print(f"  [dim]{space.description}[/dim]")
+    result_msg = resolve_space(state, rng)
+    console.print(f"  {result_msg}\n")
+    sleep(1)
+
+    # Step 2: Make a promise
+    console.print("  [bold]Step 2: The Promise[/bold]")
+    console.print('  You say out loud: "I promise to help Friend next round."')
+    make_promise(state, state.current_player, "help Friend next round")
+    console.print("  [dim]Keep it = +1 Rep. Break it = -2 Rep. Just your word.[/dim]\n")
+    sleep(1)
+
+    # Advance to Friend's turn
+    state.advance_turn()
+
+    console.print("  [bold]Step 3: Friend's turn[/bold]")
+    player = state.current_player
+    roll = roll_and_move(state, rng)
+    space = state.board[player.position]
+    console.print(f"  Friend rolled a {roll} and landed on {space.name}.")
+    result_msg = resolve_space(state, rng)
+    console.print(f"  {result_msg}\n")
+    sleep(1)
+
+    # Step 4: End of round -> proof
+    console.print("  [bold]Step 4: End of round[/bold]")
+    console.print("  Everyone took a turn. The round wraps up.")
+    from sov_engine.hashing import make_round_proof
+
+    proof = make_round_proof(state)
+    h = proof["state_hash"][:16]
+    console.print(f"  Receipt: [dim]{h}...[/dim]")
+    console.print("  [dim]This hash is your game's fingerprint.")
+    console.print("  If anyone changes the score later, the hash won't match.[/dim]\n")
+    sleep(1)
+
+    # Save the demo state
+    _save_state(state)
+
+    console.print(Panel(
+        "  That's Campfire. Roll, land, trade, promise, repeat.\n"
+        "  The console keeps score. You keep your word.\n\n"
+        "  [dim]Start a real game: sov new -p Alice -p Bob[/dim]\n"
+        "  [dim]Continue this demo: sov turn[/dim]",
+        title="You're ready",
+    ))
 
 
 @app.command()
@@ -300,6 +377,82 @@ def promise(
             raise typer.Exit(1)
 
     _save_state(state)
+
+
+@app.command(name="apologize")
+def apologize_cmd(
+    to: Annotated[str, typer.Argument(help="Who you're apologizing to")],
+    player: Annotated[str, typer.Option("--player", "-p", help="Who's sorry")] = "",
+) -> None:
+    """Apologize for a broken promise. Once per game. Costs 1 coin."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    source = None
+    if player:
+        source = next((p for p in state.players if p.name == player), None)
+    else:
+        source = state.current_player
+    target_p = next((p for p in state.players if p.name == to), None)
+
+    if source is None:
+        console.print(f"[red]Player '{player}' not found.[/red]")
+        raise typer.Exit(1)
+    if target_p is None:
+        console.print(f"[red]Player '{to}' not found.[/red]")
+        raise typer.Exit(1)
+
+    msg = apologize(state, source, target_p)
+    console.print(f"\n  {msg}")
+    _save_state(state)
+
+
+@app.command()
+def recap() -> None:
+    """Show a human-readable summary of what happened recently."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    if not state.log:
+        console.print("  Nothing has happened yet.")
+        return
+
+    # Show log entries from the current round (and previous if we just started)
+    rnd = state.current_round
+    prev_rnd = rnd - 1 if rnd > 1 else rnd
+
+    console.print(f"\n  [bold]What happened lately[/bold] [dim](Round {rnd})[/dim]\n")
+    for entry in state.log:
+        # Show entries from current and previous round
+        if entry.startswith(f"R{rnd}") or entry.startswith(f"R{prev_rnd}"):
+            # Strip the round/turn prefix for readability
+            _, _, text = entry.partition(": ")
+            if text:
+                console.print(f"  - {text}")
+
+    # Highlight interesting moments
+    broken = [e for e in state.log if "broke their promise" in e]
+    helped = [e for e in state.log if "helps" in e and "Help" not in e[:5]]
+    apologized = [e for e in state.log if "apologizes" in e]
+
+    if broken or helped or apologized:
+        console.print()
+    for b in broken:
+        _, _, text = b.partition(": ")
+        console.print(f"  [red]Ouch:[/red] {text}")
+    for h in helped:
+        _, _, text = h.partition(": ")
+        console.print(f"  [green]Kind:[/green] {text}")
+    for a in apologized:
+        _, _, text = a.partition(": ")
+        console.print(f"  [yellow]Brave:[/yellow] {text}")
+    console.print()
 
 
 @app.command()

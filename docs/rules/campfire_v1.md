@@ -102,6 +102,13 @@ The simplest trust mechanic in the game. No cards needed.
 
 That's it. No contract. No card. Just your word.
 
+## The Apology
+
+Once per game, if you broke a promise, you can publicly apologize:
+- Pay **1 coin** to the person you harmed.
+- Regain **+1 Reputation**.
+- You still feel the net consequence, but "oops" becomes a moment instead of a grudge.
+
 ## Events
 
 - Drawn at Rumor Mill (spaces 3 and 9).

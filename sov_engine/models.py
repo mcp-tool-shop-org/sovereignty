@@ -157,6 +157,7 @@ class PlayerState:
     promises: list[str] = field(default_factory=list)  # active promise texts
     helped_last_round: bool = False  # for "Good News Travels" event
     skip_next_move: bool = False  # for "Broken Bridge" event
+    apology_used: bool = False  # once per game
 
     def adjust_coins(self, amount: int) -> int:
         """Add/subtract coins. Returns actual change (can't go below 0)."""
