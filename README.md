@@ -21,20 +21,29 @@ No screens required. Takes about 30 minutes.
 ## Or use the console
 
 ```bash
-pip install sovereignty-game
-
+pipx install sovereignty-game       # one-time install (or: uv tool install sovereignty-game)
 sov tutorial                         # learn in 60 seconds
 sov new -p Alice -p Bob -p Carol     # start a game
-sov new --recipe cozy -p ...         # curated vibe (cozy/spicy/market)
+```
+
+<details>
+<summary>Full command reference</summary>
+
+```bash
+sov new --recipe cozy -p ...         # curated vibe (cozy/spicy/market/promise)
+sov new --tier treaty-table -p ...   # pick a tier
 sov turn                             # roll, land, resolve
 sov promise make "I'll help Bob"     # say it out loud
 sov treaty make "pact" --with Bob --stake "2 coins"  # stakes
+sov scenario list                    # browse scenario packs
 sov doctor                           # pre-flight check before play night
 sov recap                            # what happened this round
 sov game-end                         # final scores + Story Points
 sov postcard                         # shareable summary
 sov season-postcard                  # season standings across games
 ```
+
+</details>
 
 The console keeps score. You keep your word.
 
@@ -91,6 +100,19 @@ works perfectly without anchoring — it's just the diary that remembers.
 | 2 | **Town Hall** | Playable | Shared market, resource scarcity |
 | 3 | **Treaty Table** | Playable | Treaties with stakes — promises with teeth |
 
+## Scenario packs
+
+Zero new rules. Just vibes. Each pack sets a tier, recipe, and mood.
+
+| Scenario | Tier | Best for |
+|----------|------|----------|
+| [Cozy Night](docs/scenarios/cozy-night.md) | Campfire / Market Day | First game, mixed groups |
+| [Market Panic](docs/scenarios/market-panic.md) | Town Hall | Economy drama |
+| [Promises Matter](docs/scenarios/promises-matter.md) | Campfire | Trust and commitment |
+| [Treaty Night](docs/scenarios/treaty-night.md) | Treaty Table | High-stakes agreements |
+
+`sov scenario list` to browse from the console.
+
 ## Project structure
 
 ```
@@ -98,7 +120,7 @@ sovereignty/
   sov_engine/       # Pure game logic (models, rules, serialization, hashing)
   sov_transport/    # Ledger transport (offline + XRPL Testnet)
   sov_cli/          # Typer CLI (the "Round Console")
-  tests/            # 113 tests
+  tests/            # 114 tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
   assets/print/     # Printable cards, player mat, quick reference
 ```

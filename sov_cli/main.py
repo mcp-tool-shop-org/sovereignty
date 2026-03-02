@@ -1624,9 +1624,10 @@ def _apply_recipe(state: GameState, recipe: str) -> str:
     from sov_engine.models import Deck
 
     tag = recipe.lower()
-    valid_tags = ("cozy", "spicy", "market")
+    valid_tags = ("cozy", "spicy", "market", "promise")
     if tag not in valid_tags:
-        return f"\n  [yellow]Unknown recipe '{recipe}'. Try: cozy, spicy, or market.[/yellow]"
+        opts = "cozy, spicy, market, or promise"
+        return f"\n  [yellow]Unknown recipe '{recipe}'. Try: {opts}.[/yellow]"
 
     # Filter events
     all_events = state.event_deck.draw_pile
@@ -1823,6 +1824,65 @@ def _print_brief_status(state: GameState) -> None:
         marker = ">" if i == state.current_player_index else " "
         parts.append(f"{marker}{p.name}: {p.coins}c {p.reputation}r {p.upgrades}u")
     console.print(f"[dim]R{state.current_round} | {' | '.join(parts)}[/dim]")
+
+
+# ---------------------------------------------------------------------------
+# Scenario metadata (pure content — no engine logic)
+# ---------------------------------------------------------------------------
+
+_SCENARIOS = [
+    {
+        "name": "Cozy Night",
+        "tier": "Campfire / Market Day",
+        "recipe": "cozy",
+        "players": "2-4",
+        "time": "30-45 min",
+    },
+    {
+        "name": "Market Panic",
+        "tier": "Town Hall",
+        "recipe": "market",
+        "players": "3-4",
+        "time": "45-60 min",
+    },
+    {
+        "name": "Promises Matter",
+        "tier": "Campfire",
+        "recipe": "promise",
+        "players": "2-3",
+        "time": "30 min",
+    },
+    {
+        "name": "Treaty Night",
+        "tier": "Treaty Table",
+        "recipe": "—",
+        "players": "3-4",
+        "time": "75-90 min",
+    },
+]
+
+
+@app.command()
+def scenario(
+    action: Annotated[str, typer.Argument(help="Action: list")],
+) -> None:
+    """Browse scenario packs — themed play sessions, zero new rules."""
+    if action != "list":
+        console.print(f"[yellow]Unknown action '{action}'. Try: sov scenario list[/yellow]")
+        raise typer.Exit(1)
+
+    table = Table(title="Scenario Packs")
+    table.add_column("Scenario", style="bold")
+    table.add_column("Tier")
+    table.add_column("Recipe")
+    table.add_column("Players", justify="center")
+    table.add_column("Time", justify="right")
+
+    for s in _SCENARIOS:
+        table.add_row(s["name"], s["tier"], s["recipe"], s["players"], s["time"])
+
+    console.print(table)
+    console.print("\n  [dim]Details: docs/scenarios/<name>.md[/dim]")
 
 
 if __name__ == "__main__":

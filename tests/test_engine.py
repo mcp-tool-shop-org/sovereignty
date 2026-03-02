@@ -396,6 +396,25 @@ def test_recipe_invalid_tag():
     assert len(state.event_deck.draw_pile) == original_events
 
 
+def test_recipe_promise_filters():
+    """Promise recipe filters events and deals to commitment-heavy cards."""
+    state, _ = new_game(42, ["Alice", "Bob"])
+    original_events = len(state.event_deck.draw_pile)
+
+    from sov_cli.main import _apply_recipe
+
+    _apply_recipe(state, "promise")
+    # Events should be filtered (5 promise events >= threshold)
+    filtered_events = len(state.event_deck.draw_pile)
+    assert filtered_events < original_events
+    assert filtered_events >= 5
+    for card in state.event_deck.draw_pile:
+        assert "promise" in card.tags
+    # Deals should also be filtered (many vouchers + deals tagged promise)
+    for card in state.deal_deck.draw_pile:
+        assert "promise" in card.tags
+
+
 def test_recipe_preserves_small_decks():
     """If filtered set is too small, keep the full deck."""
     state, _ = new_game(42, ["Alice", "Bob"])

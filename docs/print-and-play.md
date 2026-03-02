@@ -1,4 +1,4 @@
-# Sovereignty: Campfire — Print & Play
+# Sovereignty — Print & Play
 
 Everything you need to play tonight. No screens required.
 
@@ -6,12 +6,22 @@ Everything you need to play tonight. No screens required.
 
 | File | Pages | What it is |
 |------|-------|------------|
-| `assets/print/event-cards.md` | 2 | 20 Event cards (cut along lines) |
-| `assets/print/deal-cards.md` | 2 | 20 Deal & Voucher cards (cut along lines) |
+| `assets/print/event-cards.md` | 2 | 28 Event cards (cut along lines) |
+| `assets/print/deal-cards.md` | 2 | 22 Deal & Voucher cards (cut along lines) |
 | `assets/print/player-mat.md` | 1 | Player mat (one per player, tracks coins/rep/promises) |
 | `assets/print/quick-ref.md` | 1 | Quick reference: board spaces, turn order, Promise rules |
+| `assets/print/treaty-quick-ref.md` | 1 | Treaty Table quick reference (Tier 3 only) |
 
-**Total: ~6 pages.** Print double-sided to save paper.
+## Which tier are you playing?
+
+| Tier | What to print | Total pages |
+|------|--------------|-------------|
+| **Campfire** | Event cards + Deal cards + Player mat + Quick ref | ~6 pages |
+| **Market Day** | Same as Campfire (resources tracked on player mat) | ~6 pages |
+| **Town Hall** | Same as Campfire (market prices tracked on board) | ~6 pages |
+| **Treaty Table** | Everything above + Treaty quick ref | ~7 pages |
+
+Print double-sided to save paper.
 
 ## What else you need
 
@@ -19,6 +29,8 @@ Everything you need to play tonight. No screens required.
 - Coins or tokens (pennies, buttons, whatever — you need ~40 total)
 - Something to mark board position (different colored buttons, bottle caps)
 - A piece of paper to draw the board (or just count spaces 0-15)
+- **Market Day / Town Hall / Treaty Table:** Resource tokens in 3 colors
+  (for Food, Wood, Tools — buttons, beads, or colored paper squares)
 
 ## Setup (2 minutes)
 
@@ -33,7 +45,7 @@ Everything you need to play tonight. No screens required.
 **On your turn:**
 1. Roll the d6. Move that many spaces clockwise (0 through 15, wrapping around).
 2. Do what the space says (see Quick Reference).
-3. Optionally: propose one trade to any player.
+3. **The Offer** (optional): make one Offer out loud.
 4. End your turn.
 
 **Promises:** Once per round, say "I promise..." and state what you'll do. Keep it = +1 Rep. Break it = -2 Rep. The table decides.
@@ -46,10 +58,14 @@ Everything you need to play tonight. No screens required.
 ## What the console does (optional)
 
 If someone has a laptop handy, `sov` tracks everything for you:
-- `sov new -p Alice -p Bob -p Carol` — start a game
-- `sov turn` — roll, move, resolve
-- `sov promise make "I'll help you"` — track a promise
-- `sov recap` — what happened this round
-- `sov end-round` — generate a tamper-proof receipt
+
+```bash
+pipx install sovereignty-game       # one-time install
+sov new -p Alice -p Bob -p Carol     # start a game
+sov turn                             # roll, move, resolve
+sov promise make "I'll help you"     # track a promise
+sov recap                            # what happened this round
+sov end-round                        # generate a tamper-proof receipt
+```
 
 The console is optional. The game works fine with just paper and dice.

@@ -73,7 +73,7 @@ def build_event_deck() -> list[Card]:
             description="You lose 1 Rep -- unless someone vouches for you.",
             flavor="People are talking...",
             effect_id="rumor",
-            tags=("spicy",),
+            tags=("spicy", "promise"),
         ),
         EventCard(
             id="evt_05",
@@ -100,7 +100,7 @@ def build_event_deck() -> list[Card]:
             description="You may force one voucher redemption NOW.",
             flavor="Time to collect.",
             effect_id="swindle",
-            tags=("spicy",),
+            tags=("spicy", "promise"),
         ),
         EventCard(
             id="evt_08",
@@ -127,7 +127,7 @@ def build_event_deck() -> list[Card]:
             description="Players with Rep < 3 lose 1 more Rep.",
             flavor="When trust is low, it falls further.",
             effect_id="trust_crisis",
-            tags=("spicy",),
+            tags=("spicy", "promise"),
         ),
         # --- New 10: human-voice cards ---
         EventCard(
@@ -209,7 +209,7 @@ def build_event_deck() -> list[Card]:
             description="Gain 1 Rep. But if you're already above 7, lose 1 instead.",
             flavor="Some stories are too good to be true.",
             effect_id="tall_tale",
-            tags=("spicy",),
+            tags=("spicy", "promise"),
         ),
         EventCard(
             id="evt_20",
