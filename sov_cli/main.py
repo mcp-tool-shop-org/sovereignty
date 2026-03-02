@@ -332,14 +332,14 @@ def self_check() -> None:
     else:
         checks.append(("info", "State directory", "Not yet created (run: sov new)"))
 
-    # 6. Dependencies
+    # 6. Dependencies (catch all exceptions — PyInstaller may partially bundle)
     for mod_name in ("typer", "rich", "xrpl"):
         try:
             mod = __import__(mod_name)
             ver = getattr(mod, "__version__", getattr(mod, "VERSION", "?"))
             checks.append(("ok", mod_name, str(ver)))
-        except ImportError:
-            checks.append(("info", mod_name, "not installed (optional)"))
+        except Exception as exc:
+            checks.append(("info", mod_name, type(exc).__name__ + ": " + str(exc)[:80]))
 
     # Print
     icons = {"ok": "[green]OK[/green]", "fail": "[red]FAIL[/red]", "info": "[dim]--[/dim]"}
@@ -1912,7 +1912,7 @@ _SCENARIOS = [
 
 _SCENARIO_BY_SLUG = {s["slug"]: s for s in _SCENARIOS}
 
-SOV_VERSION = "1.4.4"
+SOV_VERSION = "1.4.5"
 
 
 # ---------------------------------------------------------------------------

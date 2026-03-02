@@ -48,6 +48,7 @@ jobs:
           VERSION=${GITHUB_REF_NAME#v}
           uv run pyinstaller --onefile --name "sovereignty" --console \
             --collect-submodules rich \
+            --collect-data xrpl \
             sov_cli/__main__.py
           OUTNAME="sovereignty-${VERSION}-${{ matrix.target }}${{ matrix.ext }}"
           mv "dist/sovereignty${{ matrix.ext }}" "dist/${OUTNAME}"
