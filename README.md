@@ -25,10 +25,18 @@ No screens required. Takes about 30 minutes.
 
 ## Or use the console
 
+**No Python required** (downloads a prebuilt binary):
+
 ```bash
-pipx install sovereignty-game       # one-time install (or: uv tool install sovereignty-game)
-sov tutorial                         # learn in 60 seconds
-sov new -p Alice -p Bob -p Carol     # start a game
+npx @mcptoolshop/sovereignty tutorial
+```
+
+Or with Python:
+
+```bash
+pipx install sovereignty-game
+sov tutorial
+sov new -p Alice -p Bob -p Carol
 ```
 
 <details>
