@@ -430,3 +430,60 @@ def test_recipe_preserves_small_decks():
     # Deals: market has deal_04 + vouch_04 = 2, below threshold of 3
     # So full deck should be preserved
     assert len(state.deal_deck.draw_pile) == original_deals
+
+
+# ---------------------------------------------------------------------------
+# Share code tests
+# ---------------------------------------------------------------------------
+
+
+def test_parse_share_code_valid():
+    from sov_cli.main import _parse_share_code
+
+    result = _parse_share_code("SOV|cozy-night|campfire|cozy|s42")
+    assert isinstance(result, dict)
+    assert result["slug"] == "cozy-night"
+    assert result["tier"] == "campfire"
+    assert result["recipe"] == "cozy"
+    assert result["seed"] == "42"
+
+
+def test_parse_share_code_no_recipe():
+    from sov_cli.main import _parse_share_code
+
+    result = _parse_share_code("SOV|treaty-night|treaty-table|-|s99")
+    assert isinstance(result, dict)
+    assert result["recipe"] == ""
+    assert result["seed"] == "99"
+
+
+def test_parse_share_code_invalid():
+    from sov_cli.main import _parse_share_code
+
+    result = _parse_share_code("NOT|a|valid|code")
+    assert isinstance(result, str)  # error message
+
+    result2 = _parse_share_code("SOV|slug|tier|recipe|bad")
+    assert isinstance(result2, str)  # bad seed
+
+
+def test_build_share_code():
+    from sov_cli.main import _build_share_code
+
+    code = _build_share_code("cozy-night", "campfire", "cozy", 42)
+    assert code == "SOV|cozy-night|campfire|cozy|s42"
+
+    code2 = _build_share_code("treaty-night", "treaty-table", "", 99)
+    assert code2 == "SOV|treaty-night|treaty-table|-|s99"
+
+
+def test_share_code_roundtrip():
+    from sov_cli.main import _build_share_code, _parse_share_code
+
+    code = _build_share_code("market-panic", "town-hall", "market", 7)
+    parsed = _parse_share_code(code)
+    assert isinstance(parsed, dict)
+    assert parsed["slug"] == "market-panic"
+    assert parsed["tier"] == "town-hall"
+    assert parsed["recipe"] == "market"
+    assert parsed["seed"] == "7"

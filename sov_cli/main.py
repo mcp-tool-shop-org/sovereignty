@@ -276,8 +276,21 @@ def new(
     recipe: Annotated[
         str, typer.Option("--recipe", "-r", help="cozy, spicy, or market"),
     ] = "",
+    code: Annotated[
+        str, typer.Option("--code", help="Share code from sov scenario code"),
+    ] = "",
 ) -> None:
-    """Start a new game. Use --tier market-day or town-hall for resources."""
+    """Start a new game. Use --tier or --code to configure."""
+    # Share code overrides seed/tier/recipe
+    if code:
+        parsed = _parse_share_code(code)
+        if isinstance(parsed, str):
+            console.print(f"[red]{parsed}[/red]")
+            raise typer.Exit(1)
+        seed = int(parsed["seed"])
+        tier = parsed["tier"]
+        recipe = parsed["recipe"]
+
     if players is None:
         players = []
     if len(players) < 2:
@@ -1833,56 +1846,252 @@ def _print_brief_status(state: GameState) -> None:
 _SCENARIOS = [
     {
         "name": "Cozy Night",
+        "slug": "cozy-night",
         "tier": "Campfire / Market Day",
+        "tier_value": "campfire",
         "recipe": "cozy",
+        "recipe_value": "cozy",
         "players": "2-4",
         "time": "30-45 min",
     },
     {
         "name": "Market Panic",
+        "slug": "market-panic",
         "tier": "Town Hall",
+        "tier_value": "town-hall",
         "recipe": "market",
+        "recipe_value": "market",
         "players": "3-4",
         "time": "45-60 min",
     },
     {
         "name": "Promises Matter",
+        "slug": "promises-matter",
         "tier": "Campfire",
+        "tier_value": "campfire",
         "recipe": "promise",
+        "recipe_value": "promise",
         "players": "2-3",
         "time": "30 min",
     },
     {
         "name": "Treaty Night",
+        "slug": "treaty-night",
         "tier": "Treaty Table",
+        "tier_value": "treaty-table",
         "recipe": "—",
+        "recipe_value": "",
         "players": "3-4",
         "time": "75-90 min",
     },
 ]
 
+_SCENARIO_BY_SLUG = {s["slug"]: s for s in _SCENARIOS}
+
+SOV_VERSION = "1.3.0"
+
+
+def _parse_share_code(code: str) -> dict[str, str] | str:
+    """Parse a SOV share code. Returns dict or error string."""
+    parts = code.strip().split("|")
+    if len(parts) != 5 or parts[0] != "SOV":
+        return "Invalid share code. Expected: SOV|<scenario>|<tier>|<recipe>|s<seed>"
+    slug, tier, recipe, seed_part = parts[1], parts[2], parts[3], parts[4]
+    if not seed_part.startswith("s") or not seed_part[1:].isdigit():
+        return f"Invalid seed in share code: '{seed_part}'. Expected s<number>."
+    return {
+        "slug": slug,
+        "tier": tier,
+        "recipe": recipe if recipe != "-" else "",
+        "seed": seed_part[1:],
+    }
+
+
+def _build_share_code(slug: str, tier: str, recipe: str, seed: int) -> str:
+    """Build a SOV share code string."""
+    recipe_part = recipe if recipe else "-"
+    return f"SOV|{slug}|{tier}|{recipe_part}|s{seed}"
+
 
 @app.command()
 def scenario(
-    action: Annotated[str, typer.Argument(help="Action: list")],
+    action: Annotated[str, typer.Argument(help="Action: list or code")],
+    name: Annotated[str, typer.Argument(help="Scenario name (for code)")] = "",
+    seed: Annotated[int, typer.Option("--seed", "-s", help="RNG seed")] = 42,
+    tier_opt: Annotated[
+        str, typer.Option("--tier", "-t", help="Tier override (for custom)"),
+    ] = "",
+    recipe_opt: Annotated[
+        str, typer.Option("--recipe", "-r", help="Recipe override (for custom)"),
+    ] = "",
 ) -> None:
-    """Browse scenario packs — themed play sessions, zero new rules."""
-    if action != "list":
-        console.print(f"[yellow]Unknown action '{action}'. Try: sov scenario list[/yellow]")
+    """Browse scenario packs or generate share codes."""
+    if action == "list":
+        table = Table(title="Scenario Packs")
+        table.add_column("Scenario", style="bold")
+        table.add_column("Tier")
+        table.add_column("Recipe")
+        table.add_column("Players", justify="center")
+        table.add_column("Time", justify="right")
+
+        for s in _SCENARIOS:
+            table.add_row(
+                s["name"], s["tier"], s["recipe"], s["players"], s["time"],
+            )
+
+        console.print(table)
+        console.print("\n  [dim]Details: docs/scenarios/<name>.md[/dim]")
+
+    elif action == "code":
+        if not name:
+            console.print("[red]Usage: sov scenario code <name> --seed N[/red]")
+            console.print("[dim]  Names: cozy-night, market-panic, promises-matter, "
+                          "treaty-night, or custom[/dim]")
+            raise typer.Exit(1)
+
+        if name == "custom":
+            if not tier_opt:
+                console.print("[red]Custom codes need --tier.[/red]")
+                raise typer.Exit(1)
+            code = _build_share_code("custom", tier_opt, recipe_opt, seed)
+        elif name in _SCENARIO_BY_SLUG:
+            sc = _SCENARIO_BY_SLUG[name]
+            code = _build_share_code(
+                name, sc["tier_value"], sc["recipe_value"], seed,
+            )
+        else:
+            console.print(f"[red]Unknown scenario '{name}'.[/red]")
+            console.print("[dim]  Known: " + ", ".join(
+                s["slug"] for s in _SCENARIOS
+            ) + ", custom[/dim]")
+            raise typer.Exit(1)
+
+        console.print(f"\n  [bold]{code}[/bold]\n")
+        console.print("  [dim]Share this code. Others run:[/dim]")
+        console.print(f'  [dim]sov new --code "{code}" -p Name1 -p Name2[/dim]')
+
+    else:
+        console.print(
+            f"[yellow]Unknown action '{action}'. Try: list or code[/yellow]",
+        )
         raise typer.Exit(1)
 
-    table = Table(title="Scenario Packs")
-    table.add_column("Scenario", style="bold")
-    table.add_column("Tier")
-    table.add_column("Recipe")
-    table.add_column("Players", justify="center")
-    table.add_column("Time", justify="right")
 
-    for s in _SCENARIOS:
-        table.add_row(s["name"], s["tier"], s["recipe"], s["players"], s["time"])
+# ---------------------------------------------------------------------------
+# Feedback artifact
+# ---------------------------------------------------------------------------
 
-    console.print(table)
-    console.print("\n  [dim]Details: docs/scenarios/<name>.md[/dim]")
+_NOTABLE_PATTERNS = (
+    "promises:", "kept their promise", "broke their promise",
+    "apologizes", "Treaty", "BROKEN", "honored", "wins the game",
+    "toasts", "helps",
+)
+
+
+@app.command()
+def feedback() -> None:
+    """Print an issue-ready play report. Paste into GitHub Issues."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    tier = _tier_name(state)
+    seed_str = RNG_SEED_FILE.read_text().strip() if RNG_SEED_FILE.exists() else "?"
+    winner = state.winner or "(in progress)"
+    rnd = state.current_round
+    player_count = len(state.players)
+
+    # Extract recipe from log
+    recipe_used = "—"
+    for entry in state.log:
+        if "Recipe:" in entry:
+            # Format: "R1T0: Recipe: cozy (12 events, 5 deals)"
+            part = entry.split("Recipe: ", 1)[1]
+            recipe_used = part.split(" ")[0]
+            break
+
+    # Awards
+    awards = _calc_story_points(state)
+    award_names = {
+        "winner": "Winner",
+        "promise_keeper": "Promise Keeper",
+        "most_helpful": "Most Helpful",
+        "tables_choice": "Table's Choice",
+        "treaty_keeper": "Treaty Keeper",
+    }
+    award_lines: list[str] = []
+    for award_key, label in award_names.items():
+        winners = [
+            name for name, pts in awards.items()
+            if pts.get(award_key, 0) > 0
+        ]
+        if winners:
+            award_lines.append(f"- {label}: {', '.join(winners)}")
+
+    # Notable moments
+    notable: list[str] = []
+    for entry in state.log:
+        for pattern in _NOTABLE_PATTERNS:
+            if pattern in entry:
+                notable.append(f"- {entry}")
+                break
+    # Keep last 10 if there are many
+    if len(notable) > 10:
+        notable = notable[-10:]
+
+    # Proof
+    proof_line = "No proof generated."
+    anchor_line = ""
+    PROOFS_DIR.mkdir(parents=True, exist_ok=True)
+    proofs = sorted(PROOFS_DIR.glob("*.proof.json"))
+    if proofs:
+        latest = json.loads(proofs[-1].read_text(encoding="utf-8"))
+        proof_line = f"`sha256:{latest['state_hash']}`"
+
+        anchor_file = PROOFS_DIR / "anchors.json"
+        if anchor_file.exists():
+            anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
+            tx = anchors.get(str(latest["round"]))
+            if tx:
+                url = f"https://testnet.xrpl.org/transactions/{tx}"
+                anchor_line = f" | [XRPL TX]({url})"
+
+    # Build markdown output (plain text, no Rich)
+    lines = [
+        "## Sovereignty Play Report",
+        "",
+        "| Field | Value |",
+        "|-------|-------|",
+        f"| Version | {SOV_VERSION} |",
+        f"| Tier | {tier} |",
+        f"| Recipe | {recipe_used} |",
+        f"| Seed | {seed_str} |",
+        f"| Players | {player_count} |",
+        f"| Rounds | {rnd} |",
+        f"| Winner | {winner} |",
+        "",
+    ]
+
+    if award_lines:
+        lines.append("### Awards")
+        lines.extend(award_lines)
+        lines.append("")
+
+    if notable:
+        lines.append("### Notable moments")
+        lines.extend(notable)
+        lines.append("")
+
+    lines.append("### Proof")
+    lines.append(f"{proof_line}{anchor_line}")
+    lines.append("")
+    lines.append("---")
+    lines.append(f"*Generated by `sov feedback` v{SOV_VERSION}*")
+
+    output = "\n".join(lines)
+    console.print(output, highlight=False)
 
 
 if __name__ == "__main__":

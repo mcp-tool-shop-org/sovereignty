@@ -36,10 +36,13 @@ sov turn                             # roll, land, resolve
 sov promise make "I'll help Bob"     # say it out loud
 sov treaty make "pact" --with Bob --stake "2 coins"  # stakes
 sov scenario list                    # browse scenario packs
+sov scenario code cozy-night -s 42   # generate a share code
+sov new --code "SOV|..." -p ...      # play from a share code
 sov doctor                           # pre-flight check before play night
 sov recap                            # what happened this round
 sov game-end                         # final scores + Story Points
 sov postcard                         # shareable summary
+sov feedback                         # issue-ready play report
 sov season-postcard                  # season standings across games
 ```
 
@@ -120,7 +123,7 @@ sovereignty/
   sov_engine/       # Pure game logic (models, rules, serialization, hashing)
   sov_transport/    # Ledger transport (offline + XRPL Testnet)
   sov_cli/          # Typer CLI (the "Round Console")
-  tests/            # 114 tests
+  tests/            # 119 tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
   assets/print/     # Printable cards, player mat, quick reference
 ```

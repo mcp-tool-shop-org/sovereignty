@@ -80,6 +80,19 @@ Tags control session recipe filtering (`sov new --recipe cozy`).
 Cards can have multiple tags. A card tagged `("cozy", "help")` appears
 in both `--recipe cozy` and `--recipe help` sessions.
 
+## Sharing Scenario Packs
+
+Scenario packs are fan fiction for governance. Zero code needed.
+
+1. Copy `docs/scenarios/_TEMPLATE.md`
+2. Fill in every field — the vibe paragraph is the most important part
+3. Test it: play the scenario with your start command
+4. Submit a PR adding your file to `docs/scenarios/`
+
+Good scenarios have a clear mood and a "what success feels like" sentence.
+The template has everything you need. Read the existing packs in
+`docs/scenarios/` for inspiration.
+
 ## Writing in human voice
 
 Sovereignty cards should sound like someone telling a story at a table,
