@@ -37,6 +37,7 @@ sov promise make "I'll help Bob"     # say it out loud
 sov treaty make "pact" --with Bob --stake "2 coins"  # stakes
 sov scenario list                    # browse scenario packs
 sov scenario code cozy-night -s 42   # generate a share code
+sov scenario lint                    # validate scenario files
 sov new --code "SOV|..." -p ...      # play from a share code
 sov doctor                           # pre-flight check before play night
 sov recap                            # what happened this round
@@ -103,6 +104,8 @@ works perfectly without anchoring — it's just the diary that remembers.
 | 2 | **Town Hall** | Playable | Shared market, resource scarcity |
 | 3 | **Treaty Table** | Playable | Treaties with stakes — promises with teeth |
 
+Core rules are stable through v1.x. See [roadmap](docs/roadmap.md).
+
 ## Scenario packs
 
 Zero new rules. Just vibes. Each pack sets a tier, recipe, and mood.
@@ -123,7 +126,7 @@ sovereignty/
   sov_engine/       # Pure game logic (models, rules, serialization, hashing)
   sov_transport/    # Ledger transport (offline + XRPL Testnet)
   sov_cli/          # Typer CLI (the "Round Console")
-  tests/            # 119 tests
+  tests/            # 130 tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
   assets/print/     # Printable cards, player mat, quick reference
 ```

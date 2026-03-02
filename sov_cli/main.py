@@ -1888,7 +1888,190 @@ _SCENARIOS = [
 
 _SCENARIO_BY_SLUG = {s["slug"]: s for s in _SCENARIOS}
 
-SOV_VERSION = "1.3.0"
+SOV_VERSION = "1.4.0"
+
+
+# ---------------------------------------------------------------------------
+# Scenario lint
+# ---------------------------------------------------------------------------
+
+_VALID_TIERS = {
+    "campfire", "market-day", "town-hall", "treaty-table",
+    "Campfire", "Market Day", "Town Hall", "Treaty Table",
+    "Campfire / Market Day", "Campfire or Market Day",
+}
+
+_VALID_RECIPES = {"cozy", "spicy", "market", "promise", "\u2014", "-", ""}
+
+
+def _lint_scenario(filepath: str) -> list[tuple[str, str]]:
+    """Lint a scenario markdown file. Returns list of (level, message)."""
+    import re
+
+    results: list[tuple[str, str]] = []
+    path = Path(filepath)
+
+    if not path.exists():
+        results.append(("error", f"File not found: {filepath}"))
+        return results
+
+    text = path.read_text(encoding="utf-8")
+    lines = text.split("\n")
+
+    # --- Structure checks (errors) ---
+
+    # H1 heading present
+    has_h1 = any(line.startswith("# ") for line in lines)
+    if not has_h1:
+        results.append(("error", "Missing: H1 heading (scenario name)"))
+
+    # Block quote present (vibe intro)
+    has_blockquote = any(line.startswith("> ") for line in lines)
+    if not has_blockquote:
+        results.append(("error", "Missing: Block quote (vibe intro)"))
+
+    # Settings table with required rows
+    table_rows: dict[str, str] = {}
+    in_table = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith("| Setting") or stripped.startswith("| ----"):
+            in_table = True
+            continue
+        if in_table and stripped.startswith("|"):
+            cells = [c.strip() for c in stripped.split("|")]
+            # cells[0] is empty (before first |), cells[1] key, cells[2] value
+            if len(cells) >= 3:
+                table_rows[cells[1].lower()] = cells[2]
+        elif in_table and not stripped.startswith("|"):
+            in_table = False
+
+    required_rows = {"tier", "recipe", "players", "rounds", "time"}
+    found_rows = set(table_rows.keys())
+    missing_rows = required_rows - found_rows
+    if missing_rows:
+        results.append(("error", "Settings table missing rows: "
+                        + ", ".join(sorted(missing_rows))))
+    elif not table_rows:
+        results.append(("error", "Missing: Settings table"))
+
+    # "What to expect" section
+    has_expect = any(
+        line.strip().lower().startswith("## what to expect")
+        for line in lines
+    )
+    if not has_expect:
+        results.append(("error", "Missing: ## What to expect"))
+
+    # "Start command" section with a code block
+    has_start = any(
+        line.strip().lower().startswith("## start command")
+        for line in lines
+    )
+    if not has_start:
+        results.append(("error", "Missing: ## Start command"))
+    else:
+        in_start = False
+        has_code_block = False
+        for line in lines:
+            if line.strip().lower().startswith("## start command"):
+                in_start = True
+                continue
+            if in_start and line.strip().startswith("## "):
+                break
+            if in_start and line.strip().startswith("```"):
+                has_code_block = True
+                break
+        if not has_code_block:
+            results.append(
+                ("error", "Start command section has no code block"),
+            )
+
+    # --- Field checks (errors) ---
+
+    tier_value = table_rows.get("tier", "")
+    if tier_value and tier_value not in _VALID_TIERS:
+        results.append(("error", f"Invalid tier: \"{tier_value}\""))
+
+    recipe_value = table_rows.get("recipe", "")
+    recipe_clean = recipe_value.split("(")[0].strip()
+    if recipe_clean and recipe_clean not in _VALID_RECIPES:
+        results.append(("error", f"Invalid recipe: \"{recipe_value}\""))
+
+    players_value = table_rows.get("players", "")
+    if players_value and not re.match(r"^\d+(-\d+)?$", players_value):
+        results.append(
+            ("error", f"Invalid players format: \"{players_value}\""),
+        )
+
+    time_value = table_rows.get("time", "")
+    if time_value and "min" not in time_value.lower():
+        results.append(
+            ("error", f"Invalid time: \"{time_value}\" (should contain 'min')"),
+        )
+
+    # --- Content checks (warnings) ---
+
+    has_success = any(
+        line.strip().lower().startswith("## what success feels like")
+        for line in lines
+    )
+    if not has_success:
+        results.append(("warn", "Missing: ## What success feels like"))
+
+    has_after = any(
+        line.strip().lower().startswith("## after the game")
+        for line in lines
+    )
+    if not has_after:
+        results.append(("warn", "Missing: ## After the game"))
+
+    has_norms = any(
+        line.strip().lower().startswith("## table norms")
+        for line in lines
+    )
+    if not has_norms:
+        results.append(("warn", "Missing: ## Table norms"))
+
+    # Vibe intro length check
+    if has_blockquote:
+        bq_lines = [line[2:] for line in lines if line.startswith("> ")]
+        vibe_text = " ".join(bq_lines).strip()
+        if len(vibe_text) < 20:
+            results.append(
+                ("warn", f"Vibe intro too short ({len(vibe_text)} chars)"),
+            )
+        elif len(vibe_text) > 500:
+            results.append(
+                ("warn", f"Vibe intro too long ({len(vibe_text)} chars)"),
+            )
+
+    # --- Deck checks (warnings) ---
+
+    valid_recipe_tags = ("cozy", "spicy", "market", "promise")
+    if recipe_clean.lower() in valid_recipe_tags:
+        from sov_engine.content import build_deal_deck, build_event_deck
+
+        tag = recipe_clean.lower()
+        events = build_event_deck()
+        deals = build_deal_deck()
+        event_count = sum(1 for e in events if tag in e.tags)
+        deal_count = sum(1 for d in deals if tag in d.tags)
+
+        if event_count < 5:
+            results.append((
+                "warn",
+                f"Recipe '{tag}': only {event_count} matching events "
+                f"(< 5, full deck will be used)",
+            ))
+        if deal_count < 3:
+            results.append((
+                "warn",
+                f"Recipe '{tag}': only {deal_count} matching deals "
+                f"(< 3, full deck will be used)",
+            ))
+
+    return results
 
 
 def _parse_share_code(code: str) -> dict[str, str] | str:
@@ -1915,8 +2098,8 @@ def _build_share_code(slug: str, tier: str, recipe: str, seed: int) -> str:
 
 @app.command()
 def scenario(
-    action: Annotated[str, typer.Argument(help="Action: list or code")],
-    name: Annotated[str, typer.Argument(help="Scenario name (for code)")] = "",
+    action: Annotated[str, typer.Argument(help="Action: list, code, or lint")],
+    name: Annotated[str, typer.Argument(help="Scenario name or file path")] = "",
     seed: Annotated[int, typer.Option("--seed", "-s", help="RNG seed")] = 42,
     tier_opt: Annotated[
         str, typer.Option("--tier", "-t", help="Tier override (for custom)"),
@@ -1925,7 +2108,7 @@ def scenario(
         str, typer.Option("--recipe", "-r", help="Recipe override (for custom)"),
     ] = "",
 ) -> None:
-    """Browse scenario packs or generate share codes."""
+    """Browse scenario packs, generate share codes, or lint scenario files."""
     if action == "list":
         table = Table(title="Scenario Packs")
         table.add_column("Scenario", style="bold")
@@ -1970,9 +2153,58 @@ def scenario(
         console.print("  [dim]Share this code. Others run:[/dim]")
         console.print(f'  [dim]sov new --code "{code}" -p Name1 -p Name2[/dim]')
 
+    elif action == "lint":
+        # Determine which files to lint
+        if name:
+            files_to_lint = [name]
+        else:
+            scenario_dir = Path("docs/scenarios")
+            if not scenario_dir.exists():
+                console.print("[red]docs/scenarios/ not found.[/red]")
+                raise typer.Exit(1)
+            files_to_lint = sorted(
+                str(f) for f in scenario_dir.glob("*.md")
+                if f.name not in ("README.md", "CANON.md", "_TEMPLATE.md")
+            )
+            if not files_to_lint:
+                console.print("[yellow]No scenario files found.[/yellow]")
+                raise typer.Exit(1)
+
+        total = len(files_to_lint)
+        passed = 0
+        failed = 0
+
+        for fpath in files_to_lint:
+            console.print(f"\n[bold]{fpath}[/bold]")
+            issues = _lint_scenario(fpath)
+
+            errors = [msg for lvl, msg in issues if lvl == "error"]
+            warns = [msg for lvl, msg in issues if lvl == "warn"]
+
+            if not errors:
+                console.print("  [green]OK[/green] Structure OK")
+                passed += 1
+            else:
+                for msg in errors:
+                    safe = msg.replace("[", "\\[")
+                    console.print(f"  [red]FAIL[/red] {safe}")
+                failed += 1
+
+            for msg in warns:
+                safe = msg.replace("[", "\\[")
+                console.print(f"  [yellow]WARN[/yellow] {safe}")
+
+        console.print(
+            f"\n{total} file(s) checked, "
+            f"{passed} passed, {failed} failed.",
+        )
+        if failed:
+            raise typer.Exit(1)
+
     else:
         console.print(
-            f"[yellow]Unknown action '{action}'. Try: list or code[/yellow]",
+            f"[yellow]Unknown action '{action}'. "
+            f"Try: list, code, or lint[/yellow]",
         )
         raise typer.Exit(1)
 

@@ -23,6 +23,15 @@ that shapes the feel of your session. Pick one, read the intro aloud, and play.
 
 That's it. The scenario is guidance, not enforcement. The table is still authoritative.
 
+## Canon vs community
+
+The four scenarios above are **canon** — playtested, lint-passing, and
+postcard-proven. See [CANON.md](CANON.md) for what that means.
+
+Community-contributed packs will live in `docs/scenarios/community/` once
+they start arriving. To promote a community pack to canon: pass lint, share
+a postcard, and open a PR.
+
 ## Make your own
 
 A scenario is just:
@@ -31,10 +40,13 @@ A scenario is just:
 - A player count and session length
 - A paragraph that sets the tone
 
-Write it down, share it, play it. No code needed.
+Start from the [template](_TEMPLATE.md). Write it down, share it, play it.
+No code needed.
 
 ## From the console
 
 ```bash
-sov scenario list    # see all scenarios at a glance
+sov scenario list                                # see all scenarios
+sov scenario lint                                # validate scenario files
+sov scenario lint docs/scenarios/cozy-night.md   # validate one file
 ```

@@ -487,3 +487,176 @@ def test_share_code_roundtrip():
     assert parsed["tier"] == "town-hall"
     assert parsed["recipe"] == "market"
     assert parsed["seed"] == "7"
+
+
+# ---------------------------------------------------------------------------
+# Scenario lint tests
+# ---------------------------------------------------------------------------
+
+
+def test_lint_cozy_night_passes():
+    """Cozy Night scenario should pass lint with no errors."""
+    from sov_cli.main import _lint_scenario
+
+    results = _lint_scenario("docs/scenarios/cozy-night.md")
+    errors = [msg for lvl, msg in results if lvl == "error"]
+    assert errors == [], f"Unexpected errors: {errors}"
+
+
+def test_lint_market_panic_passes():
+    """Market Panic scenario should pass lint with no errors."""
+    from sov_cli.main import _lint_scenario
+
+    results = _lint_scenario("docs/scenarios/market-panic.md")
+    errors = [msg for lvl, msg in results if lvl == "error"]
+    assert errors == [], f"Unexpected errors: {errors}"
+
+
+def test_lint_promises_matter_passes():
+    """Promises Matter scenario should pass lint with no errors."""
+    from sov_cli.main import _lint_scenario
+
+    results = _lint_scenario("docs/scenarios/promises-matter.md")
+    errors = [msg for lvl, msg in results if lvl == "error"]
+    assert errors == [], f"Unexpected errors: {errors}"
+
+
+def test_lint_treaty_night_passes():
+    """Treaty Night scenario should pass lint with no errors."""
+    from sov_cli.main import _lint_scenario
+
+    results = _lint_scenario("docs/scenarios/treaty-night.md")
+    errors = [msg for lvl, msg in results if lvl == "error"]
+    assert errors == [], f"Unexpected errors: {errors}"
+
+
+def test_lint_template_has_errors():
+    """Template has placeholder values that should produce lint errors."""
+    from sov_cli.main import _lint_scenario
+
+    results = _lint_scenario("docs/scenarios/_TEMPLATE.md")
+    errors = [msg for lvl, msg in results if lvl == "error"]
+    # Template has placeholder tier, recipe, players — should flag errors
+    assert len(errors) >= 2, f"Template should produce errors: {errors}"
+
+
+def test_lint_missing_file():
+    """Linting a nonexistent file should produce an error."""
+    from sov_cli.main import _lint_scenario
+
+    results = _lint_scenario("docs/scenarios/does-not-exist.md")
+    errors = [msg for lvl, msg in results if lvl == "error"]
+    assert len(errors) == 1
+    assert "not found" in errors[0].lower()
+
+
+def test_lint_detects_missing_structure(tmp_path):
+    """Lint should flag a file missing required structure."""
+    from sov_cli.main import _lint_scenario
+
+    bad_file = tmp_path / "bad-scenario.md"
+    bad_file.write_text("Just some text without any structure.\n")
+    results = _lint_scenario(str(bad_file))
+    errors = [msg for lvl, msg in results if lvl == "error"]
+    # Should flag missing: H1, blockquote, settings table, What to expect,
+    # Start command
+    assert len(errors) >= 4
+
+
+def test_lint_detects_invalid_tier(tmp_path):
+    """Lint should flag an invalid tier value."""
+    from sov_cli.main import _lint_scenario
+
+    scenario = tmp_path / "bad-tier.md"
+    scenario.write_text(
+        "# Bad Tier\n\n"
+        "> A vibe intro that is long enough.\n\n"
+        "| Setting | Value |\n"
+        "|---------|-------|\n"
+        "| Tier | hardcore |\n"
+        "| Recipe | cozy |\n"
+        "| Players | 2-4 |\n"
+        "| Rounds | 8-10 |\n"
+        "| Time | 30 min |\n\n"
+        "## What to expect\n\nSome text.\n\n"
+        "## Start command\n\n```bash\nsov new\n```\n",
+    )
+    results = _lint_scenario(str(scenario))
+    errors = [msg for lvl, msg in results if lvl == "error"]
+    assert any("Invalid tier" in msg for msg in errors)
+
+
+def test_lint_detects_invalid_recipe(tmp_path):
+    """Lint should flag an invalid recipe value."""
+    from sov_cli.main import _lint_scenario
+
+    scenario = tmp_path / "bad-recipe.md"
+    scenario.write_text(
+        "# Bad Recipe\n\n"
+        "> A vibe intro that is long enough.\n\n"
+        "| Setting | Value |\n"
+        "|---------|-------|\n"
+        "| Tier | Campfire |\n"
+        "| Recipe | chaos |\n"
+        "| Players | 2-4 |\n"
+        "| Rounds | 8-10 |\n"
+        "| Time | 30 min |\n\n"
+        "## What to expect\n\nSome text.\n\n"
+        "## Start command\n\n```bash\nsov new\n```\n",
+    )
+    results = _lint_scenario(str(scenario))
+    errors = [msg for lvl, msg in results if lvl == "error"]
+    assert any("Invalid recipe" in msg for msg in errors)
+
+
+def test_lint_valid_tiers_accepted(tmp_path):
+    """All valid tier display names should pass."""
+    from sov_cli.main import _lint_scenario
+
+    for tier_name in ("Campfire", "Town Hall", "Treaty Table",
+                      "Campfire / Market Day"):
+        scenario = tmp_path / "good-tier.md"
+        scenario.write_text(
+            "# Good Tier\n\n"
+            "> A vibe intro that is long enough.\n\n"
+            "| Setting | Value |\n"
+            "|---------|-------|\n"
+            f"| Tier | {tier_name} |\n"
+            "| Recipe | cozy |\n"
+            "| Players | 2-4 |\n"
+            "| Rounds | 8-10 |\n"
+            "| Time | 30 min |\n\n"
+            "## What to expect\n\nSome text.\n\n"
+            "## Start command\n\n```bash\nsov new\n```\n",
+        )
+        results = _lint_scenario(str(scenario))
+        errors = [msg for lvl, msg in results if lvl == "error"]
+        assert not any("Invalid tier" in msg for msg in errors), (
+            f"Tier '{tier_name}' should be valid"
+        )
+
+
+def test_lint_deck_check_warns_on_low_counts(tmp_path):
+    """Lint warns when a recipe has too few matching cards."""
+    from sov_cli.main import _lint_scenario
+
+    # "repair" tag has very few cards — if we could use it as a recipe
+    # But let's test with a valid recipe that has known counts
+    scenario = tmp_path / "market-check.md"
+    scenario.write_text(
+        "# Market Check\n\n"
+        "> Testing deck counts for the market recipe.\n\n"
+        "| Setting | Value |\n"
+        "|---------|-------|\n"
+        "| Tier | Town Hall |\n"
+        "| Recipe | market |\n"
+        "| Players | 3-4 |\n"
+        "| Rounds | 10 |\n"
+        "| Time | 45 min |\n\n"
+        "## What to expect\n\nSome text.\n\n"
+        "## Start command\n\n```bash\nsov new\n```\n",
+    )
+    results = _lint_scenario(str(scenario))
+    warns = [msg for lvl, msg in results if lvl == "warn"]
+    # market recipe has only 2 matching deals (< 3 threshold)
+    assert any("matching deals" in msg for msg in warns)
