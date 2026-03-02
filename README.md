@@ -1,131 +1,114 @@
 # Sovereignty
 
-A strategy game about governance, trust, and trade.
-
-Offline tabletop board game with optional XRPL online verification.
+A board game about trust, trade, and keeping your word.
 
 [![CI](https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml/badge.svg)](https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## What is this?
+## Play tonight
 
-Sovereignty is a board game where players build communities and compete through
-trade, trust, and governance. It teaches real economic and Web3 concepts through
-play — no jargon, no lectures.
+Print the cards, grab a die and some coins, sit down with 2-4 people.
+No screens required. Takes about 30 minutes.
 
-**Three tiers of complexity:**
+**[Print & Play guide](docs/print-and-play.md)** | **[Full rules](docs/rules/campfire_v1.md)** | **[Play with strangers](docs/play-with-strangers.md)**
 
-| Tier | Name | What it teaches |
-|------|------|----------------|
-| 1 | **Campfire** | Wallets, payments, receipts, IOUs |
-| 2 | **Town Hall** | Markets, credit, trust mechanics |
-| 3 | **Treaty Table** | Governance, policy, adversarial play |
-
-The game is fully playable offline with printed cards and tokens. An optional
-XRPL Testnet layer adds verifiable receipts and enables remote play.
-
-## Quick start
+## Or use the console
 
 ```bash
-# Install
 pip install sovereignty-game
 
-# Start a game
-sov new --seed 42 -p Alice -p Bob -p Carol
-
-# Play turns
-sov turn
-
-# Show the board
-sov board
-
-# Generate a round proof
-sov end-round
-
-# Verify a proof file
-sov verify .sov/proofs/round_001.proof.json
+sov tutorial                         # learn in 60 seconds
+sov new -p Alice -p Bob -p Carol     # start a game
+sov turn                             # roll, land, resolve
+sov promise make "I'll help Bob"     # say it out loud
+sov recap                            # what happened this round
+sov postcard                         # shareable summary
 ```
 
-## Design principle
+The console keeps score. You keep your word.
 
-> "Teach through consequences, not terminology."
+## How it works
 
-Players learn by doing: issuing IOUs, breaking promises (and losing reputation),
-trading at shifting market prices, and voting on collective action. The concepts
-map directly to Web3 primitives — wallets, tokens, trust lines, DEX — but
-players don't need to know that to have fun.
+You start with **5 coins** and **3 reputation**. Roll a die, move around
+a 16-space board, and land on spaces that give you choices: trade, help
+someone, take a risk, or draw a card.
 
-## Game overview (Tier 1: Campfire)
+**20 Event cards** read like moments: *"Has anyone seen a small leather
+pouch?"* (Lost Wallet) or *"Nobody saw... right?"* (Found a Shortcut).
 
-- **Players:** 2-4
-- **Time:** ~30 minutes
-- **Components:** 16-space board, 10 Event cards, 10 Deal/Voucher cards
+**20 Deal cards** force conversation: *"Spot me 2 coins? I'll pay 3 back."*
+or *"I've got your back if you've got mine."*
 
-**Two meters:**
-- **Coins** — earned, spent, traded
-- **Reputation** — earned by keeping promises, lost by breaking them
+**The Promise rule:** Once per round, say "I promise..." out loud and
+commit to something. Keep it: +1 reputation. Break it: -2 reputation.
+The table decides.
 
-**Three ways to win (pick one before play):**
-- **Prosperity:** Reach 20 coins
-- **Beloved:** Reach 10 reputation
-- **Builder:** Complete 4 upgrades
+**The Apology:** Once per game, if you broke a promise, publicly apologize.
+Pay 1 coin to who you wronged, regain +1 reputation.
 
-## Round proofs
+**Pick your goal** (secret or public):
+- **Prosperity** — reach 20 coins
+- **Beloved** — reach 10 reputation
+- **Builder** — complete 4 upgrades
 
-Every round, the CLI can produce a **proof file** — a JSON document containing
-the canonical game state and its SHA-256 hash. Anyone can independently verify
-the proof:
+After 15 rounds, highest combined score wins.
+
+## What is Diary Mode?
+
+Every round, the console can produce a **proof** — a fingerprint of the
+game state. If anyone changes the score, the fingerprint won't match.
+
+Optionally, that fingerprint can be posted to the **XRPL Testnet** — a
+public ledger. Think of it as writing the score on a wall that nobody
+can erase.
 
 ```bash
-sov verify round_003.proof.json
-# -> Proof valid. Round 3, hash matches.
+sov end-round                        # generate proof
+sov wallet                           # create testnet wallet (free)
+sov anchor                           # post hash to XRPL (optional)
+sov verify proof.json --tx <txid>    # trust but verify
 ```
 
-This is the foundation for online play: proofs can be anchored to XRPL Testnet
-so remote players can't fudge their game state.
+Only the host needs a wallet. Nobody else touches a screen. The game
+works perfectly without anchoring — it's just the diary that remembers.
+
+## Three tiers (building up)
+
+| Tier | Name | Status | What it adds |
+|------|------|--------|-------------|
+| 1 | **Campfire** | Playable | Coins, reputation, promises, IOUs |
+| 2 | **Town Hall** | Planned | Shared market, resource scarcity |
+| 3 | **Treaty Table** | Planned | Governance, policy cards, alliances |
 
 ## Project structure
 
 ```
 sovereignty/
   sov_engine/       # Pure game logic (models, rules, serialization, hashing)
-  sov_transport/    # XRPL transport layer (NullTransport for offline, XRPL stub)
-  sov_cli/          # Typer CLI ("Round Console")
-  tests/            # pytest suite
-  docs/             # Game design docs (board, cards, rules)
+  sov_transport/    # Ledger transport (offline + XRPL Testnet)
+  sov_cli/          # Typer CLI (the "Round Console")
+  tests/            # 38 tests
+  docs/             # Rules, cards, print-and-play, play-with-strangers
+  assets/print/     # Printable cards, player mat, quick reference
 ```
-
-## Roadmap
-
-- [x] **Phase 1:** Campfire MVP — engine + CLI + round proofs
-- [ ] **Phase 2:** XRPL anchoring — online play with commit/reveal
-- [ ] **Phase 3:** Tier 2 (Town Hall) — markets + trust gates
-- [ ] **Phase 4:** Tier 3 (Treaty Table) — governance + policy cards
 
 ## Development
 
 ```bash
-# Clone
 git clone https://github.com/mcp-tool-shop-org/sovereignty.git
 cd sovereignty
-
-# Install with dev deps
 uv sync --dev
-
-# Run tests
 uv run pytest tests/ -v
-
-# Lint
 uv run ruff check .
 ```
 
-## Platform support
+## Design principle
 
-| Platform | Status |
-|----------|--------|
-| Linux | Tier 1 (primary) |
-| macOS | Tier 2 (best effort) |
-| Windows | Tier 3 (best effort) |
+> "Teach through consequences, not terminology."
+
+Players learn by doing: issuing IOUs, breaking promises, trading at
+shifting prices. The concepts map to Web3 primitives — wallets, tokens,
+trust lines — but players don't need to know that to have fun.
 
 ## License
 

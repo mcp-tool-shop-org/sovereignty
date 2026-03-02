@@ -475,6 +475,72 @@ def wallet() -> None:
 
 
 @app.command()
+def postcard() -> None:
+    """Share your game in one screenshot. The campfire postcard."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    rnd = state.current_round
+    players = ", ".join(p.name for p in state.players)
+
+    # Find the latest proof for the hash
+    proof_hash = "[dim]no proof yet -- run sov end-round[/dim]"
+    anchor_line = ""
+    PROOFS_DIR.mkdir(parents=True, exist_ok=True)
+    proofs = sorted(PROOFS_DIR.glob("round_*.proof.json"))
+    if proofs:
+        latest = json.loads(proofs[-1].read_text(encoding="utf-8"))
+        h = latest["state_hash"]
+        proof_hash = f"[bold]{h}[/bold]"
+
+        # Check for anchor info in the proof dir
+        anchor_file = PROOFS_DIR / "anchors.json"
+        if anchor_file.exists():
+            anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
+            tx = anchors.get(str(latest["round"]))
+            if tx:
+                url = f"https://testnet.xrpl.org/transactions/{tx}"
+                anchor_line = f"\n  Anchored: [dim]{url}[/dim]"
+
+    # Build the recap highlights
+    highlights = []
+    for entry in state.log:
+        if entry.startswith(f"R{rnd}") or (rnd > 1 and entry.startswith(f"R{rnd - 1}")):
+            _, _, text = entry.partition(": ")
+            if "broke their promise" in text:
+                highlights.append(f"[red]Ouch:[/red] {text}")
+            elif "apologizes" in text:
+                highlights.append(f"[yellow]Brave:[/yellow] {text}")
+            elif "helps" in text:
+                highlights.append(f"[green]Kind:[/green] {text}")
+            elif "wins" in text:
+                highlights.append(f"[bold green]{text}[/bold green]")
+
+    recap_text = ""
+    if highlights:
+        recap_text = "\n" + "\n".join(f"  {h}" for h in highlights[:3])
+
+    # Scoreboard
+    scores = []
+    for p in state.players:
+        scores.append(f"{p.name}: {p.coins}c {p.reputation}r {p.upgrades}u")
+
+    console.print(Panel(
+        f"  [bold]Sovereignty: Campfire[/bold]\n"
+        f"  Round {rnd} | {players}\n\n"
+        f"  {' | '.join(scores)}\n\n"
+        f"  Proof: {proof_hash}"
+        f"{anchor_line}"
+        f"{recap_text}",
+        title="Campfire Postcard",
+        subtitle="[dim]sov postcard[/dim]",
+    ))
+
+
+@app.command()
 def promise(
     action: Annotated[str, typer.Argument(help="make, keep, or break")],
     text: Annotated[str, typer.Argument(help="What you're promising")],
