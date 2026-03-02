@@ -25,9 +25,12 @@ def _player_snapshot(p: PlayerState) -> dict[str, Any]:
             for d in sorted(p.active_deals, key=lambda d: d.deal_id)
         ],
         "coins": p.coins,
+        "helped_last_round": p.helped_last_round,
         "name": p.name,
         "position": p.position,
+        "promises": sorted(p.promises),
         "reputation": p.reputation,
+        "skip_next_move": p.skip_next_move,
         "upgrades": p.upgrades,
         "vouchers_held": [
             _voucher_snapshot(v)

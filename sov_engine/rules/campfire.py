@@ -73,9 +73,19 @@ def new_game(
 
 
 def roll_and_move(state: GameState, rng: GameRng) -> int:
-    """Roll d6, move current player, handle passing Campfire. Returns roll value."""
-    roll = rng.roll_d6()
+    """Roll d6, move current player, handle passing Campfire. Returns roll value.
+
+    Returns 0 if the player's move is skipped (Broken Bridge).
+    """
     player = state.current_player
+
+    # Broken Bridge: skip this move
+    if player.skip_next_move:
+        player.skip_next_move = False
+        state.add_log(f"{player.name} skips their move (Broken Bridge).")
+        return 0
+
+    roll = rng.roll_d6()
     old_pos = player.position
     new_pos = (old_pos + roll) % BOARD_SIZE
 
@@ -267,10 +277,65 @@ def resolve_event(state: GameState, card: EventCard, rng: GameRng) -> str:
             for p in affected:
                 p.adjust_rep(-1)
             names = [p.name for p in affected] or ["no one"]
-            return f"EVENT: {card.name} — {', '.join(names)} loses 1 Rep."
+            return f"EVENT: {card.name} -- {', '.join(names)} loses 1 Rep."
+
+        # --- New events (human-voice) ---
+
+        case "lost_wallet":
+            return (
+                f"EVENT: {card.name} -- {player.name} can't trade this turn"
+                f" unless someone lends them 1 coin."
+            )
+
+        case "good_news":
+            if player.helped_last_round:
+                player.adjust_coins(2)
+                return f"EVENT: {card.name} -- {player.name} helped someone last round. +2 coins!"
+            return f"EVENT: {card.name} -- {player.name} didn't help anyone last round. No bonus."
+
+        case "awkward_favor":
+            return (
+                f"EVENT: {card.name} -- {player.name} asks: "
+                f'"Can someone cover 2 coins? I\'ll pay back 3."'
+            )
+
+        case "shortcut":
+            player.adjust_coins(3)
+            player.adjust_rep(-1)
+            return f"EVENT: {card.name} -- {player.name} gains 3 coins but loses 1 Rep."
+
+        case "community_dinner":
+            return f"EVENT: {card.name} -- Everyone may donate 1 coin to gain +1 Rep."
+
+        case "old_friend":
+            return f"EVENT: {card.name} -- {player.name} picks a friend. Both gain +1 Rep."
+
+        case "broken_bridge":
+            player.skip_next_move = True
+            return f"EVENT: {card.name} -- {player.name} will skip their next move."
+
+        case "harvest_moon":
+            poorest = min(state.players, key=lambda p: p.coins)
+            poorest.adjust_coins(2)
+            return f"EVENT: {card.name} -- {poorest.name} has the fewest coins. +2 coins."
+
+        case "tall_tale":
+            if player.reputation > 7:
+                player.adjust_rep(-1)
+                return f"EVENT: {card.name} -- {player.name}'s Rep is too high. -1 Rep."
+            player.adjust_rep(1)
+            return f"EVENT: {card.name} -- {player.name} gains +1 Rep."
+
+        case "lucky_find":
+            next_card = state.event_deck.draw(rng)
+            if next_card is None:
+                return f"EVENT: {card.name} -- but the deck is empty!"
+            result = resolve_event(state, next_card, rng)  # type: ignore[arg-type]
+            state.event_deck.discard(next_card)
+            return f"EVENT: {card.name} -- draw again! {result}"
 
         case _:
-            return f"EVENT: {card.name} — unknown effect '{eid}'."
+            return f"EVENT: {card.name} -- unknown effect '{eid}'."
 
 
 # ---------------------------------------------------------------------------
@@ -286,6 +351,7 @@ def resolve_help_desk(state: GameState, helper: PlayerState, target: PlayerState
     target.adjust_coins(1)
     helper.adjust_rep(1)
     target.adjust_rep(1)
+    helper.helped_last_round = True
     h, t = helper.name, target.name
     msg = f"{h} helps {t}. -1 coin for {h}, +1 coin for {t}, both +1 Rep."
     state.add_log(msg)
@@ -428,3 +494,38 @@ def check_deal_deadlines(state: GameState) -> list[str]:
                 state.add_log(msg)
                 messages.append(msg)
     return messages
+
+
+# ---------------------------------------------------------------------------
+# Promise mechanic
+# ---------------------------------------------------------------------------
+
+
+def make_promise(state: GameState, player: PlayerState, text: str) -> str:
+    """Player makes a promise. Once per round, say it out loud."""
+    player.promises.append(text)
+    msg = f'{player.name} promises: "{text}"'
+    state.add_log(msg)
+    return msg
+
+
+def keep_promise(state: GameState, player: PlayerState, text: str) -> str:
+    """Player kept their promise. +1 Rep."""
+    if text not in player.promises:
+        return f"{player.name} has no such promise to keep."
+    player.promises.remove(text)
+    player.adjust_rep(1)
+    msg = f'{player.name} kept their promise: "{text}" +1 Rep.'
+    state.add_log(msg)
+    return msg
+
+
+def break_promise(state: GameState, player: PlayerState, text: str) -> str:
+    """Player broke their promise. -2 Rep."""
+    if text not in player.promises:
+        return f"{player.name} has no such promise to break."
+    player.promises.remove(text)
+    player.adjust_rep(-2)
+    msg = f'{player.name} broke their promise: "{text}" -2 Rep.'
+    state.add_log(msg)
+    return msg

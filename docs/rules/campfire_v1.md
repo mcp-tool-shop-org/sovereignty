@@ -89,6 +89,19 @@ A Voucher is a promise: "I will pay you X coins by round Y."
 - Complete it by the deadline → gain the reward.
 - Fail to complete → suffer the penalty.
 
+## Promises
+
+The simplest trust mechanic in the game. No cards needed.
+
+- **Once per round**, any player may say "I promise..." and state what they'll do.
+- Say it out loud. Everyone hears it.
+- **Keep your promise:** +1 Reputation.
+- **Break your promise:** -2 Reputation.
+- Promises are tracked in the game state but enforced by the table.
+  The group decides if a promise was kept or broken.
+
+That's it. No contract. No card. Just your word.
+
 ## Events
 
 - Drawn at Rumor Mill (spaces 3 and 9).

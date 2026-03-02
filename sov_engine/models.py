@@ -154,6 +154,9 @@ class PlayerState:
     vouchers_held: list[Voucher] = field(default_factory=list)
     vouchers_issued: list[Voucher] = field(default_factory=list)
     active_deals: list[ActiveDeal] = field(default_factory=list)
+    promises: list[str] = field(default_factory=list)  # active promise texts
+    helped_last_round: bool = False  # for "Good News Travels" event
+    skip_next_move: bool = False  # for "Broken Bridge" event
 
     def adjust_coins(self, amount: int) -> int:
         """Add/subtract coins. Returns actual change (can't go below 0)."""

@@ -14,8 +14,11 @@ from rich.table import Table
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
 from sov_engine.models import GameState, WinCondition
 from sov_engine.rules.campfire import (
+    break_promise,
     check_deal_deadlines,
     check_voucher_deadlines,
+    keep_promise,
+    make_promise,
     new_game,
     resolve_space,
     roll_and_move,
@@ -76,6 +79,9 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
         p.reputation = p_data["reputation"]
         p.upgrades = p_data["upgrades"]
         p.position = p_data["position"]
+        p.promises = p_data.get("promises", [])
+        p.helped_last_round = p_data.get("helped_last_round", False)
+        p.skip_next_move = p_data.get("skip_next_move", False)
 
     state.current_round = data["current_round"]
     state.current_player_index = data["current_player_index"]
@@ -126,11 +132,11 @@ def new(
     _save_state(state)
 
     console.print(Panel(
-        f"[bold green]Sovereignty: Campfire[/bold green]\n"
-        f"Seed: {seed}\n"
-        f"Players: {', '.join(players)}\n"
-        f"Round limit: {state.config.max_rounds}",
-        title="New Game",
+        f"[bold green]Sovereignty: Campfire[/bold green]\n\n"
+        f"  Everyone starts with 5 coins, 3 reputation, and a goal.\n"
+        f"  Players: {', '.join(players)}\n"
+        f"  {state.config.max_rounds} rounds. Make them count.",
+        title="Gather 'round",
     ))
     _print_status(state)
 
@@ -148,7 +154,7 @@ def status() -> None:
 
 @app.command()
 def turn() -> None:
-    """Execute the current player's turn: roll, move, resolve."""
+    """Take your turn. Roll the dice and see what happens."""
     result = _load_game()
     if result is None:
         console.print("[red]No active game. Run 'sov new' first.[/red]")
@@ -156,25 +162,37 @@ def turn() -> None:
     state, rng = result
 
     if state.game_over:
-        console.print(f"[yellow]Game is over! Winner: {state.winner}[/yellow]")
+        console.print(f"\n  The game is over. [bold]{state.winner}[/bold] won.")
         raise typer.Exit(0)
 
     player = state.current_player
-    console.print(f"\n[bold]{player.name}'s turn[/bold] (Round {state.current_round})")
+    rnd = state.current_round
+    console.print(f"\n  [bold]{player.name}[/bold], it's your turn. [dim](Round {rnd})[/dim]")
+
+    # Show active promises as a gentle reminder
+    if player.promises:
+        for p_text in player.promises:
+            console.print(f'  [dim italic]You promised: "{p_text}"[/dim italic]')
 
     # Roll and move
     roll = roll_and_move(state, rng)
-    space = state.board[player.position]
-    console.print(f"  Rolled [bold cyan]{roll}[/bold cyan] -> landed on [bold]{space.name}[/bold]")
 
-    # Resolve space
-    result_msg = resolve_space(state, rng)
-    console.print(f"  {result_msg}")
+    if roll == 0:
+        # Skipped turn (Broken Bridge)
+        console.print("  You're stuck. Road's out. Sit tight.")
+    else:
+        space = state.board[player.position]
+        console.print(f"  You rolled a [bold cyan]{roll}[/bold cyan].")
+        console.print(f"  You land on [bold]{space.name}[/bold]. [dim]{space.description}[/dim]")
+
+        # Resolve space
+        result_msg = resolve_space(state, rng)
+        console.print(f"\n  {result_msg}")
 
     # Check win
     winner = state.check_winner()
     if winner:
-        console.print(f"\n[bold green]{winner} wins![/bold green]")
+        console.print(f"\n  [bold green]{winner} wins![/bold green]")
         _save_state(state)
         raise typer.Exit(0)
 
@@ -184,11 +202,15 @@ def turn() -> None:
 
     # End of round checks
     if state.current_round > old_round:
-        console.print(f"\n[dim]--- End of Round {old_round} ---[/dim]")
+        console.print(f"\n  [dim]--- Round {old_round} wraps up ---[/dim]")
         voucher_msgs = check_voucher_deadlines(state)
         deal_msgs = check_deal_deadlines(state)
         for m in voucher_msgs + deal_msgs:
             console.print(f"  {m}")
+
+        # Reset helped_last_round for all players at end of round
+        for p in state.players:
+            p.helped_last_round = False
 
         # Reset market prices if they were modified by events
         state.market.food = 1
@@ -196,6 +218,7 @@ def turn() -> None:
         state.market.tools = 3
 
     _save_state(state)
+    console.print()
     _print_brief_status(state)
 
 
@@ -236,6 +259,47 @@ def verify(
     else:
         console.print(f"[red]{message}[/red]")
         raise typer.Exit(1)
+
+
+@app.command()
+def promise(
+    action: Annotated[str, typer.Argument(help="make, keep, or break")],
+    text: Annotated[str, typer.Argument(help="What you're promising")],
+    player: Annotated[str, typer.Option("--player", "-p", help="Who's promising")] = "",
+) -> None:
+    """Make, keep, or break a promise. Say it out loud."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    # Find the player (default: current player)
+    target = None
+    if player:
+        target = next((p for p in state.players if p.name == player), None)
+    else:
+        target = state.current_player
+
+    if target is None:
+        console.print(f"[red]Player '{player}' not found.[/red]")
+        raise typer.Exit(1)
+
+    match action:
+        case "make":
+            msg = make_promise(state, target, text)
+            console.print(f"\n  {msg}")
+        case "keep":
+            msg = keep_promise(state, target, text)
+            console.print(f"\n  {msg}")
+        case "break":
+            msg = break_promise(state, target, text)
+            console.print(f"\n  {msg}")
+        case _:
+            console.print("[red]Use: promise make/keep/break 'your promise text'[/red]")
+            raise typer.Exit(1)
+
+    _save_state(state)
 
 
 @app.command()
@@ -290,9 +354,9 @@ def _print_status(state: GameState) -> None:
 
     console.print(table)
     if state.game_over:
-        console.print(f"[bold green]Winner: {state.winner}[/bold green]")
+        console.print(f"  [bold green]{state.winner} wins the game.[/bold green]")
     else:
-        console.print(f"[dim]Next: {state.current_player.name}[/dim]")
+        console.print(f"  [dim]{state.current_player.name}'s turn next.[/dim]")
 
 
 def _print_brief_status(state: GameState) -> None:
