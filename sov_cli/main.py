@@ -4,13 +4,31 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Never
 
 import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+from sov_cli.errors import (
+    SovError,
+    anchor_error,
+    anchor_mismatch_error,
+    invalid_action_error,
+    market_error,
+    no_game_error,
+    no_proof_error,
+    no_wallet_error,
+    player_count_error,
+    player_not_found_error,
+    proof_file_error,
+    proof_invalid_error,
+    scenario_error,
+    share_code_error,
+    treaty_error,
+    wallet_error,
+)
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
 from sov_engine.models import (
     RESOURCE_NAMES,
@@ -169,6 +187,14 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
     return state, rng
 
 
+def _fail(err: SovError) -> Never:
+    """Print structured error and exit."""
+    console.print(f"[red]{err.message}[/red]")
+    if err.hint:
+        console.print(f"  [dim]{err.hint}[/dim]")
+    raise typer.Exit(1)
+
+
 # ---------------------------------------------------------------------------
 # Commands
 # ---------------------------------------------------------------------------
@@ -285,8 +311,7 @@ def new(
     if code:
         parsed = _parse_share_code(code)
         if isinstance(parsed, str):
-            console.print(f"[red]{parsed}[/red]")
-            raise typer.Exit(1)
+            _fail(share_code_error(parsed))
         seed = int(parsed["seed"])
         tier = parsed["tier"]
         recipe = parsed["recipe"]
@@ -294,11 +319,9 @@ def new(
     if players is None:
         players = []
     if len(players) < 2:
-        console.print("[red]Need at least 2 players. Use -p Name1 -p Name2[/red]")
-        raise typer.Exit(1)
+        _fail(player_count_error(len(players)))
     if len(players) > 4:
-        console.print("[red]Maximum 4 players.[/red]")
-        raise typer.Exit(1)
+        _fail(player_count_error(len(players)))
 
     if STATE_FILE.exists() and not typer.confirm("Active game found. Overwrite?"):
         raise typer.Exit(0)
@@ -422,8 +445,7 @@ def status() -> None:
     """Show current game state."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game. Run 'sov new' first.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
     _print_status(state)
 
@@ -433,8 +455,7 @@ def turn() -> None:
     """Take your turn. Roll the dice and see what happens."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game. Run 'sov new' first.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, rng = result
 
     if state.game_over:
@@ -524,8 +545,7 @@ def end_round(
     """Generate a round proof for the current state."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     proof = make_round_proof(state)
@@ -550,8 +570,7 @@ def verify(
     if valid:
         console.print(f"  [green]Local proof valid.[/green] {message}")
     else:
-        console.print(f"  [red]Local proof invalid.[/red] {message}")
-        raise typer.Exit(1)
+        _fail(proof_invalid_error(message))
 
     if tx:
         proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
@@ -568,11 +587,9 @@ def verify(
                 explorer = f"https://testnet.xrpl.org/transactions/{tx}"
                 console.print(f"  [dim]{explorer}[/dim]")
             else:
-                console.print("  [red]Anchor mismatch.[/red] TX memo doesn't match.")
-                raise typer.Exit(1)
+                _fail(anchor_mismatch_error())
         except RuntimeError as e:
-            console.print(f"  [red]{e}[/red]")
-            raise typer.Exit(1) from None
+            _fail(anchor_error(str(e)))
 
 
 @app.command()
@@ -598,13 +615,11 @@ def anchor(
         PROOFS_DIR.mkdir(parents=True, exist_ok=True)
         proofs = sorted(PROOFS_DIR.glob("round_*.proof.json"))
         if not proofs:
-            console.print("  [red]No proof files found. Run 'sov end-round' first.[/red]")
-            raise typer.Exit(1)
+            _fail(no_proof_error())
         proof_file = proofs[-1]
 
     if not proof_file.exists():
-        console.print(f"  [red]Proof file not found: {proof_file}[/red]")
-        raise typer.Exit(1)
+        _fail(proof_file_error(str(proof_file)))
 
     # Load proof
     proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
@@ -620,12 +635,7 @@ def anchor(
         seed = os.environ.get(seed_env)
 
     if not seed:
-        console.print(
-            f"  [red]No wallet seed found.[/red]\n"
-            f"  Set {seed_env} env var, or use --signer-file.\n"
-            f"  Create a testnet wallet: sov wallet"
-        )
-        raise typer.Exit(1)
+        _fail(no_wallet_error(seed_env))
 
     # Build the memo
     game_id = f"s{seed_val}"
@@ -650,12 +660,9 @@ def anchor(
             title="Anchored",
         ))
     except RuntimeError as e:
-        console.print(f"  [red]{e}[/red]")
-        raise typer.Exit(1) from None
+        _fail(anchor_error(str(e)))
     except Exception as e:
-        console.print(f"  [red]Anchor failed: {e}[/red]")
-        console.print("  [dim]The game still works fine offline.[/dim]")
-        raise typer.Exit(1) from None
+        _fail(anchor_error(str(e)))
 
 
 @app.command()
@@ -682,11 +689,9 @@ def wallet() -> None:
             title="Testnet Wallet",
         ))
     except RuntimeError as e:
-        console.print(f"  [red]{e}[/red]")
-        raise typer.Exit(1) from None
+        _fail(wallet_error(str(e)))
     except Exception as e:
-        console.print(f"  [red]Wallet creation failed: {e}[/red]")
-        raise typer.Exit(1) from None
+        _fail(wallet_error(str(e)))
 
 
 @app.command()
@@ -698,8 +703,7 @@ def postcard(
     """Share your game in one screenshot. The campfire postcard."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     rnd = state.current_round
@@ -771,8 +775,7 @@ def promise(
     """Make, keep, or break a promise. Say it out loud."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     # Find the player (default: current player)
@@ -783,8 +786,7 @@ def promise(
         target = state.current_player
 
     if target is None:
-        console.print(f"[red]Player '{player}' not found.[/red]")
-        raise typer.Exit(1)
+        _fail(player_not_found_error(player))
 
     match action:
         case "make":
@@ -802,8 +804,7 @@ def promise(
                     " sov apologize <name>[/dim]",
                 )
         case _:
-            console.print("[red]Use: promise make/keep/break 'your promise text'[/red]")
-            raise typer.Exit(1)
+            _fail(invalid_action_error(action, "promise make/keep/break 'text'"))
 
     _save_state(state)
 
@@ -816,8 +817,7 @@ def apologize_cmd(
     """Apologize for a broken promise. Once per game. Costs 1 coin."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     source = None
@@ -828,11 +828,9 @@ def apologize_cmd(
     target_p = next((p for p in state.players if p.name == to), None)
 
     if source is None:
-        console.print(f"[red]Player '{player}' not found.[/red]")
-        raise typer.Exit(1)
+        _fail(player_not_found_error(player))
     if target_p is None:
-        console.print(f"[red]Player '{to}' not found.[/red]")
-        raise typer.Exit(1)
+        _fail(player_not_found_error(to))
 
     msg = apologize(state, source, target_p)
     console.print(f"\n  {msg}")
@@ -848,8 +846,7 @@ def offer(
     """Make an Offer. One per turn. Say it out loud."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     source = None
@@ -858,8 +855,7 @@ def offer(
     else:
         source = state.current_player
     if source is None:
-        console.print(f"[red]Player '{player}' not found.[/red]")
-        raise typer.Exit(1)
+        _fail(player_not_found_error(player))
 
     # Nudge: check for existing offer this round
     rnd = state.current_round
@@ -876,8 +872,7 @@ def offer(
     if to:
         target = next((p for p in state.players if p.name == to), None)
         if target is None:
-            console.print(f"[red]Player '{to}' not found.[/red]")
-            raise typer.Exit(1)
+            _fail(player_not_found_error(to))
         msg = f'{source.name} offers {target.name}: "{text}"'
     else:
         msg = f'{source.name} offers the table: "{text}"'
@@ -914,16 +909,11 @@ def treaty(
     """Make, keep, break, or list treaties. Say it out loud."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     if state.config.ruleset != "treaty_table_v1":
-        console.print(
-            "  [yellow]Treaties require Treaty Table tier.[/yellow]\n"
-            "  [dim]sov new --tier treaty-table -p A -p B[/dim]"
-        )
-        raise typer.Exit(1)
+        _fail(treaty_error("Treaties require Treaty Table tier."))
 
     # Find acting player
     source = None
@@ -932,43 +922,36 @@ def treaty(
     else:
         source = state.current_player
     if source is None:
-        console.print(f"[red]Player '{player}' not found.[/red]")
-        raise typer.Exit(1)
+        _fail(player_not_found_error(player))
 
     match action:
         case "make":
             if not with_player:
-                console.print("[red]Use --with to name your treaty partner.[/red]")
-                raise typer.Exit(1)
+                _fail(treaty_error("Use --with to name your treaty partner."))
             partner = next(
                 (p for p in state.players if p.name == with_player), None
             )
             if partner is None:
-                console.print(f"[red]Player '{with_player}' not found.[/red]")
-                raise typer.Exit(1)
+                _fail(player_not_found_error(with_player))
             if not stake and not their_stake:
-                console.print(
-                    "[red]Use --stake and/or --their-stake."
-                    " At least one side must stake something.[/red]"
-                )
-                raise typer.Exit(1)
+                _fail(treaty_error(
+                    "Use --stake and/or --their-stake."
+                    " At least one side must stake something."
+                ))
 
             maker_stake = parse_stake(stake)
             if isinstance(maker_stake, str):
-                console.print(f"  [red]{maker_stake}[/red]")
-                raise typer.Exit(1)
+                _fail(treaty_error(maker_stake))
             partner_stake = parse_stake(their_stake)
             if isinstance(partner_stake, str):
-                console.print(f"  [red]{partner_stake}[/red]")
-                raise typer.Exit(1)
+                _fail(treaty_error(partner_stake))
 
             result_val = treaty_make(
                 state, source, partner, text,
                 maker_stake, partner_stake, duration,
             )
             if isinstance(result_val, str):
-                console.print(f"  [red]{result_val}[/red]")
-                raise typer.Exit(1)
+                _fail(treaty_error(result_val))
             console.print(
                 f"\n  [bold]Treaty {result_val.treaty_id}[/bold]: "
                 f'{source.name} and {partner.name} agree: "{text}"'
@@ -980,22 +963,19 @@ def treaty(
 
         case "keep":
             if not text:
-                console.print("[red]Specify the treaty ID, e.g. 'sov treaty keep t_0001'[/red]")
-                raise typer.Exit(1)
+                _fail(treaty_error("Specify the treaty ID, e.g. 'sov treaty keep t_0001'"))
             t = next(
                 (t for t in source.active_treaties if t.treaty_id == text),
                 None,
             )
             if t is None:
-                console.print(f"  [red]Treaty '{text}' not found on {source.name}.[/red]")
-                raise typer.Exit(1)
+                _fail(treaty_error(f"Treaty '{text}' not found on {source.name}."))
             msg = engine_treaty_keep(state, t)
             console.print(f"\n  {msg}")
 
         case "break":
             if not text:
-                console.print("[red]Specify the treaty ID.[/red]")
-                raise typer.Exit(1)
+                _fail(treaty_error("Specify the treaty ID."))
             breaker_name = breaker or source.name
             t = next(
                 (
@@ -1005,8 +985,7 @@ def treaty(
                 None,
             )
             if t is None:
-                console.print(f"  [red]Treaty '{text}' not found on {source.name}.[/red]")
-                raise typer.Exit(1)
+                _fail(treaty_error(f"Treaty '{text}' not found on {source.name}."))
             msg = engine_treaty_break(state, t, breaker_name)
             console.print(f"\n  {msg}")
 
@@ -1047,8 +1026,7 @@ def treaty(
             return
 
         case _:
-            console.print("[red]Use: treaty make/keep/break/list[/red]")
-            raise typer.Exit(1)
+            _fail(invalid_action_error(action, "treaty make/keep/break/list"))
 
     _save_state(state)
 
@@ -1061,31 +1039,27 @@ def vote(
     """Record a table vote. MVP, Chaos Gremlin, or Best Promise."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     cat = category.lower()
     if cat == "mvp":
         target = next((p for p in state.players if p.name == value), None)
         if target is None:
-            console.print(f"[red]Player '{value}' not found.[/red]")
-            raise typer.Exit(1)
+            _fail(player_not_found_error(value))
         msg = f"Vote: {target.name} wins Table's Choice (MVP)"
         console.print(f"\n  [bold yellow]{msg}[/bold yellow]")
     elif cat == "chaos":
         target = next((p for p in state.players if p.name == value), None)
         if target is None:
-            console.print(f"[red]Player '{value}' not found.[/red]")
-            raise typer.Exit(1)
+            _fail(player_not_found_error(value))
         msg = f"Vote: {target.name} wins Chaos Gremlin"
         console.print(f"\n  [bold magenta]{msg}[/bold magenta]")
     elif cat == "promise":
         msg = f'Vote: Best Promise — "{value}"'
         console.print(f"\n  [bold green]{msg}[/bold green]")
     else:
-        console.print("[red]Use: vote mvp/chaos/promise 'name or text'[/red]")
-        raise typer.Exit(1)
+        _fail(invalid_action_error(category, "vote mvp/chaos/promise 'name or text'"))
 
     state.add_log(msg)
     console.print("  [dim]The table decides. The console records it.[/dim]")
@@ -1099,14 +1073,12 @@ def toast(
     """Raise a Toast. Name something they did right. +1 Rep. Once per game per player."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     target = next((p for p in state.players if p.name == who), None)
     if target is None:
-        console.print(f"[red]Player '{who}' not found.[/red]")
-        raise typer.Exit(1)
+        _fail(player_not_found_error(who))
 
     if target.toasted:
         console.print(f"  {target.name} has already been toasted this game.")
@@ -1245,8 +1217,7 @@ def game_end(
     """End the game. Final recap, Story Points, season standings, FINAL proof."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     # If game isn't over yet, mark it
@@ -1384,8 +1355,7 @@ def game_end(
                 console.print(f"  [green]Anchored.[/green] TX: [dim]{txid}[/dim]")
                 console.print(f"  [dim]{explorer}[/dim]")
             except Exception as e:
-                console.print(f"  [red]Anchor failed: {e}[/red]")
-                console.print("  [dim]The game record is still valid locally.[/dim]")
+                _fail(anchor_error(str(e)))
 
     console.print(
         Panel(
@@ -1501,8 +1471,7 @@ def recap() -> None:
     """Show a human-readable summary of what happened recently."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     if not state.log:
@@ -1552,8 +1521,7 @@ def board() -> None:
     """Show the game board with player positions."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     table = Table(title="Board")
@@ -1586,14 +1554,11 @@ def market(
     """Show the Market Board, or buy/sell a resource (Town Hall only)."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     if state.market_board is None:
-        console.print("  [yellow]Market Board requires Market Day or Town Hall.[/yellow]")
-        console.print("  [dim]sov new --tier market-day -p A -p B[/dim]")
-        raise typer.Exit(1)
+        _fail(market_error("Market Board requires Market Day or Town Hall."))
 
     if action == "show":
         _print_market(state)
@@ -1606,20 +1571,17 @@ def market(
     else:
         target = state.current_player
     if target is None:
-        console.print(f"[red]Player '{player}' not found.[/red]")
-        raise typer.Exit(1)
+        _fail(player_not_found_error(player))
 
     if not resource:
-        console.print("[red]Specify a resource: food, wood, or tools[/red]")
-        raise typer.Exit(1)
+        _fail(market_error("Specify a resource: food, wood, or tools"))
 
     if action == "buy":
         msg = market_buy(state, target, resource)
     elif action == "sell":
         msg = market_sell(state, target, resource)
     else:
-        console.print("[red]Use: market show / market buy food / market sell wood[/red]")
-        raise typer.Exit(1)
+        _fail(invalid_action_error(action, "market show/buy/sell"))
 
     console.print(f"\n  {msg}")
     _save_state(state)
@@ -2127,15 +2089,11 @@ def scenario(
 
     elif action == "code":
         if not name:
-            console.print("[red]Usage: sov scenario code <name> --seed N[/red]")
-            console.print("[dim]  Names: cozy-night, market-panic, promises-matter, "
-                          "treaty-night, or custom[/dim]")
-            raise typer.Exit(1)
+            _fail(scenario_error("Usage: sov scenario code <name> --seed N"))
 
         if name == "custom":
             if not tier_opt:
-                console.print("[red]Custom codes need --tier.[/red]")
-                raise typer.Exit(1)
+                _fail(scenario_error("Custom codes need --tier."))
             code = _build_share_code("custom", tier_opt, recipe_opt, seed)
         elif name in _SCENARIO_BY_SLUG:
             sc = _SCENARIO_BY_SLUG[name]
@@ -2143,11 +2101,8 @@ def scenario(
                 name, sc["tier_value"], sc["recipe_value"], seed,
             )
         else:
-            console.print(f"[red]Unknown scenario '{name}'.[/red]")
-            console.print("[dim]  Known: " + ", ".join(
-                s["slug"] for s in _SCENARIOS
-            ) + ", custom[/dim]")
-            raise typer.Exit(1)
+            known = ", ".join(s["slug"] for s in _SCENARIOS) + ", custom"
+            _fail(scenario_error(f"Unknown scenario '{name}'. Known: {known}"))
 
         console.print(f"\n  [bold]{code}[/bold]\n")
         console.print("  [dim]Share this code. Others run:[/dim]")
@@ -2160,15 +2115,13 @@ def scenario(
         else:
             scenario_dir = Path("docs/scenarios")
             if not scenario_dir.exists():
-                console.print("[red]docs/scenarios/ not found.[/red]")
-                raise typer.Exit(1)
+                _fail(scenario_error("docs/scenarios/ not found."))
             files_to_lint = sorted(
                 str(f) for f in scenario_dir.glob("*.md")
                 if f.name not in ("README.md", "CANON.md", "_TEMPLATE.md")
             )
             if not files_to_lint:
-                console.print("[yellow]No scenario files found.[/yellow]")
-                raise typer.Exit(1)
+                _fail(scenario_error("No scenario files found."))
 
         total = len(files_to_lint)
         passed = 0
@@ -2202,11 +2155,7 @@ def scenario(
             raise typer.Exit(1)
 
     else:
-        console.print(
-            f"[yellow]Unknown action '{action}'. "
-            f"Try: list, code, or lint[/yellow]",
-        )
-        raise typer.Exit(1)
+        _fail(invalid_action_error(action, "scenario list/code/lint"))
 
 
 # ---------------------------------------------------------------------------
@@ -2225,8 +2174,7 @@ def feedback() -> None:
     """Print an issue-ready play report. Paste into GitHub Issues."""
     result = _load_game()
     if result is None:
-        console.print("[red]No active game.[/red]")
-        raise typer.Exit(1)
+        _fail(no_game_error())
     state, _ = result
 
     tier = _tier_name(state)

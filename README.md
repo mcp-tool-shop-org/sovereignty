@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="assets/logo.png" width="400" alt="Sovereignty">
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/mcp-tool-shop-org/brand/main/logos/sovereignty/readme.png" width="400" alt="Sovereignty">
 </p>
 
 <p align="center">
@@ -9,6 +13,7 @@
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+  <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
 </p>
 
 ## Play tonight
@@ -126,7 +131,7 @@ sovereignty/
   sov_engine/       # Pure game logic (models, rules, serialization, hashing)
   sov_transport/    # Ledger transport (offline + XRPL Testnet)
   sov_cli/          # Typer CLI (the "Round Console")
-  tests/            # 130 tests
+  tests/            # 143 tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
   assets/print/     # Printable cards, player mat, quick reference
 ```
@@ -157,7 +162,19 @@ No engine knowledge needed — just a name, a description, and some flavor text.
 ## Security
 
 Wallet seeds, game state, and proof files — what to share and what not to.
+No telemetry, no analytics, no phone-home. The only optional network call is XRPL Testnet anchoring.
+
 See [SECURITY.md](SECURITY.md).
+
+## Threat Model
+
+| Threat | Mitigation |
+|--------|-----------|
+| Seed leakage via proofs | Proofs contain hashes only, never seeds |
+| Seed in git | `.sov/` gitignored; `sov wallet` warns |
+| Game state manipulation | Round proofs hash full state; `sov verify` detects tampering |
+| XRPL anchor spoofing | Proof hash anchored on-chain; mismatch detection in verify |
+| Player name privacy | Game state is local-only; proofs don't include names |
 
 ## License
 

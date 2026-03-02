@@ -31,6 +31,12 @@ if privacy matters to your group.
 Round proofs (`.sov/proofs/*.json`) contain hashes, not raw game data.
 They're safe to share — that's the whole point.
 
+## Telemetry
+
+Sovereignty collects no telemetry, analytics, or usage data. The only
+network call is the optional XRPL Testnet anchoring (Diary Mode), which
+you explicitly trigger with `sov anchor`. The game works fully offline.
+
 ## Reporting issues
 
 If you find a security issue in the game engine, CLI, or XRPL transport,
