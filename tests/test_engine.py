@@ -1,6 +1,10 @@
 """Tests for game engine rules."""
 
 from sov_engine.rules.campfire import (
+    apologize,
+    break_promise,
+    keep_promise,
+    make_promise,
     new_game,
     resolve_help_desk,
     resolve_space,
@@ -126,6 +130,63 @@ def test_help_desk():
     assert bob.coins == 6  # was 5, got 1
     assert alice.reputation == 4  # was 3, +1
     assert bob.reputation == 4
+    assert alice.helped_last_round is True
+
+
+def test_help_desk_sets_helped_flag():
+    state, _ = new_game(42, ["Alice", "Bob"])
+    alice, bob = state.players[0], state.players[1]
+    assert alice.helped_last_round is False
+    resolve_help_desk(state, alice, bob)
+    assert alice.helped_last_round is True
+
+
+def test_promise_make_keep():
+    state, _ = new_game(42, ["Alice", "Bob"])
+    alice = state.players[0]
+    make_promise(state, alice, "help Bob")
+    assert "help Bob" in alice.promises
+    keep_promise(state, alice, "help Bob")
+    assert "help Bob" not in alice.promises
+    assert alice.reputation == 4  # 3 + 1
+
+
+def test_promise_break():
+    state, _ = new_game(42, ["Alice", "Bob"])
+    alice = state.players[0]
+    make_promise(state, alice, "help Bob")
+    break_promise(state, alice, "help Bob")
+    assert "help Bob" not in alice.promises
+    assert alice.reputation == 1  # 3 - 2
+
+
+def test_apology():
+    state, _ = new_game(42, ["Alice", "Bob"])
+    alice, bob = state.players[0], state.players[1]
+    alice.reputation = 2  # pretend she broke a promise
+    msg = apologize(state, alice, bob)
+    assert alice.coins == 4  # 5 - 1
+    assert bob.coins == 6  # 5 + 1
+    assert alice.reputation == 3  # 2 + 1
+    assert alice.apology_used is True
+    assert "apologizes" in msg
+
+
+def test_apology_once_per_game():
+    state, _ = new_game(42, ["Alice", "Bob"])
+    alice, bob = state.players[0], state.players[1]
+    apologize(state, alice, bob)
+    msg = apologize(state, alice, bob)
+    assert "already used" in msg
+
+
+def test_skip_next_move():
+    state, rng = new_game(42, ["Alice", "Bob"])
+    alice = state.players[0]
+    alice.skip_next_move = True
+    roll = roll_and_move(state, rng)
+    assert roll == 0
+    assert alice.skip_next_move is False
 
 
 def test_game_advance_turn_wraps():

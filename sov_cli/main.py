@@ -328,14 +328,150 @@ def end_round(
 @app.command()
 def verify(
     proof_file: Annotated[Path, typer.Argument(help="Path to proof JSON file")],
+    tx: Annotated[str, typer.Option("--tx", help="XRPL tx hash to verify against")] = "",
 ) -> None:
-    """Verify a round proof file."""
+    """Verify a round proof file, optionally against an anchored tx."""
     valid, message = verify_proof(proof_file)
     if valid:
-        console.print(f"[green]{message}[/green]")
+        console.print(f"  [green]Local proof valid.[/green] {message}")
     else:
-        console.print(f"[red]{message}[/red]")
+        console.print(f"  [red]Local proof invalid.[/red] {message}")
         raise typer.Exit(1)
+
+    if tx:
+        proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
+        expected_hash = proof_data["state_hash"]
+        try:
+            from sov_transport.xrpl_testnet import XRPLTestnetTransport
+
+            transport = XRPLTestnetTransport()
+            if transport.verify(tx, expected_hash):
+                memo = transport.get_memo_text(tx)
+                console.print("  [green]Anchor verified.[/green] TX memo matches proof hash.")
+                if memo:
+                    console.print(f"  [dim]{memo}[/dim]")
+                explorer = f"https://testnet.xrpl.org/transactions/{tx}"
+                console.print(f"  [dim]{explorer}[/dim]")
+            else:
+                console.print("  [red]Anchor mismatch.[/red] TX memo doesn't match.")
+                raise typer.Exit(1)
+        except RuntimeError as e:
+            console.print(f"  [red]{e}[/red]")
+            raise typer.Exit(1) from None
+
+
+@app.command()
+def anchor(
+    proof_file: Annotated[
+        Path | None,
+        typer.Argument(help="Proof file to anchor (default: latest)"),
+    ] = None,
+    seed_env: Annotated[
+        str, typer.Option("--seed-env", help="Env var containing wallet seed"),
+    ] = "XRPL_SEED",
+    signer_file: Annotated[
+        Path | None,
+        typer.Option("--signer-file", help="File containing wallet seed"),
+    ] = None,
+) -> None:
+    """Anchor a round proof hash on XRPL Testnet. The ledger remembers."""
+    import os
+
+    # Find the proof file
+    if proof_file is None:
+        # Find the latest proof file
+        PROOFS_DIR.mkdir(parents=True, exist_ok=True)
+        proofs = sorted(PROOFS_DIR.glob("round_*.proof.json"))
+        if not proofs:
+            console.print("  [red]No proof files found. Run 'sov end-round' first.[/red]")
+            raise typer.Exit(1)
+        proof_file = proofs[-1]
+
+    if not proof_file.exists():
+        console.print(f"  [red]Proof file not found: {proof_file}[/red]")
+        raise typer.Exit(1)
+
+    # Load proof
+    proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
+    state_hash = proof_data["state_hash"]
+    rnd = proof_data["round"]
+    seed_val = proof_data.get("rng_seed", "?")
+
+    # Get wallet seed
+    seed: str | None = None
+    if signer_file and signer_file.exists():
+        seed = signer_file.read_text(encoding="utf-8").strip()
+    else:
+        seed = os.environ.get(seed_env)
+
+    if not seed:
+        console.print(
+            f"  [red]No wallet seed found.[/red]\n"
+            f"  Set {seed_env} env var, or use --signer-file.\n"
+            f"  Create a testnet wallet: sov wallet"
+        )
+        raise typer.Exit(1)
+
+    # Build the memo
+    game_id = f"s{seed_val}"
+    memo = f"SOV|campfire_v1|{game_id}|r{rnd}|sha256:{state_hash}"
+
+    console.print(f"\n  Anchoring Round {rnd}...")
+    console.print(f"  [dim]{memo}[/dim]\n")
+
+    try:
+        from sov_transport.xrpl_testnet import XRPLTestnetTransport
+
+        transport = XRPLTestnetTransport()
+        txid = transport.anchor(state_hash, memo, seed)
+
+        explorer = f"https://testnet.xrpl.org/transactions/{txid}"
+        console.print(Panel(
+            f"  Round {rnd} anchored on XRPL Testnet.\n\n"
+            f"  TX: [bold]{txid}[/bold]\n"
+            f"  Hash: [dim]{state_hash}[/dim]\n"
+            f"  Explorer: [dim]{explorer}[/dim]\n\n"
+            f"  [dim]Verify later: sov verify {proof_file} --tx {txid}[/dim]",
+            title="Anchored",
+        ))
+    except RuntimeError as e:
+        console.print(f"  [red]{e}[/red]")
+        raise typer.Exit(1) from None
+    except Exception as e:
+        console.print(f"  [red]Anchor failed: {e}[/red]")
+        console.print("  [dim]The game still works fine offline.[/dim]")
+        raise typer.Exit(1) from None
+
+
+@app.command()
+def wallet() -> None:
+    """Create a funded XRPL Testnet wallet for anchoring."""
+    console.print("\n  Creating a Testnet wallet...")
+    console.print("  [dim]This is play money. Testnet XRP has no value.[/dim]\n")
+
+    try:
+        from sov_transport.xrpl_testnet import fund_testnet_wallet
+
+        address, seed = fund_testnet_wallet()
+
+        # Save seed to .sov/wallet_seed.txt
+        wallet_file = SAVE_DIR / "wallet_seed.txt"
+        SAVE_DIR.mkdir(parents=True, exist_ok=True)
+        wallet_file.write_text(seed, encoding="utf-8")
+
+        console.print(Panel(
+            f"  Address: [bold]{address}[/bold]\n"
+            f"  Seed saved to: {wallet_file}\n\n"
+            f"  [dim]Use it: sov anchor --signer-file {wallet_file}[/dim]\n"
+            f"  [dim]Or set: export XRPL_SEED={seed}[/dim]",
+            title="Testnet Wallet",
+        ))
+    except RuntimeError as e:
+        console.print(f"  [red]{e}[/red]")
+        raise typer.Exit(1) from None
+    except Exception as e:
+        console.print(f"  [red]Wallet creation failed: {e}[/red]")
+        raise typer.Exit(1) from None
 
 
 @app.command()

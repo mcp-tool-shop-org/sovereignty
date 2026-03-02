@@ -144,3 +144,18 @@ the last player finishes. Track the current round number.
 At the end of each round, the CLI assistant (if used) can produce a
 **Round Proof** — a JSON file that captures the game state and can be
 independently verified.
+
+## Diary Mode (optional — XRPL anchoring)
+
+The proof hash can optionally be anchored on the XRPL Testnet. This is
+entirely optional. Nobody needs a wallet to play. Nobody needs to understand
+blockchains. The chain is just the diary that doesn't forget.
+
+- `sov wallet` — create a funded Testnet wallet (play money, no real value)
+- `sov anchor` — post the latest round proof hash to XRPL Testnet
+- `sov verify proof.json --tx <txid>` — verify both local proof and anchor
+
+Only the host needs a wallet. Everyone else stays offline.
+
+The memo format on-chain is:
+`SOV|campfire_v1|<game_id>|r<round>|sha256:<hash>`
