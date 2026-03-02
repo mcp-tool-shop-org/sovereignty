@@ -288,6 +288,68 @@ def doctor() -> None:
     console.print()
 
 
+@app.command("self-check")
+def self_check() -> None:
+    """Diagnose your environment. Paste output into a bug report."""
+    import platform
+    import shutil
+    import sys
+    import tempfile
+
+    checks: list[tuple[str, str, str]] = []  # (status, label, detail)
+
+    # 1. App version
+    checks.append(("ok", "Version", SOV_VERSION))
+
+    # 2. Platform
+    py = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    checks.append(("ok", "Platform", f"{platform.system()} {platform.machine()} · Python {py}"))
+
+    # 3. Rich rendering
+    try:
+        t = Table(title="Rich")
+        t.add_column("A")
+        t.add_row("ok")
+        with console.capture() as _:
+            console.print(t)
+        checks.append(("ok", "Rich rendering", "Table renders correctly"))
+    except Exception as exc:
+        checks.append(("fail", "Rich rendering", str(exc)))
+
+    # 4. Workspace write test
+    try:
+        probe = Path(tempfile.mkdtemp(prefix="sov-"))
+        (probe / "probe.txt").write_text("ok", encoding="utf-8")
+        shutil.rmtree(probe)
+        checks.append(("ok", "Filesystem write", "Temp write succeeded"))
+    except Exception as exc:
+        checks.append(("fail", "Filesystem write", str(exc)))
+
+    # 5. State directory
+    if SAVE_DIR.exists():
+        items = list(SAVE_DIR.iterdir())
+        checks.append(("ok", "State directory", f"{len(items)} file(s) in {SAVE_DIR}"))
+    else:
+        checks.append(("info", "State directory", "Not yet created (run: sov new)"))
+
+    # 6. Dependencies
+    for mod_name in ("typer", "rich", "xrpl"):
+        try:
+            mod = __import__(mod_name)
+            ver = getattr(mod, "__version__", getattr(mod, "VERSION", "?"))
+            checks.append(("ok", mod_name, str(ver)))
+        except ImportError:
+            checks.append(("info", mod_name, "not installed (optional)"))
+
+    # Print
+    icons = {"ok": "[green]OK[/green]", "fail": "[red]FAIL[/red]", "info": "[dim]--[/dim]"}
+    console.print()
+    for status, label, detail in checks:
+        icon = icons.get(status, "[dim]--[/dim]")
+        console.print(f"  {icon}  [bold]{label}[/bold]  {detail}")
+    console.print()
+
+
 @app.command()
 def new(
     seed: Annotated[int, typer.Option("--seed", "-s", help="RNG seed")] = 42,
@@ -1850,7 +1912,7 @@ _SCENARIOS = [
 
 _SCENARIO_BY_SLUG = {s["slug"]: s for s in _SCENARIOS}
 
-SOV_VERSION = "1.4.0"
+SOV_VERSION = "1.4.4"
 
 
 # ---------------------------------------------------------------------------
