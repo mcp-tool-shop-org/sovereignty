@@ -288,22 +288,21 @@ def doctor() -> None:
     console.print()
 
 
-@app.command("self-check")
-def self_check() -> None:
-    """Diagnose your environment. Paste output into a bug report."""
-    import platform
-    import shutil
-    import sys
-    import tempfile
+def _collect_checks() -> list[tuple[str, str, str]]:
+    """Collect diagnostic checks. Returns list of (status, label, detail)."""
+    import platform as _platform
+    import shutil as _shutil
+    import sys as _sys
+    import tempfile as _tempfile
 
-    checks: list[tuple[str, str, str]] = []  # (status, label, detail)
+    checks: list[tuple[str, str, str]] = []
 
     # 1. App version
     checks.append(("ok", "Version", SOV_VERSION))
 
     # 2. Platform
-    py = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    checks.append(("ok", "Platform", f"{platform.system()} {platform.machine()} · Python {py}"))
+    py = f"{_sys.version_info.major}.{_sys.version_info.minor}.{_sys.version_info.micro}"
+    checks.append(("ok", "Platform", f"{_platform.system()} {_platform.machine()} · Python {py}"))
 
     # 3. Rich rendering
     try:
@@ -318,9 +317,9 @@ def self_check() -> None:
 
     # 4. Workspace write test
     try:
-        probe = Path(tempfile.mkdtemp(prefix="sov-"))
+        probe = Path(_tempfile.mkdtemp(prefix="sov-"))
         (probe / "probe.txt").write_text("ok", encoding="utf-8")
-        shutil.rmtree(probe)
+        _shutil.rmtree(probe)
         checks.append(("ok", "Filesystem write", "Temp write succeeded"))
     except Exception as exc:
         checks.append(("fail", "Filesystem write", str(exc)))
@@ -341,13 +340,87 @@ def self_check() -> None:
         except Exception as exc:
             checks.append(("info", mod_name, type(exc).__name__ + ": " + str(exc)[:80]))
 
-    # Print
+    return checks
+
+
+def _print_checks(checks: list[tuple[str, str, str]]) -> None:
+    """Pretty-print diagnostic checks to console."""
     icons = {"ok": "[green]OK[/green]", "fail": "[red]FAIL[/red]", "info": "[dim]--[/dim]"}
     console.print()
     for status, label, detail in checks:
         icon = icons.get(status, "[dim]--[/dim]")
         console.print(f"  {icon}  [bold]{label}[/bold]  {detail}")
     console.print()
+
+
+def _checks_to_text(checks: list[tuple[str, str, str]]) -> str:
+    """Render checks as plain text for support bundles."""
+    lines = []
+    icons = {"ok": "OK", "fail": "FAIL", "info": "--"}
+    for status, label, detail in checks:
+        icon = icons.get(status, "--")
+        lines.append(f"  {icon}  {label}  {detail}")
+    return "\n".join(lines)
+
+
+@app.command("self-check")
+def self_check() -> None:
+    """Diagnose your environment. Paste output into a bug report."""
+    _print_checks(_collect_checks())
+
+
+@app.command("support-bundle")
+def support_bundle() -> None:
+    """Write a diagnostic zip for bug reports. Attach it to your issue."""
+    import datetime
+    import platform as _platform
+    import sys as _sys
+    import zipfile
+
+    checks = _collect_checks()
+    _print_checks(checks)
+
+    ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    bundle_name = f"sov-support-{ts}.zip"
+    bundle_path = Path.cwd() / bundle_name
+
+    with zipfile.ZipFile(bundle_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        # 1. Self-check output
+        zf.writestr("self-check.txt", _checks_to_text(checks))
+
+        # 2. Sanitized config (game state, no wallet secrets)
+        if STATE_FILE.exists():
+            try:
+                data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+                zf.writestr("game_state.json", json.dumps(data, indent=2))
+            except Exception:
+                zf.writestr("game_state.json", "(could not read)")
+
+        # 3. State file listing (names only, no content)
+        if SAVE_DIR.exists():
+            listing = "\n".join(f.name for f in sorted(SAVE_DIR.iterdir()))
+            zf.writestr("state-listing.txt", listing)
+
+        # 4. Proof count (no proof content — those are large)
+        if PROOFS_DIR.exists():
+            proofs = list(PROOFS_DIR.glob("*.proof.json"))
+            zf.writestr("proof-count.txt", f"{len(proofs)} proof file(s)")
+
+        # 5. Environment summary
+        env_info = {
+            "tool": "sovereignty",
+            "version": SOV_VERSION,
+            "platform": _platform.platform(),
+            "arch": _platform.machine(),
+            "python": _sys.version,
+            "cwd": str(Path.cwd()),
+            "state_dir": str(SAVE_DIR),
+            "timestamp": ts,
+        }
+        zf.writestr("environment.json", json.dumps(env_info, indent=2))
+
+    console.print(f"  [green]Bundle written:[/green] {bundle_path}")
+    console.print("  [dim]Attach this file to your GitHub issue.[/dim]")
 
 
 @app.command()
@@ -1912,7 +1985,7 @@ _SCENARIOS = [
 
 _SCENARIO_BY_SLUG = {s["slug"]: s for s in _SCENARIOS}
 
-SOV_VERSION = "1.4.5"
+SOV_VERSION = "1.4.6"
 
 
 # ---------------------------------------------------------------------------

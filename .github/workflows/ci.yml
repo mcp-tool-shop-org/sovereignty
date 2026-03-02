@@ -45,3 +45,23 @@ jobs:
 
       - name: Run tests
         run: uv run pytest tests/ -v
+
+  # Manual-only canary: quick CLI smoke test (dry-run, no real testnet)
+  # Trigger via: Actions → CI → Run workflow
+  canary:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+
+      - run: uv sync
+
+      - name: CLI smoke
+        run: |
+          uv run sov --help
+          uv run sov self-check
+          uv run sov doctor
