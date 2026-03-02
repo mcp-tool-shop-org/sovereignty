@@ -1,16 +1,22 @@
-# Sovereignty
+<p align="center">
+  <img src="assets/logo.png" width="400" alt="Sovereignty">
+</p>
 
-A board game about trust, trade, and keeping your word.
+<p align="center">
+  A board game about trust, trade, and keeping your word.
+</p>
 
-[![CI](https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml/badge.svg)](https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
+</p>
 
 ## Play tonight
 
 Print the cards, grab a die and some coins, sit down with 2-4 people.
 No screens required. Takes about 30 minutes.
 
-**[Print & Play guide](docs/print-and-play.md)** | **[Full rules](docs/rules/campfire_v1.md)** | **[Play with strangers](docs/play-with-strangers.md)**
+**[Start here](docs/start_here.md)** | **[Print & Play](docs/print-and-play.md)** | **[Full rules](docs/rules/campfire_v1.md)** | **[Play with strangers](docs/play-with-strangers.md)**
 
 ## Or use the console
 
@@ -19,10 +25,15 @@ pip install sovereignty-game
 
 sov tutorial                         # learn in 60 seconds
 sov new -p Alice -p Bob -p Carol     # start a game
+sov new --recipe cozy -p ...         # curated vibe (cozy/spicy/market)
 sov turn                             # roll, land, resolve
 sov promise make "I'll help Bob"     # say it out loud
+sov treaty make "pact" --with Bob --stake "2 coins"  # stakes
+sov doctor                           # pre-flight check before play night
 sov recap                            # what happened this round
+sov game-end                         # final scores + Story Points
 sov postcard                         # shareable summary
+sov season-postcard                  # season standings across games
 ```
 
 The console keeps score. You keep your word.
@@ -72,13 +83,13 @@ sov verify proof.json --tx <txid>    # trust but verify
 Only the host needs a wallet. Nobody else touches a screen. The game
 works perfectly without anchoring — it's just the diary that remembers.
 
-## Three tiers (building up)
+## Three tiers
 
 | Tier | Name | Status | What it adds |
 |------|------|--------|-------------|
 | 1 | **Campfire** | Playable | Coins, reputation, promises, IOUs |
-| 2 | **Town Hall** | Planned | Shared market, resource scarcity |
-| 3 | **Treaty Table** | Planned | Governance, policy cards, alliances |
+| 2 | **Town Hall** | Playable | Shared market, resource scarcity |
+| 3 | **Treaty Table** | Playable | Treaties with stakes — promises with teeth |
 
 ## Project structure
 
@@ -87,7 +98,7 @@ sovereignty/
   sov_engine/       # Pure game logic (models, rules, serialization, hashing)
   sov_transport/    # Ledger transport (offline + XRPL Testnet)
   sov_cli/          # Typer CLI (the "Round Console")
-  tests/            # 38 tests
+  tests/            # 113 tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
   assets/print/     # Printable cards, player mat, quick reference
 ```
@@ -109,6 +120,16 @@ uv run ruff check .
 Players learn by doing: issuing IOUs, breaking promises, trading at
 shifting prices. The concepts map to Web3 primitives — wallets, tokens,
 trust lines — but players don't need to know that to have fun.
+
+## Contributing
+
+The easiest way to contribute is to [add a card](CONTRIBUTING.md).
+No engine knowledge needed — just a name, a description, and some flavor text.
+
+## Security
+
+Wallet seeds, game state, and proof files — what to share and what not to.
+See [SECURITY.md](SECURITY.md).
 
 ## License
 

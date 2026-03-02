@@ -25,7 +25,7 @@ On your turn:
 1. **Roll** a d6.
 2. **Move** that many spaces clockwise around the board.
 3. **Resolve** the space you land on (see Board reference).
-4. **Optional trade:** propose one trade to any other player (coins, vouchers, resources).
+4. **The Offer** (optional): make one Offer out loud (see below).
 5. **End turn.** Play passes clockwise.
 
 ## Meters
@@ -108,6 +108,37 @@ Once per game, if you broke a promise, you can publicly apologize:
 - Pay **1 coin** to the person you harmed.
 - Regain **+1 Reputation**.
 - You still feel the net consequence, but "oops" becomes a moment instead of a grudge.
+
+## The Toast
+
+Once per game, any player can call a Toast:
+
+- Everyone names one thing another player did that was "good governance" —
+  helped someone, kept a promise, made a fair trade.
+- The toasted player gains **+1 Reputation**.
+- Each player can only be toasted **once per game**.
+
+It's a tiny ceremony. It trains the behavior the game rewards.
+
+`sov toast Alice` — records the toast and gives +1 Rep.
+
+## The Offer
+
+Once per turn, after resolving your space, you may make one Offer out loud:
+
+> "I offer X for Y."
+
+- **X** and **Y** can be coins, resources, or a Promise ("I'll help you next round").
+- Any player can accept immediately or counter.
+- If no one accepts, it's gone. No hard feelings.
+- The console can record it (`sov offer`), but the table is authoritative.
+
+Three reasons this exists:
+1. Gives shy players **permission** to negotiate.
+2. Keeps trading from becoming **endless**.
+3. Makes the game feel like a **story circle**.
+
+One offer per turn. That's the ritual.
 
 ## Events
 

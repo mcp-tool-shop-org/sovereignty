@@ -132,3 +132,5 @@ Due in 3 rounds. Default: -3 Rep
 Default: Negotiated
 
 ---
+
+_Sovereignty: Campfire v1.0 — 10 Deal cards, 10 Voucher cards_

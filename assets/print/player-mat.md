@@ -44,3 +44,5 @@ Print one per player. Use coins/tokens to track values.
 |                                                  |
 +--------------------------------------------------+
 ```
+
+_Sovereignty: Campfire v1.0 — Player Mat_

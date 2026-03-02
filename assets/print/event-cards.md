@@ -121,3 +121,5 @@ Draw another Event immediately.
 _"What's this?"_
 
 ---
+
+_Sovereignty: Campfire v1.0 — 20 Event cards_

@@ -46,6 +46,7 @@ def build_event_deck() -> list[Card]:
             description="Upgrades cost +1 coin this round.",
             flavor="The shipment's late. Again.",
             effect_id="supply_delay",
+            tags=("market",),
         ),
         EventCard(
             id="evt_02",
@@ -54,6 +55,7 @@ def build_event_deck() -> list[Card]:
             description="Every player gains 1 coin.",
             flavor="Trade is good. Everyone's eating.",
             effect_id="boom_town",
+            tags=("cozy",),
         ),
         EventCard(
             id="evt_03",
@@ -62,6 +64,7 @@ def build_event_deck() -> list[Card]:
             description="Every player pays 1 coin or loses 1 Rep.",
             flavor="Batten down the hatches.",
             effect_id="storm",
+            tags=("spicy",),
         ),
         EventCard(
             id="evt_04",
@@ -70,6 +73,7 @@ def build_event_deck() -> list[Card]:
             description="You lose 1 Rep -- unless someone vouches for you.",
             flavor="People are talking...",
             effect_id="rumor",
+            tags=("spicy",),
         ),
         EventCard(
             id="evt_05",
@@ -78,6 +82,7 @@ def build_event_deck() -> list[Card]:
             description="Market prices +1 this round.",
             flavor="A caravan just arrived with deep pockets.",
             effect_id="big_order",
+            tags=("market",),
         ),
         EventCard(
             id="evt_06",
@@ -86,6 +91,7 @@ def build_event_deck() -> list[Card]:
             description="Next 2 Festival landings give +2 Rep instead of +1.",
             flavor="The whole town is celebrating.",
             effect_id="festival_of_plenty",
+            tags=("cozy",),
         ),
         EventCard(
             id="evt_07",
@@ -94,6 +100,7 @@ def build_event_deck() -> list[Card]:
             description="You may force one voucher redemption NOW.",
             flavor="Time to collect.",
             effect_id="swindle",
+            tags=("spicy",),
         ),
         EventCard(
             id="evt_08",
@@ -102,6 +109,7 @@ def build_event_deck() -> list[Card]:
             description="You gain 3 coins.",
             flavor="Lucky day.",
             effect_id="windfall",
+            tags=("cozy",),
         ),
         EventCard(
             id="evt_09",
@@ -110,6 +118,7 @@ def build_event_deck() -> list[Card]:
             description="No one can buy at the Market this round.",
             flavor="Nothing on the shelves.",
             effect_id="drought",
+            tags=("market", "spicy"),
         ),
         EventCard(
             id="evt_10",
@@ -118,6 +127,7 @@ def build_event_deck() -> list[Card]:
             description="Players with Rep < 3 lose 1 more Rep.",
             flavor="When trust is low, it falls further.",
             effect_id="trust_crisis",
+            tags=("spicy",),
         ),
         # --- New 10: human-voice cards ---
         EventCard(
@@ -127,6 +137,7 @@ def build_event_deck() -> list[Card]:
             description="You can't trade this turn -- unless someone lends you 1 coin.",
             flavor="Has anyone seen a small leather pouch?",
             effect_id="lost_wallet",
+            tags=("help",),
         ),
         EventCard(
             id="evt_12",
@@ -135,6 +146,7 @@ def build_event_deck() -> list[Card]:
             description="If you helped someone last round, gain 2 coins now.",
             flavor="Word got around about what you did.",
             effect_id="good_news",
+            tags=("cozy", "help"),
         ),
         EventCard(
             id="evt_13",
@@ -143,6 +155,7 @@ def build_event_deck() -> list[Card]:
             description="Ask any player to cover 2 coins for you. You owe them 3 later.",
             flavor="Hey... got a minute?",
             effect_id="awkward_favor",
+            tags=("promise",),
         ),
         EventCard(
             id="evt_14",
@@ -151,6 +164,7 @@ def build_event_deck() -> list[Card]:
             description="Gain 3 coins, but lose 1 Rep. People noticed.",
             flavor="Nobody saw... right?",
             effect_id="shortcut",
+            tags=("spicy",),
         ),
         EventCard(
             id="evt_15",
@@ -159,6 +173,7 @@ def build_event_deck() -> list[Card]:
             description="Everyone may donate 1 coin. Each donor gains +1 Rep.",
             flavor="Bring something to share.",
             effect_id="community_dinner",
+            tags=("cozy", "help"),
         ),
         EventCard(
             id="evt_16",
@@ -167,6 +182,7 @@ def build_event_deck() -> list[Card]:
             description="Pick a player. You each gain +1 Rep.",
             flavor="It's been too long.",
             effect_id="old_friend",
+            tags=("cozy", "repair"),
         ),
         EventCard(
             id="evt_17",
@@ -175,6 +191,7 @@ def build_event_deck() -> list[Card]:
             description="Skip your next move. Stay where you are.",
             flavor="Road's out. Might as well make camp.",
             effect_id="broken_bridge",
+            tags=("spicy",),
         ),
         EventCard(
             id="evt_18",
@@ -183,6 +200,7 @@ def build_event_deck() -> list[Card]:
             description="The player with the fewest coins gains 2 coins.",
             flavor="The land provides for those who need it most.",
             effect_id="harvest_moon",
+            tags=("cozy", "help"),
         ),
         EventCard(
             id="evt_19",
@@ -191,6 +209,7 @@ def build_event_deck() -> list[Card]:
             description="Gain 1 Rep. But if you're already above 7, lose 1 instead.",
             flavor="Some stories are too good to be true.",
             effect_id="tall_tale",
+            tags=("spicy",),
         ),
         EventCard(
             id="evt_20",
@@ -199,6 +218,7 @@ def build_event_deck() -> list[Card]:
             description="Draw another Event immediately.",
             flavor="What's this?",
             effect_id="lucky_find",
+            tags=("cozy",),
         ),
         # --- Market-shift events (Town Hall) ---
         EventCard(
@@ -208,6 +228,7 @@ def build_event_deck() -> list[Card]:
             description="Food floods the market. Food price -1 this round.",
             flavor="More tomatoes than anyone knows what to do with.",
             effect_id="market_food_down",
+            tags=("market", "cozy"),
         ),
         EventCard(
             id="evt_22",
@@ -216,6 +237,7 @@ def build_event_deck() -> list[Card]:
             description="Wood gets scarce. Wood price +1 this round.",
             flavor="The council says: no more chopping until spring.",
             effect_id="market_wood_up",
+            tags=("market",),
         ),
         EventCard(
             id="evt_23",
@@ -224,6 +246,7 @@ def build_event_deck() -> list[Card]:
             description="A traveling tinker sells cheap. Tools price -1 this round.",
             flavor="Step right up! Everything must go!",
             effect_id="market_tools_down",
+            tags=("market",),
         ),
         EventCard(
             id="evt_24",
@@ -232,6 +255,7 @@ def build_event_deck() -> list[Card]:
             description="The caravan restocks. +2 to each supply pool.",
             flavor="Fresh goods from the valley.",
             effect_id="market_restock",
+            tags=("market",),
         ),
         EventCard(
             id="evt_25",
@@ -240,6 +264,7 @@ def build_event_deck() -> list[Card]:
             description="Lose 2 from each supply pool. Prices don't change.",
             flavor="Somebody left a lantern burning.",
             effect_id="market_fire",
+            tags=("market", "spicy"),
         ),
         EventCard(
             id="evt_26",
@@ -248,6 +273,7 @@ def build_event_deck() -> list[Card]:
             description="Everyone eats! Remove 1 Food from each player who has it.",
             flavor="The whole town gathers. Bring what you've got.",
             effect_id="market_feast",
+            tags=("market", "cozy"),
         ),
         EventCard(
             id="evt_27",
@@ -256,6 +282,7 @@ def build_event_deck() -> list[Card]:
             description="Tools price +1 this round. Upgrades cost +1 coin.",
             flavor="Everything's breaking and nobody can fix it.",
             effect_id="market_tools_up",
+            tags=("market", "spicy"),
         ),
         EventCard(
             id="evt_28",
@@ -264,6 +291,7 @@ def build_event_deck() -> list[Card]:
             description="All prices -1 this round. The land provides.",
             flavor="The rivers are full and the fields are green.",
             effect_id="market_all_down",
+            tags=("market", "cozy"),
         ),
     ]
 
@@ -281,6 +309,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=2,
             penalty_rep=1,
             deadline_rounds=2,
+            tags=("promise",),
         ),
         DealCard(
             id="deal_02",
@@ -291,6 +320,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=1,
             penalty_rep=1,
             deadline_rounds=3,
+            tags=("promise",),
         ),
         DealCard(
             id="deal_03",
@@ -301,6 +331,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=3,
             penalty_rep=2,
             deadline_rounds=2,
+            tags=("help", "cozy"),
         ),
         DealCard(
             id="deal_04",
@@ -311,6 +342,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=1,
             penalty_rep=1,
             deadline_rounds=4,
+            tags=("market",),
         ),
         DealCard(
             id="deal_05",
@@ -321,6 +353,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=2,
             penalty_rep=1,
             deadline_rounds=3,
+            tags=("help",),
         ),
         # --- New 5 Deals: human-voice ---
         DealCard(
@@ -333,6 +366,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=1,
             penalty_rep=1,
             deadline_rounds=2,
+            tags=("promise",),
         ),
         DealCard(
             id="deal_07",
@@ -344,6 +378,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=0,
             penalty_rep=1,
             deadline_rounds=1,
+            tags=("cozy",),
         ),
         DealCard(
             id="deal_08",
@@ -355,6 +390,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=2,
             penalty_rep=2,
             deadline_rounds=4,
+            tags=("help", "cozy"),
         ),
         DealCard(
             id="deal_09",
@@ -366,6 +402,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=1,
             penalty_rep=1,
             deadline_rounds=2,
+            tags=("promise",),
         ),
         DealCard(
             id="deal_10",
@@ -377,6 +414,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=1,
             penalty_rep=1,
             deadline_rounds=2,
+            tags=("spicy",),
         ),
         # --- Resource-native deals (Town Hall) ---
         DealCard(
@@ -389,6 +427,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=1,
             penalty_rep=0,
             deadline_rounds=3,
+            tags=("help", "cozy"),
         ),
         DealCard(
             id="deal_12",
@@ -400,6 +439,7 @@ def build_deal_deck() -> list[Card]:
             reward_rep=1,
             penalty_rep=2,
             deadline_rounds=2,
+            tags=("promise", "help"),
         ),
     ]
     vouchers: list[Card] = [
@@ -412,6 +452,7 @@ def build_deal_deck() -> list[Card]:
             face_value=2,
             deadline_rounds=3,
             default_penalty_rep=2,
+            tags=("promise",),
         ),
         VoucherCard(
             id="vouch_02",
@@ -421,6 +462,7 @@ def build_deal_deck() -> list[Card]:
             face_value=4,
             deadline_rounds=4,
             default_penalty_rep=3,
+            tags=("promise",),
         ),
         VoucherCard(
             id="vouch_03",
@@ -430,6 +472,7 @@ def build_deal_deck() -> list[Card]:
             face_value=1,
             deadline_rounds=3,
             default_penalty_rep=2,
+            tags=("help", "promise"),
         ),
         VoucherCard(
             id="vouch_04",
@@ -439,6 +482,7 @@ def build_deal_deck() -> list[Card]:
             face_value=3,
             deadline_rounds=4,
             default_penalty_rep=2,
+            tags=("market", "promise"),
         ),
         VoucherCard(
             id="vouch_05",
@@ -449,6 +493,7 @@ def build_deal_deck() -> list[Card]:
             deadline_rounds=0,
             default_penalty_rep=0,
             negotiable=True,
+            tags=("promise",),
         ),
         # --- New 5 Vouchers: human-voice ---
         VoucherCard(
@@ -459,6 +504,7 @@ def build_deal_deck() -> list[Card]:
             face_value=2,
             deadline_rounds=1,
             default_penalty_rep=2,
+            tags=("spicy", "promise"),
         ),
         VoucherCard(
             id="vouch_07",
@@ -468,6 +514,7 @@ def build_deal_deck() -> list[Card]:
             face_value=3,
             deadline_rounds=3,
             default_penalty_rep=2,
+            tags=("promise",),
         ),
         VoucherCard(
             id="vouch_08",
@@ -477,6 +524,7 @@ def build_deal_deck() -> list[Card]:
             face_value=2,
             deadline_rounds=2,
             default_penalty_rep=1,
+            tags=("cozy", "promise"),
         ),
         VoucherCard(
             id="vouch_09",
@@ -486,6 +534,7 @@ def build_deal_deck() -> list[Card]:
             face_value=3,
             deadline_rounds=3,
             default_penalty_rep=3,
+            tags=("help", "promise"),
         ),
         VoucherCard(
             id="vouch_10",
@@ -496,6 +545,7 @@ def build_deal_deck() -> list[Card]:
             deadline_rounds=0,
             default_penalty_rep=0,
             negotiable=True,
+            tags=("promise",),
         ),
     ]
     return deals + vouchers

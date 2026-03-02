@@ -56,3 +56,7 @@
 - Need Rep >= 2 to issue
 - Rep >= 5: vouchers pay face value +1 (trusted)
 - Miss the deadline: automatic default, lose Rep
+
+---
+
+_Sovereignty: Campfire v1.0 — Quick Reference_

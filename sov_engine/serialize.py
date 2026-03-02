@@ -8,8 +8,32 @@ from typing import Any
 from sov_engine.models import (
     GameState,
     PlayerState,
+    Stake,
+    Treaty,
     Voucher,
 )
+
+
+def _stake_snapshot(s: Stake) -> dict[str, Any]:
+    result: dict[str, Any] = {"coins": s.coins}
+    if s.resources:
+        result["resources"] = dict(sorted(s.resources.items()))
+    return result
+
+
+def _treaty_snapshot(t: Treaty) -> dict[str, Any]:
+    return {
+        "created_round": t.created_round,
+        "deadline_round": t.deadline_round,
+        "parties": sorted(t.parties),
+        "stakes": {
+            name: _stake_snapshot(stake)
+            for name, stake in sorted(t.stakes.items())
+        },
+        "status": t.status.value,
+        "text": t.text,
+        "treaty_id": t.treaty_id,
+    }
 
 
 def _player_snapshot(p: PlayerState) -> dict[str, Any]:
@@ -24,6 +48,10 @@ def _player_snapshot(p: PlayerState) -> dict[str, Any]:
             }
             for d in sorted(p.active_deals, key=lambda d: d.deal_id)
         ],
+        "active_treaties": [
+            _treaty_snapshot(t)
+            for t in sorted(p.active_treaties, key=lambda t: t.treaty_id)
+        ],
         "apology_used": p.apology_used,
         "coins": p.coins,
         "helped_last_round": p.helped_last_round,
@@ -32,6 +60,7 @@ def _player_snapshot(p: PlayerState) -> dict[str, Any]:
         "promises": sorted(p.promises),
         "reputation": p.reputation,
         "skip_next_move": p.skip_next_move,
+        "toasted": p.toasted,
         "upgrades": p.upgrades,
         "vouchers_held": [
             _voucher_snapshot(v)
@@ -82,11 +111,12 @@ def game_state_snapshot(state: GameState) -> dict[str, Any]:
         "turn_in_round": state.turn_in_round,
         "winner": state.winner,
     }
-    # Include market board state for Town Hall
+    # Include market board state for Market Day / Town Hall
     mb = state.market_board
     if mb is not None:
         snapshot["market_board"] = {
             "base_prices": dict(sorted(mb.base_prices.items())),
+            "fixed_prices": mb.fixed_prices,
             "price_shifts": dict(sorted(mb.price_shifts.items())),
             "supply": dict(sorted(mb.supply.items())),
         }

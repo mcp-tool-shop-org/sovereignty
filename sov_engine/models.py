@@ -52,6 +52,23 @@ class DealStatus(StrEnum):
     FAILED = "failed"
 
 
+class TreatyStatus(StrEnum):
+    ACTIVE = "active"
+    KEPT = "kept"
+    BROKEN = "broken"
+
+
+# ---------------------------------------------------------------------------
+# Treaty constants
+# ---------------------------------------------------------------------------
+
+MAX_ACTIVE_TREATIES = 2
+STAKE_CAP_COINS = 5
+STAKE_CAP_RESOURCES = 3
+TREATY_REP_PENALTY = -3
+TREATY_REP_BONUS = 1
+
+
 # ---------------------------------------------------------------------------
 # Board
 # ---------------------------------------------------------------------------
@@ -77,6 +94,7 @@ class Card:
     card_type: CardType
     description: str
     flavor: str = ""
+    tags: tuple[str, ...] = ()  # content tags for session recipe filtering
 
 
 @dataclass
@@ -134,6 +152,38 @@ class ActiveDeal:
 
 
 # ---------------------------------------------------------------------------
+# Stake + Treaty (issued during play)
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class Stake:
+    """Collateral put up for a treaty."""
+
+    coins: int = 0
+    resources: dict[str, int] = field(default_factory=dict)
+
+    def is_empty(self) -> bool:
+        return self.coins == 0 and not any(v > 0 for v in self.resources.values())
+
+    def total_value(self) -> int:
+        return self.coins + sum(self.resources.values())
+
+
+@dataclass
+class Treaty:
+    """A binding agreement between two players with escrowed stakes."""
+
+    treaty_id: str
+    text: str
+    parties: list[str]  # exactly 2 player names
+    stakes: dict[str, Stake]  # player_name -> their stake
+    deadline_round: int  # absolute round number
+    status: TreatyStatus = TreatyStatus.ACTIVE
+    created_round: int = 0
+
+
+# ---------------------------------------------------------------------------
 # Player
 # ---------------------------------------------------------------------------
 
@@ -161,7 +211,9 @@ class PlayerState:
     helped_last_round: bool = False  # for "Good News Travels" event
     skip_next_move: bool = False  # for "Broken Bridge" event
     apology_used: bool = False  # once per game
+    toasted: bool = False  # once per game — The Toast
     resources: dict[str, int] = field(default_factory=dict)  # Town Hall: food/wood/tools
+    active_treaties: list[Treaty] = field(default_factory=list)
 
     def adjust_coins(self, amount: int) -> int:
         """Add/subtract coins. Returns actual change (can't go below 0)."""
@@ -247,25 +299,29 @@ class MarketPrices:
 
 @dataclass
 class MarketBoard:
-    """Town Hall market with supply pools and scarcity pricing."""
+    """Market board with supply pools. Fixed or dynamic pricing."""
 
     supply: dict[str, int] = field(default_factory=dict)
     base_prices: dict[str, int] = field(default_factory=dict)
     price_shifts: dict[str, int] = field(default_factory=dict)
+    fixed_prices: bool = False  # Market Day: no scarcity, no shifts
 
     @classmethod
-    def create(cls, num_players: int) -> MarketBoard:
-        """Create a market board sized for the player count."""
-        pool = _supply_pool_size(num_players)
+    def create(cls, num_players: int, *, fixed: bool = False) -> MarketBoard:
+        """Create a market board. fixed=True for Market Day (store prices)."""
+        pool = 999 if fixed else _supply_pool_size(num_players)
         return cls(
             supply={r: pool for r in RESOURCE_NAMES},
             base_prices={r: MARKET_BASE_PRICE for r in RESOURCE_NAMES},
             price_shifts={r: 0 for r in RESOURCE_NAMES},
+            fixed_prices=fixed,
         )
 
     def price(self, resource: str) -> int:
-        """Effective price: base + shift + scarcity. Clamped to [1, 4]."""
+        """Effective price. Fixed mode: always base. Dynamic: base + shift + scarcity."""
         base = self.base_prices.get(resource, MARKET_BASE_PRICE)
+        if self.fixed_prices:
+            return base
         shift = self.price_shifts.get(resource, 0)
         scarcity = 1 if self.supply.get(resource, 0) <= 2 else 0
         return max(MARKET_PRICE_MIN, min(MARKET_PRICE_MAX, base + shift + scarcity))
@@ -283,15 +339,20 @@ class MarketBoard:
         return cost
 
     def sell(self, resource: str) -> int:
-        """Add 1 to supply, return sell price (base price, no scarcity)."""
+        """Add 1 to supply, return sell price (1 below buy price)."""
         base = self.base_prices.get(resource, MARKET_BASE_PRICE)
-        shift = self.price_shifts.get(resource, 0)
-        sell_price = max(1, base + shift - 1)  # sell at 1 below buy
+        if self.fixed_prices:
+            sell_price = max(1, base - 1)
+        else:
+            shift = self.price_shifts.get(resource, 0)
+            sell_price = max(1, base + shift - 1)
         self.supply[resource] = self.supply.get(resource, 0) + 1
         return sell_price
 
     def shift_price(self, resource: str, amount: int) -> None:
-        """Shift a resource price by amount. Clamped so effective stays in [1,4]."""
+        """Shift a resource price. No-op in fixed-price mode."""
+        if self.fixed_prices:
+            return
         self.price_shifts[resource] = self.price_shifts.get(resource, 0) + amount
 
     def reset_shifts(self) -> None:

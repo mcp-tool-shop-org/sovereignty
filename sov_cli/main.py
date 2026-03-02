@@ -12,7 +12,15 @@ from rich.panel import Panel
 from rich.table import Table
 
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
-from sov_engine.models import RESOURCE_NAMES, GameState, MarketBoard, WinCondition
+from sov_engine.models import (
+    RESOURCE_NAMES,
+    GameState,
+    MarketBoard,
+    Stake,
+    Treaty,
+    TreatyStatus,
+    WinCondition,
+)
 from sov_engine.rules.campfire import (
     apologize,
     break_promise,
@@ -24,11 +32,25 @@ from sov_engine.rules.campfire import (
     resolve_space,
     roll_and_move,
 )
+from sov_engine.rules.market_day import new_market_day_game
 from sov_engine.rules.town_hall import (
     market_buy,
     market_sell,
     market_status,
     new_town_hall_game,
+)
+from sov_engine.rules.treaty_table import (
+    check_treaty_deadlines,
+    new_treaty_table_game,
+    parse_stake,
+    treaty_list,
+    treaty_make,
+)
+from sov_engine.rules.treaty_table import (
+    treaty_break as engine_treaty_break,
+)
+from sov_engine.rules.treaty_table import (
+    treaty_keep as engine_treaty_keep,
 )
 from sov_engine.serialize import canonical_json, game_state_snapshot
 
@@ -78,8 +100,12 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
         wcs[p_data["name"]] = WinCondition(p_data["win_condition"])
 
     ruleset = data.get("config", {}).get("ruleset", "campfire_v1")
-    if ruleset == "town_hall_v1":
+    if ruleset == "treaty_table_v1":
+        state, _ = new_treaty_table_game(seed, names, wcs)
+    elif ruleset == "town_hall_v1":
         state, _ = new_town_hall_game(seed, names, wcs)
+    elif ruleset == "market_day_v1":
+        state, _ = new_market_day_game(seed, names, wcs)
     else:
         state, _ = new_game(seed, names, wcs)
 
@@ -94,7 +120,32 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
         p.helped_last_round = p_data.get("helped_last_round", False)
         p.skip_next_move = p_data.get("skip_next_move", False)
         p.apology_used = p_data.get("apology_used", False)
+        p.toasted = p_data.get("toasted", False)
         p.resources = p_data.get("resources", {})
+
+    # Restore treaties (shared between two players — deduplicate by ID)
+    treaty_registry: dict[str, Treaty] = {}
+    for i, p_data in enumerate(data["players"]):
+        state.players[i].active_treaties = []
+        for t_data in p_data.get("active_treaties", []):
+            tid = t_data["treaty_id"]
+            if tid not in treaty_registry:
+                treaty_registry[tid] = Treaty(
+                    treaty_id=tid,
+                    text=t_data["text"],
+                    parties=t_data["parties"],
+                    stakes={
+                        name: Stake(
+                            coins=s_data["coins"],
+                            resources=s_data.get("resources", {}),
+                        )
+                        for name, s_data in t_data["stakes"].items()
+                    },
+                    deadline_round=t_data["deadline_round"],
+                    status=TreatyStatus(t_data["status"]),
+                    created_round=t_data.get("created_round", 0),
+                )
+            state.players[i].active_treaties.append(treaty_registry[tid])
 
     state.current_round = data["current_round"]
     state.current_player_index = data["current_player_index"]
@@ -105,13 +156,14 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
     state.market.wood = data["market"]["wood"]
     state.market.tools = data["market"]["tools"]
 
-    # Restore market board for Town Hall games
+    # Restore market board for Market Day / Town Hall games
     mb_data = data.get("market_board")
     if mb_data:
         state.market_board = MarketBoard(
             supply=mb_data["supply"],
             base_prices=mb_data["base_prices"],
             price_shifts=mb_data["price_shifts"],
+            fixed_prices=mb_data.get("fixed_prices", False),
         )
 
     return state, rng
@@ -123,6 +175,94 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
 
 
 @app.command()
+def doctor() -> None:
+    """Pre-flight check. Is everything ready to play?"""
+    checks: list[tuple[str, str, str]] = []  # (status, message, hint)
+
+    # 1. Game directory
+    if SAVE_DIR.exists():
+        checks.append(("ok", "Game directory exists (.sov/)", ""))
+    else:
+        checks.append(("info", "No game directory yet", "Run: sov new -p Alice -p Bob"))
+
+    # 2. Active game
+    if STATE_FILE.exists():
+        result = _load_game()
+        if result:
+            state, _ = result
+            tier = _tier_name(state)
+            n = len(state.players)
+            names = ", ".join(p.name for p in state.players)
+            rnd = state.current_round
+            if state.game_over:
+                checks.append((
+                    "ok",
+                    f"Game complete: {tier} ({names})",
+                    "Run: sov game-end",
+                ))
+            else:
+                checks.append((
+                    "ok",
+                    f"Ready to play {tier} — {n} players ({names}), round {rnd}",
+                    "",
+                ))
+        else:
+            checks.append(("warn", "Game state exists but can't load", "Try: sov new"))
+    else:
+        checks.append(("info", "No active game", "Run: sov new -p Alice -p Bob"))
+
+    # 3. Season file
+    if SEASON_FILE.exists():
+        try:
+            season = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
+            game_count = len(season.get("games", []))
+            s = "s" if game_count != 1 else ""
+            checks.append((
+                "ok", f"Season active ({game_count} game{s} played)", "",
+            ))
+        except (json.JSONDecodeError, OSError):
+            checks.append((
+                "warn", "Season file exists but can't parse",
+                "Delete .sov/season.json to start fresh",
+            ))
+    else:
+        checks.append((
+            "info", "No season file yet (that's fine)",
+            "Seasons start after sov game-end",
+        ))
+
+    # 4. Wallet / Diary Mode
+    wallet_file = SAVE_DIR / "wallet_seed.txt"
+    if wallet_file.exists():
+        checks.append(("ok", "Wallet configured (Diary Mode ready)", ""))
+    else:
+        import os
+
+        if os.environ.get("XRPL_SEED"):
+            checks.append(("ok", "Wallet configured via XRPL_SEED env var", ""))
+        else:
+            checks.append(("info", "No wallet set up (Diary Mode is optional)", "Run: sov wallet"))
+
+    # 5. Proofs
+    PROOFS_DIR.mkdir(parents=True, exist_ok=True)
+    proofs = list(PROOFS_DIR.glob("*.proof.json"))
+    if proofs:
+        s = "s" if len(proofs) != 1 else ""
+        checks.append(("ok", f"{len(proofs)} proof file{s} saved", ""))
+
+    # Print
+    icons = {"ok": "[green]OK[/green]", "warn": "[yellow]!![/yellow]", "info": "[dim]--[/dim]"}
+    console.print()
+    for status, msg, hint in checks:
+        icon = icons.get(status, "[dim]--[/dim]")
+        line = f"  {icon}  {msg}"
+        if hint:
+            line += f"  [dim]({hint})[/dim]"
+        console.print(line)
+    console.print()
+
+
+@app.command()
 def new(
     seed: Annotated[int, typer.Option("--seed", "-s", help="RNG seed")] = 42,
     players: Annotated[
@@ -130,10 +270,14 @@ def new(
         typer.Option("--player", "-p", help="Player names (2-4)"),
     ] = None,
     tier: Annotated[
-        str, typer.Option("--tier", "-t", help="campfire or town-hall"),
+        str,
+        typer.Option("--tier", "-t", help="campfire, market-day, town-hall, or treaty-table"),
     ] = "campfire",
+    recipe: Annotated[
+        str, typer.Option("--recipe", "-r", help="cozy, spicy, or market"),
+    ] = "",
 ) -> None:
-    """Start a new game. Use --tier town-hall for the Market Board."""
+    """Start a new game. Use --tier market-day or town-hall for resources."""
     if players is None:
         players = []
     if len(players) < 2:
@@ -146,14 +290,27 @@ def new(
     if STATE_FILE.exists() and not typer.confirm("Active game found. Overwrite?"):
         raise typer.Exit(0)
 
-    if tier in ("town-hall", "town_hall", "townhall"):
+    if tier in ("treaty-table", "treaty_table", "treatytable"):
+        state, rng = new_treaty_table_game(seed, players)
+        tier_label = "Treaty Table"
+        extra = "  Treaties have teeth. Put up your coins, or shut up.\n"
+    elif tier in ("town-hall", "town_hall", "townhall"):
         state, rng = new_town_hall_game(seed, players)
         tier_label = "Town Hall"
-        extra = "  A shared Market Board with Food, Wood, and Tools.\n"
+        extra = "  A living Market Board — prices shift with scarcity.\n"
+    elif tier in ("market-day", "market_day", "marketday"):
+        state, rng = new_market_day_game(seed, players)
+        tier_label = "Market Day"
+        extra = "  A Market Board with fixed prices. Buy, hold, spend.\n"
     else:
         state, rng = new_game(seed, players)
         tier_label = "Campfire"
         extra = ""
+
+    # Apply recipe filter (curate the vibe)
+    recipe_note = ""
+    if recipe:
+        recipe_note = _apply_recipe(state, recipe)
 
     # Save seed for reloading
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
@@ -165,7 +322,8 @@ def new(
         f"  Everyone starts with 5 coins, 3 reputation, and a goal.\n"
         f"{extra}"
         f"  Players: {', '.join(players)}\n"
-        f"  {state.config.max_rounds} rounds. Make them count.",
+        f"  {state.config.max_rounds} rounds. Make them count."
+        f"{recipe_note}",
         title="Gather 'round",
     ))
     _print_status(state)
@@ -268,6 +426,7 @@ def turn() -> None:
 
     if state.game_over:
         console.print(f"\n  The game is over. [bold]{state.winner}[/bold] won.")
+        console.print("  [dim]Wrap up: sov game-end[/dim]")
         raise typer.Exit(0)
 
     player = state.current_player
@@ -278,6 +437,15 @@ def turn() -> None:
     if player.promises:
         for p_text in player.promises:
             console.print(f'  [dim italic]You promised: "{p_text}"[/dim italic]')
+
+    # Show active treaties
+    active_t = [t for t in player.active_treaties if t.status == TreatyStatus.ACTIVE]
+    for t in active_t:
+        other = [n for n in t.parties if n != player.name][0]
+        console.print(
+            f'  [dim italic]Treaty with {other}: "{t.text}"'
+            f" (due R{t.deadline_round})[/dim italic]"
+        )
 
     # Roll and move
     roll = roll_and_move(state, rng)
@@ -298,6 +466,7 @@ def turn() -> None:
     winner = state.check_winner()
     if winner:
         console.print(f"\n  [bold green]{winner} wins![/bold green]")
+        console.print("  [dim]Record the season: sov game-end[/dim]")
         _save_state(state)
         raise typer.Exit(0)
 
@@ -310,7 +479,8 @@ def turn() -> None:
         console.print(f"\n  [dim]--- Round {old_round} wraps up ---[/dim]")
         voucher_msgs = check_voucher_deadlines(state)
         deal_msgs = check_deal_deadlines(state)
-        for m in voucher_msgs + deal_msgs:
+        treaty_msgs = check_treaty_deadlines(state)
+        for m in voucher_msgs + deal_msgs + treaty_msgs:
             console.print(f"  {m}")
 
         # Reset helped_last_round for all players at end of round
@@ -507,7 +677,11 @@ def wallet() -> None:
 
 
 @app.command()
-def postcard() -> None:
+def postcard(
+    style: Annotated[
+        str, typer.Option("--style", "-s", help="cozy, spicy, economic, or all"),
+    ] = "all",
+) -> None:
     """Share your game in one screenshot. The campfire postcard."""
     result = _load_game()
     if result is None:
@@ -528,7 +702,6 @@ def postcard() -> None:
         h = latest["state_hash"]
         proof_hash = f"[bold]{h}[/bold]"
 
-        # Check for anchor info in the proof dir
         anchor_file = PROOFS_DIR / "anchors.json"
         if anchor_file.exists():
             anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
@@ -537,19 +710,8 @@ def postcard() -> None:
                 url = f"https://testnet.xrpl.org/transactions/{tx}"
                 anchor_line = f"\n  Anchored: [dim]{url}[/dim]"
 
-    # Build the recap highlights
-    highlights = []
-    for entry in state.log:
-        if entry.startswith(f"R{rnd}") or (rnd > 1 and entry.startswith(f"R{rnd - 1}")):
-            _, _, text = entry.partition(": ")
-            if "broke their promise" in text:
-                highlights.append(f"[red]Ouch:[/red] {text}")
-            elif "apologizes" in text:
-                highlights.append(f"[yellow]Brave:[/yellow] {text}")
-            elif "helps" in text:
-                highlights.append(f"[green]Kind:[/green] {text}")
-            elif "wins" in text:
-                highlights.append(f"[bold green]{text}[/bold green]")
+    # Build highlights filtered by style
+    highlights = _postcard_highlights(state, rnd, style)
 
     recap_text = ""
     if highlights:
@@ -560,17 +722,19 @@ def postcard() -> None:
     for p in state.players:
         score_line = f"{p.name}: {p.coins}c {p.reputation}r {p.upgrades}u"
         if p.resources:
-            res = " ".join(f"{v}{k[0].upper()}" for k, v in p.resources.items() if v > 0)
+            res = " ".join(
+                f"{v}{k[0].upper()}" for k, v in p.resources.items() if v > 0
+            )
             if res:
                 score_line += f" {res}"
         scores.append(score_line)
 
-    # Market line (Town Hall only)
+    # Market line
     market_line = ""
     if state.market_board:
         market_line = f"\n  {_market_moment(state)}"
 
-    tier_name = "Town Hall" if state.market_board else "Campfire"
+    tier_name = _tier_name(state)
 
     console.print(Panel(
         f"  [bold]Sovereignty: {tier_name}[/bold]\n"
@@ -581,7 +745,7 @@ def postcard() -> None:
         f"{market_line}"
         f"{recap_text}",
         title=f"{tier_name} Postcard",
-        subtitle="[dim]sov postcard[/dim]",
+        subtitle=f"[dim]sov postcard --style {style}[/dim]",
     ))
 
 
@@ -619,6 +783,11 @@ def promise(
         case "break":
             msg = break_promise(state, target, text)
             console.print(f"\n  {msg}")
+            if not target.apology_used:
+                console.print(
+                    "  [dim]You can Apologize once per game:"
+                    " sov apologize <name>[/dim]",
+                )
         case _:
             console.print("[red]Use: promise make/keep/break 'your promise text'[/red]")
             raise typer.Exit(1)
@@ -655,6 +824,663 @@ def apologize_cmd(
     msg = apologize(state, source, target_p)
     console.print(f"\n  {msg}")
     _save_state(state)
+
+
+@app.command()
+def offer(
+    text: Annotated[str, typer.Argument(help="What you're offering, e.g. '2 coins for 1 wood'")],
+    to: Annotated[str, typer.Option("--to", help="Who you're offering to")] = "",
+    player: Annotated[str, typer.Option("--player", "-p", help="Who's making the offer")] = "",
+) -> None:
+    """Make an Offer. One per turn. Say it out loud."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    source = None
+    if player:
+        source = next((p for p in state.players if p.name == player), None)
+    else:
+        source = state.current_player
+    if source is None:
+        console.print(f"[red]Player '{player}' not found.[/red]")
+        raise typer.Exit(1)
+
+    # Nudge: check for existing offer this round
+    rnd = state.current_round
+    prior_offers = [
+        e for e in state.log
+        if e.startswith(f"R{rnd}") and f"{source.name} offers" in e
+    ]
+    if prior_offers:
+        console.print(
+            "  [yellow]One Offer per turn"
+            " — save it for next round.[/yellow]",
+        )
+
+    if to:
+        target = next((p for p in state.players if p.name == to), None)
+        if target is None:
+            console.print(f"[red]Player '{to}' not found.[/red]")
+            raise typer.Exit(1)
+        msg = f'{source.name} offers {target.name}: "{text}"'
+    else:
+        msg = f'{source.name} offers the table: "{text}"'
+
+    state.add_log(msg)
+    console.print(f"\n  {msg}")
+    console.print("  [dim]The table decides. Accept, counter, or let it go.[/dim]")
+    _save_state(state)
+
+
+@app.command()
+def treaty(
+    action: Annotated[str, typer.Argument(help="make, keep, break, or list")],
+    text: Annotated[str, typer.Argument(help="Treaty text or treaty ID")] = "",
+    with_player: Annotated[
+        str, typer.Option("--with", help="Treaty partner"),
+    ] = "",
+    stake: Annotated[
+        str, typer.Option("--stake", help="Your stake, e.g. '2 coins'"),
+    ] = "",
+    their_stake: Annotated[
+        str, typer.Option("--their-stake", help="Partner's stake"),
+    ] = "",
+    duration: Annotated[
+        int, typer.Option("--duration", "-d", help="Rounds until deadline"),
+    ] = 3,
+    player: Annotated[
+        str, typer.Option("--player", "-p", help="Who's acting"),
+    ] = "",
+    breaker: Annotated[
+        str, typer.Option("--breaker", help="Who broke it (for break)"),
+    ] = "",
+) -> None:
+    """Make, keep, break, or list treaties. Say it out loud."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    if state.config.ruleset != "treaty_table_v1":
+        console.print(
+            "  [yellow]Treaties require Treaty Table tier.[/yellow]\n"
+            "  [dim]sov new --tier treaty-table -p A -p B[/dim]"
+        )
+        raise typer.Exit(1)
+
+    # Find acting player
+    source = None
+    if player:
+        source = next((p for p in state.players if p.name == player), None)
+    else:
+        source = state.current_player
+    if source is None:
+        console.print(f"[red]Player '{player}' not found.[/red]")
+        raise typer.Exit(1)
+
+    match action:
+        case "make":
+            if not with_player:
+                console.print("[red]Use --with to name your treaty partner.[/red]")
+                raise typer.Exit(1)
+            partner = next(
+                (p for p in state.players if p.name == with_player), None
+            )
+            if partner is None:
+                console.print(f"[red]Player '{with_player}' not found.[/red]")
+                raise typer.Exit(1)
+            if not stake and not their_stake:
+                console.print(
+                    "[red]Use --stake and/or --their-stake."
+                    " At least one side must stake something.[/red]"
+                )
+                raise typer.Exit(1)
+
+            maker_stake = parse_stake(stake)
+            if isinstance(maker_stake, str):
+                console.print(f"  [red]{maker_stake}[/red]")
+                raise typer.Exit(1)
+            partner_stake = parse_stake(their_stake)
+            if isinstance(partner_stake, str):
+                console.print(f"  [red]{partner_stake}[/red]")
+                raise typer.Exit(1)
+
+            result_val = treaty_make(
+                state, source, partner, text,
+                maker_stake, partner_stake, duration,
+            )
+            if isinstance(result_val, str):
+                console.print(f"  [red]{result_val}[/red]")
+                raise typer.Exit(1)
+            console.print(
+                f"\n  [bold]Treaty {result_val.treaty_id}[/bold]: "
+                f'{source.name} and {partner.name} agree: "{text}"'
+            )
+            console.print(
+                f"  [dim]Due round {result_val.deadline_round}. "
+                f"Stakes in escrow.[/dim]"
+            )
+
+        case "keep":
+            if not text:
+                console.print("[red]Specify the treaty ID, e.g. 'sov treaty keep t_0001'[/red]")
+                raise typer.Exit(1)
+            t = next(
+                (t for t in source.active_treaties if t.treaty_id == text),
+                None,
+            )
+            if t is None:
+                console.print(f"  [red]Treaty '{text}' not found on {source.name}.[/red]")
+                raise typer.Exit(1)
+            msg = engine_treaty_keep(state, t)
+            console.print(f"\n  {msg}")
+
+        case "break":
+            if not text:
+                console.print("[red]Specify the treaty ID.[/red]")
+                raise typer.Exit(1)
+            breaker_name = breaker or source.name
+            t = next(
+                (
+                    t for t in source.active_treaties
+                    if t.treaty_id == text
+                ),
+                None,
+            )
+            if t is None:
+                console.print(f"  [red]Treaty '{text}' not found on {source.name}.[/red]")
+                raise typer.Exit(1)
+            msg = engine_treaty_break(state, t, breaker_name)
+            console.print(f"\n  {msg}")
+
+        case "list":
+            treaties = treaty_list(source)
+            if not treaties:
+                console.print(f"  {source.name} has no treaties.")
+                return
+            table = Table(title=f"{source.name}'s Treaties")
+            table.add_column("ID", style="bold")
+            table.add_column("With")
+            table.add_column("Text")
+            table.add_column("Stakes")
+            table.add_column("Due")
+            table.add_column("Status")
+            for t in treaties:
+                other = [n for n in t.parties if n != source.name]
+                other_name = other[0] if other else "?"
+                from sov_engine.rules.treaty_table import _stake_desc
+                stake_parts = []
+                for name, s in t.stakes.items():
+                    if not s.is_empty():
+                        stake_parts.append(f"{name}: {_stake_desc(s)}")
+                status_style = {
+                    TreatyStatus.ACTIVE: "[cyan]active[/cyan]",
+                    TreatyStatus.KEPT: "[green]kept[/green]",
+                    TreatyStatus.BROKEN: "[red]broken[/red]",
+                }
+                table.add_row(
+                    t.treaty_id,
+                    other_name,
+                    t.text,
+                    "; ".join(stake_parts) if stake_parts else "-",
+                    f"R{t.deadline_round}",
+                    status_style.get(t.status, t.status.value),
+                )
+            console.print(table)
+            return
+
+        case _:
+            console.print("[red]Use: treaty make/keep/break/list[/red]")
+            raise typer.Exit(1)
+
+    _save_state(state)
+
+
+@app.command()
+def vote(
+    category: Annotated[str, typer.Argument(help="mvp, chaos, or promise")],
+    value: Annotated[str, typer.Argument(help="Player name or promise text")],
+) -> None:
+    """Record a table vote. MVP, Chaos Gremlin, or Best Promise."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    cat = category.lower()
+    if cat == "mvp":
+        target = next((p for p in state.players if p.name == value), None)
+        if target is None:
+            console.print(f"[red]Player '{value}' not found.[/red]")
+            raise typer.Exit(1)
+        msg = f"Vote: {target.name} wins Table's Choice (MVP)"
+        console.print(f"\n  [bold yellow]{msg}[/bold yellow]")
+    elif cat == "chaos":
+        target = next((p for p in state.players if p.name == value), None)
+        if target is None:
+            console.print(f"[red]Player '{value}' not found.[/red]")
+            raise typer.Exit(1)
+        msg = f"Vote: {target.name} wins Chaos Gremlin"
+        console.print(f"\n  [bold magenta]{msg}[/bold magenta]")
+    elif cat == "promise":
+        msg = f'Vote: Best Promise — "{value}"'
+        console.print(f"\n  [bold green]{msg}[/bold green]")
+    else:
+        console.print("[red]Use: vote mvp/chaos/promise 'name or text'[/red]")
+        raise typer.Exit(1)
+
+    state.add_log(msg)
+    console.print("  [dim]The table decides. The console records it.[/dim]")
+    _save_state(state)
+
+
+@app.command()
+def toast(
+    who: Annotated[str, typer.Argument(help="Player to toast")],
+) -> None:
+    """Raise a Toast. Name something they did right. +1 Rep. Once per game per player."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    target = next((p for p in state.players if p.name == who), None)
+    if target is None:
+        console.print(f"[red]Player '{who}' not found.[/red]")
+        raise typer.Exit(1)
+
+    if target.toasted:
+        console.print(f"  {target.name} has already been toasted this game.")
+        console.print("  [dim]One toast per player. Make it count.[/dim]")
+        raise typer.Exit(0)
+
+    target.toasted = True
+    target.adjust_rep(1)
+    msg = f"The table toasts {target.name}! +1 Rep."
+    state.add_log(msg)
+    console.print(f"\n  [bold yellow]{msg}[/bold yellow]")
+    console.print("  [dim]Name what they did right. The table remembers.[/dim]")
+    _save_state(state)
+
+
+SEASON_FILE = SAVE_DIR / "season.json"
+
+
+def _calc_story_points(state: GameState) -> dict[str, dict[str, int]]:
+    """Calculate Story Points for a completed game."""
+    names = [p.name for p in state.players]
+    points: dict[str, dict[str, int]] = {
+        n: {
+            "winner": 0, "promise_keeper": 0, "most_helpful": 0,
+            "tables_choice": 0, "treaty_keeper": 0,
+        }
+        for n in names
+    }
+
+    # Winner
+    if state.winner and state.winner in points:
+        points[state.winner]["winner"] = 1
+
+    # Promise Keeper: most "kept their promise" entries
+    kept_counts: dict[str, int] = {n: 0 for n in names}
+    for entry in state.log:
+        for n in names:
+            if f"{n} kept their promise" in entry:
+                kept_counts[n] += 1
+    max_kept = max(kept_counts.values()) if kept_counts else 0
+    if max_kept > 0:
+        for n in names:
+            if kept_counts[n] == max_kept:
+                points[n]["promise_keeper"] = 1
+
+    # Most Helpful: most "helps" entries (Help Desk visits)
+    help_counts: dict[str, int] = {n: 0 for n in names}
+    for entry in state.log:
+        for n in names:
+            if f"{n} helps" in entry:
+                help_counts[n] += 1
+    max_help = max(help_counts.values()) if help_counts else 0
+    if max_help > 0:
+        for n in names:
+            if help_counts[n] == max_help:
+                points[n]["most_helpful"] = 1
+
+    # Table's Choice: MVP vote
+    for entry in state.log:
+        if "Table's Choice (MVP)" in entry:
+            for n in names:
+                if n in entry:
+                    points[n]["tables_choice"] = 1
+
+    # Treaty Keeper: most treaties honored
+    treaty_counts: dict[str, int] = {n: 0 for n in names}
+    for entry in state.log:
+        if "honored" in entry and "Treaty" in entry:
+            for n in names:
+                if n in entry:
+                    treaty_counts[n] += 1
+    max_treaty = max(treaty_counts.values()) if treaty_counts else 0
+    if max_treaty > 0:
+        for n in names:
+            if treaty_counts[n] == max_treaty:
+                points[n]["treaty_keeper"] = 1
+
+    return points
+
+
+def _update_season(state: GameState, story_points: dict[str, dict[str, int]]) -> dict:
+    """Update season.json with this game's results. Returns season data."""
+    if SEASON_FILE.exists():
+        season = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
+    else:
+        season = {"games": [], "standings": {}}
+
+    # Build per-player totals for this game
+    game_totals: dict[str, int] = {}
+    for name, awards in story_points.items():
+        game_totals[name] = sum(awards.values())
+
+    # Collect vote entries
+    votes: dict[str, str] = {}
+    for entry in state.log:
+        if "Table's Choice (MVP)" in entry:
+            _, _, text = entry.partition(": ")
+            votes["mvp"] = text
+        elif "Chaos Gremlin" in entry:
+            _, _, text = entry.partition(": ")
+            votes["chaos"] = text
+        elif "Best Promise" in entry:
+            _, _, text = entry.partition(": ")
+            votes["promise"] = text
+
+    game_record = {
+        "game_id": f"sov_{state.config.seed}",
+        "ruleset": state.config.ruleset,
+        "players": [p.name for p in state.players],
+        "winner": state.winner,
+        "rounds": state.current_round,
+        "story_points": game_totals,
+        "awards": {k: v for k, v in story_points.items()},
+        "votes": votes,
+    }
+    season["games"].append(game_record)
+
+    # Update standings
+    for name, total in game_totals.items():
+        season["standings"][name] = season["standings"].get(name, 0) + total
+
+    SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    SEASON_FILE.write_text(
+        json.dumps(season, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return season
+
+
+@app.command(name="game-end")
+def game_end(
+    do_anchor: Annotated[
+        bool, typer.Option("--anchor", help="Stamp the final hash on XRPL Testnet"),
+    ] = False,
+) -> None:
+    """End the game. Final recap, Story Points, season standings, FINAL proof."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    # If game isn't over yet, mark it
+    if not state.game_over:
+        winner = state.check_winner()
+        if not winner:
+            # Force end — tiebreak
+            state._resolve_tiebreak()
+
+    tier_name = _tier_name(state)
+
+    # Calculate Story Points
+    story_points = _calc_story_points(state)
+
+    # Print final scoreboard
+    score_table = Table(title=f"Final Scores — {tier_name}")
+    score_table.add_column("Player", style="bold")
+    score_table.add_column("Coins", justify="right")
+    score_table.add_column("Rep", justify="right")
+    score_table.add_column("Upgrades", justify="right")
+    if state.market_board:
+        score_table.add_column("Resources", justify="right")
+    score_table.add_column("Score", justify="right")
+    for p in state.players:
+        combined = (p.coins / 2) + p.reputation + (p.upgrades * 3)
+        row: list[str] = [p.name, str(p.coins), str(p.reputation), str(p.upgrades)]
+        if state.market_board:
+            res_parts = []
+            for r in RESOURCE_NAMES:
+                count = p.resources.get(r, 0)
+                if count > 0:
+                    res_parts.append(f"{count}{r[0].upper()}")
+            row.append(" ".join(res_parts) if res_parts else "-")
+        row.append(f"{combined:.1f}")
+        score_table.add_row(*row)
+    console.print(score_table)
+
+    # Print winner
+    if state.winner:
+        console.print(f"\n  [bold green]{state.winner} wins![/bold green]")
+
+    # Print Story Points awards
+    console.print()
+    awards_table = Table(title="Story Points")
+    awards_table.add_column("Award", style="bold")
+    awards_table.add_column("Player(s)")
+    awards_table.add_column("Points", justify="right")
+
+    award_names = {
+        "winner": "Winner",
+        "promise_keeper": "Promise Keeper",
+        "most_helpful": "Most Helpful",
+        "tables_choice": "Table's Choice",
+        "treaty_keeper": "Treaty Keeper",
+    }
+    for key, label in award_names.items():
+        winners = [n for n, a in story_points.items() if a[key] > 0]
+        if winners:
+            awards_table.add_row(label, ", ".join(winners), "+1")
+        else:
+            awards_table.add_row(label, "[dim]—[/dim]", "[dim]—[/dim]")
+    console.print(awards_table)
+
+    # Totals
+    console.print()
+    for name, awards in story_points.items():
+        total = sum(awards.values())
+        if total > 0:
+            console.print(f"  {name}: [bold]{total}[/bold] Story Points")
+
+    # Update season
+    season = _update_season(state, story_points)
+
+    # Show season standings
+    if len(season["games"]) > 1:
+        console.print()
+        standing_table = Table(title=f"Season Standings (Game {len(season['games'])})")
+        standing_table.add_column("Player", style="bold")
+        standing_table.add_column("Story Points", justify="right")
+        for name, total in sorted(
+            season["standings"].items(), key=lambda x: x[1], reverse=True,
+        ):
+            standing_table.add_row(name, str(total))
+        console.print(standing_table)
+
+    # Show votes
+    for entry in state.log:
+        _, _, text = entry.partition(": ")
+        if "Vote:" in text:
+            console.print(f"  [dim]{text}[/dim]")
+
+    # Generate FINAL proof
+    proof = make_round_proof(state)
+    proof["final"] = True
+    out_dir = PROOFS_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+    proof_path = out_dir / "final.proof.json"
+    proof_content = canonical_json(proof)
+    proof_path.write_text(proof_content, encoding="utf-8", newline="\n")
+    h = proof["state_hash"]
+    console.print(f"\n  Final proof: [dim]{h}[/dim]")
+    console.print(f"  Saved to: [dim]{proof_path}[/dim]")
+
+    _save_state(state)
+
+    # Optional anchor
+    if do_anchor:
+        import os
+
+        seed_val = state.config.seed
+        game_id = f"s{seed_val}"
+        memo = f"SOV|{state.config.ruleset}|{game_id}|FINAL|{proof['state_hash']}"
+
+        wallet_file = SAVE_DIR / "wallet_seed.txt"
+        wallet_seed: str | None = None
+        if wallet_file.exists():
+            wallet_seed = wallet_file.read_text(encoding="utf-8").strip()
+        else:
+            wallet_seed = os.environ.get("XRPL_SEED")
+
+        if not wallet_seed:
+            console.print(
+                "\n  [yellow]No wallet seed found for anchoring.[/yellow]\n"
+                "  Create one: sov wallet"
+            )
+        else:
+            console.print("\n  Anchoring FINAL proof...")
+            console.print(f"  [dim]{memo}[/dim]")
+            try:
+                from sov_transport.xrpl_testnet import XRPLTestnetTransport
+
+                transport = XRPLTestnetTransport()
+                txid = transport.anchor(proof["state_hash"], memo, wallet_seed)
+                explorer = f"https://testnet.xrpl.org/transactions/{txid}"
+                console.print(f"  [green]Anchored.[/green] TX: [dim]{txid}[/dim]")
+                console.print(f"  [dim]{explorer}[/dim]")
+            except Exception as e:
+                console.print(f"  [red]Anchor failed: {e}[/red]")
+                console.print("  [dim]The game record is still valid locally.[/dim]")
+
+    console.print(
+        Panel(
+            "  Game over. Story Points recorded.\n"
+            "  Share a screenshot of this recap with your group.\n\n"
+            "  [dim]Start the next game: sov new -p ...[/dim]\n"
+            "  [dim]Season standings: cat .sov/season.json[/dim]",
+            title="That's a wrap",
+        )
+    )
+
+
+@app.command(name="season-postcard")
+def season_postcard() -> None:
+    """Share your season in one screenshot."""
+    if not SEASON_FILE.exists():
+        console.print("  [yellow]No season yet.[/yellow]")
+        console.print("  [dim]Finish a game with sov game-end to start tracking.[/dim]")
+        raise typer.Exit(0)
+
+    season = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
+    games = season.get("games", [])
+    standings = season.get("standings", {})
+
+    if not games:
+        console.print("  [yellow]No games recorded yet.[/yellow]")
+        raise typer.Exit(0)
+
+    # Standings table
+    s = "s" if len(games) != 1 else ""
+    standing_table = Table(title=f"Season Standings ({len(games)} game{s})")
+    standing_table.add_column("Player", style="bold")
+    standing_table.add_column("Story Points", justify="right")
+    sorted_standings = sorted(standings.items(), key=lambda x: x[1], reverse=True)
+    for name, total in sorted_standings:
+        standing_table.add_row(name, str(total))
+    console.print(standing_table)
+
+    # Champion (if 3+ games)
+    if len(games) >= 3 and sorted_standings:
+        champ = sorted_standings[0]
+        # Check for tie
+        tied = [n for n, t in sorted_standings if t == champ[1]]
+        if len(tied) > 1:
+            names = ", ".join(tied)
+            console.print(
+                f"\n  [bold yellow]Tied for Season Champion:"
+                f" {names}[/bold yellow]",
+            )
+        else:
+            console.print(f"\n  [bold yellow]Season Champion: {champ[0]}[/bold yellow]")
+
+    # Award totals across the season
+    award_totals: dict[str, dict[str, int]] = {}
+    for game in games:
+        for name, awards in game.get("awards", {}).items():
+            if name not in award_totals:
+                award_totals[name] = {
+                    "winner": 0, "promise_keeper": 0,
+                    "most_helpful": 0, "tables_choice": 0,
+                }
+            for key, val in awards.items():
+                award_totals[name][key] = award_totals[name].get(key, 0) + val
+
+    if award_totals:
+        console.print()
+        award_table = Table(title="Award Totals")
+        award_table.add_column("Player", style="bold")
+        award_table.add_column("Wins", justify="right")
+        award_table.add_column("Promise", justify="right")
+        award_table.add_column("Helpful", justify="right")
+        award_table.add_column("MVP", justify="right")
+        for name in [n for n, _ in sorted_standings]:
+            a = award_totals.get(name, {})
+            award_table.add_row(
+                name,
+                str(a.get("winner", 0)),
+                str(a.get("promise_keeper", 0)),
+                str(a.get("most_helpful", 0)),
+                str(a.get("tables_choice", 0)),
+            )
+        console.print(award_table)
+
+    # Game history
+    console.print()
+    for i, game in enumerate(games, 1):
+        w = game.get("winner", "?")
+        r = game.get("ruleset", "?").replace("_v1", "").replace("_", " ").title()
+        rnds = game.get("rounds", "?")
+        console.print(f"  Game {i}: {r} — {w} won (round {rnds})")
+
+    # Votes highlight
+    all_votes = []
+    for game in games:
+        for _key, text in game.get("votes", {}).items():
+            all_votes.append(text)
+    if all_votes:
+        console.print()
+        for v in all_votes:
+            console.print(f"  [dim]{v}[/dim]")
+
+    console.print(
+        Panel(
+            "  Share this screenshot with your group.\n"
+            "  [dim]sov season-postcard[/dim]",
+            title="Season Postcard",
+        )
+    )
 
 
 @app.command()
@@ -752,8 +1578,8 @@ def market(
     state, _ = result
 
     if state.market_board is None:
-        console.print("  [yellow]Market Board is a Town Hall feature.[/yellow]")
-        console.print("  [dim]Start a Town Hall game: sov new --tier town-hall -p A -p B[/dim]")
+        console.print("  [yellow]Market Board requires Market Day or Town Hall.[/yellow]")
+        console.print("  [dim]sov new --tier market-day -p A -p B[/dim]")
         raise typer.Exit(1)
 
     if action == "show":
@@ -793,12 +1619,114 @@ def market(
 # ---------------------------------------------------------------------------
 
 
+def _apply_recipe(state: GameState, recipe: str) -> str:
+    """Filter event/deal decks to cards matching a recipe tag. Returns a note string."""
+    from sov_engine.models import Deck
+
+    tag = recipe.lower()
+    valid_tags = ("cozy", "spicy", "market")
+    if tag not in valid_tags:
+        return f"\n  [yellow]Unknown recipe '{recipe}'. Try: cozy, spicy, or market.[/yellow]"
+
+    # Filter events
+    all_events = state.event_deck.draw_pile
+    filtered_events = [c for c in all_events if tag in c.tags]
+    if len(filtered_events) >= 5:
+        state.event_deck = Deck(draw_pile=filtered_events)
+        evt_note = f"{len(filtered_events)} events"
+    else:
+        evt_note = f"all {len(all_events)} events (too few '{tag}' events to filter)"
+
+    # Filter deals
+    all_deals = state.deal_deck.draw_pile
+    filtered_deals = [c for c in all_deals if tag in c.tags]
+    if len(filtered_deals) >= 3:
+        state.deal_deck = Deck(draw_pile=filtered_deals)
+        deal_note = f"{len(filtered_deals)} deals"
+    else:
+        deal_note = f"all {len(all_deals)} deals (too few '{tag}' deals to filter)"
+
+    state.add_log(f"Recipe: {tag} ({evt_note}, {deal_note})")
+    return f"\n  [dim]Recipe: {tag} — {evt_note}, {deal_note}[/dim]"
+
+
+def _postcard_highlights(
+    state: GameState, rnd: int, style: str,
+) -> list[str]:
+    """Build postcard highlights filtered by story style."""
+    # Define which log patterns each style cares about
+    matchers: dict[str, list[tuple[str, str]]] = {
+        "cozy": [
+            ("helps", "[green]Kind:[/green]"),
+            ("apologizes", "[yellow]Brave:[/yellow]"),
+            ("toasts", "[yellow]Toast:[/yellow]"),
+            ("kept their promise", "[green]Kept:[/green]"),
+        ],
+        "spicy": [
+            ("broke their promise", "[red]Ouch:[/red]"),
+            ("BROKEN", "[red]Treaty broken:[/red]"),
+            ("offers", "[cyan]Trade:[/cyan]"),
+            ("defaults", "[red]Default:[/red]"),
+        ],
+        "economic": [
+            ("buys", "[cyan]Buy:[/cyan]"),
+            ("sells", "[cyan]Sell:[/cyan]"),
+            ("Market", "[dim]Market:[/dim]"),
+        ],
+    }
+    # "all" uses every matcher
+    if style == "all":
+        active = [
+            ("broke their promise", "[red]Ouch:[/red]"),
+            ("apologizes", "[yellow]Brave:[/yellow]"),
+            ("helps", "[green]Kind:[/green]"),
+            ("offers", "[cyan]Trade:[/cyan]"),
+            ("toasts", "[yellow]Toast:[/yellow]"),
+            ("Treaty.*honored", "[green]Treaty kept:[/green]"),
+            ("BROKEN", "[red]Treaty broken:[/red]"),
+            ("wins", "[bold green]"),
+        ]
+    else:
+        active = matchers.get(style, matchers["cozy"])
+
+    highlights: list[str] = []
+    for entry in state.log:
+        if not (
+            entry.startswith(f"R{rnd}")
+            or (rnd > 1 and entry.startswith(f"R{rnd - 1}"))
+        ):
+            continue
+        _, _, text = entry.partition(": ")
+        for pattern, label in active:
+            if pattern in text:
+                highlights.append(f"{label} {text}")
+                break
+    return highlights
+
+
+def _tier_name(state: GameState) -> str:
+    """Human-readable tier name from game state."""
+    ruleset = state.config.ruleset
+    if ruleset == "treaty_table_v1":
+        return "Treaty Table"
+    if ruleset == "town_hall_v1":
+        return "Town Hall"
+    if ruleset == "market_day_v1":
+        return "Market Day"
+    return "Campfire"
+
+
 def _market_moment(state: GameState) -> str:
     """One human-readable line about the market's mood."""
     mb = state.market_board
     if mb is None:
         return ""
-    # Find the most dramatic thing happening
+
+    # Market Day: fixed prices, always open
+    if mb.fixed_prices:
+        return "[green]Market's open.[/green] Fixed prices — always 2 coins."
+
+    # Town Hall: dynamic mood
     empty = [r for r in RESOURCE_NAMES if mb.supply[r] == 0]
     scarce = [r for r in RESOURCE_NAMES if 0 < mb.supply[r] <= 2]
     cheap = [r for r in RESOURCE_NAMES if mb.price(r) <= 1]
@@ -817,26 +1745,35 @@ def _market_moment(state: GameState) -> str:
 
 
 def _print_market(state: GameState) -> None:
-    """Print the Town Hall market board."""
+    """Print the market board."""
     mb = state.market_board
     if mb is None:
         return
     info = market_status(state)
-    table = Table(title="Market Board")
+    title = "Market Board" if not mb.fixed_prices else "Market Board (fixed prices)"
+    table = Table(title=title)
     table.add_column("Resource", style="bold")
-    table.add_column("Price", justify="right")
-    table.add_column("Supply", justify="right")
-    table.add_column("Status")
+    table.add_column("Buy", justify="right")
+    table.add_column("Sell", justify="right")
+    if not mb.fixed_prices:
+        table.add_column("Supply", justify="right")
+        table.add_column("Status")
     for r in RESOURCE_NAMES:
         d = info[r]
-        if d["supply"] == 0:
-            status = "[red]EMPTY[/red]"
-        elif d["supply"] <= 2:
-            status = "[yellow]scarce (+1 price)[/yellow]"
-        else:
-            status = "[green]available[/green]"
-        table.add_row(r.title(), str(d["price"]), str(d["supply"]), status)
+        sell = max(1, d["price"] - 1)
+        row: list[str] = [r.title(), str(d["price"]), str(sell)]
+        if not mb.fixed_prices:
+            if d["supply"] == 0:
+                status = "[red]EMPTY[/red]"
+            elif d["supply"] <= 2:
+                status = "[yellow]scarce (+1 price)[/yellow]"
+            else:
+                status = "[green]available[/green]"
+            row.extend([str(d["supply"]), status])
+        table.add_row(*row)
     console.print(table)
+    if mb.fixed_prices:
+        console.print("  [dim]A shop, not a casino. Buy what you need.[/dim]")
 
 
 def _print_status(state: GameState) -> None:
