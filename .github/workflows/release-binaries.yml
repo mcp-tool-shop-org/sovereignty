@@ -40,13 +40,15 @@ jobs:
       - run: uv venv
 
       - name: Install dependencies + PyInstaller
-        run: uv pip install . pyinstaller
+        run: uv pip install . "pyinstaller>=6.9.0"
 
       - name: Build binary
         shell: bash
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          uv run pyinstaller --onefile --name "sovereignty" --console sov_cli/__main__.py
+          uv run pyinstaller --onefile --name "sovereignty" --console \
+            --collect-submodules rich \
+            sov_cli/__main__.py
           OUTNAME="sovereignty-${VERSION}-${{ matrix.target }}${{ matrix.ext }}"
           mv "dist/sovereignty${{ matrix.ext }}" "dist/${OUTNAME}"
           echo "ASSET_NAME=${OUTNAME}" >> "$GITHUB_ENV"
