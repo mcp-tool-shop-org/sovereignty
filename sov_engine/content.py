@@ -269,7 +269,7 @@ def build_event_deck() -> list[Card]:
 
 
 def build_deal_deck() -> list[Card]:
-    """Create the 20 Deal/Voucher cards for Campfire v1."""
+    """Create the 22 Deal/Voucher cards (12 Deals + 10 Vouchers)."""
     deals: list[Card] = [
         # --- Original 5 Deals ---
         DealCard(
@@ -376,6 +376,29 @@ def build_deal_deck() -> list[Card]:
             reward_coins=4,
             reward_rep=1,
             penalty_rep=1,
+            deadline_rounds=2,
+        ),
+        # --- Resource-native deals (Town Hall) ---
+        DealCard(
+            id="deal_11",
+            name="Soup Kitchen",
+            card_type=CardType.DEAL,
+            description="Donate 1 Food to any player. +1 Rep for you.",
+            flavor="Nobody goes hungry on my watch.",
+            reward_coins=0,
+            reward_rep=1,
+            penalty_rep=0,
+            deadline_rounds=3,
+        ),
+        DealCard(
+            id="deal_12",
+            name="Lend Me Your Hammer",
+            card_type=CardType.DEAL,
+            description="Loan 1 Tools for a round. Returned = +1 Rep. Kept = they lose 2 Rep.",
+            flavor="I just need it for the afternoon.",
+            reward_coins=0,
+            reward_rep=1,
+            penalty_rep=2,
             deadline_rounds=2,
         ),
     ]

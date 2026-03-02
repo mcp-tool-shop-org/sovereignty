@@ -558,16 +558,29 @@ def postcard() -> None:
     # Scoreboard
     scores = []
     for p in state.players:
-        scores.append(f"{p.name}: {p.coins}c {p.reputation}r {p.upgrades}u")
+        score_line = f"{p.name}: {p.coins}c {p.reputation}r {p.upgrades}u"
+        if p.resources:
+            res = " ".join(f"{v}{k[0].upper()}" for k, v in p.resources.items() if v > 0)
+            if res:
+                score_line += f" {res}"
+        scores.append(score_line)
+
+    # Market line (Town Hall only)
+    market_line = ""
+    if state.market_board:
+        market_line = f"\n  {_market_moment(state)}"
+
+    tier_name = "Town Hall" if state.market_board else "Campfire"
 
     console.print(Panel(
-        f"  [bold]Sovereignty: Campfire[/bold]\n"
+        f"  [bold]Sovereignty: {tier_name}[/bold]\n"
         f"  Round {rnd} | {players}\n\n"
         f"  {' | '.join(scores)}\n\n"
         f"  Proof: {proof_hash}"
         f"{anchor_line}"
+        f"{market_line}"
         f"{recap_text}",
-        title="Campfire Postcard",
+        title=f"{tier_name} Postcard",
         subtitle="[dim]sov postcard[/dim]",
     ))
 
@@ -686,6 +699,12 @@ def recap() -> None:
     for a in apologized:
         _, _, text = a.partition(": ")
         console.print(f"  [yellow]Brave:[/yellow] {text}")
+
+    # Market Moments (Town Hall only)
+    if state.market_board:
+        console.print()
+        console.print(f"  {_market_moment(state)}")
+
     console.print()
 
 
@@ -772,6 +791,29 @@ def market(
 # ---------------------------------------------------------------------------
 # Display helpers
 # ---------------------------------------------------------------------------
+
+
+def _market_moment(state: GameState) -> str:
+    """One human-readable line about the market's mood."""
+    mb = state.market_board
+    if mb is None:
+        return ""
+    # Find the most dramatic thing happening
+    empty = [r for r in RESOURCE_NAMES if mb.supply[r] == 0]
+    scarce = [r for r in RESOURCE_NAMES if 0 < mb.supply[r] <= 2]
+    cheap = [r for r in RESOURCE_NAMES if mb.price(r) <= 1]
+
+    if empty:
+        names = " and ".join(r.title() for r in empty)
+        return f"[red]Market's dry:[/red] {names} unavailable."
+    if scarce:
+        r = scarce[0]
+        p = mb.price(r)
+        return f"[yellow]Market's tight:[/yellow] {r.title()} is scarce (price {p})."
+    if cheap:
+        r = cheap[0]
+        return f"[green]Market's kind:[/green] {r.title()} is cheap (price 1)."
+    return "[dim]Market's steady. Nothing scarce, nothing cheap.[/dim]"
 
 
 def _print_market(state: GameState) -> None:
