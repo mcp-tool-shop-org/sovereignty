@@ -334,6 +334,55 @@ def resolve_event(state: GameState, card: EventCard, rng: GameRng) -> str:
             state.event_deck.discard(next_card)
             return f"EVENT: {card.name} -- draw again! {result}"
 
+        # --- Market-shift events (Town Hall) ---
+
+        case "market_food_down":
+            if state.market_board:
+                state.market_board.shift_price("food", -1)
+            return f"EVENT: {card.name} -- Food price -1 this round."
+
+        case "market_wood_up":
+            if state.market_board:
+                state.market_board.shift_price("wood", 1)
+            return f"EVENT: {card.name} -- Wood price +1 this round."
+
+        case "market_tools_down":
+            if state.market_board:
+                state.market_board.shift_price("tools", -1)
+            return f"EVENT: {card.name} -- Tools price -1 this round."
+
+        case "market_tools_up":
+            if state.market_board:
+                state.market_board.shift_price("tools", 1)
+            return f"EVENT: {card.name} -- Tools price +1 this round."
+
+        case "market_restock":
+            if state.market_board:
+                for r in ("food", "wood", "tools"):
+                    state.market_board.supply[r] += 2
+            return f"EVENT: {card.name} -- +2 to each supply pool."
+
+        case "market_fire":
+            if state.market_board:
+                for r in ("food", "wood", "tools"):
+                    state.market_board.supply[r] = max(0, state.market_board.supply[r] - 2)
+            return f"EVENT: {card.name} -- -2 from each supply pool."
+
+        case "market_feast":
+            ate = []
+            for p in state.players:
+                if p.resources.get("food", 0) > 0:
+                    p.resources["food"] -= 1
+                    ate.append(p.name)
+            who = ", ".join(ate) if ate else "nobody"
+            return f"EVENT: {card.name} -- {who} shared food."
+
+        case "market_all_down":
+            if state.market_board:
+                for r in ("food", "wood", "tools"):
+                    state.market_board.shift_price(r, -1)
+            return f"EVENT: {card.name} -- All prices -1 this round."
+
         case _:
             return f"EVENT: {card.name} -- unknown effect '{eid}'."
 

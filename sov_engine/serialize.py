@@ -14,7 +14,7 @@ from sov_engine.models import (
 
 def _player_snapshot(p: PlayerState) -> dict[str, Any]:
     """Canonical player state snapshot."""
-    return {
+    snapshot: dict[str, Any] = {
         "active_deals": [
             {
                 "deal_id": d.deal_id,
@@ -43,6 +43,9 @@ def _player_snapshot(p: PlayerState) -> dict[str, Any]:
         ],
         "win_condition": p.win_condition.value,
     }
+    if p.resources:
+        snapshot["resources"] = dict(sorted(p.resources.items()))
+    return snapshot
 
 
 def _voucher_snapshot(v: Voucher) -> dict[str, Any]:
@@ -59,7 +62,7 @@ def _voucher_snapshot(v: Voucher) -> dict[str, Any]:
 
 def game_state_snapshot(state: GameState) -> dict[str, Any]:
     """Produce a canonical, hashable snapshot of the full game state."""
-    return {
+    snapshot: dict[str, Any] = {
         "config": {
             "board_size": state.config.board_size,
             "max_players": state.config.max_players,
@@ -79,6 +82,15 @@ def game_state_snapshot(state: GameState) -> dict[str, Any]:
         "turn_in_round": state.turn_in_round,
         "winner": state.winner,
     }
+    # Include market board state for Town Hall
+    mb = state.market_board
+    if mb is not None:
+        snapshot["market_board"] = {
+            "base_prices": dict(sorted(mb.base_prices.items())),
+            "price_shifts": dict(sorted(mb.price_shifts.items())),
+            "supply": dict(sorted(mb.supply.items())),
+        }
+    return snapshot
 
 
 def canonical_json(data: dict[str, Any]) -> str:

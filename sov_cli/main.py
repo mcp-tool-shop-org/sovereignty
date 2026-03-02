@@ -12,7 +12,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
-from sov_engine.models import GameState, WinCondition
+from sov_engine.models import RESOURCE_NAMES, GameState, MarketBoard, WinCondition
 from sov_engine.rules.campfire import (
     apologize,
     break_promise,
@@ -23,6 +23,12 @@ from sov_engine.rules.campfire import (
     new_game,
     resolve_space,
     roll_and_move,
+)
+from sov_engine.rules.town_hall import (
+    market_buy,
+    market_sell,
+    market_status,
+    new_town_hall_game,
 )
 from sov_engine.serialize import canonical_json, game_state_snapshot
 
@@ -71,7 +77,11 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
         names.append(p_data["name"])
         wcs[p_data["name"]] = WinCondition(p_data["win_condition"])
 
-    state, _ = new_game(seed, names, wcs)
+    ruleset = data.get("config", {}).get("ruleset", "campfire_v1")
+    if ruleset == "town_hall_v1":
+        state, _ = new_town_hall_game(seed, names, wcs)
+    else:
+        state, _ = new_game(seed, names, wcs)
 
     # Restore mutable state
     for i, p_data in enumerate(data["players"]):
@@ -84,6 +94,7 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
         p.helped_last_round = p_data.get("helped_last_round", False)
         p.skip_next_move = p_data.get("skip_next_move", False)
         p.apology_used = p_data.get("apology_used", False)
+        p.resources = p_data.get("resources", {})
 
     state.current_round = data["current_round"]
     state.current_player_index = data["current_player_index"]
@@ -94,9 +105,15 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
     state.market.wood = data["market"]["wood"]
     state.market.tools = data["market"]["tools"]
 
-    # Advance RNG to match game progression (approximate)
-    # For true determinism we'd need to replay all actions from seed
-    # This is sufficient for Phase 1 CLI play
+    # Restore market board for Town Hall games
+    mb_data = data.get("market_board")
+    if mb_data:
+        state.market_board = MarketBoard(
+            supply=mb_data["supply"],
+            base_prices=mb_data["base_prices"],
+            price_shifts=mb_data["price_shifts"],
+        )
+
     return state, rng
 
 
@@ -107,13 +124,16 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
 
 @app.command()
 def new(
-    seed: Annotated[int, typer.Option("--seed", "-s", help="RNG seed for reproducibility")] = 42,
+    seed: Annotated[int, typer.Option("--seed", "-s", help="RNG seed")] = 42,
     players: Annotated[
         list[str],
-        typer.Option("--player", "-p", help="Player names (2-4 required)"),
+        typer.Option("--player", "-p", help="Player names (2-4)"),
     ] = None,
+    tier: Annotated[
+        str, typer.Option("--tier", "-t", help="campfire or town-hall"),
+    ] = "campfire",
 ) -> None:
-    """Start a new Campfire game."""
+    """Start a new game. Use --tier town-hall for the Market Board."""
     if players is None:
         players = []
     if len(players) < 2:
@@ -126,7 +146,14 @@ def new(
     if STATE_FILE.exists() and not typer.confirm("Active game found. Overwrite?"):
         raise typer.Exit(0)
 
-    state, rng = new_game(seed, players)
+    if tier in ("town-hall", "town_hall", "townhall"):
+        state, rng = new_town_hall_game(seed, players)
+        tier_label = "Town Hall"
+        extra = "  A shared Market Board with Food, Wood, and Tools.\n"
+    else:
+        state, rng = new_game(seed, players)
+        tier_label = "Campfire"
+        extra = ""
 
     # Save seed for reloading
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
@@ -134,8 +161,9 @@ def new(
     _save_state(state)
 
     console.print(Panel(
-        f"[bold green]Sovereignty: Campfire[/bold green]\n\n"
+        f"[bold green]Sovereignty: {tier_label}[/bold green]\n\n"
         f"  Everyone starts with 5 coins, 3 reputation, and a goal.\n"
+        f"{extra}"
         f"  Players: {', '.join(players)}\n"
         f"  {state.config.max_rounds} rounds. Make them count.",
         title="Gather 'round",
@@ -293,6 +321,10 @@ def turn() -> None:
         state.market.food = 1
         state.market.wood = 2
         state.market.tools = 3
+
+        # Reset Town Hall market price shifts
+        if state.market_board:
+            state.market_board.reset_shifts()
 
     _save_state(state)
     console.print()
@@ -681,37 +713,129 @@ def board() -> None:
     console.print(table)
 
 
+@app.command()
+def market(
+    action: Annotated[
+        str, typer.Argument(help="show, buy, or sell"),
+    ] = "show",
+    resource: Annotated[
+        str, typer.Argument(help="food, wood, or tools"),
+    ] = "",
+    player: Annotated[
+        str, typer.Option("--player", "-p", help="Who's trading"),
+    ] = "",
+) -> None:
+    """Show the Market Board, or buy/sell a resource (Town Hall only)."""
+    result = _load_game()
+    if result is None:
+        console.print("[red]No active game.[/red]")
+        raise typer.Exit(1)
+    state, _ = result
+
+    if state.market_board is None:
+        console.print("  [yellow]Market Board is a Town Hall feature.[/yellow]")
+        console.print("  [dim]Start a Town Hall game: sov new --tier town-hall -p A -p B[/dim]")
+        raise typer.Exit(1)
+
+    if action == "show":
+        _print_market(state)
+        return
+
+    # Find the player
+    target = None
+    if player:
+        target = next((p for p in state.players if p.name == player), None)
+    else:
+        target = state.current_player
+    if target is None:
+        console.print(f"[red]Player '{player}' not found.[/red]")
+        raise typer.Exit(1)
+
+    if not resource:
+        console.print("[red]Specify a resource: food, wood, or tools[/red]")
+        raise typer.Exit(1)
+
+    if action == "buy":
+        msg = market_buy(state, target, resource)
+    elif action == "sell":
+        msg = market_sell(state, target, resource)
+    else:
+        console.print("[red]Use: market show / market buy food / market sell wood[/red]")
+        raise typer.Exit(1)
+
+    console.print(f"\n  {msg}")
+    _save_state(state)
+    console.print()
+    _print_market(state)
+
+
 # ---------------------------------------------------------------------------
 # Display helpers
 # ---------------------------------------------------------------------------
 
 
+def _print_market(state: GameState) -> None:
+    """Print the Town Hall market board."""
+    mb = state.market_board
+    if mb is None:
+        return
+    info = market_status(state)
+    table = Table(title="Market Board")
+    table.add_column("Resource", style="bold")
+    table.add_column("Price", justify="right")
+    table.add_column("Supply", justify="right")
+    table.add_column("Status")
+    for r in RESOURCE_NAMES:
+        d = info[r]
+        if d["supply"] == 0:
+            status = "[red]EMPTY[/red]"
+        elif d["supply"] <= 2:
+            status = "[yellow]scarce (+1 price)[/yellow]"
+        else:
+            status = "[green]available[/green]"
+        table.add_row(r.title(), str(d["price"]), str(d["supply"]), status)
+    console.print(table)
+
+
 def _print_status(state: GameState) -> None:
+    is_town_hall = state.market_board is not None
     table = Table(title=f"Round {state.current_round}")
     table.add_column("Player", style="bold")
     table.add_column("Coins", justify="right")
     table.add_column("Rep", justify="right")
     table.add_column("Upgrades", justify="right")
+    if is_town_hall:
+        table.add_column("Resources", justify="right")
     table.add_column("Position")
     table.add_column("Goal")
 
     for i, p in enumerate(state.players):
         marker = " *" if i == state.current_player_index else ""
         pos_name = state.board[p.position].name if state.board else str(p.position)
-        table.add_row(
+        row: list[str] = [
             p.name + marker,
             str(p.coins),
             str(p.reputation),
             str(p.upgrades),
-            pos_name,
-            p.win_condition.value,
-        )
+        ]
+        if is_town_hall:
+            res_parts = []
+            for r in RESOURCE_NAMES:
+                count = p.resources.get(r, 0)
+                if count > 0:
+                    res_parts.append(f"{count}{r[0].upper()}")
+            row.append(" ".join(res_parts) if res_parts else "-")
+        row.extend([pos_name, p.win_condition.value])
+        table.add_row(*row)
 
     console.print(table)
     if state.game_over:
         console.print(f"  [bold green]{state.winner} wins the game.[/bold green]")
     else:
         console.print(f"  [dim]{state.current_player.name}'s turn next.[/dim]")
+    if is_town_hall:
+        console.print()
+        _print_market(state)
 
 
 def _print_brief_status(state: GameState) -> None:

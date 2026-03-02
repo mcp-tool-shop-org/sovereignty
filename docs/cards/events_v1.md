@@ -92,11 +92,51 @@
 
 ---
 
+## Market-shift cards (21-28) — Town Hall only
+
+These cards affect the shared Market Board. In Campfire games they appear
+in the deck but have no mechanical effect.
+
+### 21. Bumper Harvest
+**Effect:** Food price -1 this round.
+**Flavor:** "More tomatoes than anyone knows what to do with."
+
+### 22. Logging Ban
+**Effect:** Wood price +1 this round.
+**Flavor:** "The council says: no more chopping until spring."
+
+### 23. Tinker's Arrival
+**Effect:** Tools price -1 this round.
+**Flavor:** "Step right up! Everything must go!"
+
+### 24. Trade Caravan
+**Effect:** +2 to each supply pool.
+**Flavor:** "Fresh goods from the valley."
+
+### 25. Warehouse Fire
+**Effect:** -2 from each supply pool.
+**Flavor:** "Somebody left a lantern burning."
+
+### 26. Feast Day
+**Effect:** Each player who has Food loses 1 Food.
+**Flavor:** "The whole town gathers. Bring what you've got."
+
+### 27. Tool Shortage
+**Effect:** Tools price +1 this round.
+**Flavor:** "Everything's breaking and nobody can fix it."
+
+### 28. Good Rains
+**Effect:** All prices -1 this round.
+**Flavor:** "The rivers are full and the fields are green."
+
+---
+
 ## Design notes
 
-- **Balance:** ~8 positive, ~6 negative, ~6 situational/social.
+- **Balance:** ~8 positive, ~6 negative, ~6 situational/social, ~8 market-shift.
 - **Social cards** (4, 6, 7, 13, 15, 16) require player interaction — these are the fun ones.
 - **Human-voice cards** (11-20) read like moments, not mechanics. They create stories.
+- **Market-shift cards** (21-28) create supply/demand tension at the table (Town Hall only).
 - **Trust Crisis** (10) punishes low-rep players, creating a "reputation floor" incentive.
 - **Harvest Moon** (18) is a catch-up mechanic — helps the player who needs it most.
 - **Lucky Find** (20) is recursive — draws another Event, creating surprise chains.

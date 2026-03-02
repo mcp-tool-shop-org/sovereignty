@@ -143,6 +143,9 @@ STARTING_COINS = 5
 STARTING_REP = 3
 
 
+RESOURCE_NAMES = ("food", "wood", "tools")
+
+
 @dataclass
 class PlayerState:
     name: str
@@ -158,6 +161,7 @@ class PlayerState:
     helped_last_round: bool = False  # for "Good News Travels" event
     skip_next_move: bool = False  # for "Broken Bridge" event
     apology_used: bool = False  # once per game
+    resources: dict[str, int] = field(default_factory=dict)  # Town Hall: food/wood/tools
 
     def adjust_coins(self, amount: int) -> int:
         """Add/subtract coins. Returns actual change (can't go below 0)."""
@@ -219,15 +223,81 @@ class Deck:
 # Market
 # ---------------------------------------------------------------------------
 
+MARKET_BASE_PRICE = 2
+MARKET_PRICE_MIN = 1
+MARKET_PRICE_MAX = 4
+
+
+def _supply_pool_size(num_players: int) -> int:
+    """Supply per resource based on player count: 2p=6, 3p=8, 4p=10."""
+    return 4 + (num_players * 2)
+
 
 @dataclass
 class MarketPrices:
+    """Simple price tracker (Campfire tier — prices reset each round)."""
+
     food: int = 1
     wood: int = 2
     tools: int = 3
 
     def as_dict(self) -> dict[str, int]:
         return {"food": self.food, "wood": self.wood, "tools": self.tools}
+
+
+@dataclass
+class MarketBoard:
+    """Town Hall market with supply pools and scarcity pricing."""
+
+    supply: dict[str, int] = field(default_factory=dict)
+    base_prices: dict[str, int] = field(default_factory=dict)
+    price_shifts: dict[str, int] = field(default_factory=dict)
+
+    @classmethod
+    def create(cls, num_players: int) -> MarketBoard:
+        """Create a market board sized for the player count."""
+        pool = _supply_pool_size(num_players)
+        return cls(
+            supply={r: pool for r in RESOURCE_NAMES},
+            base_prices={r: MARKET_BASE_PRICE for r in RESOURCE_NAMES},
+            price_shifts={r: 0 for r in RESOURCE_NAMES},
+        )
+
+    def price(self, resource: str) -> int:
+        """Effective price: base + shift + scarcity. Clamped to [1, 4]."""
+        base = self.base_prices.get(resource, MARKET_BASE_PRICE)
+        shift = self.price_shifts.get(resource, 0)
+        scarcity = 1 if self.supply.get(resource, 0) <= 2 else 0
+        return max(MARKET_PRICE_MIN, min(MARKET_PRICE_MAX, base + shift + scarcity))
+
+    def can_buy(self, resource: str) -> bool:
+        """True if any supply remains."""
+        return self.supply.get(resource, 0) > 0
+
+    def buy(self, resource: str) -> int:
+        """Remove 1 from supply, return effective price. Caller pays."""
+        if not self.can_buy(resource):
+            return -1
+        cost = self.price(resource)
+        self.supply[resource] -= 1
+        return cost
+
+    def sell(self, resource: str) -> int:
+        """Add 1 to supply, return sell price (base price, no scarcity)."""
+        base = self.base_prices.get(resource, MARKET_BASE_PRICE)
+        shift = self.price_shifts.get(resource, 0)
+        sell_price = max(1, base + shift - 1)  # sell at 1 below buy
+        self.supply[resource] = self.supply.get(resource, 0) + 1
+        return sell_price
+
+    def shift_price(self, resource: str, amount: int) -> None:
+        """Shift a resource price by amount. Clamped so effective stays in [1,4]."""
+        self.price_shifts[resource] = self.price_shifts.get(resource, 0) + amount
+
+    def reset_shifts(self) -> None:
+        """Clear event-driven price shifts at end of round."""
+        for r in self.price_shifts:
+            self.price_shifts[r] = 0
 
 
 # ---------------------------------------------------------------------------
@@ -255,6 +325,7 @@ class GameState:
     event_deck: Deck = field(default_factory=Deck)
     deal_deck: Deck = field(default_factory=Deck)
     market: MarketPrices = field(default_factory=MarketPrices)
+    market_board: MarketBoard | None = None  # Town Hall only
     current_round: int = 1
     current_player_index: int = 0
     turn_in_round: int = 0

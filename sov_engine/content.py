@@ -36,7 +36,7 @@ def build_board() -> list[Space]:
 
 
 def build_event_deck() -> list[Card]:
-    """Create the 20 Event cards for Campfire v1."""
+    """Create the 28 Event cards (20 Campfire + 8 Market-shift for Town Hall)."""
     return [
         # --- Original 10 ---
         EventCard(
@@ -199,6 +199,71 @@ def build_event_deck() -> list[Card]:
             description="Draw another Event immediately.",
             flavor="What's this?",
             effect_id="lucky_find",
+        ),
+        # --- Market-shift events (Town Hall) ---
+        EventCard(
+            id="evt_21",
+            name="Bumper Harvest",
+            card_type=CardType.EVENT,
+            description="Food floods the market. Food price -1 this round.",
+            flavor="More tomatoes than anyone knows what to do with.",
+            effect_id="market_food_down",
+        ),
+        EventCard(
+            id="evt_22",
+            name="Logging Ban",
+            card_type=CardType.EVENT,
+            description="Wood gets scarce. Wood price +1 this round.",
+            flavor="The council says: no more chopping until spring.",
+            effect_id="market_wood_up",
+        ),
+        EventCard(
+            id="evt_23",
+            name="Tinker's Arrival",
+            card_type=CardType.EVENT,
+            description="A traveling tinker sells cheap. Tools price -1 this round.",
+            flavor="Step right up! Everything must go!",
+            effect_id="market_tools_down",
+        ),
+        EventCard(
+            id="evt_24",
+            name="Trade Caravan",
+            card_type=CardType.EVENT,
+            description="The caravan restocks. +2 to each supply pool.",
+            flavor="Fresh goods from the valley.",
+            effect_id="market_restock",
+        ),
+        EventCard(
+            id="evt_25",
+            name="Warehouse Fire",
+            card_type=CardType.EVENT,
+            description="Lose 2 from each supply pool. Prices don't change.",
+            flavor="Somebody left a lantern burning.",
+            effect_id="market_fire",
+        ),
+        EventCard(
+            id="evt_26",
+            name="Feast Day",
+            card_type=CardType.EVENT,
+            description="Everyone eats! Remove 1 Food from each player who has it.",
+            flavor="The whole town gathers. Bring what you've got.",
+            effect_id="market_feast",
+        ),
+        EventCard(
+            id="evt_27",
+            name="Tool Shortage",
+            card_type=CardType.EVENT,
+            description="Tools price +1 this round. Upgrades cost +1 coin.",
+            flavor="Everything's breaking and nobody can fix it.",
+            effect_id="market_tools_up",
+        ),
+        EventCard(
+            id="evt_28",
+            name="Good Rains",
+            card_type=CardType.EVENT,
+            description="All prices -1 this round. The land provides.",
+            flavor="The rivers are full and the fields are green.",
+            effect_id="market_all_down",
         ),
     ]
 
