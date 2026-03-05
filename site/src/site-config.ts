@@ -15,7 +15,7 @@ export const config: SiteConfig = {
     headlineAccent: 'a board game about keeping your word.',
     description: 'Roll, trade, promise, betray. 2-4 players, 30 minutes, no screens required. The console keeps score — you keep your word. Optionally anchor results on the XRPL Testnet.',
     primaryCta: { href: '#usage', label: 'Get started' },
-    secondaryCta: { href: '#tiers', label: 'See the tiers' },
+    secondaryCta: { href: 'handbook/', label: 'Read the Handbook' },
     previews: [
       { label: 'Install', code: 'pipx install sovereignty-game' },
       { label: 'Tutorial', code: 'sov tutorial' },
