@@ -1,13 +1,13 @@
-# Build platform binaries for npm distribution via @mcptoolshop/npm-launcher.
+# Combined release workflow: PyPI publish + platform binaries.
 # Asset naming convention (locked):
 #   sovereignty-<version>-<os>-<arch>[.exe]
 #   checksums-<version>.txt
 
-name: Release Binaries
+name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
   workflow_dispatch:
 
 concurrency:
@@ -15,7 +15,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  # --- PyPI publish (trusted publishing via OIDC) ---
+  publish:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: pip install build
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  # --- Platform binaries (PyInstaller) ---
+  build-binaries:
+    if: github.event_name == 'release'
     strategy:
       matrix:
         include:
@@ -59,8 +84,9 @@ jobs:
           name: binary-${{ matrix.target }}
           path: dist/${{ env.ASSET_NAME }}
 
-  release:
-    needs: build
+  upload-binaries:
+    if: github.event_name == 'release'
+    needs: build-binaries
     runs-on: ubuntu-latest
     permissions:
       contents: write

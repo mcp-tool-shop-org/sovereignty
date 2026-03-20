@@ -39,6 +39,7 @@ from sov_engine.models import (
     TreatyStatus,
     WinCondition,
 )
+from sov_engine.rng import GameRng
 from sov_engine.rules.campfire import (
     apologize,
     break_promise,
@@ -96,7 +97,7 @@ def _save_state(state: GameState) -> None:
     STATE_FILE.write_text(canonical_json(snapshot), encoding="utf-8", newline="\n")
 
 
-def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defined]  # noqa: F821
+def _load_game() -> tuple[GameState, GameRng] | None:
     """Load game state from disk. Returns None if no active game."""
     if not STATE_FILE.exists():
         return None
@@ -107,8 +108,6 @@ def _load_game() -> tuple[GameState, GameRng] | None:  # type: ignore[name-defin
     data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
 
     # Reconstruct game from saved state
-    from sov_engine.rng import GameRng
-
     rng = GameRng(seed)
 
     wcs: dict[str, WinCondition] = {}
@@ -820,7 +819,7 @@ def wallet() -> None:
             f"  Address: [bold]{address}[/bold]\n"
             f"  Seed saved to: {wallet_file}\n\n"
             f"  [dim]Use it: sov anchor --signer-file {wallet_file}[/dim]\n"
-            f"  [dim]Or set: export XRPL_SEED={seed}[/dim]",
+            f"  [dim]Or set: export XRPL_SEED=<your-seed>[/dim]",
             title="Testnet Wallet",
         ))
     except RuntimeError as e:
@@ -1985,7 +1984,7 @@ _SCENARIOS = [
 
 _SCENARIO_BY_SLUG = {s["slug"]: s for s in _SCENARIOS}
 
-SOV_VERSION = "1.4.6"
+SOV_VERSION = "1.4.7"
 
 
 # ---------------------------------------------------------------------------

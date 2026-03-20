@@ -45,7 +45,19 @@ from sov_engine.rules.town_hall import (  # noqa: F401
     upgrade_with_resources,
 )
 
-_treaty_counter = 0
+
+def _next_treaty_id(state: GameState) -> str:
+    """Derive the next treaty ID from existing treaties in the game state."""
+    max_num = 0
+    for p in state.players:
+        for t in p.active_treaties:
+            # Parse "t_0003" → 3
+            try:
+                num = int(t.treaty_id.split("_")[1])
+                max_num = max(max_num, num)
+            except (IndexError, ValueError):
+                pass
+    return f"t_{max_num + 1:04d}"
 
 
 # ---------------------------------------------------------------------------
@@ -211,8 +223,6 @@ def treaty_make(
 
     Returns the Treaty on success, or an error string.
     """
-    global _treaty_counter
-
     if maker.name == partner.name:
         return "Can't make a treaty with yourself."
 
@@ -248,9 +258,8 @@ def treaty_make(
             f"(needs {_stake_desc(partner_stake)})."
         )
 
-    _treaty_counter += 1
     treaty = Treaty(
-        treaty_id=f"t_{_treaty_counter:04d}",
+        treaty_id=_next_treaty_id(state),
         text=text,
         parties=[maker.name, partner.name],
         stakes={maker.name: maker_stake, partner.name: partner_stake},

@@ -266,10 +266,7 @@ def test_treaty_serialization_roundtrip():
 
 
 def test_treaty_deterministic_hash():
-    import sov_engine.rules.treaty_table as tt
-
     def play_game(seed: int) -> str:
-        tt._treaty_counter = 0  # reset for determinism
         state, _ = new_treaty_table_game(seed, ["A", "B"])
         a, b = state.players
         a.resources["food"] = 3

@@ -10,7 +10,6 @@ build/
 .venv/
 
 # uv
-uv.lock
 
 # Game state (local play sessions)
 .sov/

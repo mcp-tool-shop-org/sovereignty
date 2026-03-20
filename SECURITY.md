@@ -6,18 +6,18 @@ Here's what to know about keeping things safe.
 ## Wallet seeds
 
 If you use Diary Mode (`sov wallet`), the CLI creates a Testnet wallet
-stored locally in `.sov/wallet.json`. This file contains your seed.
+stored locally in `.sov/wallet_seed.txt`. This file contains your seed.
 
 **Rules:**
 
 - Never paste wallet seeds into GitHub issues, Discord, or any public channel
 - Never commit `.sov/` to version control (it's in `.gitignore`)
 - Testnet seeds aren't "real money," but treating them carelessly builds bad habits
-- If you share a game directory, delete `.sov/wallet.json` first
+- If you share a game directory, delete `.sov/wallet_seed.txt` first
 
 ## Environment variables
 
-The CLI reads wallet config from `.sov/wallet.json` by default.
+The CLI reads wallet config from `.sov/wallet_seed.txt` by default.
 No environment variables contain secrets unless you configure them yourself.
 
 ## Game state files
@@ -28,8 +28,10 @@ if privacy matters to your group.
 
 ## Proof files
 
-Round proofs (`.sov/proofs/*.json`) contain hashes, not raw game data.
-They're safe to share — that's the whole point.
+Round proofs (`.sov/proofs/*.json`) contain both the state hash and
+the full game state snapshot used to compute it. Player names, scores,
+and positions are included. The hash alone is safe to share publicly;
+share the full proof file only with your play group.
 
 ## Telemetry
 
