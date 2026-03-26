@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from importlib.metadata import version as _pkg_version
 from pathlib import Path
 from typing import Annotated, Never
@@ -74,14 +75,17 @@ from sov_engine.rules.treaty_table import (
 )
 from sov_engine.serialize import canonical_json, game_state_snapshot
 
+
 def _version_callback(value: bool) -> None:
     if value:
         try:
             ver = _pkg_version("sovereignty-game")
         except Exception:
-            import re
             _pyproject = Path(__file__).parent.parent / "pyproject.toml"
-            m = re.search(r'^version\s*=\s*"([^"]+)"', _pyproject.read_text(encoding="utf-8"), re.MULTILINE)
+            _content = _pyproject.read_text(encoding="utf-8")
+            m = re.search(
+                r'^version\s*=\s*"([^"]+)"', _content, re.MULTILINE,
+            )
             ver = m.group(1) if m else "unknown"
         typer.echo(f"sovereignty {ver}")
         raise typer.Exit()
@@ -100,7 +104,12 @@ console = Console()
 def main(
     version: Annotated[
         bool,
-        typer.Option("--version", "-V", help="Show version and exit.", callback=_version_callback, is_eager=True),
+        typer.Option(
+            "--version", "-V",
+            help="Show version and exit.",
+            callback=_version_callback,
+            is_eager=True,
+        ),
     ] = False,
 ) -> None:
     """Sovereignty — a strategy game about governance, trust, and trade."""
