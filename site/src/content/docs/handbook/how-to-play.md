@@ -9,7 +9,7 @@ Sovereignty teaches through consequences, not terminology. Here's how a game wor
 
 ## Setup
 
-Each player starts with **5 coins** and **3 reputation**. The board has 16 spaces. Roll a die, move, and land on spaces that give you choices: trade, help someone, take a risk, or draw a card.
+Each player starts with **5 coins** and **3 reputation** (clamped between 0 and 10). The board has 16 spaces arranged in a loop. Roll a die, move forward, and land on spaces that give you choices: trade, help someone, take a risk, or draw a card.
 
 ## Cards
 
@@ -42,28 +42,28 @@ Pick a goal at the start — secret or public:
 
 ## Winning
 
-After 15 rounds, the highest combined score wins. The tiebreak formula weighs coins, reputation, and upgrades: `(coins / 2) + reputation + (upgrades * 3)`. Your goal influences strategy, but the final score is what matters.
+A player wins immediately by achieving their chosen goal (20 coins for Prosperity, 10 reputation for Beloved, 4 upgrades for Builder). If nobody achieves their goal after 15 rounds, the highest combined score wins. The tiebreak formula weighs coins, reputation, and upgrades: `(coins / 2) + reputation + (upgrades * 3)`.
 
 ## The board
 
-The board has 16 spaces. Each space has a distinct effect:
+The board has 16 spaces arranged in a loop. Some space types appear more than once (Rumor Mill is at positions 3 and 9, Trade Dock at 4 and 12). When you pass through or land on Campfire (position 0), you gain 1 coin.
 
 | Space | Effect |
 |-------|--------|
-| **Campfire** | Safe. +1 coin when you pass through or land on it |
-| **Workshop** | Pay 2 coins for +1 upgrade |
-| **Market** | Buy or sell 1 resource at market price |
-| **Rumor Mill** | Draw an Event card |
-| **Trade Dock** | Propose a trade with any player |
-| **Festival** | Donate 1 coin for +1 reputation |
-| **Trouble** | Lose 1 coin or 1 reputation |
-| **Help Desk** | Give another player 1 coin; both gain +1 reputation |
-| **Mint** | Gain 2 coins from the bank |
-| **Builder** | Pay 3 coins for +1 upgrade (requires reputation 3 or higher) |
-| **Faucet** | Gain 1 coin from the bank |
-| **Taxman** | Pay 1 coin, or lose 1 reputation if broke |
-| **Commons** | Vote: if majority agrees, everyone gains 1 coin |
-| **Crossroads** | Draw a Deal card. Accept or pass |
+| **Campfire** (0) | Safe. +1 coin when you pass through or land on it |
+| **Workshop** (1) | Pay 2 coins for +1 upgrade |
+| **Market** (2) | Buy or sell 1 resource at market price |
+| **Rumor Mill** (3, 9) | Draw an Event card |
+| **Trade Dock** (4, 12) | Propose a trade with any player |
+| **Festival** (5) | Donate 1 coin for +1 reputation |
+| **Trouble** (6) | Lose 1 coin or 1 reputation |
+| **Help Desk** (7) | Give another player 1 coin; both gain +1 reputation |
+| **Mint** (8) | Gain 2 coins from the bank |
+| **Builder** (10) | Pay 3 coins for +1 upgrade (requires reputation 3 or higher) |
+| **Faucet** (11) | Gain 1 coin from the bank |
+| **Taxman** (13) | Pay 1 coin, or lose 1 reputation if broke |
+| **Commons** (14) | Vote: if majority agrees, everyone gains 1 coin |
+| **Crossroads** (15) | Draw a Deal card. Accept or pass |
 
 ## The Toast
 

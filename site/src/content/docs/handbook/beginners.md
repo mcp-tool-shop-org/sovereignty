@@ -76,6 +76,8 @@ After everyone has taken a turn, the round ends. After 15 rounds, the player wit
 
 **Deals** are timed challenges. When you draw a Deal card at Crossroads, you can accept or pass. Accepted deals have a deadline -- complete the task for rewards, or fail and lose reputation.
 
+**The Toast** is a one-time gift. Once per game, any player can toast another player by naming something they did right. The toasted player gains +1 reputation. Each player can only be toasted once.
+
 ## Common commands
 
 Here are the commands you will use most often:

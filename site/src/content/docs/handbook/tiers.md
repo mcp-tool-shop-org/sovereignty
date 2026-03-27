@@ -37,7 +37,13 @@ Town Hall adds three resources: **food**, **wood**, and **tools**. A shared mark
 
 ### Treaty Table details
 
-Treaties are binding agreements between two players. Both sides put up collateral (coins and/or resources) in escrow. If one side breaks the treaty, the other gets both stakes. If honored, stakes are returned and both gain +1 reputation. Each player can have at most 2 active treaties. Stake caps: 5 coins, 3 total resource units. Breaking a treaty costs -3 reputation.
+Treaties are binding agreements between two players. Both sides put up collateral (coins and/or resources) in escrow. At least one party must stake something -- otherwise, use a promise instead.
+
+- If one side breaks the treaty, the breaker forfeits their stake to the harmed party, who also gets their own stake back. The breaker loses 3 reputation.
+- If honored (or if neither side breaks before the deadline), stakes are returned and both gain +1 reputation.
+- Each player can have at most 2 active treaties at once.
+- Stake caps: 5 coins and 3 total resource units per stake.
+- Treaties have a duration in rounds (default 3). Expired treaties that nobody broke are auto-honored.
 
 ## Scenario packs
 
