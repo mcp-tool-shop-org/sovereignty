@@ -25,10 +25,11 @@ Only the host needs a wallet. Nobody else touches a screen. The game works perfe
 
 ## Security
 
-- Proofs contain hashes only, never wallet seeds
+- Proofs contain hashes and state snapshots, but never wallet seeds
 - The `.sov/` directory is gitignored
 - `sov wallet` warns about Testnet seed reuse on Mainnet
-- Game state is local-only; proofs don't include player names
+- Proofs include player names and game state (scores, positions, promises) -- share only with your play group
+- Only the SHA-256 hash is posted to the ledger; the full proof stays local
 
 ## Why anchor?
 

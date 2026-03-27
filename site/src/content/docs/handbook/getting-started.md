@@ -53,8 +53,8 @@ sov end-round
 
 For the physical version, print the cards and reference sheets from the `assets/print/` directory. You need:
 
-- 20 Event cards
-- 20 Deal cards
+- 28 Event cards (20 core + 8 market-shift for Town Hall)
+- 22 Deal and Voucher cards (12 Deals + 10 Vouchers)
 - A six-sided die
 - Coins (real or tokens)
 

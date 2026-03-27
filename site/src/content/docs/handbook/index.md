@@ -16,5 +16,6 @@ Sovereignty is a board game about trust, trade, and keeping your word. 2–4 pla
 - **[Tiers and Scenarios](/sovereignty/handbook/tiers/)** — Three tiers of complexity and scenario packs
 - **[Diary Mode](/sovereignty/handbook/diary-mode/)** — Optional XRPL Testnet verification
 - **[Reference](/sovereignty/handbook/reference/)** — Full CLI command reference
+- **[Beginners](/sovereignty/handbook/beginners/)** — New to Sovereignty? Start here
 
 [Back to landing page](/sovereignty/)

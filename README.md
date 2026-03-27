@@ -45,19 +45,35 @@ sov new -p Alice -p Bob -p Carol
 ```bash
 sov new --recipe cozy -p ...         # curated vibe (cozy/spicy/market/promise)
 sov new --tier treaty-table -p ...   # pick a tier
+sov new --code "SOV|..." -p ...      # play from a share code
+sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
+sov status                           # show current game state
+sov board                            # show the board layout
+sov recap                            # what happened this round
 sov promise make "I'll help Bob"     # say it out loud
-sov treaty make "pact" --with Bob --stake "2 coins"  # stakes
+sov promise keep "I'll help Bob"     # kept it: +1 Rep
+sov promise break "text"             # broke it: -2 Rep
+sov apologize Bob                    # once per game, pay 1 coin, +1 Rep
+sov offer "2 coins for 1 wood" --to Bob  # make a trade offer
+sov treaty make "pact" --with Bob --stake "2 coins"  # binding treaty
+sov treaty list                      # show your treaties
+sov market                           # show market prices + supply
+sov market buy food                  # buy a resource (Town Hall+)
+sov market sell wood                 # sell a resource (Town Hall+)
+sov vote mvp Alice                   # table votes: mvp/chaos/promise
+sov toast Alice                      # +1 Rep, once per player per game
+sov end-round                        # generate round proof
+sov game-end                         # final scores + Story Points
+sov postcard                         # shareable summary
+sov season-postcard                  # season standings across games
+sov feedback                         # issue-ready play report
 sov scenario list                    # browse scenario packs
 sov scenario code cozy-night -s 42   # generate a share code
 sov scenario lint                    # validate scenario files
-sov new --code "SOV|..." -p ...      # play from a share code
 sov doctor                           # pre-flight check before play night
-sov recap                            # what happened this round
-sov game-end                         # final scores + Story Points
-sov postcard                         # shareable summary
-sov feedback                         # issue-ready play report
-sov season-postcard                  # season standings across games
+sov self-check                       # diagnose your environment
+sov support-bundle                   # diagnostic zip for bug reports
 ```
 
 </details>
@@ -70,11 +86,13 @@ You start with **5 coins** and **3 reputation**. Roll a die, move around
 a 16-space board, and land on spaces that give you choices: trade, help
 someone, take a risk, or draw a card.
 
-**20 Event cards** read like moments: *"Has anyone seen a small leather
+**28 Event cards** read like moments: *"Has anyone seen a small leather
 pouch?"* (Lost Wallet) or *"Nobody saw... right?"* (Found a Shortcut).
+Includes 8 market-shift events for Town Hall games.
 
-**20 Deal cards** force conversation: *"Spot me 2 coins? I'll pay 3 back."*
-or *"I've got your back if you've got mine."*
+**22 Deal & Voucher cards** force conversation: *"Spot me 2 coins? I'll
+pay 3 back."* or *"I've got your back if you've got mine."* Deals set
+goals with deadlines; Vouchers are IOUs you issue to other players.
 
 **The Promise rule:** Once per round, say "I promise..." out loud and
 commit to something. Keep it: +1 reputation. Break it: -2 reputation.
@@ -139,7 +157,7 @@ sovereignty/
   sov_engine/       # Pure game logic (models, rules, serialization, hashing)
   sov_transport/    # Ledger transport (offline + XRPL Testnet)
   sov_cli/          # Typer CLI (the "Round Console")
-  tests/            # 143 tests
+  tests/            # 147 tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
   assets/print/     # Printable cards, player mat, quick reference
 ```

@@ -11,15 +11,33 @@ Sovereignty has three tiers of complexity. Start simple, add depth when ready.
 
 | Tier | Name | What it adds |
 |------|------|-------------|
-| 1 | **Campfire** | Coins, reputation, promises, IOUs |
-| 2 | **Town Hall** | Shared market, resource scarcity, dynamic pricing |
-| 3 | **Treaty Table** | Binding treaties with escrow stakes — promises with teeth |
+| 1 | **Campfire** | Coins, reputation, promises, IOUs, vouchers |
+| 2 | **Town Hall** | Shared market board with supply pools, resource scarcity, dynamic pricing, resource-cost upgrades |
+| 3 | **Treaty Table** | Binding treaties with escrowed stakes — promises with teeth |
 
 Core rules are stable through v1.x. Each tier includes everything from the tiers below it.
 
 ```bash
+sov new --tier campfire -p Alice -p Bob
+sov new --tier town-hall -p Alice -p Bob -p Carol
 sov new --tier treaty-table -p Alice -p Bob -p Carol
 ```
+
+### Market Day (variant)
+
+Market Day is a gentler introduction to resources. It uses a fixed-price market board where prices are always 2 coins and supply never runs out. Use it as a stepping stone between Campfire and Town Hall.
+
+```bash
+sov new --tier market-day -p Alice -p Bob
+```
+
+### Town Hall details
+
+Town Hall adds three resources: **food**, **wood**, and **tools**. A shared market board tracks supply per resource. Prices shift based on scarcity (supply 2 or fewer raises the price by 1) and events. Workshop upgrades cost 2 coins + 1 wood. Builder upgrades cost 3 coins + 1 tools.
+
+### Treaty Table details
+
+Treaties are binding agreements between two players. Both sides put up collateral (coins and/or resources) in escrow. If one side breaks the treaty, the other gets both stakes. If honored, stakes are returned and both gain +1 reputation. Each player can have at most 2 active treaties. Stake caps: 5 coins, 3 total resource units. Breaking a treaty costs -3 reputation.
 
 ## Scenario packs
 
