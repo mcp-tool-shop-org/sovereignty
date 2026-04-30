@@ -1,0 +1,14 @@
+# Dependabot config: keep SHA-pinned third-party Actions fresh.
+# Without this, the SHA pins in .github/workflows/*.yml go stale and we miss
+# upstream security fixes.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "github-actions"

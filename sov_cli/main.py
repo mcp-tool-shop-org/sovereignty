@@ -14,6 +14,7 @@ from rich.panel import Panel
 from rich.table import Table
 
 from sov_cli.errors import (
+    ProofFormatError,
     SovError,
     anchor_error,
     anchor_mismatch_error,
@@ -203,6 +204,7 @@ def _load_game() -> tuple[GameState, GameRng] | None:
     state.turn_in_round = data["turn_in_round"]
     state.game_over = data["game_over"]
     state.winner = data["winner"]
+    state.log = data.get("log", [])
     state.market.food = data["market"]["food"]
     state.market.wood = data["market"]["wood"]
     state.market.tools = data["market"]["tools"]
@@ -590,7 +592,7 @@ def tutorial() -> None:
     from sov_engine.hashing import make_round_proof
 
     proof = make_round_proof(state)
-    h = proof["state_hash"][:16]
+    h = proof["envelope_hash"][:16]
     console.print(f"  Receipt: [dim]{h}...[/dim]")
     console.print("  [dim]This hash is your game's fingerprint.")
     console.print("  If anyone changes the score later, the hash won't match.[/dim]\n")
@@ -722,7 +724,7 @@ def end_round(
 
     console.print(Panel(
         f"Round: {proof['round']}\n"
-        f"Hash: [bold]{proof['state_hash']}[/bold]\n"
+        f"Hash: [bold]{proof['envelope_hash']}[/bold]\n"
         f"File: {path}",
         title="Round Proof",
     ))
@@ -734,7 +736,10 @@ def verify(
     tx: Annotated[str, typer.Option("--tx", help="XRPL tx hash to verify against")] = "",
 ) -> None:
     """Verify a round proof file, optionally against an anchored tx."""
-    valid, message = verify_proof(proof_file)
+    try:
+        valid, message = verify_proof(proof_file)
+    except ProofFormatError as e:
+        _fail(proof_invalid_error(str(e)))
     if valid:
         console.print(f"  [green]Local proof valid.[/green] {message}")
     else:
@@ -742,7 +747,7 @@ def verify(
 
     if tx:
         proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
-        expected_hash = proof_data["state_hash"]
+        expected_hash = proof_data["envelope_hash"]
         try:
             from sov_transport.xrpl_testnet import XRPLTestnetTransport
 
@@ -791,9 +796,10 @@ def anchor(
 
     # Load proof
     proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
-    state_hash = proof_data["state_hash"]
+    envelope_hash = proof_data["envelope_hash"]
     rnd = proof_data["round"]
     seed_val = proof_data.get("rng_seed", "?")
+    ruleset = proof_data.get("ruleset", "campfire_v1")
 
     # Get wallet seed
     seed: str | None = None
@@ -805,9 +811,9 @@ def anchor(
     if not seed:
         _fail(no_wallet_error(seed_env))
 
-    # Build the memo
+    # Build the memo (ruleset matches the proof, not hardcoded campfire)
     game_id = f"s{seed_val}"
-    memo = f"SOV|campfire_v1|{game_id}|r{rnd}|sha256:{state_hash}"
+    memo = f"SOV|{ruleset}|{game_id}|r{rnd}|sha256:{envelope_hash}"
 
     console.print(f"\n  Anchoring Round {rnd}...")
     console.print(f"  [dim]{memo}[/dim]\n")
@@ -816,13 +822,13 @@ def anchor(
         from sov_transport.xrpl_testnet import XRPLTestnetTransport
 
         transport = XRPLTestnetTransport()
-        txid = transport.anchor(state_hash, memo, seed)
+        txid = transport.anchor(envelope_hash, memo, seed)
 
         explorer = f"https://testnet.xrpl.org/transactions/{txid}"
         console.print(Panel(
             f"  Round {rnd} anchored on XRPL Testnet.\n\n"
             f"  TX: [bold]{txid}[/bold]\n"
-            f"  Hash: [dim]{state_hash}[/dim]\n"
+            f"  Hash: [dim]{envelope_hash}[/dim]\n"
             f"  Explorer: [dim]{explorer}[/dim]\n\n"
             f"  [dim]Verify later: sov verify {proof_file} --tx {txid}[/dim]",
             title="Anchored",
@@ -884,7 +890,7 @@ def postcard(
     proofs = sorted(PROOFS_DIR.glob("round_*.proof.json"))
     if proofs:
         latest = json.loads(proofs[-1].read_text(encoding="utf-8"))
-        h = latest["state_hash"]
+        h = latest["envelope_hash"]
         proof_hash = f"[bold]{h}[/bold]"
 
         anchor_file = PROOFS_DIR / "anchors.json"
@@ -1485,7 +1491,7 @@ def game_end(
     proof_path = out_dir / "final.proof.json"
     proof_content = canonical_json(proof)
     proof_path.write_text(proof_content, encoding="utf-8", newline="\n")
-    h = proof["state_hash"]
+    h = proof["envelope_hash"]
     console.print(f"\n  Final proof: [dim]{h}[/dim]")
     console.print(f"  Saved to: [dim]{proof_path}[/dim]")
 
@@ -1497,7 +1503,7 @@ def game_end(
 
         seed_val = state.config.seed
         game_id = f"s{seed_val}"
-        memo = f"SOV|{state.config.ruleset}|{game_id}|FINAL|{proof['state_hash']}"
+        memo = f"SOV|{state.config.ruleset}|{game_id}|FINAL|sha256:{proof['envelope_hash']}"
 
         wallet_file = SAVE_DIR / "wallet_seed.txt"
         wallet_seed: str | None = None
@@ -1518,7 +1524,7 @@ def game_end(
                 from sov_transport.xrpl_testnet import XRPLTestnetTransport
 
                 transport = XRPLTestnetTransport()
-                txid = transport.anchor(proof["state_hash"], memo, wallet_seed)
+                txid = transport.anchor(proof["envelope_hash"], memo, wallet_seed)
                 explorer = f"https://testnet.xrpl.org/transactions/{txid}"
                 console.print(f"  [green]Anchored.[/green] TX: [dim]{txid}[/dim]")
                 console.print(f"  [dim]{explorer}[/dim]")
@@ -2396,7 +2402,7 @@ def feedback() -> None:
     proofs = sorted(PROOFS_DIR.glob("*.proof.json"))
     if proofs:
         latest = json.loads(proofs[-1].read_text(encoding="utf-8"))
-        proof_line = f"`sha256:{latest['state_hash']}`"
+        proof_line = f"`{latest['envelope_hash']}`"
 
         anchor_file = PROOFS_DIR / "anchors.json"
         if anchor_file.exists():

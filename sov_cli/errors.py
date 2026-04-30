@@ -5,6 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 
+class ProofFormatError(Exception):
+    """Raised when a proof file uses an unsupported format version.
+
+    As of sovereignty v2.0.0, only proof_version 2 is supported. v1 proofs
+    (which only hashed the embedded ``state`` and left envelope metadata
+    unsigned) cannot be verified by this binary.
+    """
+
+
 @dataclass
 class SovError:
     """Structured error shape for user-facing messages.

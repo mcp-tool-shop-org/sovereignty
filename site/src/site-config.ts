@@ -6,7 +6,7 @@ export const config: SiteConfig = {
   logoBadge: 'SV',
   brandName: 'Sovereignty',
   repoUrl: 'https://github.com/mcp-tool-shop-org/sovereignty',
-  pypiUrl: 'https://pypi.org/project/sovereignty-game/',
+  npmUrl: 'https://pypi.org/project/sovereignty-game/',
   footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {

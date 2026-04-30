@@ -102,6 +102,7 @@ def game_state_snapshot(state: GameState) -> dict[str, Any]:
         "current_player_index": state.current_player_index,
         "current_round": state.current_round,
         "game_over": state.game_over,
+        "log": list(state.log),
         "market": {
             "food": state.market.food,
             "tools": state.market.tools,

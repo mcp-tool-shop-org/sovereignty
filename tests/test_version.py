@@ -16,9 +16,8 @@ def _get_version() -> str:
 
 def test_version_is_semver():
     ver = _get_version()
-    parts = ver.split(".")
-    assert len(parts) >= 3, f"Expected semver, got {ver}"
-    assert all(p.isdigit() for p in parts[:3])
+    pep440 = re.match(r"^(\d+)\.(\d+)\.(\d+)(?:(?:a|b|rc)\d+|\.dev\d+|\.post\d+)?$", ver)
+    assert pep440, f"Expected PEP 440 version (X.Y.Z[aN|bN|rcN|.devN|.postN]), got {ver}"
 
 
 def test_version_at_least_1_0_0():

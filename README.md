@@ -198,9 +198,9 @@ See [SECURITY.md](SECURITY.md).
 |--------|-----------|
 | Seed leakage via proofs | Proofs contain hashes only, never seeds |
 | Seed in git | `.sov/` gitignored; `sov wallet` warns |
-| Game state manipulation | Round proofs hash full state; `sov verify` detects tampering |
+| Game state manipulation | Round proofs `envelope_hash` covers `game_id`, `round`, `ruleset`, `rng_seed`, `timestamp`, `players`, and `state`. `sov verify` detects tampering across the full envelope. Proof format v1 is no longer supported in v2.0.0+. |
 | XRPL anchor spoofing | Proof hash anchored on-chain; mismatch detection in verify |
-| Player name privacy | Game state is local-only; proofs don't include names |
+| Player name privacy | Player names ARE included in proofs (top-level `players` list and inside player snapshots). For private play, do not publish `proof.json` or share postcards. |
 
 ## License
 
