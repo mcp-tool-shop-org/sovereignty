@@ -3,6 +3,32 @@
 Sovereignty is a board game that optionally connects to the XRPL Testnet.
 Here's what to know about keeping things safe.
 
+## Found a security issue?
+
+Please report it — we'd rather hear it from you than read about it later.
+
+**Preferred:** open a GitHub issue with the `security` label so the fix is
+public and traceable:
+
+```bash
+gh issue create --label security --title "..." --body "..."
+```
+
+For anything you'd rather not file in the open (e.g. a working exploit
+against a player who has not yet upgraded), email the maintainer at
+`64996768+mcp-tool-shop@users.noreply.github.com` and we'll coordinate a
+private fix and disclosure.
+
+When reporting, please include:
+
+- The version you're on (`sov --version` or `pip show sovereignty-game`).
+- The output of `sov support-bundle --json` (seeds redacted by default).
+- Repro steps — the smaller the better.
+
+This is a board game, not critical infrastructure. We won't make you wait
+90 days for a patch — responsible disclosure is appreciated, fast turnaround
+is the norm.
+
 ## Wallet seeds
 
 If you use Diary Mode (`sov wallet`), the CLI creates a Testnet wallet
@@ -100,8 +126,5 @@ JSON output (with seeds redacted) rather than a raw terminal screenshot.
 
 ## Reporting issues
 
-If you find a security issue in the game engine, CLI, or XRPL transport,
-open a GitHub issue or email 64996768+mcp-tool-shop@users.noreply.github.com.
-
-This is a board game, not critical infrastructure. Responsible disclosure
-is appreciated but we won't make you wait 90 days for a patch.
+See [Found a security issue?](#found-a-security-issue) at the top of this
+document.

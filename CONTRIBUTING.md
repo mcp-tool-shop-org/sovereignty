@@ -3,6 +3,66 @@
 The easiest way to contribute is to add a card. You don't need to touch
 the engine, the CLI, or any infrastructure.
 
+## Dev environment in 5 commands
+
+```bash
+git clone https://github.com/mcp-tool-shop-org/sovereignty.git
+cd sovereignty
+uv sync --frozen --dev
+uv run pytest tests/ -v
+uv run sov tutorial
+```
+
+If `uv` isn't installed, get it from [astral.sh/uv](https://docs.astral.sh/uv/).
+The `--frozen` flag matches CI exactly so you don't get version drift.
+
+## Where things live (domain ownership)
+
+The repo is split into a small number of domains. PRs that stay in one
+domain are easy to review; PRs that touch many are usually the symptom of
+a missing seam somewhere.
+
+| Domain | Path | What lives here |
+|--------|------|-----------------|
+| Engine | `sov_engine/` | Pure game logic — models, rules, serialization, hashing. No I/O. |
+| Transport | `sov_transport/` | XRPL anchoring + offline ledger. The only network code. |
+| CLI | `sov_cli/` | Typer commands, console output, file I/O glue. |
+| Tests | `tests/` | One test module per code module. Mirrors the source tree. |
+| ci-docs | root `*.md`, `docs/`, `.github/`, lint configs | Docs, issue/PR templates, CI workflow, lint config. |
+| Frontend | `site/` | Astro landing page + Starlight handbook content. |
+
+Atomic file writes (game state, proofs, season files) go through
+`sov_engine/io_utils.py::atomic_write_text` — don't re-implement the
+tmp-file-then-`os.replace` dance in callers.
+
+## Running just a slice of the tests
+
+The full suite is fast (under a minute), but during iteration you usually
+only need one slice:
+
+```bash
+# Engine only — pure logic, no XRPL
+uv run pytest tests/test_engine_*.py tests/test_models.py tests/test_serialize.py -v
+
+# Transport only — XRPL + offline ledger
+uv run pytest tests/test_transport_*.py tests/test_xrpl_*.py -v
+
+# Everything (what CI runs)
+uv run pytest tests/ -v -W error::DeprecationWarning -W error::PendingDeprecationWarning
+```
+
+Match patterns to your actual test filenames; the root names above are
+the convention but not all modules use them yet.
+
+## Dogfood swarms
+
+Some of the larger refactors (the v2.0.0rc1 health pass, the structured
+error work) ran as parallel-agent "dogfood swarms" rather than single PRs.
+The convention is documented in the maintainer's memory directory; for
+contributors the relevant takeaway is: if your change touches more than
+one domain at once, please split it into one PR per domain so the swarm
+playbook can review them independently.
+
 ## Adding an Event card
 
 Events live in `sov_engine/content.py` inside `campfire_events()`.
@@ -107,15 +167,12 @@ not like a rulebook.
 The `flavor` field is where personality lives. The `description` field
 can be more mechanical, but still keep it conversational.
 
-## Running tests
+## Running the full gate
 
-Install dependencies the same way CI does (locked versions, no drift):
-
-```bash
-uv sync --frozen --dev
-```
-
-Then run the gate locally:
+The dev-env section above gets you set up; this is the gate every PR
+must pass. It's also what `bash scripts/verify.sh` runs (currently lint
++ tests; the format and mypy steps are CI-only until parking F-022 is
+resolved):
 
 ```bash
 uv run pytest tests/ -v -W error::DeprecationWarning -W error::PendingDeprecationWarning

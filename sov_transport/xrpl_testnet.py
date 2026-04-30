@@ -46,6 +46,34 @@ def _from_hex(hex_str: str) -> str:
         return ""
 
 
+def _classify_submit_error(exc: BaseException) -> str:
+    """Classify a submit_and_wait exception into a stable, grep-able reason token.
+
+    Returns one of: ``"network"``, ``"ledger_not_found"``, ``"signing_failed"``,
+    ``"timeout"``, ``"unknown"``. The token is stable across releases so
+    operators can grep logs (``reason=ledger_not_found``) and dashboards can
+    aggregate by failure mode.
+    """
+    name = type(exc).__name__.lower()
+    msg = str(exc).lower()
+    if "ledger" in name or "ledger_not_found" in msg or "ledgernotfound" in name:
+        return "ledger_not_found"
+    if "sign" in name or "wallet" in name or "signing" in msg:
+        return "signing_failed"
+    if "timeout" in name or "timeout" in msg or "timed out" in msg:
+        return "timeout"
+    if (
+        "connection" in name
+        or "network" in name
+        or "http" in name
+        or "connect" in msg
+        or "refused" in msg
+        or "unreachable" in msg
+    ):
+        return "network"
+    return "unknown"
+
+
 def _extract_memos(result: dict[str, Any]) -> list[Any]:
     """Extract the Memos list from an xrpl-py Tx response result.
 
@@ -118,7 +146,17 @@ class XRPLTestnetTransport(LedgerTransport):
         self.url = url
 
     def anchor(self, round_hash: str, memo: str, signer: str) -> str:
-        """Post a self-payment with the round hash as a memo.
+        """Anchor a round proof hash on XRPL Testnet for public auditability.
+
+        When to use: call this once per completed round to publish the round's
+        SHA-256 proof onto XRPL Testnet. The returned testnet tx hash becomes
+        part of the round's anchor record and lets anyone (including the
+        operator, players, or auditors) cross-check the round on
+        https://livenet.xrpl.org via the testnet explorer.
+
+        Implementation: posts a 1-drop self-payment whose memo carries the
+        SOV-grammar string. Bounded retry with exponential backoff handles
+        transient testnet glitches; the call gives up after ~30s.
 
         Args:
             round_hash: The SHA-256 hash of the round proof.
@@ -131,13 +169,17 @@ class XRPLTestnetTransport(LedgerTransport):
                 avoid leaking the seed via traceback locals or chained causes.
 
         Returns:
-            The transaction hash.
+            The XRPL transaction hash (a hex string suitable for explorer
+            lookup at https://livenet.xrpl.org).
 
         Raises:
-            ValueError: If the memo exceeds 1024 UTF-8 bytes.
+            ValueError: If the memo exceeds 1024 UTF-8 bytes. Operator action:
+                shorten the memo and retry.
             TransportError: If the network call exhausts retries within the
                 deadline, the response indicates failure, or the response
-                shape is missing the expected ``hash`` field.
+                shape is missing the expected ``hash`` field. The message
+                explains whether to retry, check XRPL testnet status, or
+                file an issue.
         """
         # Validate memo size BEFORE the secret-scrub try/except so the caller
         # gets a clear, untransformed ValueError on this user-input mistake.
@@ -161,8 +203,9 @@ class XRPLTestnetTransport(LedgerTransport):
 
             # Log address (PUBLIC) — never the seed.
             logger.info(
-                "anchor: submitting payment from %s",
+                "anchor.submit account=%s url=%s",
                 repr(wallet.classic_address),
+                self.url,
             )
 
             tx_memo = Memo(
@@ -184,14 +227,17 @@ class XRPLTestnetTransport(LedgerTransport):
             deadline = time.monotonic() + _SUBMIT_DEADLINE_SECONDS
             response = None
             last_exc: Exception | None = None
+            attempts_made = 0
             for attempt in range(_SUBMIT_MAX_ATTEMPTS):
                 if time.monotonic() >= deadline:
                     break
+                attempts_made = attempt + 1
                 try:
                     response = submit_and_wait(payment, client, wallet)
                     break
                 except Exception as submit_exc:
                     last_exc = submit_exc
+                    reason = _classify_submit_error(submit_exc)
                     if attempt + 1 >= _SUBMIT_MAX_ATTEMPTS:
                         break
                     backoff = _SUBMIT_BACKOFF_SECONDS[
@@ -201,19 +247,43 @@ class XRPLTestnetTransport(LedgerTransport):
                     if remaining <= 0:
                         break
                     sleep_for = min(backoff, remaining)
+                    # Stable structured WARNING — operators can grep
+                    # `anchor.retry reason=ledger_not_found` to triage.
                     logger.warning(
-                        "anchor: submit attempt %d/%d failed (%s); retrying in %.1fs",
+                        "anchor.retry attempt=%d/%d reason=%s exc=%s "
+                        "remaining_s=%.1f sleep_s=%.1f "
+                        "(transient error; retrying after %.1fs)",
                         attempt + 1,
                         _SUBMIT_MAX_ATTEMPTS,
+                        reason,
                         type(submit_exc).__name__,
+                        remaining,
+                        sleep_for,
                         sleep_for,
                     )
                     time.sleep(sleep_for)
 
             if response is None:
                 # All attempts exhausted (or deadline) without a response.
-                # Re-raise into the secret-scrub wrapper below.
-                raise TransportError("submit_and_wait exhausted retries") from last_exc
+                # Build a concrete operator-actionable message and re-raise
+                # into the secret-scrub wrapper below.
+                last_reason = _classify_submit_error(last_exc) if last_exc else "deadline"
+                last_exc_name = type(last_exc).__name__ if last_exc else "Deadline"
+                logger.error(
+                    "anchor.exhausted attempts=%d deadline_s=%.1f reason=%s exc=%s",
+                    attempts_made,
+                    _SUBMIT_DEADLINE_SECONDS,
+                    last_reason,
+                    last_exc_name,
+                )
+                raise TransportError(
+                    f"Anchor failed after {attempts_made} attempts within "
+                    f"{_SUBMIT_DEADLINE_SECONDS:.0f}s deadline "
+                    f"(last reason: {last_reason}, last error: {last_exc_name}). "
+                    "Check XRPL testnet status at "
+                    "https://livenet.xrpl.org/network/validators "
+                    "then re-run `sov anchor` to retry."
+                ) from last_exc
 
             # Guarded extraction: check is_successful() before trusting the
             # result envelope, and use .get() instead of [] so a missing
@@ -228,16 +298,46 @@ class XRPLTestnetTransport(LedgerTransport):
                     # outcome — fall through to the result-shape check.
                     is_ok = True
             if not is_ok:
-                raise TransportError("submit_and_wait response not successful")
+                # Try to surface the engine_result if present — it's the most
+                # actionable hint for an operator (tecPATH_DRY, tefBAD_AUTH,
+                # etc.) without leaking secrets.
+                result_for_hint = getattr(response, "result", None)
+                engine_hint = ""
+                if isinstance(result_for_hint, dict):
+                    er = result_for_hint.get("engine_result")
+                    if isinstance(er, str) and er:
+                        engine_hint = f" (engine_result: {er})"
+                raise TransportError(
+                    "XRPL reported the submission was not successful"
+                    f"{engine_hint}. This usually means a transaction-level "
+                    "rejection (insufficient balance, bad auth, or path issue). "
+                    "Check the wallet on https://livenet.xrpl.org and retry "
+                    "after fixing the underlying cause."
+                )
 
             result = getattr(response, "result", None)
             if not isinstance(result, dict):
-                raise TransportError("submit_and_wait response missing result dict")
+                raise TransportError(
+                    "XRPL submit_and_wait response was successful but missing "
+                    f"the expected result dict (got {type(result).__name__}). "
+                    "This is unexpected; please file an issue at "
+                    "https://github.com/mcp-tool-shop-org/sovereignty/issues "
+                    "with the xrpl-py version you have installed."
+                )
             tx_hash = result.get("hash")
             if not isinstance(tx_hash, str) or not tx_hash:
-                raise TransportError("submit_and_wait response missing 'hash' field")
+                # Sanitize the response shape (keys only, no values) so we can
+                # share it in the error without leaking transaction internals.
+                shape_keys = sorted(result.keys()) if result else []
+                raise TransportError(
+                    "XRPL response was successful but missing 'hash' field. "
+                    f"Response shape (keys only): {shape_keys}. "
+                    "This is unexpected; please file an issue at "
+                    "https://github.com/mcp-tool-shop-org/sovereignty/issues "
+                    "with this shape and your xrpl-py version."
+                )
 
-            logger.info("anchor: submit succeeded tx=%s", tx_hash)
+            logger.info("anchor.success tx=%s attempts=%d", tx_hash, attempts_made)
             return tx_hash
         except Exception as e:
             # Re-raise the same exception type with a sanitized message that
@@ -249,7 +349,10 @@ class XRPLTestnetTransport(LedgerTransport):
                 f"{type(e).__name__} in XRPLTestnetTransport.anchor "
                 "(details suppressed to protect signer secret)"
             )
-            logger.error("anchor: terminal failure (%s)", type(e).__name__)
+            logger.error(
+                "anchor.terminal exc=%s (details suppressed to protect signer secret)",
+                type(e).__name__,
+            )
             try:
                 raise type(e)(sanitized) from None
             except Exception:
@@ -269,7 +372,14 @@ class XRPLTestnetTransport(LedgerTransport):
             signer = ""  # noqa: F841 — intentional scrub of caller's seed
 
     def verify(self, txid: str, expected_hash: str) -> bool:
-        """Look up a transaction and check that its memo encodes the expected hash.
+        """Check whether an XRPL tx contains a memo encoding the expected hash.
+
+        When to use: call this to audit a previously-anchored round. Given the
+        ``txid`` returned by ``anchor()`` and the SHA-256 hash you expect to
+        find inside, this looks up the transaction on XRPL Testnet and returns
+        True if a matching ``sha256:<expected_hash>`` field is present.
+        Returns False if the tx exists but has no matching memo (e.g. it was
+        anchored by a different round, or the proof was tampered with).
 
         Performs a STRUCTURED parse of the SOV memo grammar
         (e.g. ``SOV|campfire_v1|s42|r1|sha256:<hash>``): splits the memo on
@@ -280,12 +390,20 @@ class XRPLTestnetTransport(LedgerTransport):
         appearing inside an unrelated memo).
 
         Args:
-            txid: The XRPL transaction hash.
+            txid: The XRPL transaction hash (as returned by ``anchor()``).
             expected_hash: The SHA-256 hash we expect in the memo. Must be
                 non-empty.
 
         Returns:
-            True if any memo on the transaction encodes the expected hash.
+            True if any memo on the transaction encodes the expected hash;
+            False otherwise (including the case where the tx exists but has
+            no matching memo).
+
+        Raises:
+            ValueError: If ``expected_hash`` is empty. Operator action: pass
+                a non-empty hash.
+            RuntimeError: If xrpl-py is not installed. Install with
+                ``pip install 'sovereignty-game[xrpl]'``.
         """
         if not expected_hash:
             raise ValueError("expected_hash must be non-empty")
@@ -353,7 +471,18 @@ class XRPLTestnetTransport(LedgerTransport):
 
 
 def fund_testnet_wallet() -> tuple[str, str]:
-    """Create and fund a new XRPL Testnet wallet. Returns (address, seed).
+    """Generate a new testnet wallet funded by the public XRPL faucet.
+
+    When to use: call this once during first-time testnet onboarding to mint
+    a fresh wallet you control. For repeat play (every other round after
+    onboarding), DO NOT call this again — instead, store the seed returned
+    here via the OS keychain or set the ``XRPL_SEED`` env var, then reuse
+    that seed across runs. Funding the faucet repeatedly wastes testnet
+    capacity and creates orphan wallets.
+
+    Returns:
+        A ``(address, seed)`` tuple. The ``seed`` is a SECRET — see security
+        note below.
 
     SECURITY: The returned seed is a SECRET. Do not log, print, or transmit.
     Store via the OS keychain or set the ``XRPL_SEED`` env var. Treat the

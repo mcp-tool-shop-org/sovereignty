@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Handbook
+    url: https://mcp-tool-shop-org.github.io/sovereignty/handbook/
+    about: Rules, CLI reference, Diary Mode, and beginner walkthrough.

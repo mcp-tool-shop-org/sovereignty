@@ -37,6 +37,7 @@ from sov_cli.errors import (
     wallet_error,
 )
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
+from sov_engine.io_utils import atomic_write_text
 from sov_engine.models import (
     RESOURCE_NAMES,
     GameState,
@@ -171,23 +172,11 @@ PROOFS_DIR = SAVE_DIR / "proofs"
 SUPPORTED_STATE_SCHEMA_VERSION = 1
 
 
-def _atomic_write(path: Path, content: str) -> None:
-    """Write content to path atomically (.tmp + os.replace).
-
-    Crash/disk-full mid-write leaves the .tmp behind, NOT a half-written
-    target file. Caller is responsible for any concurrent-writer locking;
-    this helper only addresses single-process write atomicity.
-    """
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(content, encoding="utf-8", newline="\n")
-    os.replace(tmp, path)
-
-
 def _save_state(state: GameState) -> None:
     """Persist game state to disk atomically."""
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
     snapshot = game_state_snapshot(state)
-    _atomic_write(STATE_FILE, canonical_json(snapshot))
+    atomic_write_text(STATE_FILE, canonical_json(snapshot))
     logger.info("save_state path=%s round=%d", STATE_FILE, state.current_round)
 
 
@@ -208,11 +197,18 @@ def _record_anchor(round_key: int | str, txid: str) -> None:
                 anchors = {}
         except (json.JSONDecodeError, OSError) as e:
             # Don't lose the new txid because the prior file was corrupt;
-            # log and overwrite.
-            logger.warning("anchors.json unreadable, overwriting: %s", e)
+            # log and overwrite. Non-fatal — the new anchor still gets
+            # recorded; only prior entries are lost.
+            logger.warning(
+                "anchors.write.recover path=%s exc=%s detail=%s "
+                "(overwriting unreadable anchors.json; previous tx history lost)",
+                anchor_file,
+                type(e).__name__,
+                e,
+            )
             anchors = {}
     anchors[str(round_key)] = txid
-    _atomic_write(
+    atomic_write_text(
         anchor_file,
         json.dumps(anchors, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
     )
@@ -239,7 +235,13 @@ def _load_game() -> tuple[GameState, GameRng] | None:
         ValueError,
         OSError,
     ) as e:
-        logger.error("load_game failed: %s: %s", type(e).__name__, e)
+        # Structured log for grep-ability; user gets a humanized SovError next.
+        logger.error(
+            "load_game.failed exc_type=%s state_file=%s detail=%s",
+            type(e).__name__,
+            STATE_FILE,
+            e,
+        )
         _fail(state_corrupt_error(f"{type(e).__name__}: {e}"))
 
 
@@ -493,14 +495,36 @@ def doctor(
     # 4. Wallet / Diary Mode
     wallet_file = SAVE_DIR / "wallet_seed.txt"
     if wallet_file.exists():
-        checks.append(("ok", "Wallet configured (Diary Mode ready)", ""))
+        checks.append(
+            (
+                "ok",
+                "Wallet seed found at .sov/wallet_seed.txt (Diary Mode ready)",
+                "",
+            )
+        )
     else:
         import os
 
         if os.environ.get("XRPL_SEED"):
-            checks.append(("ok", "Wallet configured via XRPL_SEED env var", ""))
+            checks.append(
+                (
+                    "ok",
+                    "Wallet configured via XRPL_SEED env var (Diary Mode ready)",
+                    "",
+                )
+            )
         else:
-            checks.append(("info", "No wallet set up (Diary Mode is optional)", "Run: sov wallet"))
+            checks.append(
+                (
+                    "info",
+                    "No wallet set up — Diary Mode (XRPL anchoring) is disabled",
+                    (
+                        "Optional. To enable: set XRPL_SEED in your environment, "
+                        "or run `sov wallet` to generate a Testnet seed and store "
+                        "it at .sov/wallet_seed.txt (gitignored)."
+                    ),
+                )
+            )
 
     # 5. Proofs
     PROOFS_DIR.mkdir(parents=True, exist_ok=True)
@@ -592,12 +616,26 @@ def _collect_checks() -> list[tuple[str, str, str]]:
 
 
 def _print_checks(checks: list[tuple[str, str, str]]) -> None:
-    """Pretty-print diagnostic checks to console."""
+    """Pretty-print diagnostic checks to console.
+
+    When any check is FAIL, append a one-line nudge toward `sov support-bundle`
+    so the user has a clear next step (file a bug with the bundle attached).
+    """
     icons = {"ok": "[green]OK[/green]", "fail": "[red]FAIL[/red]", "info": "[dim]--[/dim]"}
     console.print()
+    fail_count = 0
     for status, label, detail in checks:
         icon = icons.get(status, "[dim]--[/dim]")
         console.print(f"  {icon}  [bold]{label}[/bold]  {detail}")
+        if status == "fail":
+            fail_count += 1
+    if fail_count:
+        plural = "s" if fail_count != 1 else ""
+        console.print(
+            f"\n  [yellow]{fail_count} check{plural} failed.[/yellow]"
+            " [dim]Run `sov support-bundle` to capture diagnostics, then "
+            "open an issue at https://github.com/mcp-tool-shop-org/sovereignty/issues.[/dim]"
+        )
     console.print()
 
 
@@ -675,7 +713,16 @@ def support_bundle(
                 data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
                 zf.writestr("game_state.json", json.dumps(data, indent=2))
             except Exception as exc:
-                logger.warning("support-bundle could not read game_state: %s", exc)
+                # Non-fatal: bundle still produced, just with a placeholder
+                # game_state.json. Useful diagnostic for the maintainer who
+                # opens the bundle later.
+                logger.warning(
+                    "support_bundle.read_state.failed path=%s exc=%s detail=%s "
+                    "(bundle still written; game_state.json contains placeholder)",
+                    STATE_FILE,
+                    type(exc).__name__,
+                    exc,
+                )
                 zf.writestr("game_state.json", "(could not read)")
 
         # 3. State file listing (names only, no content)
@@ -706,7 +753,15 @@ def support_bundle(
         return
 
     console.print(f"  [green]Bundle written:[/green] {bundle_path}")
-    console.print("  [dim]Attach this file to your GitHub issue.[/dim]")
+    console.print(
+        "  [dim]Next: open an issue at "
+        "https://github.com/mcp-tool-shop-org/sovereignty/issues "
+        "and attach this file.[/dim]"
+    )
+    console.print(
+        "  [dim]The bundle contains: self-check, sanitized game state "
+        "(no wallet seeds), file listing, proof count, environment info.[/dim]"
+    )
 
 
 @app.command()
@@ -773,7 +828,7 @@ def new(
 
     # Save seed for reloading
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
-    _atomic_write(RNG_SEED_FILE, str(seed))
+    atomic_write_text(RNG_SEED_FILE, str(seed))
     _save_state(state)
 
     console.print(
@@ -808,7 +863,7 @@ def tutorial() -> None:
     # Set up a 2-player demo game
     state, rng = new_game(seed=1, player_names=["You", "Friend"])
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
-    _atomic_write(RNG_SEED_FILE, "1")
+    atomic_write_text(RNG_SEED_FILE, "1")
 
     console.print("\n  You and Friend sit down with 5 coins and 3 reputation each.")
     console.print("  [dim]Goal: be the first to reach 20 coins (Prosperity).[/dim]\n")
@@ -1089,7 +1144,7 @@ def anchor(
         # Persist txid so postcard / feedback can surface the explorer link
         # in future invocations (the anchor receipt was previously read-only).
         _record_anchor(rnd, txid)
-        logger.info("anchor success round=%s txid=%s", rnd, txid)
+        logger.info("anchor.success round=%s txid=%s", rnd, txid)
 
         explorer = f"https://testnet.xrpl.org/transactions/{txid}"
         console.print(
@@ -1103,10 +1158,21 @@ def anchor(
             )
         )
     except RuntimeError as e:
-        logger.error("anchor failed (RuntimeError): %s", e)
+        # Transport-level failure (network/server). Game state is unaffected.
+        logger.error(
+            "anchor.failed round=%s exc=RuntimeError detail=%s "
+            "(non-fatal: re-run `sov anchor` to retry)",
+            rnd,
+            e,
+        )
         _fail(anchor_error(str(e)))
     except Exception as e:
-        logger.error("anchor failed (%s): %s", type(e).__name__, e)
+        logger.error(
+            "anchor.failed round=%s exc=%s detail=%s (non-fatal: re-run `sov anchor` to retry)",
+            rnd,
+            type(e).__name__,
+            e,
+        )
         _fail(anchor_error(str(e)))
 
 
@@ -1657,7 +1723,7 @@ def _update_season(
         season["standings"][name] = season["standings"].get(name, 0) + total
 
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
-    _atomic_write(
+    atomic_write_text(
         SEASON_FILE,
         json.dumps(season, indent=2, ensure_ascii=False) + "\n",
     )
@@ -1801,7 +1867,12 @@ def game_end(
 
         if not wallet_seed:
             console.print(
-                "\n  [yellow]No wallet seed found for anchoring.[/yellow]\n  Create one: sov wallet"
+                "\n  [yellow]No wallet seed found for anchoring.[/yellow]"
+                "\n  [dim]Pick one of:[/dim]"
+                "\n  [dim]  - Generate a Testnet wallet:  sov wallet[/dim]"
+                "\n  [dim]  - Set XRPL_SEED in your environment[/dim]"
+                "\n  [dim]  - Save a seed at .sov/wallet_seed.txt[/dim]"
+                "\n  [dim]The final proof is already saved locally — anchoring is optional.[/dim]"
             )
         else:
             console.print("\n  Anchoring FINAL proof...")
@@ -1812,13 +1883,18 @@ def game_end(
                 transport = XRPLTestnetTransport()
                 txid = transport.anchor(proof["envelope_hash"], memo, wallet_seed)
                 _record_anchor("FINAL", txid)
-                logger.info("anchor success round=FINAL txid=%s", txid)
+                logger.info("anchor.success round=FINAL txid=%s", txid)
                 explorer = f"https://testnet.xrpl.org/transactions/{txid}"
                 console.print(f"  [green]Anchored.[/green] TX: [dim]{txid}[/dim]")
                 console.print(f"  [dim]{explorer}[/dim]")
             except Exception as e:
+                # Final-proof anchor failed; the proof file is still saved
+                # locally and the season was already recorded. Operator can
+                # retry with `sov anchor .sov/proofs/final.proof.json`.
                 logger.error(
-                    "FINAL anchor failed (%s): %s",
+                    "anchor.failed round=FINAL exc=%s detail=%s "
+                    "(non-fatal: final proof saved locally; retry with "
+                    "`sov anchor .sov/proofs/final.proof.json`)",
                     type(e).__name__,
                     e,
                 )

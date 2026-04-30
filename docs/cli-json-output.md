@@ -1,10 +1,71 @@
 # CLI JSON Output Schema
 
+## Why JSON output?
+
+Bug reports written as terminal screenshots are great for vibes and
+terrible for triage. Versions get cropped, terminal themes hide red text,
+and Unicode glyphs get mangled in copy-paste. The `--json` flag fixes
+that: it produces a single compact envelope that captures the same
+diagnostic data in a shape a human can read, a script can parse, and a
+maintainer can replay.
+
 The diagnostic commands `sov doctor`, `sov self-check`, and
-`sov support-bundle` accept a `--json` flag that emits a machine-readable
-envelope on stdout. This document is the **canonical schema** — both the CLI
-implementation (engine domain) and any consumer (CI, incident-response
-runbooks, log shippers) MUST agree on this shape.
+`sov support-bundle` all accept `--json` and emit this envelope on stdout.
+The default output (no flag) is unchanged — pretty rich-formatted text
+for humans at the table.
+
+## Worked example: `sov self-check --json`
+
+Pipe it through `jq` to see the shape:
+
+```bash
+$ sov self-check --json | jq .
+{
+  "timestamp": "2026-04-30T12:34:56Z",
+  "command": "sov self-check",
+  "status": "ok",
+  "fields": [
+    {
+      "name": "python_version",
+      "status": "ok",
+      "value": "3.12.4",
+      "message": "Python 3.12.4 detected"
+    },
+    {
+      "name": "sov_version",
+      "status": "ok",
+      "value": "2.0.0rc1",
+      "message": "sovereignty-game 2.0.0rc1"
+    },
+    {
+      "name": "wallet_seed_present",
+      "status": "ok",
+      "value": false,
+      "message": "No wallet configured (Diary Mode disabled)"
+    }
+  ]
+}
+```
+
+`status` rolls up to `"fail"` if any field failed, `"warn"` if any
+warned, otherwise `"ok"`. That makes one-liners like
+`sov self-check --json | jq -e '.status == "ok"'` work for CI smoke tests.
+
+## Where to send the output
+
+When you're filing a GitHub issue (`gh issue create`), the highest-signal
+attachment you can include is `sov support-bundle --json`. It bundles
+version, OS, Python, config, and the same field rollup as `self-check`
+into a single JSON envelope. The bug-report template asks for it directly.
+
+If a maintainer needs more — game state, logs, the lot — `sov
+support-bundle` (without `--json`) writes a zip you can attach. The JSON
+envelope is the canonical machine-readable diagnostic; the zip is the
+"give me everything" escape hatch for hard reproductions.
+
+This document is the **canonical schema** — both the CLI implementation
+(engine domain) and any consumer (CI, incident-response runbooks, log
+shippers, the bug-report template) MUST agree on this shape.
 
 ## When to use `--json`
 

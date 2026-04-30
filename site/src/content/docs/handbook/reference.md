@@ -93,6 +93,9 @@ sidebar:
 
 ## Links
 
-- [GitHub Repository](https://github.com/mcp-tool-shop-org/sovereignty)
-- [Full Rules (Campfire v1)](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/docs/rules/campfire_v1.md)
-- [Print & Play](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/docs/print-and-play.md)
+The links below open on GitHub (external — leaves this site).
+
+- [GitHub Repository](https://github.com/mcp-tool-shop-org/sovereignty) — source code and releases
+- [Full Rules (Campfire v1)](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/docs/rules/campfire_v1.md) — the canonical rule reference
+- [Print & Play](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/docs/print-and-play.md) — print the cards and play tabletop
+- [Report a bug or ask a question](https://github.com/mcp-tool-shop-org/sovereignty/issues/new/choose) — pick the matching template

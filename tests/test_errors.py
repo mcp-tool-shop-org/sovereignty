@@ -127,9 +127,13 @@ def test_input_and_state_errors_not_retryable():
         assert err.retryable is False, f"{err.code} should not be retryable"
 
 
-def test_reset_error_has_empty_hint():
+def test_reset_error_has_actionable_hint():
+    """Stage C humanization (W6): reset_error now points the user at where
+    sovereignty looks for state, since the most common cause of "no game"
+    is running the CLI from a different cwd than where the .sov/ folder lives."""
     err = reset_error()
     assert err.code == "STATE_NO_DATA"
-    assert err.hint == ""
-    # user_message should NOT contain "Hint:" line
-    assert "Hint" not in err.user_message()
+    assert err.hint != ""
+    assert ".sov" in err.hint
+    # Hint surfaces in user_message when present
+    assert "Hint" in err.user_message() or err.hint in err.user_message()

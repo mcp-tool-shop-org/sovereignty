@@ -13,15 +13,26 @@ export const config: SiteConfig = {
   // (issue body in .artifact/site-theme-packageUrl-issue.md). Once site-theme
   // 0.3.0 ships packageUrl, rename this field and drop the HACK note.
   npmUrl: 'https://pypi.org/project/sovereignty-game/',
+
+  // SECURITY — set:html boundary
+  // The fields below (footerText, hero.badge, hero.description) are rendered
+  // by @mcptoolshop/site-theme's BaseLayout via set:html (raw HTML injection).
+  // Today they are hard-coded literals; the trust boundary is the literal
+  // itself. NEVER source these from external input (env var, fetched JSON,
+  // content collection, user form). If you need dynamic content here,
+  // switch to a sanitized template.
   footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
-    badge: 'Open source',
+    badge: 'v2.0.0rc1 — proof v2 anchoring',
     headline: 'Sovereignty',
     headlineAccent: 'a board game about keeping your word.',
     description: 'Roll, trade, promise, betray. 2-4 players, 30 minutes, no screens required. The console keeps score — you keep your word. Optionally anchor results on the XRPL Testnet.',
-    primaryCta: { href: '#usage', label: 'Get started' },
-    secondaryCta: { href: 'handbook/', label: 'Read the Handbook' },
+    primaryCta: { href: '#usage', label: 'Install with pipx' },
+    // CTA href hardened (Wave 1 LOW → Wave 6 Stage C). Was 'handbook/' (relative,
+    // fragile on non-homepage routes); now absolute base-prefixed so it resolves
+    // correctly under the configured Astro `base` ('/sovereignty').
+    secondaryCta: { href: '/sovereignty/handbook/', label: 'Read the Handbook' },
     previews: [
       { label: 'Install', code: 'pipx install sovereignty-game' },
       { label: 'Tutorial', code: 'sov tutorial' },
@@ -33,19 +44,19 @@ export const config: SiteConfig = {
     {
       kind: 'features',
       id: 'features',
-      title: 'Features',
-      subtitle: 'Teach through consequences, not terminology.',
+      title: 'What makes it different',
+      subtitle: 'Reputation that you say out loud, not jargon you have to learn. Three mechanics carry the whole game.',
       features: [
-        { title: 'Promises', desc: 'Say "I promise..." out loud. Keep it: +1 reputation. Break it: -2 reputation. The table decides.' },
-        { title: 'Treaties', desc: 'Put your coins where your mouth is. Binding agreements with escrow stakes — promises with teeth.' },
-        { title: 'Proofs', desc: 'Every round produces a SHA-256 fingerprint. Optionally anchor it on the XRPL Testnet — a wall nobody can erase.' },
+        { title: 'Promises you say out loud', desc: 'Say "I promise..." at the table. Keep it: +1 reputation. Break it: -2 reputation. No app reminders — the table holds you to it.' },
+        { title: 'Treaties with real stakes', desc: 'Put your coins where your mouth is. Binding agreements with escrowed stakes — promises with teeth, judged by the room.' },
+        { title: 'Proofs anyone can verify', desc: 'Every round produces a SHA-256 fingerprint. Optionally anchor it on the XRPL Testnet — a public wall nobody can erase.' },
       ],
     },
     {
       kind: 'data-table',
       id: 'tiers',
-      title: 'Three Tiers',
-      subtitle: 'Start simple, add complexity when ready.',
+      title: 'Pick your depth',
+      subtitle: 'Three tiers. Start at Campfire on game night one — add complexity only when the table is ready.',
       columns: ['Tier', 'Name', 'What it adds'],
       rows: [
         ['1', 'Campfire', 'Coins, reputation, promises, IOUs'],
@@ -56,7 +67,7 @@ export const config: SiteConfig = {
     {
       kind: 'code-cards',
       id: 'usage',
-      title: 'Usage',
+      title: 'Get playing in 60 seconds',
       cards: [
         { title: 'Install', code: 'pipx install sovereignty-game\n# or: uv tool install sovereignty-game' },
         { title: 'Quick start', code: 'sov tutorial           # learn in 60 seconds\nsov new -p Alice -p Bob # start a game\nsov turn               # roll, land, resolve\nsov end-round          # generate proof' },
@@ -65,8 +76,8 @@ export const config: SiteConfig = {
     {
       kind: 'features',
       id: 'diary',
-      title: 'Diary Mode',
-      subtitle: 'Optional on-chain verification — because trust is good, proof is better.',
+      title: 'Diary Mode — optional, educational',
+      subtitle: 'Skip this on game night one. When you\'re curious how cryptographic proof works, the console can anchor each round to a public ledger — for free, with play-money tokens.',
       features: [
         { title: 'Wallet', desc: 'Create a free XRPL Testnet wallet. Test XRP has no value — it\'s play money.' },
         { title: 'Anchor', desc: 'Post your round proof hash to the ledger. Think of it as writing the score on a wall nobody can erase.' },

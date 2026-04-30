@@ -6,13 +6,24 @@ from abc import ABC, abstractmethod
 
 
 class LedgerTransport(ABC):
-    """Interface for anchoring round proofs to a ledger.
+    """Abstract transport for anchoring round proofs.
+
+    Implementations must support three operations:
+
+    * ``anchor`` — submit a round proof and return a ledger-native txid.
+    * ``verify`` — check that a txid contains the expected round-proof hash.
+    * ``get_memo_text`` — retrieve the first decodable memo attached to a tx.
 
     Implementations MUST provide ``anchor`` and ``verify``. ``get_memo_text``
     is part of the contract so all transports (NullTransport, XRPLTestnetTransport,
     future EVMTransport, etc.) share a uniform polymorphic surface; the base
     class default raises ``NotImplementedError`` so a transport that genuinely
     cannot retrieve memos (e.g. an offline shim) can opt out explicitly.
+
+    Txid prefix reservation: the ``offline:`` txid prefix is RESERVED for
+    NullTransport. Real ledger transports MUST return their own native txid
+    format (e.g. XRPL hex hash, EVM 0x-prefixed hash) and MUST NOT use the
+    ``offline:`` prefix, which downstream code uses as a routing signal.
     """
 
     @abstractmethod

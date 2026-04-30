@@ -18,31 +18,18 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from sov_cli.errors import ProofFormatError
+from sov_engine.io_utils import atomic_write_text
 from sov_engine.models import GameState
 from sov_engine.serialize import canonical_json, game_state_snapshot
 
 logger = logging.getLogger("sov_engine")
 
 PROOF_VERSION = 2
-
-
-def _atomic_write_text(path: Path, content: str) -> None:
-    """Write ``content`` to ``path`` atomically.
-
-    Crash / disk-full mid-write leaves a ``.tmp`` sibling, NOT a half-written
-    target file. Single-process write atomicity only — concurrent-writer
-    locking is the caller's responsibility. Mirrors the helper in
-    ``sov_cli.main._atomic_write``.
-    """
-    tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(content, encoding="utf-8", newline="\n")
-    os.replace(tmp, path)
 
 
 def _compute_envelope_hash(envelope: dict[str, Any]) -> str:
@@ -84,7 +71,7 @@ def save_proof(proof: dict[str, Any], directory: Path | None = None) -> Path:
     filename = f"round_{round_num:03d}.proof.json"
     path = directory / filename
     content = canonical_json(proof)
-    _atomic_write_text(path, content)
+    atomic_write_text(path, content)
     logger.info("save_proof round=%s path=%s", round_num, path)
     return path
 

@@ -11,33 +11,80 @@
 </p>
 
 <p align="center">
+  Sit down with 2-4 friends, roll a die, move around a board, and try to
+  end up with more coins or more goodwill than anyone else. Make promises
+  out loud — keep them and people trust you, break them and they don't.
+  No prior games like this needed. No screens at the table.
+</p>
+
+<p align="center">
   <a href="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
 </p>
 
-## Play tonight
+## Install in 30 seconds
 
-Print the cards, grab a die and some coins, sit down with 2-4 people.
-No screens required. Takes about 30 minutes.
+The fastest way — Python users:
 
-**[Start here](docs/start_here.md)** | **[Print & Play](docs/print-and-play.md)** | **[Full rules](docs/rules/campfire_v1.md)** | **[Play with strangers](docs/play-with-strangers.md)**
+```bash
+pipx install sovereignty-game
+sov tutorial
+```
 
-## Or use the console
-
-**No Python required** (downloads a prebuilt binary):
+No Python? No problem. The `npx` path downloads a prebuilt binary:
 
 ```bash
 npx @mcptoolshop/sovereignty tutorial
 ```
 
-Or with Python:
+That's it. `sov tutorial` walks you through the rules in about 60 seconds.
+
+## Your first game
+
+Once you and 2-3 friends are at the table, the console runs the round and
+you do the talking. A real session looks like this:
 
 ```bash
-pipx install sovereignty-game
-sov tutorial
+# Start a game with three players
 sov new -p Alice -p Bob -p Carol
+
+# Each player takes a turn — roll, land, resolve
+sov turn
+
+# Check where everyone stands
+sov status
+
+# When everyone has gone, close the round
+sov end-round
 ```
+
+Expected output for `sov status` after a few turns:
+
+```
+Round 3 of 15
+
+  Alice   coins: 7   rep: 4   space: 11
+  Bob     coins: 4   rep: 3   space: 6
+  Carol   coins: 6   rep: 5   space: 13
+```
+
+Repeat for 15 rounds. `sov game-end` prints the final scores.
+
+> Want a guided in-app walkthrough first? Run `sov tutorial`.
+> Want to play with no software at all? See [Print & Play](docs/print-and-play.md).
+> Want a deeper rules tour? See [Start here](docs/start_here.md) or
+> the [full handbook](https://mcp-tool-shop-org.github.io/sovereignty/handbook/).
+
+> _A short demo GIF or screenshot belongs here — tracked as a Stage D
+> follow-up so the README can show what a turn actually looks like._
+
+## Play without the console
+
+Print the cards, grab a die and some coins, sit down with 2-4 people.
+The game works fully on the table.
+
+**[Start here](docs/start_here.md)** | **[Print & Play](docs/print-and-play.md)** | **[Full rules](docs/rules/campfire_v1.md)** | **[Play with strangers](docs/play-with-strangers.md)**
 
 <details>
 <summary>Full command reference</summary>
@@ -157,7 +204,7 @@ sovereignty/
   sov_engine/       # Pure game logic (models, rules, serialization, hashing)
   sov_transport/    # Ledger transport (offline + XRPL Testnet)
   sov_cli/          # Typer CLI (the "Round Console")
-  tests/            # 147 tests
+  tests/            # Engine, transport, and CLI tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
   assets/print/     # Printable cards, player mat, quick reference
 ```
