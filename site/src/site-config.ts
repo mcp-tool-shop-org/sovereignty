@@ -9,9 +9,10 @@ export const config: SiteConfig = {
   // HACK: site-theme's SiteConfig only exposes `npmUrl?` for the registry-link
   // slot, but sovereignty is a Python package on PyPI. We point npmUrl at the
   // PyPI listing so the link lands correctly; the visible label still reads
-  // "npm". Tracked upstream: site-theme should generalise this to `packageUrl`
-  // (issue body in .artifact/site-theme-packageUrl-issue.md). Once site-theme
-  // 0.3.0 ships packageUrl, rename this field and drop the HACK note.
+  // "npm". Tracked upstream:
+  //   https://github.com/mcp-tool-shop-org/site-theme/issues/4
+  // Once site-theme 0.3.0 ships `packageUrl`, rename this field and drop the
+  // HACK note.
   npmUrl: 'https://pypi.org/project/sovereignty-game/',
 
   // SECURITY — set:html boundary

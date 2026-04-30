@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sovereignty-game"
-version = "2.0.0rc1"
+version = "2.0.0"
 description = "A strategy game about governance, trust, and trade — offline tabletop + XRPL online verification."
 readme = "README.md"
 license = "MIT"

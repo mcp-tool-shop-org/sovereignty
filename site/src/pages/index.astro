@@ -94,6 +94,14 @@ for (const s of config.sections) {
   nav={navItems}
 >
   {/*
+    HACK: root landing page can't inject OG/Twitter meta — site-theme
+    BaseLayout has no head slot. Tracked upstream:
+    https://github.com/mcp-tool-shop-org/site-theme/issues/5
+    Restore <Fragment slot="head"> with og:* + twitter:* meta tags once
+    site-theme 0.3.0 ships the slot. Handbook subroutes already carry
+    the meta via Starlight's own head config.
+  */}
+  {/*
     F-FE-002 (Wave 9, a11y): skip-to-content link as the first focusable
     element of the page. Hidden until focused (sr-only-style off-screen
     positioning), then anchored top-left and high-contrast for keyboard

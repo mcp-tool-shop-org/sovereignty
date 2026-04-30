@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [2.0.0rc1] - Unreleased
+## [2.0.0] - 2026-04-30
 
 ### BREAKING
 
@@ -70,8 +70,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Known limitations
 
-- Root landing page OG / Twitter meta tags pending upstream `site-theme` head-slot PR. Handbook pages (depth content most likely shared) DO carry OG / Twitter meta. Tracked at `.artifact/site-theme-head-slot-issue.md`.
-- `--json` flag is on `doctor` / `self-check` / `support-bundle` only. `sov status` / `board` / `recap` / `market` / `season-postcard` / `scenario list` ship human-only output in v2.0.0; broader `--json` coverage is a v2.x follow-up.
+- Root landing page OG / Twitter meta tags are not rendered. Blocked on upstream site-theme `<slot name="head"/>` ([mcp-tool-shop-org/site-theme#5](https://github.com/mcp-tool-shop-org/site-theme/issues/5)). Handbook subroutes are unaffected (Starlight handles its own head).
+- `--json` output mode is currently on diagnostic commands only (`sov doctor`, `sov self-check`, `sov support-bundle`). `sov status` / `board` / `recap` / `market` / `season-postcard` / `scenario list` pending v2.1; tracked in [docs/v2.1-roadmap.md](docs/v2.1-roadmap.md).
+- Site-theme `npmUrl` is being used to point at PyPI as a band-aid (link renders correctly but label still reads "npm"). Upstream `packageUrl` proposal: [mcp-tool-shop-org/site-theme#4](https://github.com/mcp-tool-shop-org/site-theme/issues/4).
 
 ### Notes
 
