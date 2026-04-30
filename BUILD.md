@@ -17,7 +17,7 @@ The binary lands in `dist/sovereignty` (or `dist/sovereignty.exe` on Windows).
 
 ## CI Build
 
-The GitHub Actions workflow `.github/workflows/release.yml` (specifically the
+The GitHub Actions workflow `.github/workflows/publish.yml` (specifically the
 `build-binaries` job) runs automatically when a version tag (`v*`) is pushed.
 It builds for three platforms and uploads binaries + checksums to the GitHub
 Release.
@@ -75,7 +75,7 @@ ModuleNotFoundError: No module named 'rich._unicode_data.unicode17-0-0'
 
 ## Release pipeline ordering (locked spec)
 
-The `release.yml` workflow is structured so that **PyPI publish blocks on
+The `publish.yml` workflow is structured so that **PyPI publish blocks on
 binaries existing**. The dependency chain is:
 
 ```

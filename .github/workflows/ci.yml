@@ -27,7 +27,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Top-level least-privilege default. pages.yml + release.yml already have
+# Top-level least-privilege default. pages.yml + publish.yml already have
 # job-level permissions; this closes the gap (parking F-593530-011).
 permissions:
   contents: read

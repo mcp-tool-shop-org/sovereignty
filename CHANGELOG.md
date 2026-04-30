@@ -5,11 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.2] - 2026-04-30
+
+### Fixed
+
+- Renamed `.github/workflows/release.yml` back to `publish.yml` to match the pre-existing PyPI Trusted Publisher record. The workflow filename was changed in v1.4.7 (consolidating `publish.yml` + `release-binaries.yml` into one file) but PyPI's publisher entry was never updated, so OIDC `invalid-publisher` blocked v2.0.0 + v2.0.1 PyPI publishes. v2.0.2 is functionally identical to v2.0.1 (and v2.0.0); only the workflow filename changed.
+
+### Note
+
+- **`sovereignty-game==2.0.0` and `==2.0.1` are not on PyPI.** PyPI users should `pip install sovereignty-game==2.0.2`. GitHub Release v2.0.0 / v2.0.1 / v2.0.2 binaries (consumed by `npx @mcptoolshop/sovereignty`) all ship the same code.
+
 ## [2.0.1] - 2026-04-30
 
 ### Fixed
 
-- `release.yml` wheel-smoke gate (added in v2.0.0 as Stage B "fail-closed" hardening) had a bash strict-mode interaction with `ls`'s exit code on no-match globs. The gate fired on its own first run and blocked PyPI publish for v2.0.0. v2.0.1 fixes the gate; functionally identical to v2.0.0 binaries published to GitHub Release.
+- `publish.yml` wheel-smoke gate (added in v2.0.0 as Stage B "fail-closed" hardening) had a bash strict-mode interaction with `ls`'s exit code on no-match globs. The gate fired on its own first run and blocked PyPI publish for v2.0.0. v2.0.1 fixes the gate; functionally identical to v2.0.0 binaries published to GitHub Release.
 
 ### Note
 
@@ -41,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `anchors.json` persisted after every successful `transport.anchor()` (per-round + FINAL) so `postcard` / `feedback` can read what they always claimed to.
 - `_atomic_write` helper applied uniformly across `STATE_FILE`, `SEASON_FILE`, `RNG_SEED_FILE`, `save_proof`, `anchors.json` (consolidated in `sov_engine/io_utils.py::atomic_write_text`).
 - Real-XRPL-Testnet integration test (gated behind `RUN_INTEGRATION=1`) covering the full anchor → verify round-trip.
-- Pre-publish wheel smoke test in `release.yml` (fresh venv, `pip install dist/sovereignty-game-*.whl`, `sov --version` / `sov --help` / `sov self-check --json | jq .status`) so `pypa/gh-action-pypi-publish` fails closed if the wheel can't import or boot.
+- Pre-publish wheel smoke test in `publish.yml` (fresh venv, `pip install dist/sovereignty-game-*.whl`, `sov --version` / `sov --help` / `sov self-check --json | jq .status`) so `pypa/gh-action-pypi-publish` fails closed if the wheel can't import or boot.
 - Issue templates (bug, feature, scenario) and `PULL_REQUEST_TEMPLATE.md` in `.github/`.
 - Favicons (svg, apple-touch, 32x32, 16x16) and 1200x630 OG / Twitter image at `site/public/og-image.png`. Anchor-nav hardened with base-prefixed absolute hrefs.
 - Shell-completion docs in CONTRIBUTING.md (`sov --install-completion` via Typer).
@@ -59,7 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `_load_game` raises `STATE_CORRUPT` (`SovError`) on JSON / enum / `OSError`; no more bare tracebacks reach the user.
 - `upgrade_with_resources` fall-through: defensive `logger.warning` surfaces the silent fall to Campfire's coinless workshop.
 - README threat-model row referenced "timestamp" but the engine field is `timestamp_utc`. Aligned (CHANGELOG was already correct).
-- BUILD.md PyInstaller pin out of sync with `release.yml` (`>=6.9.0` vs `==6.11.1`); BUILD.md now matches the workflow.
+- BUILD.md PyInstaller pin out of sync with `publish.yml` (`>=6.9.0` vs `==6.11.1`); BUILD.md now matches the workflow.
 - `site/src/content/docs/handbook/` content sync: cleared stale `dist/` + AppleDouble droppings (`._index.md`, `._reference.md`) blocking Astro's content collection.
 
 ### Changed
@@ -69,7 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Top-level `permissions: contents: read` on `ci.yml` (least-privilege).
 - Third-party GitHub Actions pinned to commit SHAs; provenance attestation added to released binaries AND the checksum manifest.
 - PyInstaller pinned to exact version (`==6.11.1`) for reproducible release builds.
-- `release.yml`: publish job `needs: [build-binaries]` so PyPI fail-closes if binaries fail (npm consumers can't hit a 404 on a major version bump).
+- `publish.yml`: publish job `needs: [build-binaries]` so PyPI fail-closes if binaries fail (npm consumers can't hit a 404 on a major version bump).
 - New advisory CI job: `pip-audit` + `gitleaks`.
 - `dependabot.yml`: pip + npm ecosystems added; dev-dep grouping.
 - SECURITY.md rewritten to mirror README threat-model rows exactly (v2 envelope field list including `timestamp_utc`, player-names-in-proofs warning, XRPL_SEED guidance, SOV_LOG_LEVEL); v1→v2 migration text relocated to dedicated guide.
@@ -102,7 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - PyPI classifier updated from Beta to Production/Stable
-- Combined `publish.yml` + `release-binaries.yml` into single `release.yml` workflow
+- Combined `publish.yml` + `release-binaries.yml` into single `publish.yml` workflow
 - Removed `uv.lock` from `.gitignore` (lock files should be tracked)
 - Version bump to 1.4.7
 
