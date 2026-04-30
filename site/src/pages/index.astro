@@ -9,6 +9,14 @@ import CodeCardGrid from '@mcptoolshop/site-theme/components/CodeCardGrid.astro'
 import ApiList from '@mcptoolshop/site-theme/components/ApiList.astro';
 import { config } from '../site-config';
 
+// F-004 fix: nav anchors must be absolute (base-prefixed) so they navigate
+// from non-homepage routes (e.g. handbook pages) back to the homepage section,
+// instead of resolving to `/sovereignty/handbook/some-page/#features` which
+// scrolls nowhere because the handbook layout has no element with that ID.
+// `import.meta.env.BASE_URL` is the configured Astro `base` ('/sovereignty');
+// normalize trailing slash so we always emit `/sovereignty/#features`.
+const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
+
 // Exhaustiveness guard for section dispatch (Wave 5 / F-008).
 //
 // Two-layer guard:
@@ -54,7 +62,7 @@ for (const s of config.sections) {
   repoUrl={config.repoUrl}
   npmUrl={config.npmUrl}
   footerText={config.footerText}
-  nav={config.sections.map(s => ({ href: `#${s.id}`, label: s.title }))}
+  nav={config.sections.map(s => ({ href: `${base}#${s.id}`, label: s.title }))}
 >
   <Hero {...config.hero} />
 

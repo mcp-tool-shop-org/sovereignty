@@ -17,10 +17,20 @@
   No prior games like this needed. No screens at the table.
 </p>
 
+<!--
+  Badge style policy (Stage D / W7CIDOCS-001): all badges use shields.io
+  default `flat` style for visual consistency. Each shields.io URL pins
+  `cacheSeconds=3600` so cold-cache renders fall back to the last known
+  value rather than going blank when the upstream registry is slow. The
+  CI badge is GitHub's first-party SVG and is exempt — GitHub serves it
+  from camo with its own cache.
+-->
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue" alt="Landing Page"></a>
+  <a href="https://pypi.org/project/sovereignty-game/"><img src="https://img.shields.io/pypi/v/sovereignty-game?include_prereleases&style=flat&cacheSeconds=3600" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/sovereignty-game/"><img src="https://img.shields.io/pypi/pyversions/sovereignty-game?style=flat&cacheSeconds=3600" alt="Python versions"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat&cacheSeconds=86400" alt="License: MIT"></a>
+  <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
 ## Install in 30 seconds

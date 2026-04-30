@@ -28,7 +28,11 @@ export const config: SiteConfig = {
     headline: 'Sovereignty',
     headlineAccent: 'a board game about keeping your word.',
     description: 'Roll, trade, promise, betray. 2-4 players, 30 minutes, no screens required. The console keeps score — you keep your word. Optionally anchor results on the XRPL Testnet.',
-    primaryCta: { href: '#usage', label: 'Install with pipx' },
+    // F-004 (Stage D): primaryCta hardened to absolute base-prefixed href for
+    // parity with secondaryCta. Hero is only rendered on the homepage today, so
+    // a bare '#usage' fragment works there — but absolute paths are robust to
+    // future refactors that might surface the Hero on additional routes.
+    primaryCta: { href: '/sovereignty/#usage', label: 'Install with pipx' },
     // CTA href hardened (Wave 1 LOW → Wave 6 Stage C). Was 'handbook/' (relative,
     // fragile on non-homepage routes); now absolute base-prefixed so it resolves
     // correctly under the configured Astro `base` ('/sovereignty').
