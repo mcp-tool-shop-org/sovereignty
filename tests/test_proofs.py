@@ -196,6 +196,62 @@ def _game_id_change(p: dict[str, Any]) -> None:
     p["game_id"] = p["game_id"] + "_tampered"
 
 
+def _proof_version_field_tamper(p: dict[str, Any]) -> None:
+    """Mutate ``proof_version`` while keeping it a recognized version.
+
+    Direct value-bump (e.g. to 99) short-circuits at ``hashing.py:94`` via
+    the 'Unknown proof_version' branch BEFORE ``_compute_envelope_hash``
+    runs, which means the envelope_hash protection over ``proof_version``
+    isn't empirically demonstrated. Instead we set the version to the
+    same canonical value (2) but via a different Python object identity --
+    ``True`` -- which serializes to ``true`` in canonical JSON and therefore
+    changes the hashed payload while not tripping the version check
+    (``int(True) == 1`` is rejected as v1, but bool(True) compared by ``!= 2``
+    is True in Python: ``True == 1`` so this still won't work via the
+    short-circuit). Pragmatic alternative used here: tamper the version
+    AND patch the version check pre-condition by setting a
+    string-shaped variant that the verifier currently doesn't accept.
+
+    Practical approach: the tamper is the empirical *negative* check that
+    ``proof_version`` IS hashed. We mutate version to a different int-shaped
+    value (``3``); verify_proof's contract returns False with the
+    'Unknown proof_version' message. While this is the version-check
+    short-circuit, the tamper still demonstrates the FIELD's coverage by
+    way of the companion test ``test_envelope_hash_includes_proof_version``
+    below which directly shows the hash differs when the field is removed
+    from the canonical payload.
+    """
+    p["proof_version"] = 3
+
+
+def test_envelope_hash_includes_proof_version() -> None:
+    """Direct empirical proof that ``proof_version`` is in the hashed payload.
+
+    Build a real proof, recompute the envelope hash WITHOUT ``proof_version``
+    in the dict, and assert the result differs from ``proof['envelope_hash']``.
+    This is the "is-the-field-actually-covered" assertion that the parametrized
+    tamper suite cannot make for ``proof_version`` (because the version-check
+    short-circuit at hashing.py:94 fires before the hash compare).
+    """
+    from sov_engine.hashing import _compute_envelope_hash
+
+    proof = _make_proof_for_tamper()
+    original_hash = proof["envelope_hash"]
+
+    # Strip proof_version from a copy and recompute. Different payload =>
+    # different hash. If a future refactor accidentally drops proof_version
+    # from the canonical envelope, original_hash and stripped_hash will
+    # collide and this test will fail.
+    stripped = {k: v for k, v in proof.items() if k != "proof_version"}
+    stripped_hash = _compute_envelope_hash(stripped)
+
+    assert original_hash != stripped_hash, (
+        "envelope_hash must depend on proof_version; removing it from the "
+        "canonical payload should change the digest. If this test fails, "
+        "proof_version is not being hashed and is silently tamperable."
+    )
+
+
 @pytest.mark.parametrize(
     "tamper_name,tamper_fn",
     [
@@ -206,12 +262,18 @@ def _game_id_change(p: dict[str, Any]) -> None:
         ("rng_seed_change", _rng_seed_change),
         ("timestamp_tweak", _timestamp_tweak),
         ("game_id_change", _game_id_change),
+        ("proof_version_field", _proof_version_field_tamper),
     ],
 )
 def test_v2_envelope_field_tampering_invalidates_proof(tamper_name, tamper_fn):
     """One test per tamper vector. Each mutates a single envelope field and
     asserts ``verify_proof`` returns (False, ...). This is the F-V2CUT-001
     coverage that proves ``envelope_hash`` actually covers each named field.
+
+    Most vectors trip the "Hash mismatch" branch; the ``proof_version`` vector
+    short-circuits earlier at the version check (hashing.py:94) and produces
+    an "Unknown proof_version" message. Both are valid rejection paths: the
+    contract is that the proof MUST be rejected, not the specific message.
     """
     proof = _make_proof_for_tamper()
     tamper_fn(proof)
@@ -220,7 +282,9 @@ def test_v2_envelope_field_tampering_invalidates_proof(tamper_name, tamper_fn):
         path = _write_proof(proof, Path(tmp))
         valid, msg = verify_proof(path)
         assert not valid, f"tamper '{tamper_name}' should invalidate envelope_hash"
-        assert "mismatch" in msg.lower(), (
+        # Accept either rejection path: hash-mismatch or version-check.
+        msg_lower = msg.lower()
+        assert "mismatch" in msg_lower or "unknown proof_version" in msg_lower, (
             f"tamper '{tamper_name}' produced unexpected message: {msg}"
         )
 
@@ -285,3 +349,108 @@ def test_explicit_v1_proof_version_is_rejected():
 
         with pytest.raises(ProofFormatError):
             verify_proof(path)
+
+
+# ---------------------------------------------------------------------------
+# verify_proof negative branches (parking-lot F-432101-019)
+# ---------------------------------------------------------------------------
+
+
+def test_verify_proof_returns_false_when_file_missing(tmp_path):
+    """A path that doesn't exist must yield (False, message), not raise.
+
+    ``verify_proof`` already wraps ``read_text`` in a try/except for
+    ``OSError``; this test pins that contract so a future refactor that
+    drops the catch will fail loud.
+    """
+    missing = tmp_path / "does_not_exist.proof.json"
+    assert not missing.exists()
+
+    valid, msg = verify_proof(missing)
+    assert valid is False
+    assert msg, "verify_proof must return a non-empty message on failure"
+    # Message should mention the read failure or the missing file.
+    assert "failed to read" in msg.lower() or "no such" in msg.lower()
+
+
+def test_verify_proof_returns_false_on_invalid_json(tmp_path):
+    """Garbage JSON must return (False, message), not propagate
+    ``json.JSONDecodeError`` to the caller.
+    """
+    bad = tmp_path / "bad.proof.json"
+    bad.write_text("not json{", encoding="utf-8")
+
+    valid, msg = verify_proof(bad)
+    assert valid is False
+    assert msg
+    assert "failed to read" in msg.lower()
+
+
+def test_verify_proof_returns_false_on_missing_envelope_hash_field(tmp_path):
+    """A v2-shaped proof missing ``envelope_hash`` must return False with a
+    field-specific message (not a hash-mismatch, not a raise).
+    """
+    state, _ = new_game(42, ["Alice", "Bob"])
+    snapshot = game_state_snapshot(state)
+
+    proof_no_hash: dict[str, Any] = {
+        "game_id": "sov_42",
+        "proof_version": 2,
+        "round": 1,
+        "ruleset": "campfire_v1",
+        "rng_seed": 42,
+        "timestamp_utc": "2024-01-01T00:00:00Z",
+        "players": ["Alice", "Bob"],
+        "state": snapshot,
+        # Notably: NO envelope_hash key.
+    }
+
+    path = tmp_path / "no_hash.proof.json"
+    path.write_text(canonical_json(proof_no_hash), encoding="utf-8", newline="\n")
+
+    valid, msg = verify_proof(path)
+    assert valid is False
+    assert "envelope_hash" in msg, f"missing-field error must name the missing field; got: {msg!r}"
+
+
+def test_verify_proof_raises_or_returns_false_on_unknown_proof_version(tmp_path):
+    """An unknown ``proof_version`` (e.g. 99) must NOT silently verify.
+
+    Contract: either return ``(False, "Unknown proof_version: ...")`` (current
+    behavior) OR raise a structured error. This test accepts either path so
+    the engine team can tighten the contract without breaking the test.
+    """
+    state, _ = new_game(42, ["Alice", "Bob"])
+    snapshot = game_state_snapshot(state)
+
+    proof_unknown_version: dict[str, Any] = {
+        "game_id": "sov_42",
+        "proof_version": 99,
+        "round": 1,
+        "ruleset": "campfire_v1",
+        "rng_seed": 42,
+        "timestamp_utc": "2024-01-01T00:00:00Z",
+        "players": ["Alice", "Bob"],
+        "state": snapshot,
+        "envelope_hash": "0" * 64,
+    }
+
+    path = tmp_path / "unknown_version.proof.json"
+    path.write_text(
+        canonical_json(proof_unknown_version),
+        encoding="utf-8",
+        newline="\n",
+    )
+
+    try:
+        valid, msg = verify_proof(path)
+    except (ProofFormatError, ValueError) as exc:
+        # Acceptable: structured raise with mention of the version.
+        assert "99" in str(exc) or "version" in str(exc).lower()
+        return
+
+    # Acceptable: (False, "Unknown proof_version: 99 ...").
+    assert valid is False
+    assert "99" in msg or "unknown proof_version" in msg.lower(), (
+        f"unknown proof_version must produce a version-specific message; got: {msg!r}"
+    )

@@ -25,6 +25,7 @@ def test_new_game_setup():
 
 def test_new_game_rejects_bad_player_count():
     import pytest
+
     with pytest.raises(ValueError, match="2-4"):
         new_game(1, ["Solo"])
     with pytest.raises(ValueError, match="2-4"):
@@ -204,16 +205,46 @@ def test_game_advance_turn_wraps():
 
 
 def test_tiebreak_after_max_rounds():
+    """Tiebreak must pick the player with the highest combined score AND
+    name them explicitly.
+
+    Parking-lot F-432101-022: the prior assertion (`winner is not None`)
+    hid a real branch confusion. With Bob at 20 coins (Prosperity threshold)
+    and Alice at 10, if ``advance_turn`` ever called ``check_winner`` BEFORE
+    ``_resolve_tiebreak``, Bob would win by Prosperity, not by tiebreak --
+    a different code path with different log output. This test pins WHICH
+    branch fires and WHICH player wins by computing the expected winner
+    via the documented tiebreak formula:
+
+        score(p) = (p.coins / 2) + p.reputation + (p.upgrades * 3)
+    """
     state, rng = new_game(42, ["Alice", "Bob"])
     state.current_round = 15  # max
     state.players[0].coins = 10
     state.players[1].coins = 20
 
+    # Compute expected winner via the formula at sov_engine/models.py:420.
+    def _score(p) -> float:
+        return (p.coins / 2) + p.reputation + (p.upgrades * 3)
+
+    # With both at default rep=3, upgrades=0:
+    #   Alice: 10/2 + 3 + 0 = 8.0
+    #   Bob:   20/2 + 3 + 0 = 13.0
+    expected = max(state.players, key=_score).name
+    assert expected == "Bob", "fixture sanity: Bob should be the higher-score player"
+
     state.advance_turn()  # Bob's turn
-    state.advance_turn()  # wraps to Alice, round becomes 16 → tiebreak
+    state.advance_turn()  # wraps to Alice, round becomes 16 -> tiebreak
 
     assert state.game_over
-    assert state.winner is not None
+    # WHO wins, not just "winner is not None":
+    assert state.winner == expected, (
+        f"tiebreak should pick the highest-score player by formula; "
+        f"expected {expected!r}, got {state.winner!r}. "
+        "If this fails because state.winner is set by a different code path "
+        "(e.g. check_winner firing before _resolve_tiebreak), the tiebreak "
+        "branch is being silently bypassed."
+    )
 
 
 def test_toast():
@@ -228,14 +259,44 @@ def test_toast():
     assert alice.toasted is True
 
 
-def test_toast_once_per_game():
-    state, rng = new_game(42, ["Alice", "Bob"])
-    alice = state.players[0]
+def test_toast_once_per_game(monkeypatch, tmp_path):
+    """``sov toast <who>`` must refuse a second invocation against the same
+    player in the same game.
 
-    alice.toasted = True
-    alice.adjust_rep(1)
-    # Second toast should be blocked (CLI enforces, model just tracks)
-    assert alice.toasted is True
+    Parking-lot F-432101-023: the prior smoke test only set ``toasted=True``
+    manually and asserted it stayed True -- it did not exercise the CLI
+    enforcement path (the model has no logic to block a second toast; the
+    rule lives entirely in ``sov_cli/main.py:1258``). This test invokes
+    ``sov toast`` twice via CliRunner and asserts the second call refuses
+    (message contains "already" -- the CLI exits 0 in the refusal path
+    today, so we cannot rely on a non-zero exit code).
+    """
+    from typer.testing import CliRunner
+
+    from sov_cli.main import _save_state, app
+
+    monkeypatch.chdir(tmp_path)
+
+    # Seed a minimal active game.
+    state, _ = new_game(42, ["Alice", "Bob"])
+    (tmp_path / ".sov").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".sov" / "rng_seed.txt").write_text("42", encoding="utf-8")
+    _save_state(state)
+
+    runner = CliRunner()
+
+    # First toast: should succeed and mention the +1 Rep effect.
+    first = runner.invoke(app, ["toast", "Alice"])
+    assert first.exit_code == 0, f"first toast must succeed; got: {first.output!r}"
+    assert "Alice" in first.output
+
+    # Second toast: must be refused. Either non-zero exit OR "already" in output.
+    second = runner.invoke(app, ["toast", "Alice"])
+    refused = (second.exit_code != 0) or ("already" in second.output.lower())
+    assert refused, (
+        f"second toast against the same player must be refused; "
+        f"exit_code={second.exit_code}, output={second.output!r}"
+    )
 
 
 def test_content_tags_on_events():
@@ -613,8 +674,7 @@ def test_lint_valid_tiers_accepted(tmp_path):
     """All valid tier display names should pass."""
     from sov_cli.main import _lint_scenario
 
-    for tier_name in ("Campfire", "Town Hall", "Treaty Table",
-                      "Campfire / Market Day"):
+    for tier_name in ("Campfire", "Town Hall", "Treaty Table", "Campfire / Market Day"):
         scenario = tmp_path / "good-tier.md"
         scenario.write_text(
             "# Good Tier\n\n"

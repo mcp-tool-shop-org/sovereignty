@@ -1,6 +1,7 @@
-# Dependabot config: keep SHA-pinned third-party Actions fresh.
-# Without this, the SHA pins in .github/workflows/*.yml go stale and we miss
-# upstream security fixes.
+# Dependabot config: keep SHA-pinned third-party Actions and runtime/dev
+# dependencies fresh across all three ecosystems shipped by this repo
+# (W4CIDOCS-002). Without coverage on pip + npm we miss upstream security
+# fixes for xrpl-py, typer, rich, astro, starlight, etc.
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -12,3 +13,35 @@ updates:
     labels:
       - "dependencies"
       - "github-actions"
+
+  # Python project (pyproject.toml + uv.lock at repo root). Dependabot's pip
+  # ecosystem reads pyproject.toml; uv-managed lock updates land via the
+  # locked spec adjustment + `uv sync --frozen` in CI.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps"
+    labels:
+      - "dependencies"
+      - "python"
+    # Group dev-only bumps so we can auto-merge low-risk dev-tool churn
+    # in a future Stage B-2 pass without burying runtime upgrades.
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+
+  # Astro/Starlight handbook site lives under /site with its own package.json.
+  - package-ecosystem: "npm"
+    directory: "/site"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps"
+    labels:
+      - "dependencies"
+      - "javascript"
+    groups:
+      dev-dependencies:
+        dependency-type: "development"

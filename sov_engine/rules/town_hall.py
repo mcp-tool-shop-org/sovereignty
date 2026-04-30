@@ -33,6 +33,35 @@ from sov_engine.rules.campfire import (  # noqa: F401
     roll_and_move,
 )
 
+# Public surface — both the names defined here AND the Campfire re-exports.
+# Listed explicitly so ``from sov_engine.rules.town_hall import *`` is
+# deterministic and ``treaty_table.py`` (which also re-exports this module)
+# does not silently drop or pick up symbols.
+__all__ = [
+    # Game setup
+    "new_town_hall_game",
+    # Market actions defined here
+    "market_buy",
+    "market_sell",
+    "market_status",
+    "upgrade_with_resources",
+    # Re-exports from Campfire
+    "accept_deal",
+    "apologize",
+    "break_promise",
+    "check_deal_deadlines",
+    "check_voucher_deadlines",
+    "complete_deal",
+    "issue_voucher",
+    "keep_promise",
+    "make_promise",
+    "redeem_voucher",
+    "resolve_event",
+    "resolve_help_desk",
+    "resolve_space",
+    "roll_and_move",
+]
+
 # ---------------------------------------------------------------------------
 # Town Hall game setup
 # ---------------------------------------------------------------------------
@@ -81,9 +110,7 @@ def new_town_hall_game(
         market=MarketPrices(),
         market_board=market_board,
     )
-    state.add_log(
-        f"Town Hall game started. Seed: {seed}. Players: {', '.join(player_names)}"
-    )
+    state.add_log(f"Town Hall game started. Seed: {seed}. Players: {', '.join(player_names)}")
     return state, rng
 
 
@@ -93,7 +120,9 @@ def new_town_hall_game(
 
 
 def market_buy(
-    state: GameState, player: PlayerState, resource: str,
+    state: GameState,
+    player: PlayerState,
+    resource: str,
 ) -> str:
     """Buy 1 resource from the market. Returns description."""
     mb = state.market_board
@@ -113,15 +142,16 @@ def market_buy(
     held = player.resources[resource]
     left = mb.supply[resource]
     msg = (
-        f"{player.name} buys 1 {resource} for {paid} coins. "
-        f"(Holds {held}, market has {left} left.)"
+        f"{player.name} buys 1 {resource} for {paid} coins. (Holds {held}, market has {left} left.)"
     )
     state.add_log(msg)
     return msg
 
 
 def market_sell(
-    state: GameState, player: PlayerState, resource: str,
+    state: GameState,
+    player: PlayerState,
+    resource: str,
 ) -> str:
     """Sell 1 resource back to the market. Returns description."""
     mb = state.market_board
@@ -151,10 +181,7 @@ def market_status(state: GameState) -> dict[str, dict[str, int]]:
     mb = state.market_board
     if mb is None:
         return {}
-    return {
-        r: {"price": mb.price(r), "supply": mb.supply.get(r, 0)}
-        for r in RESOURCE_NAMES
-    }
+    return {r: {"price": mb.price(r), "supply": mb.supply.get(r, 0)} for r in RESOURCE_NAMES}
 
 
 # ---------------------------------------------------------------------------
@@ -163,7 +190,9 @@ def market_status(state: GameState) -> dict[str, dict[str, int]]:
 
 
 def upgrade_with_resources(
-    state: GameState, player: PlayerState, space_kind: str,
+    state: GameState,
+    player: PlayerState,
+    space_kind: str,
 ) -> str:
     """Upgrade at Workshop or Builder, paying resources too (Town Hall).
 
@@ -179,10 +208,7 @@ def upgrade_with_resources(
         res_name = "tools"
         res_cost = BUILDER_TOOLS_COST
         if player.reputation < 3:
-            return (
-                f"{player.name} needs Rep >= 3 for Builder "
-                f"(has {player.reputation})."
-            )
+            return f"{player.name} needs Rep >= 3 for Builder (has {player.reputation})."
     else:
         return f"Unknown upgrade space: {space_kind}."
 

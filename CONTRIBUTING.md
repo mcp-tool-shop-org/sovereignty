@@ -109,12 +109,39 @@ can be more mechanical, but still keep it conversational.
 
 ## Running tests
 
+Install dependencies the same way CI does (locked versions, no drift):
+
 ```bash
-uv run pytest tests/ -v
-uv run ruff check .
+uv sync --frozen --dev
 ```
 
-All tests must pass. Lint must be clean. No exceptions.
+Then run the gate locally:
+
+```bash
+uv run pytest tests/ -v -W error::DeprecationWarning -W error::PendingDeprecationWarning
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy sov_engine sov_transport sov_cli
+```
+
+All tests must pass. Lint must be clean. mypy must be clean. No exceptions.
+
+## Logging and diagnostics
+
+The CLI uses the stdlib `logging` module. Override the level with the
+`SOV_LOG_LEVEL` env var (`DEBUG` / `INFO` / `WARNING` / `ERROR`):
+
+```bash
+SOV_LOG_LEVEL=DEBUG uv run sov play
+```
+
+Warnings (e.g. "Ruleset X does not expose upgrade_with_resources; falling
+back to Campfire workshop") write to stderr at WARNING level by default.
+
+For machine-readable diagnostic output, `sov doctor`, `sov self-check`, and
+`sov support-bundle` all accept `--json`. The schema is documented in
+[docs/cli-json-output.md](docs/cli-json-output.md) — when adding a new
+diagnostic field, register its `name` there and add a contract test.
 
 ## Code contributions
 

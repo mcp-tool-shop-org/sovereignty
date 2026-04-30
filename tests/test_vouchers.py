@@ -13,7 +13,6 @@ from sov_engine.models import (
     VoucherCard,
     VoucherStatus,
 )
-from sov_engine.rules import campfire as _campfire
 from sov_engine.rules.campfire import (
     check_voucher_deadlines,
     issue_voucher,
@@ -219,7 +218,11 @@ def test_check_voucher_deadlines_auto_defaults_expired():
     round has passed and applies the penalty."""
     state, _rng = new_game(42, ["Alice", "Bob"])
     alice, bob = state.players[0], state.players[1]
-    template = _small_loan_template()  # face_value=2 -> penalty max(1, (2+1)//2) == 1
+    # _small_loan_template has default_penalty_rep=2 (non-negotiable). Post-W5
+    # parking F-005 fix, Voucher.penalty_rep is set from default_penalty_rep at
+    # issue time and used by check_voucher_deadlines instead of the dead
+    # max(1, (face_value+1)//2) recompute branch.
+    template = _small_loan_template()
 
     v = issue_voucher(state, alice, bob, template)
     assert isinstance(v, Voucher)
@@ -232,7 +235,7 @@ def test_check_voucher_deadlines_auto_defaults_expired():
 
     assert len(messages) == 1
     assert v.status == VoucherStatus.DEFAULTED
-    assert alice.reputation == rep_before - 1  # max(1, (2+1)//2) == 1
+    assert alice.reputation == rep_before - 2  # template.default_penalty_rep
     assert "expired" in messages[0].lower()
 
 
@@ -300,18 +303,19 @@ def test_voucher_id_format_and_uniqueness():
     assert len(ids) == 3, "voucher_ids must be unique within a run"
 
 
-def test_voucher_counter_resets_between_tests():
-    """Twin of the prior test — proves the autouse counter reset works.
+def test_voucher_counter_lives_on_state_post_w5():
+    """Counter migrated from module global into GameState (W5 parking F-006).
 
-    If conftest's reset fixture were missing, this test (depending on
-    discovery order) would observe v_0004+ rather than v_0001."""
+    Each new_game() seeds next_voucher_id=0, so test isolation is automatic
+    via fresh state per test rather than the conftest autouse fixture (now
+    a no-op kept as a hook for future test isolation needs)."""
     state, _rng = new_game(42, ["Alice", "Bob"])
     alice, bob = state.players[0], state.players[1]
+    assert state.next_voucher_id == 0  # fresh game starts at 0
     v = issue_voucher(state, alice, bob, _small_loan_template())
     assert isinstance(v, Voucher)
     assert v.voucher_id == "v_0001"
-    # Belt-and-suspenders: confirm the module global is at 1, not 4+.
-    assert _campfire._voucher_counter == 1
+    assert state.next_voucher_id == 1  # incremented after issue
 
 
 # ---------------------------------------------------------------------------
@@ -346,5 +350,3 @@ def test_redeem_already_defaulted_voucher_is_noop():
 
     msg = redeem_voucher(state, v)
     assert "already" in msg.lower()
-
-

@@ -55,6 +55,13 @@ strict = true
 warn_return_any = true
 warn_unused_configs = true
 
+[[tool.mypy.overrides]]
+module = "xrpl.*"
+ignore_missing_imports = true
+# xrpl-py 3.x ships no PEP 561 stubs as of 2026-04-30.
+# Remove this override when xrpl-py publishes a py.typed marker
+# or when a third-party stubs package is available on PyPI.
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 

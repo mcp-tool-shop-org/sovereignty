@@ -13,7 +13,6 @@ from sov_engine.models import (
     DealCard,
     DealStatus,
 )
-from sov_engine.rules import campfire as _campfire
 from sov_engine.rules.campfire import (
     accept_deal,
     check_deal_deadlines,
@@ -76,7 +75,8 @@ def test_accept_deal_id_format_and_uniqueness():
     assert d1.deal_id == "d_0001"
     assert d2.deal_id == "d_0002"
     assert d1.deal_id != d2.deal_id
-    assert _campfire._deal_counter == 2
+    # Counter lives on GameState post-W5 (parking F-432101-006 migration).
+    assert state.next_deal_id == 2
 
 
 # ---------------------------------------------------------------------------

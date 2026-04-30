@@ -350,3 +350,62 @@ def test_fund_testnet_wallet_requires_xrpl_py():
         fund_testnet_wallet()
 
 
+# ---------------------------------------------------------------------------
+# _extract_memos response-shape coverage (Wave 4 F-003 amend)
+# ---------------------------------------------------------------------------
+
+
+def test_extract_memos_falls_back_to_nested_tx_memos_path(fake_xrpl):
+    """``verify`` must succeed when memos live nested under ``result['tx']``.
+
+    The xrpl-py response shape varies across versions: memos may live at the
+    top level of ``result`` OR nested under ``result['tx']``. This fixture
+    sets ONLY the nested path (no top-level ``Memos`` key) and asserts
+    ``verify()`` still returns True. Currently the fallback branch in
+    ``_extract_memos`` (``xrpl_testnet.py:45-47``) has zero coverage; if a
+    refactor breaks the fallback, this test will fail loud.
+    """
+    from sov_transport.xrpl_testnet import XRPLTestnetTransport, _to_hex
+
+    expected_hash = "abc123"
+    memo_text = f"SOV|campfire_v1|s42|r1|sha256:{expected_hash}"
+
+    fake_response = MagicMock()
+    # Note: NO top-level "Memos" key. Memos live under result['tx']['Memos'].
+    fake_response.result = {
+        "tx": {
+            "Memos": [
+                {"Memo": {"MemoData": _to_hex(memo_text)}},
+            ],
+        },
+    }
+    fake_client = MagicMock()
+    fake_client.request.return_value = fake_response
+    fake_xrpl["xrpl.clients"].JsonRpcClient.return_value = fake_client
+
+    t = XRPLTestnetTransport()
+    assert t.verify("TXID", expected_hash) is True
+
+
+def test_extract_memos_returns_empty_list_on_unexpected_shape(fake_xrpl):
+    """An unexpected response shape (no memos in ANY known location) must
+    degrade gracefully -- verify() returns False, does not crash.
+
+    Defends against silent regressions where xrpl-py changes its response
+    shape again and ``_extract_memos`` would otherwise raise (e.g. KeyError
+    or AttributeError).
+    """
+    from sov_transport.xrpl_testnet import XRPLTestnetTransport
+
+    fake_response = MagicMock()
+    # Neither top-level Memos NOR result['tx']['Memos']. result['tx'] is
+    # also intentionally not a dict to exercise the isinstance(tx, dict)
+    # guard at xrpl_testnet.py:46.
+    fake_response.result = {"tx": "not a dict"}
+    fake_client = MagicMock()
+    fake_client.request.return_value = fake_response
+    fake_xrpl["xrpl.clients"].JsonRpcClient.return_value = fake_client
+
+    t = XRPLTestnetTransport()
+    # Must NOT raise; must return False (no memos => no match).
+    assert t.verify("TXID", "abc123") is False

@@ -26,10 +26,7 @@ def _treaty_snapshot(t: Treaty) -> dict[str, Any]:
         "created_round": t.created_round,
         "deadline_round": t.deadline_round,
         "parties": sorted(t.parties),
-        "stakes": {
-            name: _stake_snapshot(stake)
-            for name, stake in sorted(t.stakes.items())
-        },
+        "stakes": {name: _stake_snapshot(stake) for name, stake in sorted(t.stakes.items())},
         "status": t.status.value,
         "text": t.text,
         "treaty_id": t.treaty_id,
@@ -49,8 +46,7 @@ def _player_snapshot(p: PlayerState) -> dict[str, Any]:
             for d in sorted(p.active_deals, key=lambda d: d.deal_id)
         ],
         "active_treaties": [
-            _treaty_snapshot(t)
-            for t in sorted(p.active_treaties, key=lambda t: t.treaty_id)
+            _treaty_snapshot(t) for t in sorted(p.active_treaties, key=lambda t: t.treaty_id)
         ],
         "apology_used": p.apology_used,
         "coins": p.coins,
@@ -63,12 +59,10 @@ def _player_snapshot(p: PlayerState) -> dict[str, Any]:
         "toasted": p.toasted,
         "upgrades": p.upgrades,
         "vouchers_held": [
-            _voucher_snapshot(v)
-            for v in sorted(p.vouchers_held, key=lambda v: v.voucher_id)
+            _voucher_snapshot(v) for v in sorted(p.vouchers_held, key=lambda v: v.voucher_id)
         ],
         "vouchers_issued": [
-            _voucher_snapshot(v)
-            for v in sorted(p.vouchers_issued, key=lambda v: v.voucher_id)
+            _voucher_snapshot(v) for v in sorted(p.vouchers_issued, key=lambda v: v.voucher_id)
         ],
         "win_condition": p.win_condition.value,
     }
@@ -83,6 +77,7 @@ def _voucher_snapshot(v: Voucher) -> dict[str, Any]:
         "face_value": v.face_value,
         "holder": v.holder,
         "issuer": v.issuer,
+        "penalty_rep": v.penalty_rep,
         "status": v.status.value,
         "template_id": v.template_id,
         "voucher_id": v.voucher_id,
@@ -91,6 +86,9 @@ def _voucher_snapshot(v: Voucher) -> dict[str, Any]:
 
 def game_state_snapshot(state: GameState) -> dict[str, Any]:
     """Produce a canonical, hashable snapshot of the full game state."""
+    # schema_version mirrors the proof_version naming convention from
+    # sov_engine/hashing.py. Bump on any field rename or removal; new
+    # optional fields don't require bump.
     snapshot: dict[str, Any] = {
         "config": {
             "board_size": state.config.board_size,
@@ -108,7 +106,10 @@ def game_state_snapshot(state: GameState) -> dict[str, Any]:
             "tools": state.market.tools,
             "wood": state.market.wood,
         },
+        "next_deal_id": state.next_deal_id,
+        "next_voucher_id": state.next_voucher_id,
         "players": [_player_snapshot(p) for p in state.players],
+        "schema_version": 1,
         "turn_in_round": state.turn_in_round,
         "winner": state.winner,
     }
@@ -126,10 +127,13 @@ def game_state_snapshot(state: GameState) -> dict[str, Any]:
 
 def canonical_json(data: dict[str, Any]) -> str:
     """Produce canonical JSON: sorted keys, no trailing whitespace, LF line endings."""
-    return json.dumps(
-        data,
-        sort_keys=True,
-        indent=2,
-        ensure_ascii=False,
-        separators=(",", ": "),
-    ).replace("\r\n", "\n") + "\n"
+    return (
+        json.dumps(
+            data,
+            sort_keys=True,
+            indent=2,
+            ensure_ascii=False,
+            separators=(",", ": "),
+        ).replace("\r\n", "\n")
+        + "\n"
+    )

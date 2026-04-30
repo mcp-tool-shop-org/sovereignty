@@ -94,8 +94,5 @@ def new_market_day_game(
         market=MarketPrices(),
         market_board=market_board,
     )
-    state.add_log(
-        f"Market Day game started. Seed: {seed}. "
-        f"Players: {', '.join(player_names)}"
-    )
+    state.add_log(f"Market Day game started. Seed: {seed}. Players: {', '.join(player_names)}")
     return state, rng

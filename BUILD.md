@@ -72,3 +72,51 @@ bump deliberately after smoke-testing the binary across all matrix targets.
 ```
 ModuleNotFoundError: No module named 'rich._unicode_data.unicode17-0-0'
 ```
+
+## Release pipeline ordering (locked spec)
+
+The `release.yml` workflow is structured so that **PyPI publish blocks on
+binaries existing**. The dependency chain is:
+
+```
+release: published
+  ├── build-binaries  (matrix: linux-x64, darwin-arm64, win-x64)
+  │     └── attest-build-provenance per matrix leg
+  ├── publish (PyPI, OIDC trusted publishing)        needs: build-binaries
+  └── upload-binaries (GitHub Release + checksums)   needs: build-binaries
+```
+
+This ordering matters because `npx @mcptoolshop/sovereignty` consumers
+resolve binaries from the GitHub Release manifest. If PyPI shipped on a
+major version while binaries were missing, npm users would hit a 404 on
+install. The `needs: [build-binaries]` constraint on `publish` makes that
+impossible — a transient OIDC/fulcio failure on any of the three matrix
+legs blocks PyPI too, fail-closed.
+
+### Recovery procedure for a partial release
+
+If `build-binaries` fails on one of the three platforms after a tag was
+published:
+
+1. **Do not** delete the GitHub Release tag yet — its existence does not
+   imply a PyPI publish (publish hasn't run; it was blocked).
+2. Diagnose the matrix leg (most often: transient sigstore/fulcio outage,
+   GitHub Actions runner image rotation, or a flaky `pip install` step).
+3. Re-trigger via the GitHub UI: Actions → Release → Run workflow on the
+   release tag. The `if: github.event_name == 'release'` gate is satisfied
+   by re-running on the original release context.
+4. If you must publish to PyPI without binaries (true emergency), trigger
+   via `workflow_dispatch` — the `publish` job's `if: github.event_name ==
+   'release'` gate will skip it under workflow_dispatch, so you'll need to
+   relax that condition for the one-off run. **Document the gap loudly in
+   the release notes.**
+5. After binaries succeed, upload-binaries will attach them to the Release
+   page and `checksums-<version>.txt` will be regenerated.
+
+### Why no `skip-existing` on PyPI publish
+
+We deliberately do **not** pass `skip-existing: true` to
+`pypa/gh-action-pypi-publish`. A second publish attempt for the same
+version is a signal that something went wrong upstream — we want the loud
+HTTP 400 rather than a silent no-op. If you legitimately need to retry,
+bump the version (e.g. `2.0.0rc1` → `2.0.0rc2`).

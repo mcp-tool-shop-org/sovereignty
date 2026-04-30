@@ -104,10 +104,7 @@ def new_treaty_table_game(
         market=MarketPrices(),
         market_board=market_board,
     )
-    state.add_log(
-        f"Treaty Table game started. Seed: {seed}. "
-        f"Players: {', '.join(player_names)}"
-    )
+    state.add_log(f"Treaty Table game started. Seed: {seed}. Players: {', '.join(player_names)}")
     return state, rng
 
 
@@ -128,10 +125,7 @@ def parse_stake(text: str) -> Stake | str:
     for part in parts:
         tokens = part.split()
         if len(tokens) != 2:
-            return (
-                f"Can't parse stake: '{part}'. "
-                "Use '<amount> <type>' (e.g. '2 coins')."
-            )
+            return f"Can't parse stake: '{part}'. Use '<amount> <type>' (e.g. '2 coins')."
         try:
             amount = int(tokens[0])
         except ValueError:
@@ -189,9 +183,7 @@ def _transfer_stake(to_player: PlayerState, stake: Stake) -> None:
     """Transfer forfeited stake to the harmed party."""
     to_player.adjust_coins(stake.coins)
     for resource, amount in stake.resources.items():
-        to_player.resources[resource] = (
-            to_player.resources.get(resource, 0) + amount
-        )
+        to_player.resources[resource] = to_player.resources.get(resource, 0) + amount
 
 
 def _stake_desc(stake: Stake) -> str:
@@ -226,37 +218,23 @@ def treaty_make(
     if maker.name == partner.name:
         return "Can't make a treaty with yourself."
 
-    maker_active = [
-        t for t in maker.active_treaties if t.status == TreatyStatus.ACTIVE
-    ]
+    maker_active = [t for t in maker.active_treaties if t.status == TreatyStatus.ACTIVE]
     if len(maker_active) >= MAX_ACTIVE_TREATIES:
-        return (
-            f"{maker.name} already has {MAX_ACTIVE_TREATIES} active treaties. "
-            "Resolve one first."
-        )
+        return f"{maker.name} already has {MAX_ACTIVE_TREATIES} active treaties. Resolve one first."
 
-    partner_active = [
-        t for t in partner.active_treaties if t.status == TreatyStatus.ACTIVE
-    ]
+    partner_active = [t for t in partner.active_treaties if t.status == TreatyStatus.ACTIVE]
     if len(partner_active) >= MAX_ACTIVE_TREATIES:
         return (
-            f"{partner.name} already has {MAX_ACTIVE_TREATIES} active treaties. "
-            "Resolve one first."
+            f"{partner.name} already has {MAX_ACTIVE_TREATIES} active treaties. Resolve one first."
         )
 
     if maker_stake.is_empty() and partner_stake.is_empty():
         return "At least one party must stake something. Otherwise, use a promise."
 
     if not _can_afford_stake(maker, maker_stake):
-        return (
-            f"{maker.name} can't afford that stake "
-            f"(needs {_stake_desc(maker_stake)})."
-        )
+        return f"{maker.name} can't afford that stake (needs {_stake_desc(maker_stake)})."
     if not _can_afford_stake(partner, partner_stake):
-        return (
-            f"{partner.name} can't afford that stake "
-            f"(needs {_stake_desc(partner_stake)})."
-        )
+        return f"{partner.name} can't afford that stake (needs {_stake_desc(partner_stake)})."
 
     treaty = Treaty(
         treaty_id=_next_treaty_id(state),
@@ -292,9 +270,7 @@ def treaty_keep(state: GameState, treaty: Treaty) -> str:
     treaty.status = TreatyStatus.KEPT
 
     for player_name, stake in treaty.stakes.items():
-        player = next(
-            (p for p in state.players if p.name == player_name), None
-        )
+        player = next((p for p in state.players if p.name == player_name), None)
         if player:
             _return_stake(player, stake)
             player.adjust_rep(TREATY_REP_BONUS)
@@ -309,7 +285,9 @@ def treaty_keep(state: GameState, treaty: Treaty) -> str:
 
 
 def treaty_break(
-    state: GameState, treaty: Treaty, breaker_name: str,
+    state: GameState,
+    treaty: Treaty,
+    breaker_name: str,
 ) -> str:
     """One party broke the treaty. Breaker forfeits stake to harmed party."""
     if treaty.status != TreatyStatus.ACTIVE:
@@ -320,12 +298,8 @@ def treaty_break(
     treaty.status = TreatyStatus.BROKEN
 
     harmed_name = [n for n in treaty.parties if n != breaker_name][0]
-    harmed = next(
-        (p for p in state.players if p.name == harmed_name), None
-    )
-    breaker = next(
-        (p for p in state.players if p.name == breaker_name), None
-    )
+    harmed = next((p for p in state.players if p.name == harmed_name), None)
+    breaker = next((p for p in state.players if p.name == breaker_name), None)
 
     if not breaker or not harmed:
         return "Player not found."
@@ -368,10 +342,7 @@ def check_treaty_deadlines(state: GameState) -> list[str]:
         for t in player.active_treaties:
             if t.treaty_id in seen:
                 continue
-            if (
-                t.status == TreatyStatus.ACTIVE
-                and state.current_round > t.deadline_round
-            ):
+            if t.status == TreatyStatus.ACTIVE and state.current_round > t.deadline_round:
                 seen.add(t.treaty_id)
                 msg = treaty_keep(state, t)
                 messages.append(msg)

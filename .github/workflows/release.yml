@@ -16,7 +16,14 @@ concurrency:
 
 jobs:
   # --- PyPI publish (trusted publishing via OIDC) ---
+  # Locked spec adjustment #4: publish MUST depend on build-binaries success
+  # so a major-version PyPI release is never shipped without the binaries that
+  # `npx @mcptoolshop/sovereignty` consumers resolve from the GitHub Release.
+  # Fail-closed on `release` events; allow workflow_dispatch publish-only runs
+  # for hotfix scenarios documented in BUILD.md.
   publish:
+    if: github.event_name == 'release'
+    needs: [build-binaries]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -122,6 +129,7 @@ jobs:
       - name: Generate checksums
         shell: bash
         run: |
+          set -euo pipefail
           VERSION=${GITHUB_REF_NAME#v}
           cd artifacts
           sha256sum * > "checksums-${VERSION}.txt"

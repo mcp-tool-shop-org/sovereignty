@@ -39,8 +39,12 @@ def test_treaty_make_coins():
     alice, bob = state.players
 
     result = treaty_make(
-        state, alice, bob, "help each other",
-        Stake(coins=2), Stake(coins=1),
+        state,
+        alice,
+        bob,
+        "help each other",
+        Stake(coins=2),
+        Stake(coins=1),
     )
     assert isinstance(result, Treaty)
     assert result.treaty_id == "t_0001"
@@ -60,8 +64,12 @@ def test_treaty_make_resource_stake():
     bob.resources["wood"] = 2
 
     result = treaty_make(
-        state, alice, bob, "trade pact",
-        Stake(resources={"food": 2}), Stake(resources={"wood": 1}),
+        state,
+        alice,
+        bob,
+        "trade pact",
+        Stake(resources={"food": 2}),
+        Stake(resources={"wood": 1}),
     )
     assert isinstance(result, Treaty)
     assert alice.resources["food"] == 1  # 3 - 2
@@ -74,8 +82,12 @@ def test_treaty_make_mixed_stakes():
     bob.resources["tools"] = 2
 
     result = treaty_make(
-        state, alice, bob, "alliance",
-        Stake(coins=3), Stake(resources={"tools": 1}),
+        state,
+        alice,
+        bob,
+        "alliance",
+        Stake(coins=3),
+        Stake(resources={"tools": 1}),
     )
     assert isinstance(result, Treaty)
     assert alice.coins == 2  # 5 - 3
@@ -88,8 +100,12 @@ def test_treaty_keep_returns_stakes():
     old_rep_a, old_rep_b = alice.reputation, bob.reputation
 
     t = treaty_make(
-        state, alice, bob, "help",
-        Stake(coins=2), Stake(coins=1),
+        state,
+        alice,
+        bob,
+        "help",
+        Stake(coins=2),
+        Stake(coins=1),
     )
     assert isinstance(t, Treaty)
 
@@ -108,8 +124,12 @@ def test_treaty_break_transfers_stake():
     old_rep = alice.reputation
 
     t = treaty_make(
-        state, alice, bob, "pact",
-        Stake(coins=3), Stake(coins=2),
+        state,
+        alice,
+        bob,
+        "pact",
+        Stake(coins=3),
+        Stake(coins=2),
     )
     assert isinstance(t, Treaty)
     assert alice.coins == 2  # 5 - 3
@@ -164,8 +184,12 @@ def test_treaty_cant_afford():
     assert alice.coins == 5
 
     result = treaty_make(
-        state, alice, bob, "impossible",
-        Stake(coins=STAKE_CAP_COINS), Stake(),  # 5 coins, alice has 5 — OK
+        state,
+        alice,
+        bob,
+        "impossible",
+        Stake(coins=STAKE_CAP_COINS),
+        Stake(),  # 5 coins, alice has 5 — OK
     )
     assert isinstance(result, Treaty)
 
@@ -203,8 +227,13 @@ def test_treaty_deadline_auto_keeps():
     alice, bob = state.players
 
     t = treaty_make(
-        state, alice, bob, "short pact",
-        Stake(coins=1), Stake(coins=1), duration_rounds=1,
+        state,
+        alice,
+        bob,
+        "short pact",
+        Stake(coins=1),
+        Stake(coins=1),
+        duration_rounds=1,
     )
     assert isinstance(t, Treaty)
     assert alice.coins == 4
@@ -242,8 +271,12 @@ def test_treaty_serialization_roundtrip():
     alice.resources["food"] = 3
 
     treaty_make(
-        state, alice, bob, "serialize me",
-        Stake(coins=2, resources={"food": 1}), Stake(coins=1),
+        state,
+        alice,
+        bob,
+        "serialize me",
+        Stake(coins=2, resources={"food": 1}),
+        Stake(coins=1),
     )
 
     snapshot = game_state_snapshot(state)
@@ -326,3 +359,53 @@ def test_treaty_escrow_prevents_overspend():
     result = treaty_make(state2, x, y, "second", Stake(coins=2), Stake())
     assert isinstance(result, str)
     assert "can't afford" in result
+
+
+def test_next_treaty_id_with_malformed_id_skips_gracefully():
+    """``_next_treaty_id`` must tolerate a malformed treaty_id and return the
+    next valid id from the well-formed siblings.
+
+    Parking-lot F-432101-021: the error-tolerant branch in
+    ``sov_engine/rules/treaty_table.py:_next_treaty_id`` (the
+    ``except (IndexError, ValueError): pass`` for non-canonical ids) is
+    unreachable via normal production paths because every treaty_id is
+    minted as ``t_NNNN``. We construct a scenario with ONE malformed id
+    (``"bad_id"``) plus one well-formed (``"t_0003"``) and assert the
+    helper returns ``"t_0004"`` -- proving the malformed id is skipped
+    (not parsed, not crashed on, not used as max).
+    """
+    from sov_engine.rules.treaty_table import _next_treaty_id
+
+    state, _ = new_treaty_table_game(42, ["Alice", "Bob"])
+    alice, bob = state.players
+
+    # Stake one canonical treaty so we have a well-formed id to anchor against.
+    canonical = treaty_make(state, alice, bob, "good", Stake(coins=1), Stake())
+    assert isinstance(canonical, Treaty)
+    # Force its id to "t_0003" so the next valid id would be "t_0004".
+    canonical.treaty_id = "t_0003"
+
+    # Inject a malformed treaty into Alice's active list. We bypass treaty_make
+    # because production code never produces malformed ids -- this is a
+    # deliberate corruption to exercise the defensive parse branch.
+    malformed = Treaty(
+        treaty_id="bad_id",
+        text="malformed",
+        parties=["Alice", "Bob"],
+        stakes={
+            "Alice": Stake(coins=0),
+            "Bob": Stake(coins=0),
+        },
+        deadline_round=99,
+        status=TreatyStatus.ACTIVE,
+        created_round=0,
+    )
+    alice.active_treaties.append(malformed)
+
+    # The helper must NOT raise; must return the next valid id from the
+    # well-formed sibling ("t_0003" -> "t_0004").
+    next_id = _next_treaty_id(state)
+    assert next_id == "t_0004", (
+        f"_next_treaty_id must skip malformed ids and increment from the "
+        f"highest well-formed sibling; expected 't_0004', got {next_id!r}."
+    )

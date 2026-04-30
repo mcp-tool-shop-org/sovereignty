@@ -8,6 +8,42 @@ import DataTable from '@mcptoolshop/site-theme/components/DataTable.astro';
 import CodeCardGrid from '@mcptoolshop/site-theme/components/CodeCardGrid.astro';
 import ApiList from '@mcptoolshop/site-theme/components/ApiList.astro';
 import { config } from '../site-config';
+
+// Exhaustiveness guard for section dispatch (Wave 5 / F-008).
+//
+// Two-layer guard:
+//   1. Compile-time: the switch below narrows `s.kind` to `never` in the
+//      default branch. If a new SectionConfig kind is added in site-config.ts
+//      without a matching case, TypeScript fails the build with a type error
+//      on `assertNever(kind)` ("argument is not assignable to never").
+//   2. Run-time: any unknown kind that slips past the type checker (e.g. a
+//      cast or a JSON-loaded section) logs a loud warning during `astro build`
+//      so it cannot disappear silently.
+//
+// Whenever you add a new kind below, also add a matching renderer branch in
+// the JSX dispatch further down in this file.
+const KNOWN_SECTION_KINDS = ['features', 'data-table', 'code-cards', 'api'] as const;
+type KnownSectionKind = typeof KNOWN_SECTION_KINDS[number];
+function assertNever(_x: never, ctx: string): never {
+  throw new Error(`Unhandled section kind in index.astro dispatch (${ctx})`);
+}
+for (const s of config.sections) {
+  const kind = s.kind;
+  switch (kind) {
+    case 'features':
+    case 'data-table':
+    case 'code-cards':
+    case 'api':
+      break;
+    default:
+      // Compile-time check: this line errors if `kind` is not narrowed to
+      // `never` (i.e. a new kind was added above without a case here).
+      assertNever(kind, `id="${(s as { id?: string }).id ?? '<unknown>'}"`);
+  }
+  if (!KNOWN_SECTION_KINDS.includes(kind as KnownSectionKind)) {
+    console.warn(`[index.astro] Unknown section kind "${kind}" (id="${s.id}"); section will render with empty body. Add a renderer branch or remove the section from site-config.ts.`);
+  }
+}
 ---
 
 <BaseLayout
@@ -24,6 +60,10 @@ import { config } from '../site-config';
 
   {config.sections.map((s) => (
     <Section id={s.id} title={s.title} subtitle={s.subtitle}>
+      {/*
+        Renderer branches. Keep this list in sync with KNOWN_SECTION_KINDS in
+        the frontmatter — the exhaustiveness loop above enforces that.
+      */}
       {s.kind === 'features' && <FeatureGrid features={s.features} />}
       {s.kind === 'data-table' && <DataTable columns={s.columns} rows={s.rows} />}
       {s.kind === 'code-cards' && <CodeCardGrid cards={s.cards} />}

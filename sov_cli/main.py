@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+import logging
+import os
 import re
 from importlib.metadata import version as _pkg_version
 from pathlib import Path
-from typing import Annotated, Never
+from typing import Annotated, Any, Never
 
 import typer
 from rich.console import Console
@@ -29,6 +31,8 @@ from sov_cli.errors import (
     proof_invalid_error,
     scenario_error,
     share_code_error,
+    state_corrupt_error,
+    state_version_mismatch_error,
     treaty_error,
     wallet_error,
 )
@@ -85,11 +89,47 @@ def _version_callback(value: bool) -> None:
             _pyproject = Path(__file__).parent.parent / "pyproject.toml"
             _content = _pyproject.read_text(encoding="utf-8")
             m = re.search(
-                r'^version\s*=\s*"([^"]+)"', _content, re.MULTILINE,
+                r'^version\s*=\s*"([^"]+)"',
+                _content,
+                re.MULTILINE,
             )
             ver = m.group(1) if m else "unknown"
         typer.echo(f"sovereignty {ver}")
         raise typer.Exit()
+
+
+# Module-level logger. Engine code uses "sov_engine"; CLI uses "sov_cli".
+# Default handler is configured below to write WARNING-level messages to
+# stderr; operators can raise/lower verbosity via SOV_LOG_LEVEL.
+logger = logging.getLogger("sov_cli")
+
+
+def _configure_default_logging() -> None:
+    """Wire a stderr handler at WARNING by default. Idempotent.
+
+    Operators can override the threshold via the ``SOV_LOG_LEVEL`` env var
+    (DEBUG, INFO, WARNING, ERROR). Both ``sov_cli`` and ``sov_engine`` loggers
+    share the configuration so engine warnings (e.g. workshop fall-through)
+    surface to the user without each module installing its own handler.
+    """
+    level_name = os.environ.get("SOV_LOG_LEVEL", "WARNING").upper()
+    level = getattr(logging, level_name, logging.WARNING)
+    for name in ("sov_cli", "sov_engine"):
+        lg = logging.getLogger(name)
+        lg.setLevel(level)
+        # Don't re-add a handler if we already configured this logger in
+        # the current process (e.g. multiple typer invocations in tests).
+        if any(getattr(h, "_sov_default", False) for h in lg.handlers):
+            continue
+        handler = logging.StreamHandler()
+        handler.setLevel(level)
+        handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+        handler._sov_default = True  # type: ignore[attr-defined]
+        lg.addHandler(handler)
+        lg.propagate = False
+
+
+_configure_default_logging()
 
 
 app = typer.Typer(
@@ -106,7 +146,8 @@ def main(
     version: Annotated[
         bool,
         typer.Option(
-            "--version", "-V",
+            "--version",
+            "-V",
             help="Show version and exit.",
             callback=_version_callback,
             is_eager=True,
@@ -114,6 +155,7 @@ def main(
     ] = False,
 ) -> None:
     """Sovereignty — a strategy game about governance, trust, and trade."""
+
 
 # ---------------------------------------------------------------------------
 # Persistent state (file-backed per game session)
@@ -124,23 +166,91 @@ STATE_FILE = SAVE_DIR / "game_state.json"
 RNG_SEED_FILE = SAVE_DIR / "rng_seed.txt"
 PROOFS_DIR = SAVE_DIR / "proofs"
 
+# State schema version this binary understands. Bump on any field rename or
+# removal in ``game_state_snapshot``; new optional fields don't require bump.
+SUPPORTED_STATE_SCHEMA_VERSION = 1
+
+
+def _atomic_write(path: Path, content: str) -> None:
+    """Write content to path atomically (.tmp + os.replace).
+
+    Crash/disk-full mid-write leaves the .tmp behind, NOT a half-written
+    target file. Caller is responsible for any concurrent-writer locking;
+    this helper only addresses single-process write atomicity.
+    """
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(content, encoding="utf-8", newline="\n")
+    os.replace(tmp, path)
+
 
 def _save_state(state: GameState) -> None:
-    """Persist game state to disk."""
+    """Persist game state to disk atomically."""
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
     snapshot = game_state_snapshot(state)
-    STATE_FILE.write_text(canonical_json(snapshot), encoding="utf-8", newline="\n")
+    _atomic_write(STATE_FILE, canonical_json(snapshot))
+    logger.info("save_state path=%s round=%d", STATE_FILE, state.current_round)
+
+
+def _record_anchor(round_key: int | str, txid: str) -> None:
+    """Persist an XRPL anchor txid keyed by round (or "FINAL") to anchors.json.
+
+    Schema matches what postcard / feedback already read:
+    ``{round_str: txid}``. Called after a successful ``transport.anchor()``
+    so subsequent invocations can surface the explorer link.
+    """
+    PROOFS_DIR.mkdir(parents=True, exist_ok=True)
+    anchor_file = PROOFS_DIR / "anchors.json"
+    anchors: dict[str, str] = {}
+    if anchor_file.exists():
+        try:
+            anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
+            if not isinstance(anchors, dict):
+                anchors = {}
+        except (json.JSONDecodeError, OSError) as e:
+            # Don't lose the new txid because the prior file was corrupt;
+            # log and overwrite.
+            logger.warning("anchors.json unreadable, overwriting: %s", e)
+            anchors = {}
+    anchors[str(round_key)] = txid
+    _atomic_write(
+        anchor_file,
+        json.dumps(anchors, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+    )
 
 
 def _load_game() -> tuple[GameState, GameRng] | None:
-    """Load game state from disk. Returns None if no active game."""
+    """Load game state from disk.
+
+    Returns None if no active game (missing files). On a corrupted save or a
+    schema_version we don't understand, prints a structured ``SovError`` and
+    exits via ``_fail`` — the same path the rest of the CLI uses for
+    unrecoverable user-facing failures.
+    """
     if not STATE_FILE.exists():
         return None
     if not RNG_SEED_FILE.exists():
         return None
 
+    try:
+        return _load_game_inner()
+    except (
+        json.JSONDecodeError,
+        KeyError,
+        ValueError,
+        OSError,
+    ) as e:
+        logger.error("load_game failed: %s: %s", type(e).__name__, e)
+        _fail(state_corrupt_error(f"{type(e).__name__}: {e}"))
+
+
+def _load_game_inner() -> tuple[GameState, GameRng] | None:
+    """Load implementation — exceptions are caught by ``_load_game``."""
     seed = int(RNG_SEED_FILE.read_text().strip())
     data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+
+    schema_version = data.get("schema_version")
+    if schema_version != SUPPORTED_STATE_SCHEMA_VERSION:
+        _fail(state_version_mismatch_error(schema_version))
 
     # Reconstruct game from saved state
     rng = GameRng(seed)
@@ -208,6 +318,10 @@ def _load_game() -> tuple[GameState, GameRng] | None:
     state.market.food = data["market"]["food"]
     state.market.wood = data["market"]["wood"]
     state.market.tools = data["market"]["tools"]
+    # Restore monotonic ID counters (default 0 for forward-compat with
+    # snapshots that predate the field — issue_voucher will start at 1).
+    state.next_voucher_id = data.get("next_voucher_id", 0)
+    state.next_deal_id = data.get("next_deal_id", 0)
 
     # Restore market board for Market Day / Town Hall games
     mb_data = data.get("market_board")
@@ -235,8 +349,78 @@ def _fail(err: SovError) -> Never:
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# JSON output schema (coordination contract with ci-docs)
+# ---------------------------------------------------------------------------
+# Shape:
+#   {
+#     "timestamp": "<ISO-8601 UTC>",
+#     "command": "<doctor|self-check|support-bundle>",
+#     "status":  "ok" | "warn" | "fail",
+#     "fields":  [
+#       {"name": "<str>", "status": "<str>", "value": <Any>,
+#        "message": "<optional str>"}
+#     ]
+#   }
+# Both the engine emitter and ci-docs's CLI/docs surface treat this layout as
+# the contract. Add new fields as additional list entries; do not mutate the
+# top-level shape without a coordinated bump.
+
+_JSON_OUTPUT_OK = "ok"
+_JSON_OUTPUT_WARN = "warn"
+_JSON_OUTPUT_FAIL = "fail"
+
+
+def _json_status() -> str:
+    """Return the current ISO-8601 UTC timestamp suitable for JSON envelopes."""
+    import datetime as _dt
+
+    return _dt.datetime.now(_dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _checks_to_json_payload(
+    command: str,
+    checks: list[tuple[str, str, str]],
+    *,
+    status_map: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    """Convert a (status, label, detail) checks list to the documented JSON.
+
+    ``status_map`` lets a caller alias internal status labels (e.g. "info"
+    -> "ok") without losing the original in the per-field "status".
+    """
+    smap = status_map or {}
+    fields = [
+        {
+            "name": label,
+            "status": status,
+            "value": detail,
+        }
+        for status, label, detail in checks
+    ]
+    overall = _JSON_OUTPUT_OK
+    for f in fields:
+        normalised = smap.get(f["status"], f["status"])
+        if normalised == _JSON_OUTPUT_FAIL:
+            overall = _JSON_OUTPUT_FAIL
+            break
+        if normalised == _JSON_OUTPUT_WARN and overall == _JSON_OUTPUT_OK:
+            overall = _JSON_OUTPUT_WARN
+    return {
+        "timestamp": _json_status(),
+        "command": command,
+        "status": overall,
+        "fields": fields,
+    }
+
+
 @app.command()
-def doctor() -> None:
+def doctor(
+    json_out: Annotated[
+        bool,
+        typer.Option("--json", help="Emit machine-readable JSON to stdout."),
+    ] = False,
+) -> None:
     """Pre-flight check. Is everything ready to play?"""
     checks: list[tuple[str, str, str]] = []  # (status, message, hint)
 
@@ -256,17 +440,21 @@ def doctor() -> None:
             names = ", ".join(p.name for p in state.players)
             rnd = state.current_round
             if state.game_over:
-                checks.append((
-                    "ok",
-                    f"Game complete: {tier} ({names})",
-                    "Run: sov game-end",
-                ))
+                checks.append(
+                    (
+                        "ok",
+                        f"Game complete: {tier} ({names})",
+                        "Run: sov game-end",
+                    )
+                )
             else:
-                checks.append((
-                    "ok",
-                    f"Ready to play {tier} — {n} players ({names}), round {rnd}",
-                    "",
-                ))
+                checks.append(
+                    (
+                        "ok",
+                        f"Ready to play {tier} — {n} players ({names}), round {rnd}",
+                        "",
+                    )
+                )
         else:
             checks.append(("warn", "Game state exists but can't load", "Try: sov new"))
     else:
@@ -278,19 +466,29 @@ def doctor() -> None:
             season = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
             game_count = len(season.get("games", []))
             s = "s" if game_count != 1 else ""
-            checks.append((
-                "ok", f"Season active ({game_count} game{s} played)", "",
-            ))
+            checks.append(
+                (
+                    "ok",
+                    f"Season active ({game_count} game{s} played)",
+                    "",
+                )
+            )
         except (json.JSONDecodeError, OSError):
-            checks.append((
-                "warn", "Season file exists but can't parse",
-                "Delete .sov/season.json to start fresh",
-            ))
+            checks.append(
+                (
+                    "warn",
+                    "Season file exists but can't parse",
+                    "Delete .sov/season.json to start fresh",
+                )
+            )
     else:
-        checks.append((
-            "info", "No season file yet (that's fine)",
-            "Seasons start after sov game-end",
-        ))
+        checks.append(
+            (
+                "info",
+                "No season file yet (that's fine)",
+                "Seasons start after sov game-end",
+            )
+        )
 
     # 4. Wallet / Diary Mode
     wallet_file = SAVE_DIR / "wallet_seed.txt"
@@ -310,6 +508,21 @@ def doctor() -> None:
     if proofs:
         s = "s" if len(proofs) != 1 else ""
         checks.append(("ok", f"{len(proofs)} proof file{s} saved", ""))
+
+    if json_out:
+        # Doctor uses ("status","message","hint") triples; map to the
+        # documented JSON shape with "info" rolling up as "ok".
+        payload = _checks_to_json_payload(
+            "doctor",
+            checks,
+            status_map={"info": _JSON_OUTPUT_OK},
+        )
+        # Stash hints into "message" for richer machine consumption.
+        for f, (_status, _msg, hint) in zip(payload["fields"], checks, strict=True):
+            if hint:
+                f["message"] = hint
+        typer.echo(json.dumps(payload, indent=2))
+        return
 
     # Print
     icons = {"ok": "[green]OK[/green]", "warn": "[yellow]!![/yellow]", "info": "[dim]--[/dim]"}
@@ -399,13 +612,35 @@ def _checks_to_text(checks: list[tuple[str, str, str]]) -> str:
 
 
 @app.command("self-check")
-def self_check() -> None:
+def self_check(
+    json_out: Annotated[
+        bool,
+        typer.Option("--json", help="Emit machine-readable JSON to stdout."),
+    ] = False,
+) -> None:
     """Diagnose your environment. Paste output into a bug report."""
-    _print_checks(_collect_checks())
+    checks = _collect_checks()
+    if json_out:
+        payload = _checks_to_json_payload(
+            "self-check",
+            checks,
+            status_map={"info": _JSON_OUTPUT_OK},
+        )
+        typer.echo(json.dumps(payload, indent=2))
+        return
+    _print_checks(checks)
 
 
 @app.command("support-bundle")
-def support_bundle() -> None:
+def support_bundle(
+    json_out: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help="Emit machine-readable JSON to stdout (in addition to writing the bundle).",
+        ),
+    ] = False,
+) -> None:
     """Write a diagnostic zip for bug reports. Attach it to your issue."""
     import datetime
     import platform as _platform
@@ -413,22 +648,34 @@ def support_bundle() -> None:
     import zipfile
 
     checks = _collect_checks()
-    _print_checks(checks)
+    if not json_out:
+        _print_checks(checks)
 
     ts = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     bundle_name = f"sov-support-{ts}.zip"
     bundle_path = Path.cwd() / bundle_name
 
+    # Pre-build the JSON payload so we can both stash it inside the zip
+    # AND emit it to stdout when --json is set.
+    json_payload = _checks_to_json_payload(
+        "support-bundle",
+        checks,
+        status_map={"info": _JSON_OUTPUT_OK},
+    )
+    json_payload["bundle_path"] = str(bundle_path)
+
     with zipfile.ZipFile(bundle_path, "w", zipfile.ZIP_DEFLATED) as zf:
-        # 1. Self-check output
+        # 1. Self-check output (text + JSON)
         zf.writestr("self-check.txt", _checks_to_text(checks))
+        zf.writestr("self-check.json", json.dumps(json_payload, indent=2))
 
         # 2. Sanitized config (game state, no wallet secrets)
         if STATE_FILE.exists():
             try:
                 data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
                 zf.writestr("game_state.json", json.dumps(data, indent=2))
-            except Exception:
+            except Exception as exc:
+                logger.warning("support-bundle could not read game_state: %s", exc)
                 zf.writestr("game_state.json", "(could not read)")
 
         # 3. State file listing (names only, no content)
@@ -454,6 +701,10 @@ def support_bundle() -> None:
         }
         zf.writestr("environment.json", json.dumps(env_info, indent=2))
 
+    if json_out:
+        typer.echo(json.dumps(json_payload, indent=2))
+        return
+
     console.print(f"  [green]Bundle written:[/green] {bundle_path}")
     console.print("  [dim]Attach this file to your GitHub issue.[/dim]")
 
@@ -462,7 +713,7 @@ def support_bundle() -> None:
 def new(
     seed: Annotated[int, typer.Option("--seed", "-s", help="RNG seed")] = 42,
     players: Annotated[
-        list[str],
+        list[str] | None,
         typer.Option("--player", "-p", help="Player names (2-4)"),
     ] = None,
     tier: Annotated[
@@ -470,10 +721,12 @@ def new(
         typer.Option("--tier", "-t", help="campfire, market-day, town-hall, or treaty-table"),
     ] = "campfire",
     recipe: Annotated[
-        str, typer.Option("--recipe", "-r", help="cozy, spicy, or market"),
+        str,
+        typer.Option("--recipe", "-r", help="cozy, spicy, or market"),
     ] = "",
     code: Annotated[
-        str, typer.Option("--code", help="Share code from sov scenario code"),
+        str,
+        typer.Option("--code", help="Share code from sov scenario code"),
     ] = "",
 ) -> None:
     """Start a new game. Use --tier or --code to configure."""
@@ -520,18 +773,20 @@ def new(
 
     # Save seed for reloading
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
-    RNG_SEED_FILE.write_text(str(seed), encoding="utf-8")
+    _atomic_write(RNG_SEED_FILE, str(seed))
     _save_state(state)
 
-    console.print(Panel(
-        f"[bold green]Sovereignty: {tier_label}[/bold green]\n\n"
-        f"  Everyone starts with 5 coins, 3 reputation, and a goal.\n"
-        f"{extra}"
-        f"  Players: {', '.join(players)}\n"
-        f"  {state.config.max_rounds} rounds. Make them count."
-        f"{recipe_note}",
-        title="Gather 'round",
-    ))
+    console.print(
+        Panel(
+            f"[bold green]Sovereignty: {tier_label}[/bold green]\n\n"
+            f"  Everyone starts with 5 coins, 3 reputation, and a goal.\n"
+            f"{extra}"
+            f"  Players: {', '.join(players)}\n"
+            f"  {state.config.max_rounds} rounds. Make them count."
+            f"{recipe_note}",
+            title="Gather 'round",
+        )
+    )
     _print_status(state)
 
 
@@ -540,18 +795,20 @@ def tutorial() -> None:
     """Learn to play in 60 seconds. Sets up a quick demo game."""
     from time import sleep
 
-    console.print(Panel(
-        "[bold green]Sovereignty: Campfire[/bold green]\n\n"
-        "  A quick walkthrough. Two players, one round.\n"
-        "  Takes about a minute.",
-        title="Learn by doing",
-    ))
+    console.print(
+        Panel(
+            "[bold green]Sovereignty: Campfire[/bold green]\n\n"
+            "  A quick walkthrough. Two players, one round.\n"
+            "  Takes about a minute.",
+            title="Learn by doing",
+        )
+    )
     sleep(1)
 
     # Set up a 2-player demo game
     state, rng = new_game(seed=1, player_names=["You", "Friend"])
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
-    RNG_SEED_FILE.write_text("1", encoding="utf-8")
+    _atomic_write(RNG_SEED_FILE, "1")
 
     console.print("\n  You and Friend sit down with 5 coins and 3 reputation each.")
     console.print("  [dim]Goal: be the first to reach 20 coins (Prosperity).[/dim]\n")
@@ -601,13 +858,15 @@ def tutorial() -> None:
     # Save the demo state
     _save_state(state)
 
-    console.print(Panel(
-        "  That's Campfire. Roll, land, trade, promise, repeat.\n"
-        "  The console keeps score. You keep your word.\n\n"
-        "  [dim]Start a real game: sov new -p Alice -p Bob[/dim]\n"
-        "  [dim]Continue this demo: sov turn[/dim]",
-        title="You're ready",
-    ))
+    console.print(
+        Panel(
+            "  That's Campfire. Roll, land, trade, promise, repeat.\n"
+            "  The console keeps score. You keep your word.\n\n"
+            "  [dim]Start a real game: sov new -p Alice -p Bob[/dim]\n"
+            "  [dim]Continue this demo: sov turn[/dim]",
+            title="You're ready",
+        )
+    )
 
 
 @app.command()
@@ -647,8 +906,7 @@ def turn() -> None:
     for t in active_t:
         other = [n for n in t.parties if n != player.name][0]
         console.print(
-            f'  [dim italic]Treaty with {other}: "{t.text}"'
-            f" (due R{t.deadline_round})[/dim italic]"
+            f'  [dim italic]Treaty with {other}: "{t.text}" (due R{t.deadline_round})[/dim italic]'
         )
 
     # Roll and move
@@ -722,12 +980,12 @@ def end_round(
     out_dir = output or PROOFS_DIR
     path = save_proof(proof, out_dir)
 
-    console.print(Panel(
-        f"Round: {proof['round']}\n"
-        f"Hash: [bold]{proof['envelope_hash']}[/bold]\n"
-        f"File: {path}",
-        title="Round Proof",
-    ))
+    console.print(
+        Panel(
+            f"Round: {proof['round']}\nHash: [bold]{proof['envelope_hash']}[/bold]\nFile: {path}",
+            title="Round Proof",
+        )
+    )
 
 
 @app.command()
@@ -739,11 +997,13 @@ def verify(
     try:
         valid, message = verify_proof(proof_file)
     except ProofFormatError as e:
-        _fail(proof_invalid_error(str(e)))
+        # ProofFormatError is raised for v1/unsupported version proofs.
+        _fail(proof_invalid_error(str(e), kind="UNSUPPORTED_VERSION"))
     if valid:
         console.print(f"  [green]Local proof valid.[/green] {message}")
     else:
-        _fail(proof_invalid_error(message))
+        # Hash mismatch / missing field: bytes were modified or corrupted.
+        _fail(proof_invalid_error(message, kind="MODIFIED"))
 
     if tx:
         proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
@@ -772,7 +1032,8 @@ def anchor(
         typer.Argument(help="Proof file to anchor (default: latest)"),
     ] = None,
     seed_env: Annotated[
-        str, typer.Option("--seed-env", help="Env var containing wallet seed"),
+        str,
+        typer.Option("--seed-env", help="Env var containing wallet seed"),
     ] = "XRPL_SEED",
     signer_file: Annotated[
         Path | None,
@@ -825,18 +1086,27 @@ def anchor(
         transport = XRPLTestnetTransport()
         txid = transport.anchor(envelope_hash, memo, seed)
 
+        # Persist txid so postcard / feedback can surface the explorer link
+        # in future invocations (the anchor receipt was previously read-only).
+        _record_anchor(rnd, txid)
+        logger.info("anchor success round=%s txid=%s", rnd, txid)
+
         explorer = f"https://testnet.xrpl.org/transactions/{txid}"
-        console.print(Panel(
-            f"  Round {rnd} anchored on XRPL Testnet.\n\n"
-            f"  TX: [bold]{txid}[/bold]\n"
-            f"  Hash: [dim]{envelope_hash}[/dim]\n"
-            f"  Explorer: [dim]{explorer}[/dim]\n\n"
-            f"  [dim]Verify later: sov verify {proof_file} --tx {txid}[/dim]",
-            title="Anchored",
-        ))
+        console.print(
+            Panel(
+                f"  Round {rnd} anchored on XRPL Testnet.\n\n"
+                f"  TX: [bold]{txid}[/bold]\n"
+                f"  Hash: [dim]{envelope_hash}[/dim]\n"
+                f"  Explorer: [dim]{explorer}[/dim]\n\n"
+                f"  [dim]Verify later: sov verify {proof_file} --tx {txid}[/dim]",
+                title="Anchored",
+            )
+        )
     except RuntimeError as e:
+        logger.error("anchor failed (RuntimeError): %s", e)
         _fail(anchor_error(str(e)))
     except Exception as e:
+        logger.error("anchor failed (%s): %s", type(e).__name__, e)
         _fail(anchor_error(str(e)))
 
 
@@ -856,13 +1126,15 @@ def wallet() -> None:
         SAVE_DIR.mkdir(parents=True, exist_ok=True)
         wallet_file.write_text(seed, encoding="utf-8")
 
-        console.print(Panel(
-            f"  Address: [bold]{address}[/bold]\n"
-            f"  Seed saved to: {wallet_file}\n\n"
-            f"  [dim]Use it: sov anchor --signer-file {wallet_file}[/dim]\n"
-            f"  [dim]Or set: export XRPL_SEED=<your-seed>[/dim]",
-            title="Testnet Wallet",
-        ))
+        console.print(
+            Panel(
+                f"  Address: [bold]{address}[/bold]\n"
+                f"  Seed saved to: {wallet_file}\n\n"
+                f"  [dim]Use it: sov anchor --signer-file {wallet_file}[/dim]\n"
+                f"  [dim]Or set: export XRPL_SEED=<your-seed>[/dim]",
+                title="Testnet Wallet",
+            )
+        )
     except RuntimeError as e:
         _fail(wallet_error(str(e)))
     except Exception as e:
@@ -872,7 +1144,8 @@ def wallet() -> None:
 @app.command()
 def postcard(
     style: Annotated[
-        str, typer.Option("--style", "-s", help="cozy, spicy, economic, or all"),
+        str,
+        typer.Option("--style", "-s", help="cozy, spicy, economic, or all"),
     ] = "all",
 ) -> None:
     """Share your game in one screenshot. The campfire postcard."""
@@ -914,9 +1187,7 @@ def postcard(
     for p in state.players:
         score_line = f"{p.name}: {p.coins}c {p.reputation}r {p.upgrades}u"
         if p.resources:
-            res = " ".join(
-                f"{v}{k[0].upper()}" for k, v in p.resources.items() if v > 0
-            )
+            res = " ".join(f"{v}{k[0].upper()}" for k, v in p.resources.items() if v > 0)
             if res:
                 score_line += f" {res}"
         scores.append(score_line)
@@ -928,17 +1199,19 @@ def postcard(
 
     tier_name = _tier_name(state)
 
-    console.print(Panel(
-        f"  [bold]Sovereignty: {tier_name}[/bold]\n"
-        f"  Round {rnd} | {players}\n\n"
-        f"  {' | '.join(scores)}\n\n"
-        f"  Proof: {proof_hash}"
-        f"{anchor_line}"
-        f"{market_line}"
-        f"{recap_text}",
-        title=f"{tier_name} Postcard",
-        subtitle=f"[dim]sov postcard --style {style}[/dim]",
-    ))
+    console.print(
+        Panel(
+            f"  [bold]Sovereignty: {tier_name}[/bold]\n"
+            f"  Round {rnd} | {players}\n\n"
+            f"  {' | '.join(scores)}\n\n"
+            f"  Proof: {proof_hash}"
+            f"{anchor_line}"
+            f"{market_line}"
+            f"{recap_text}",
+            title=f"{tier_name} Postcard",
+            subtitle=f"[dim]sov postcard --style {style}[/dim]",
+        )
+    )
 
 
 @app.command()
@@ -975,8 +1248,7 @@ def promise(
             console.print(f"\n  {msg}")
             if not target.apology_used:
                 console.print(
-                    "  [dim]You can Apologize once per game:"
-                    " sov apologize <name>[/dim]",
+                    "  [dim]You can Apologize once per game: sov apologize <name>[/dim]",
                 )
         case _:
             _fail(invalid_action_error(action, "promise make/keep/break 'text'"))
@@ -1035,13 +1307,11 @@ def offer(
     # Nudge: check for existing offer this round
     rnd = state.current_round
     prior_offers = [
-        e for e in state.log
-        if e.startswith(f"R{rnd}") and f"{source.name} offers" in e
+        e for e in state.log if e.startswith(f"R{rnd}") and f"{source.name} offers" in e
     ]
     if prior_offers:
         console.print(
-            "  [yellow]One Offer per turn"
-            " — save it for next round.[/yellow]",
+            "  [yellow]One Offer per turn — save it for next round.[/yellow]",
         )
 
     if to:
@@ -1063,22 +1333,28 @@ def treaty(
     action: Annotated[str, typer.Argument(help="make, keep, break, or list")],
     text: Annotated[str, typer.Argument(help="Treaty text or treaty ID")] = "",
     with_player: Annotated[
-        str, typer.Option("--with", help="Treaty partner"),
+        str,
+        typer.Option("--with", help="Treaty partner"),
     ] = "",
     stake: Annotated[
-        str, typer.Option("--stake", help="Your stake, e.g. '2 coins'"),
+        str,
+        typer.Option("--stake", help="Your stake, e.g. '2 coins'"),
     ] = "",
     their_stake: Annotated[
-        str, typer.Option("--their-stake", help="Partner's stake"),
+        str,
+        typer.Option("--their-stake", help="Partner's stake"),
     ] = "",
     duration: Annotated[
-        int, typer.Option("--duration", "-d", help="Rounds until deadline"),
+        int,
+        typer.Option("--duration", "-d", help="Rounds until deadline"),
     ] = 3,
     player: Annotated[
-        str, typer.Option("--player", "-p", help="Who's acting"),
+        str,
+        typer.Option("--player", "-p", help="Who's acting"),
     ] = "",
     breaker: Annotated[
-        str, typer.Option("--breaker", help="Who broke it (for break)"),
+        str,
+        typer.Option("--breaker", help="Who broke it (for break)"),
     ] = "",
 ) -> None:
     """Make, keep, break, or list treaties. Say it out loud."""
@@ -1103,16 +1379,15 @@ def treaty(
         case "make":
             if not with_player:
                 _fail(treaty_error("Use --with to name your treaty partner."))
-            partner = next(
-                (p for p in state.players if p.name == with_player), None
-            )
+            partner = next((p for p in state.players if p.name == with_player), None)
             if partner is None:
                 _fail(player_not_found_error(with_player))
             if not stake and not their_stake:
-                _fail(treaty_error(
-                    "Use --stake and/or --their-stake."
-                    " At least one side must stake something."
-                ))
+                _fail(
+                    treaty_error(
+                        "Use --stake and/or --their-stake. At least one side must stake something."
+                    )
+                )
 
             maker_stake = parse_stake(stake)
             if isinstance(maker_stake, str):
@@ -1122,8 +1397,13 @@ def treaty(
                 _fail(treaty_error(partner_stake))
 
             result_val = treaty_make(
-                state, source, partner, text,
-                maker_stake, partner_stake, duration,
+                state,
+                source,
+                partner,
+                text,
+                maker_stake,
+                partner_stake,
+                duration,
             )
             if isinstance(result_val, str):
                 _fail(treaty_error(result_val))
@@ -1131,10 +1411,7 @@ def treaty(
                 f"\n  [bold]Treaty {result_val.treaty_id}[/bold]: "
                 f'{source.name} and {partner.name} agree: "{text}"'
             )
-            console.print(
-                f"  [dim]Due round {result_val.deadline_round}. "
-                f"Stakes in escrow.[/dim]"
-            )
+            console.print(f"  [dim]Due round {result_val.deadline_round}. Stakes in escrow.[/dim]")
 
         case "keep":
             if not text:
@@ -1153,10 +1430,7 @@ def treaty(
                 _fail(treaty_error("Specify the treaty ID."))
             breaker_name = breaker or source.name
             t = next(
-                (
-                    t for t in source.active_treaties
-                    if t.treaty_id == text
-                ),
+                (t for t in source.active_treaties if t.treaty_id == text),
                 None,
             )
             if t is None:
@@ -1180,6 +1454,7 @@ def treaty(
                 other = [n for n in t.parties if n != source.name]
                 other_name = other[0] if other else "?"
                 from sov_engine.rules.treaty_table import _stake_desc
+
                 stake_parts = []
                 for name, s in t.stakes.items():
                     if not s.is_empty():
@@ -1277,8 +1552,11 @@ def _calc_story_points(state: GameState) -> dict[str, dict[str, int]]:
     names = [p.name for p in state.players]
     points: dict[str, dict[str, int]] = {
         n: {
-            "winner": 0, "promise_keeper": 0, "most_helpful": 0,
-            "tables_choice": 0, "treaty_keeper": 0,
+            "winner": 0,
+            "promise_keeper": 0,
+            "most_helpful": 0,
+            "tables_choice": 0,
+            "treaty_keeper": 0,
         }
         for n in names
     }
@@ -1334,7 +1612,10 @@ def _calc_story_points(state: GameState) -> dict[str, dict[str, int]]:
     return points
 
 
-def _update_season(state: GameState, story_points: dict[str, dict[str, int]]) -> dict:
+def _update_season(
+    state: GameState,
+    story_points: dict[str, dict[str, int]],
+) -> dict[str, Any]:
     """Update season.json with this game's results. Returns season data."""
     if SEASON_FILE.exists():
         season = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
@@ -1376,17 +1657,20 @@ def _update_season(state: GameState, story_points: dict[str, dict[str, int]]) ->
         season["standings"][name] = season["standings"].get(name, 0) + total
 
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
-    SEASON_FILE.write_text(
+    _atomic_write(
+        SEASON_FILE,
         json.dumps(season, indent=2, ensure_ascii=False) + "\n",
-        encoding="utf-8",
     )
+    # json.loads returns Any; cast to satisfy the typed return.
+    assert isinstance(season, dict)
     return season
 
 
 @app.command(name="game-end")
 def game_end(
     do_anchor: Annotated[
-        bool, typer.Option("--anchor", help="Stamp the final hash on XRPL Testnet"),
+        bool,
+        typer.Option("--anchor", help="Stamp the final hash on XRPL Testnet"),
     ] = False,
 ) -> None:
     """End the game. Final recap, Story Points, season standings, FINAL proof."""
@@ -1473,7 +1757,9 @@ def game_end(
         standing_table.add_column("Player", style="bold")
         standing_table.add_column("Story Points", justify="right")
         for name, total in sorted(
-            season["standings"].items(), key=lambda x: x[1], reverse=True,
+            season["standings"].items(),
+            key=lambda x: x[1],
+            reverse=True,
         ):
             standing_table.add_row(name, str(total))
         console.print(standing_table)
@@ -1515,8 +1801,7 @@ def game_end(
 
         if not wallet_seed:
             console.print(
-                "\n  [yellow]No wallet seed found for anchoring.[/yellow]\n"
-                "  Create one: sov wallet"
+                "\n  [yellow]No wallet seed found for anchoring.[/yellow]\n  Create one: sov wallet"
             )
         else:
             console.print("\n  Anchoring FINAL proof...")
@@ -1526,10 +1811,17 @@ def game_end(
 
                 transport = XRPLTestnetTransport()
                 txid = transport.anchor(proof["envelope_hash"], memo, wallet_seed)
+                _record_anchor("FINAL", txid)
+                logger.info("anchor success round=FINAL txid=%s", txid)
                 explorer = f"https://testnet.xrpl.org/transactions/{txid}"
                 console.print(f"  [green]Anchored.[/green] TX: [dim]{txid}[/dim]")
                 console.print(f"  [dim]{explorer}[/dim]")
             except Exception as e:
+                logger.error(
+                    "FINAL anchor failed (%s): %s",
+                    type(e).__name__,
+                    e,
+                )
                 _fail(anchor_error(str(e)))
 
     console.print(
@@ -1577,8 +1869,7 @@ def season_postcard() -> None:
         if len(tied) > 1:
             names = ", ".join(tied)
             console.print(
-                f"\n  [bold yellow]Tied for Season Champion:"
-                f" {names}[/bold yellow]",
+                f"\n  [bold yellow]Tied for Season Champion: {names}[/bold yellow]",
             )
         else:
             console.print(f"\n  [bold yellow]Season Champion: {champ[0]}[/bold yellow]")
@@ -1589,8 +1880,10 @@ def season_postcard() -> None:
         for name, awards in game.get("awards", {}).items():
             if name not in award_totals:
                 award_totals[name] = {
-                    "winner": 0, "promise_keeper": 0,
-                    "most_helpful": 0, "tables_choice": 0,
+                    "winner": 0,
+                    "promise_keeper": 0,
+                    "most_helpful": 0,
+                    "tables_choice": 0,
                 }
             for key, val in awards.items():
                 award_totals[name][key] = award_totals[name].get(key, 0) + val
@@ -1634,8 +1927,7 @@ def season_postcard() -> None:
 
     console.print(
         Panel(
-            "  Share this screenshot with your group.\n"
-            "  [dim]sov season-postcard[/dim]",
+            "  Share this screenshot with your group.\n  [dim]sov season-postcard[/dim]",
             title="Season Postcard",
         )
     )
@@ -1717,13 +2009,16 @@ def board() -> None:
 @app.command()
 def market(
     action: Annotated[
-        str, typer.Argument(help="show, buy, or sell"),
+        str,
+        typer.Argument(help="show, buy, or sell"),
     ] = "show",
     resource: Annotated[
-        str, typer.Argument(help="food, wood, or tools"),
+        str,
+        typer.Argument(help="food, wood, or tools"),
     ] = "",
     player: Annotated[
-        str, typer.Option("--player", "-p", help="Who's trading"),
+        str,
+        typer.Option("--player", "-p", help="Who's trading"),
     ] = "",
 ) -> None:
     """Show the Market Board, or buy/sell a resource (Town Hall only)."""
@@ -1802,7 +2097,9 @@ def _apply_recipe(state: GameState, recipe: str) -> str:
 
 
 def _postcard_highlights(
-    state: GameState, rnd: int, style: str,
+    state: GameState,
+    rnd: int,
+    style: str,
 ) -> list[str]:
     """Build postcard highlights filtered by story style."""
     # Define which log patterns each style cares about
@@ -1842,10 +2139,7 @@ def _postcard_highlights(
 
     highlights: list[str] = []
     for entry in state.log:
-        if not (
-            entry.startswith(f"R{rnd}")
-            or (rnd > 1 and entry.startswith(f"R{rnd - 1}"))
-        ):
+        if not (entry.startswith(f"R{rnd}") or (rnd > 1 and entry.startswith(f"R{rnd - 1}"))):
             continue
         _, _, text = entry.partition(": ")
         for pattern, label in active:
@@ -2033,9 +2327,16 @@ SOV_VERSION = "1.4.7"
 # ---------------------------------------------------------------------------
 
 _VALID_TIERS = {
-    "campfire", "market-day", "town-hall", "treaty-table",
-    "Campfire", "Market Day", "Town Hall", "Treaty Table",
-    "Campfire / Market Day", "Campfire or Market Day",
+    "campfire",
+    "market-day",
+    "town-hall",
+    "treaty-table",
+    "Campfire",
+    "Market Day",
+    "Town Hall",
+    "Treaty Table",
+    "Campfire / Market Day",
+    "Campfire or Market Day",
 }
 
 _VALID_RECIPES = {"cozy", "spicy", "market", "promise", "\u2014", "-", ""}
@@ -2087,24 +2388,17 @@ def _lint_scenario(filepath: str) -> list[tuple[str, str]]:
     found_rows = set(table_rows.keys())
     missing_rows = required_rows - found_rows
     if missing_rows:
-        results.append(("error", "Settings table missing rows: "
-                        + ", ".join(sorted(missing_rows))))
+        results.append(("error", "Settings table missing rows: " + ", ".join(sorted(missing_rows))))
     elif not table_rows:
         results.append(("error", "Missing: Settings table"))
 
     # "What to expect" section
-    has_expect = any(
-        line.strip().lower().startswith("## what to expect")
-        for line in lines
-    )
+    has_expect = any(line.strip().lower().startswith("## what to expect") for line in lines)
     if not has_expect:
         results.append(("error", "Missing: ## What to expect"))
 
     # "Start command" section with a code block
-    has_start = any(
-        line.strip().lower().startswith("## start command")
-        for line in lines
-    )
+    has_start = any(line.strip().lower().startswith("## start command") for line in lines)
     if not has_start:
         results.append(("error", "Missing: ## Start command"))
     else:
@@ -2128,17 +2422,17 @@ def _lint_scenario(filepath: str) -> list[tuple[str, str]]:
 
     tier_value = table_rows.get("tier", "")
     if tier_value and tier_value not in _VALID_TIERS:
-        results.append(("error", f"Invalid tier: \"{tier_value}\""))
+        results.append(("error", f'Invalid tier: "{tier_value}"'))
 
     recipe_value = table_rows.get("recipe", "")
     recipe_clean = recipe_value.split("(")[0].strip()
     if recipe_clean and recipe_clean not in _VALID_RECIPES:
-        results.append(("error", f"Invalid recipe: \"{recipe_value}\""))
+        results.append(("error", f'Invalid recipe: "{recipe_value}"'))
 
     players_value = table_rows.get("players", "")
     if players_value and not re.match(r"^\d+(-\d+)?$", players_value):
         results.append(
-            ("error", f"Invalid players format: \"{players_value}\""),
+            ("error", f'Invalid players format: "{players_value}"'),
         )
 
     time_value = table_rows.get("time", "")
@@ -2150,23 +2444,16 @@ def _lint_scenario(filepath: str) -> list[tuple[str, str]]:
     # --- Content checks (warnings) ---
 
     has_success = any(
-        line.strip().lower().startswith("## what success feels like")
-        for line in lines
+        line.strip().lower().startswith("## what success feels like") for line in lines
     )
     if not has_success:
         results.append(("warn", "Missing: ## What success feels like"))
 
-    has_after = any(
-        line.strip().lower().startswith("## after the game")
-        for line in lines
-    )
+    has_after = any(line.strip().lower().startswith("## after the game") for line in lines)
     if not has_after:
         results.append(("warn", "Missing: ## After the game"))
 
-    has_norms = any(
-        line.strip().lower().startswith("## table norms")
-        for line in lines
-    )
+    has_norms = any(line.strip().lower().startswith("## table norms") for line in lines)
     if not has_norms:
         results.append(("warn", "Missing: ## Table norms"))
 
@@ -2196,17 +2483,21 @@ def _lint_scenario(filepath: str) -> list[tuple[str, str]]:
         deal_count = sum(1 for d in deals if tag in d.tags)
 
         if event_count < 5:
-            results.append((
-                "warn",
-                f"Recipe '{tag}': only {event_count} matching events "
-                f"(< 5, full deck will be used)",
-            ))
+            results.append(
+                (
+                    "warn",
+                    f"Recipe '{tag}': only {event_count} matching events "
+                    f"(< 5, full deck will be used)",
+                )
+            )
         if deal_count < 3:
-            results.append((
-                "warn",
-                f"Recipe '{tag}': only {deal_count} matching deals "
-                f"(< 3, full deck will be used)",
-            ))
+            results.append(
+                (
+                    "warn",
+                    f"Recipe '{tag}': only {deal_count} matching deals "
+                    f"(< 3, full deck will be used)",
+                )
+            )
 
     return results
 
@@ -2239,10 +2530,12 @@ def scenario(
     name: Annotated[str, typer.Argument(help="Scenario name or file path")] = "",
     seed: Annotated[int, typer.Option("--seed", "-s", help="RNG seed")] = 42,
     tier_opt: Annotated[
-        str, typer.Option("--tier", "-t", help="Tier override (for custom)"),
+        str,
+        typer.Option("--tier", "-t", help="Tier override (for custom)"),
     ] = "",
     recipe_opt: Annotated[
-        str, typer.Option("--recipe", "-r", help="Recipe override (for custom)"),
+        str,
+        typer.Option("--recipe", "-r", help="Recipe override (for custom)"),
     ] = "",
 ) -> None:
     """Browse scenario packs, generate share codes, or lint scenario files."""
@@ -2256,7 +2549,11 @@ def scenario(
 
         for s in _SCENARIOS:
             table.add_row(
-                s["name"], s["tier"], s["recipe"], s["players"], s["time"],
+                s["name"],
+                s["tier"],
+                s["recipe"],
+                s["players"],
+                s["time"],
             )
 
         console.print(table)
@@ -2273,7 +2570,10 @@ def scenario(
         elif name in _SCENARIO_BY_SLUG:
             sc = _SCENARIO_BY_SLUG[name]
             code = _build_share_code(
-                name, sc["tier_value"], sc["recipe_value"], seed,
+                name,
+                sc["tier_value"],
+                sc["recipe_value"],
+                seed,
             )
         else:
             known = ", ".join(s["slug"] for s in _SCENARIOS) + ", custom"
@@ -2292,7 +2592,8 @@ def scenario(
             if not scenario_dir.exists():
                 _fail(scenario_error("docs/scenarios/ not found."))
             files_to_lint = sorted(
-                str(f) for f in scenario_dir.glob("*.md")
+                str(f)
+                for f in scenario_dir.glob("*.md")
                 if f.name not in ("README.md", "CANON.md", "_TEMPLATE.md")
             )
             if not files_to_lint:
@@ -2323,8 +2624,7 @@ def scenario(
                 console.print(f"  [yellow]WARN[/yellow] {safe}")
 
         console.print(
-            f"\n{total} file(s) checked, "
-            f"{passed} passed, {failed} failed.",
+            f"\n{total} file(s) checked, {passed} passed, {failed} failed.",
         )
         if failed:
             raise typer.Exit(1)
@@ -2338,9 +2638,16 @@ def scenario(
 # ---------------------------------------------------------------------------
 
 _NOTABLE_PATTERNS = (
-    "promises:", "kept their promise", "broke their promise",
-    "apologizes", "Treaty", "BROKEN", "honored", "wins the game",
-    "toasts", "helps",
+    "promises:",
+    "kept their promise",
+    "broke their promise",
+    "apologizes",
+    "Treaty",
+    "BROKEN",
+    "honored",
+    "wins the game",
+    "toasts",
+    "helps",
 )
 
 
@@ -2378,10 +2685,7 @@ def feedback() -> None:
     }
     award_lines: list[str] = []
     for award_key, label in award_names.items():
-        winners = [
-            name for name, pts in awards.items()
-            if pts.get(award_key, 0) > 0
-        ]
+        winners = [name for name, pts in awards.items() if pts.get(award_key, 0) > 0]
         if winners:
             award_lines.append(f"- {label}: {', '.join(winners)}")
 

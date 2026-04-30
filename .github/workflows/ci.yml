@@ -7,28 +7,44 @@ on:
       - "sov_transport/**"
       - "sov_cli/**"
       - "tests/**"
+      - "scripts/**"
       - "pyproject.toml"
+      - "uv.lock"
+      - "BUILD.md"
       - ".github/workflows/**"
+  # Run CI on every PR — minutes-cheap and avoids path-filter blind spots
+  # where a docs-only PR silently skips lint/type checks (parking F-593530-015).
   pull_request:
-    paths:
-      - "sov_engine/**"
-      - "sov_transport/**"
-      - "sov_cli/**"
-      - "tests/**"
-      - "pyproject.toml"
-      - ".github/workflows/**"
   workflow_dispatch:
+  # Daily canary at 14:00 UTC (morning Pacific). Catches upstream drift —
+  # GH Actions runner image rotations, deprecated transitive deps, XRPL
+  # testnet endpoint changes — even when no PRs are flowing
+  # (parking F-593530-025).
+  schedule:
+    - cron: "0 14 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Top-level least-privilege default. pages.yml + release.yml already have
+# job-level permissions; this closes the gap (parking F-593530-011).
+permissions:
+  contents: read
+
 jobs:
   lint-and-test:
+    # Skip on schedule (canary runs the smoke instead) so we don't burn minutes
+    # repeating the same lint/test work daily.
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     strategy:
+      # Don't cancel sibling matrix legs on a single failure — we want to know
+      # whether 3.13 still passes when 3.11 fails (parking F-W4CIDOCS-004).
+      fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        # Parking F-593530-010: 3.13 is in classifiers; CI must prove it.
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -37,26 +53,33 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      # Parking F-593530-023: --frozen ensures CI uses locked versions.
       - name: Install dependencies
-        run: uv sync --dev
+        run: uv sync --frozen --dev
 
+      # Parking F-593530-014: --output-format=github surfaces inline PR
+      # annotations on failed lint instead of forcing reviewers into raw logs.
       - name: Lint with ruff
-        run: uv run ruff check .
+        run: uv run ruff check --output-format=github .
 
-      # Advisory until pre-existing type debt is cleaned up (Stage B work item).
-      # Once `uv run mypy` is clean, drop continue-on-error to make this gate blocking.
-      - name: Type-check with mypy (advisory)
+      - name: Check formatting with ruff
+        run: uv run ruff format --check .
+
+      # mypy is now blocking. Combined with the xrpl-py override in
+      # pyproject.toml + engine/transport type fixes, the strict gate stands.
+      - name: Type-check with mypy
         if: matrix.python-version == '3.12'
-        continue-on-error: true
         run: uv run mypy sov_engine sov_transport sov_cli
 
+      # Curated -W error filters: catch our own deprecations without failing
+      # on third-party noise (parking F-593530-014).
       - name: Run tests
-        run: uv run pytest tests/ -v
+        run: uv run pytest tests/ -v -W error::DeprecationWarning -W error::PendingDeprecationWarning
 
-  # Manual-only canary: quick CLI smoke test (dry-run, no real testnet)
-  # Trigger via: Actions → CI → Run workflow
-  canary:
-    if: github.event_name == 'workflow_dispatch'
+  # Supply-chain advisory scan. Advisory in Stage B (continue-on-error) so
+  # transitive low-severity items don't block PRs; tighten in Stage B-2.
+  security:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -65,7 +88,35 @@ jobs:
         with:
           python-version: "3.12"
 
-      - run: uv sync
+      - name: Install dependencies
+        run: uv sync --frozen --dev
+
+      - name: pip-audit (advisory)
+        continue-on-error: true
+        run: |
+          uv pip install pip-audit
+          uv run pip-audit
+
+      - name: Secret scan with gitleaks (advisory)
+        continue-on-error: true
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.6
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  # Canary CLI smoke. Runs on workflow_dispatch (manual) AND on a daily cron
+  # so we catch upstream environmental drift even when no PRs are flowing
+  # (parking F-593530-025). 14:00 UTC = morning Pacific.
+  canary:
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: astral-sh/setup-uv@4db96194c378173c656ce18a155ffc14a9fc4355 # v5.2.2
+        with:
+          python-version: "3.12"
+
+      - run: uv sync --frozen
 
       - name: CLI smoke
         run: |

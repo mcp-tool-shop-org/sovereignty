@@ -3,6 +3,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
+
+# ProofErrorKind distinguishes the *reason* a proof failed verification so
+# the CLI can render an actionable hint. "MODIFIED" means the bytes don't
+# match the recorded hash (likely tampered or corrupted). "UNSUPPORTED_VERSION"
+# means the file is well-formed but uses a proof_version this binary does not
+# understand (typically a legacy v1 proof — install sovereignty <2.0.0).
+ProofErrorKind = Literal["MODIFIED", "UNSUPPORTED_VERSION", "UNKNOWN"]
 
 
 class ProofFormatError(Exception):
@@ -118,12 +126,56 @@ def proof_file_error(path: str) -> SovError:
     )
 
 
-def proof_invalid_error(detail: str) -> SovError:
-    """Proof verification failed."""
+def proof_invalid_error(
+    detail: str,
+    kind: ProofErrorKind = "UNKNOWN",
+) -> SovError:
+    """Proof verification failed.
+
+    ``kind`` distinguishes tampering from forward/backward-incompatible
+    proof versions so the user gets the right next step.
+    """
+    if kind == "UNSUPPORTED_VERSION":
+        hint = (
+            "Proof format v1 is unsupported in v2.0.0+; "
+            "install sovereignty <2.0.0 to verify legacy proofs."
+        )
+    elif kind == "MODIFIED":
+        hint = "The proof may have been tampered with or is corrupted."
+    else:
+        hint = "The proof file may have been modified."
     return SovError(
         code="STATE_PROOF_INVALID",
         message=f"Local proof invalid. {detail}",
-        hint="The proof file may have been modified.",
+        hint=hint,
+    )
+
+
+def state_corrupt_error(detail: str) -> SovError:
+    """On-disk game state could not be parsed (corrupted save)."""
+    return SovError(
+        code="STATE_CORRUPT",
+        message=f"Saved game state is unreadable. {detail}",
+        hint=(
+            "Delete .sov/game_state.json (and .sov/rng_seed.txt) and start a new "
+            "game with: sov new -p Alice -p Bob"
+        ),
+    )
+
+
+def state_version_mismatch_error(found: object) -> SovError:
+    """Saved state uses a schema_version this binary doesn't understand."""
+    return SovError(
+        code="STATE_VERSION_MISMATCH",
+        message=(
+            f"Saved game state schema_version={found!r} is not supported "
+            "by this sovereignty binary."
+        ),
+        hint=(
+            "Either upgrade/downgrade sovereignty to match the saved game, "
+            "or delete .sov/game_state.json and start fresh: "
+            "sov new -p Alice -p Bob"
+        ),
     )
 
 

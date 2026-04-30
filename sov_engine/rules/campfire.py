@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from sov_engine.content import build_board, build_deal_deck, build_event_deck
 from sov_engine.models import (
     BOARD_SIZE,
@@ -21,6 +23,8 @@ from sov_engine.models import (
     WinCondition,
 )
 from sov_engine.rng import GameRng
+
+logger = logging.getLogger("sov_engine")
 
 # ---------------------------------------------------------------------------
 # Game setup
@@ -150,7 +154,45 @@ def resolve_space(state: GameState, rng: GameRng) -> str:
     return msg
 
 
+# Rulesets where the resource-cost upgrade path (upgrade_with_resources) is the
+# documented rule. Hitting Campfire's coinless fall-through under one of these
+# rulesets means the CLI didn't dispatch to upgrade_with_resources — surface
+# a warning so operators can see (and ci-docs can document) the gap. This is
+# the FALL-THROUGH WARNING, not a feature wire-up — wiring is Phase 5.
+_RESOURCE_UPGRADE_RULESETS = frozenset(
+    {"town_hall_v1", "treaty_table_v1", "market_day_v1"},
+)
+
+
+def _warn_fallthrough_workshop(state: GameState) -> None:
+    """Log a warning when Workshop falls through to coinless resolve.
+
+    EXACT key string is part of the engine<->ci-docs coordination contract
+    for finding F-engine-010 (Wave 5). ci-docs ensures the warning surfaces
+    to the user (not swallowed by quiet mode); the engine emits it via stdlib
+    logging from one source of truth.
+    """
+    if state.config.ruleset in _RESOURCE_UPGRADE_RULESETS:
+        logger.warning(
+            "Ruleset %s does not expose upgrade_with_resources; falling back to Campfire workshop",
+            state.config.ruleset,
+        )
+
+
+def _warn_fallthrough_builder(state: GameState) -> None:
+    """Log a warning when Builder falls through to coinless resolve.
+
+    Twin of ``_warn_fallthrough_workshop`` — same coordination contract.
+    """
+    if state.config.ruleset in _RESOURCE_UPGRADE_RULESETS:
+        logger.warning(
+            "Ruleset %s does not expose upgrade_with_resources; falling back to Campfire builder",
+            state.config.ruleset,
+        )
+
+
 def _resolve_workshop(player: PlayerState, state: GameState) -> str:
+    _warn_fallthrough_workshop(state)
     cost = 2
     if player.coins >= cost:
         player.adjust_coins(-cost)
@@ -161,6 +203,7 @@ def _resolve_workshop(player: PlayerState, state: GameState) -> str:
 
 
 def _resolve_builder(player: PlayerState, state: GameState) -> str:
+    _warn_fallthrough_builder(state)
     cost = 3
     if not player.can_use_builder():
         return f"{player.name} needs Rep >= 3 for Builder (has {player.reputation})."
@@ -411,7 +454,11 @@ def resolve_help_desk(state: GameState, helper: PlayerState, target: PlayerState
 # Voucher operations
 # ---------------------------------------------------------------------------
 
-_voucher_counter = 0
+# NOTE: voucher and deal counters used to be module-level globals; they now
+# live on GameState (next_voucher_id, next_deal_id) so reload + replay are
+# deterministic and the IDs round-trip through game_state_snapshot. The
+# placeholder name is kept here purely so any stale `import _voucher_counter`
+# fails loudly at import time rather than silently re-creating the global.
 
 
 def issue_voucher(
@@ -423,23 +470,29 @@ def issue_voucher(
     deadline_rounds: int | None = None,
 ) -> Voucher | str:
     """Issue a voucher from issuer to holder. Returns Voucher or error string."""
-    global _voucher_counter
-
     if not issuer.can_issue_voucher():
         return f"{issuer.name} can't issue vouchers (Rep {issuer.reputation} < 2)."
 
     fv = face_value if template.negotiable and face_value is not None else template.face_value
-    dr = deadline_rounds if template.negotiable and deadline_rounds is not None else template.deadline_rounds  # noqa: E501
-    template.default_penalty_rep if not template.negotiable else max(1, (fv + 1) // 2)
+    dr = (
+        deadline_rounds
+        if template.negotiable and deadline_rounds is not None
+        else template.deadline_rounds
+    )  # noqa: E501
+    # Penalty: templates that are NOT negotiable use the template's default;
+    # negotiable templates (where face_value can vary) derive a face-scaled
+    # penalty so cheap vouchers stay cheap to default on.
+    penalty_rep = template.default_penalty_rep if not template.negotiable else max(1, (fv + 1) // 2)
 
-    _voucher_counter += 1
+    state.next_voucher_id += 1
     v = Voucher(
-        voucher_id=f"v_{_voucher_counter:04d}",
+        voucher_id=f"v_{state.next_voucher_id:04d}",
         template_id=template.id,
         issuer=issuer.name,
         holder=holder.name,
         face_value=fv,
         deadline_round=state.current_round + dr,
+        penalty_rep=penalty_rep,
     )
     issuer.vouchers_issued.append(v)
     holder.vouchers_held.append(v)
@@ -469,9 +522,15 @@ def redeem_voucher(state: GameState, voucher: Voucher) -> str:
         msg = f"Voucher redeemed: {issuer.name} pays {pay_amount} to {holder.name}."
     else:
         voucher.status = VoucherStatus.DEFAULTED
-        # Find penalty from template (simplified: use face_value // 2 + 1)
-        penalty = max(1, (voucher.face_value + 1) // 2)
+        penalty = voucher.penalty_rep or max(1, (voucher.face_value + 1) // 2)
         issuer.adjust_rep(-penalty)
+        logger.info(
+            "voucher_default voucher_id=%s issuer=%s pay_amount=%d penalty=%d",
+            voucher.voucher_id,
+            issuer.name,
+            pay_amount,
+            penalty,
+        )
         msg = f"Voucher DEFAULT: {issuer.name} can't pay {pay_amount}. -{penalty} Rep."
 
     state.add_log(msg)
@@ -485,8 +544,14 @@ def check_voucher_deadlines(state: GameState) -> list[str]:
         for v in player.vouchers_issued:
             if v.status == VoucherStatus.ACTIVE and state.current_round > v.deadline_round:
                 v.status = VoucherStatus.DEFAULTED
-                penalty = max(1, (v.face_value + 1) // 2)
+                penalty = v.penalty_rep or max(1, (v.face_value + 1) // 2)
                 player.adjust_rep(-penalty)
+                logger.info(
+                    "voucher_expired voucher_id=%s issuer=%s penalty=%d",
+                    v.voucher_id,
+                    player.name,
+                    penalty,
+                )
                 msg = f"Voucher expired: {player.name} defaults on {v.voucher_id}. -{penalty} Rep."
                 state.add_log(msg)
                 messages.append(msg)
@@ -497,15 +562,14 @@ def check_voucher_deadlines(state: GameState) -> list[str]:
 # Deal operations
 # ---------------------------------------------------------------------------
 
-_deal_counter = 0
+# Deal counter also lives on GameState (state.next_deal_id) — see issue_voucher.
 
 
 def accept_deal(state: GameState, player: PlayerState, card: DealCard) -> ActiveDeal:
     """Player accepts a deal card."""
-    global _deal_counter
-    _deal_counter += 1
+    state.next_deal_id += 1
     deal = ActiveDeal(
-        deal_id=f"d_{_deal_counter:04d}",
+        deal_id=f"d_{state.next_deal_id:04d}",
         template_id=card.id,
         player=player.name,
         deadline_round=state.current_round + card.deadline_rounds,
@@ -539,6 +603,12 @@ def check_deal_deadlines(state: GameState) -> list[str]:
             if d.status == DealStatus.ACTIVE and state.current_round > d.deadline_round:
                 d.status = DealStatus.FAILED
                 player.adjust_rep(-d.penalty_rep)
+                logger.info(
+                    "deal_expired deal_id=%s player=%s penalty=%d",
+                    d.deal_id,
+                    player.name,
+                    d.penalty_rep,
+                )
                 msg = f"Deal expired: {player.name} fails {d.deal_id}. -{d.penalty_rep} Rep."
                 state.add_log(msg)
                 messages.append(msg)
@@ -581,7 +651,9 @@ def break_promise(state: GameState, player: PlayerState, text: str) -> str:
 
 
 def apologize(
-    state: GameState, player: PlayerState, target: PlayerState,
+    state: GameState,
+    player: PlayerState,
+    target: PlayerState,
 ) -> str:
     """Once per game, apologize for a broken promise. Pay 1 coin, regain +1 Rep."""
     if player.apology_used:

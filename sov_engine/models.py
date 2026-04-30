@@ -132,6 +132,9 @@ class Voucher:
     face_value: int
     deadline_round: int  # absolute round number
     status: VoucherStatus = VoucherStatus.ACTIVE
+    # Rep deduction applied if the voucher defaults (resolved at issue time
+    # from the template + face value so reload + replay are deterministic).
+    penalty_rep: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -393,6 +396,11 @@ class GameState:
     game_over: bool = False
     winner: str | None = None
     log: list[str] = field(default_factory=list)
+    # Monotonic counters for issued vouchers / accepted deals. Persisted in
+    # game_state_snapshot so reload + replay produce stable IDs (mirrors the
+    # _next_treaty_id pattern in sov_engine/rules/treaty_table.py).
+    next_voucher_id: int = 0
+    next_deal_id: int = 0
 
     @property
     def current_player(self) -> PlayerState:
@@ -429,8 +437,6 @@ class GameState:
             if p.has_won():
                 self.game_over = True
                 self.winner = p.name
-                self.add_log(
-                    f"{p.name} wins by {p.win_condition.value}!"
-                )
+                self.add_log(f"{p.name} wins by {p.win_condition.value}!")
                 return p.name
         return None

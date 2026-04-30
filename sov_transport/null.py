@@ -14,3 +14,7 @@ class NullTransport(LedgerTransport):
     def verify(self, txid: str, expected_hash: str) -> bool:
         # In offline mode, verification is done via local proof files
         return txid.startswith("offline:")
+
+    def get_memo_text(self, txid: str) -> str | None:
+        """Offline mode has no on-ledger memos; return None as a no-op."""
+        return None

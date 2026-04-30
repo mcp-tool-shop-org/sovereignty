@@ -1,3 +1,17 @@
 @import "tailwindcss";
 @import "@mcptoolshop/site-theme/styles/theme.css";
-@source "../../node_modules/@mcptoolshop/site-theme";
+
+/*
+ * Tailwind v4 source-detection (Wave 5 / Wave-4 MED tightening).
+ *
+ * Tailwind v4 auto-discovers candidates from the project root, but we list
+ * sources explicitly to guard against:
+ *   - new file extensions in src/ (e.g. .mdx) being silently skipped
+ *   - handbook content under src/content/docs/ being missed if auto-detect
+ *     ever changes its default ignore rules
+ *   - the load-bearing site-theme dep being purged if any node_modules
+ *     scanning behaviour shifts in future Tailwind releases
+ */
+@source "../**/*.{astro,html,js,ts,md,mdx}";
+@source "../content/**/*.{md,mdx}";
+@source "../../node_modules/@mcptoolshop/site-theme/**/*.{astro,html,js,ts}";

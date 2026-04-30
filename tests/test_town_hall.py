@@ -174,7 +174,7 @@ def test_supply_pool_scales_with_players():
     state3, _ = new_town_hall_game(42, ["A", "B", "C"])
     state4, _ = new_town_hall_game(42, ["A", "B", "C", "D"])
 
-    assert state2.market_board.supply["food"] == 8   # 4 + 2*2
+    assert state2.market_board.supply["food"] == 8  # 4 + 2*2
     assert state3.market_board.supply["food"] == 10  # 4 + 3*2
     assert state4.market_board.supply["food"] == 12  # 4 + 4*2
 
@@ -188,8 +188,11 @@ def test_market_event_food_down():
     state, _ = new_town_hall_game(42, ["Alice", "Bob"])
     rng = GameRng(42)
     card = EventCard(
-        id="evt_21", name="Bumper Harvest", card_type=CardType.EVENT,
-        description="", effect_id="market_food_down",
+        id="evt_21",
+        name="Bumper Harvest",
+        card_type=CardType.EVENT,
+        description="",
+        effect_id="market_food_down",
     )
     resolve_event(state, card, rng)
     assert state.market_board.price("food") == 1  # base 2 - 1 shift
@@ -205,8 +208,11 @@ def test_market_event_restock():
     rng = GameRng(42)
     old_food = state.market_board.supply["food"]
     card = EventCard(
-        id="evt_24", name="Trade Caravan", card_type=CardType.EVENT,
-        description="", effect_id="market_restock",
+        id="evt_24",
+        name="Trade Caravan",
+        card_type=CardType.EVENT,
+        description="",
+        effect_id="market_restock",
     )
     resolve_event(state, card, rng)
     assert state.market_board.supply["food"] == old_food + 2
@@ -222,8 +228,11 @@ def test_market_event_fire():
     rng = GameRng(42)
     old_food = state.market_board.supply["food"]
     card = EventCard(
-        id="evt_25", name="Warehouse Fire", card_type=CardType.EVENT,
-        description="", effect_id="market_fire",
+        id="evt_25",
+        name="Warehouse Fire",
+        card_type=CardType.EVENT,
+        description="",
+        effect_id="market_fire",
     )
     resolve_event(state, card, rng)
     assert state.market_board.supply["food"] == old_food - 2
@@ -240,8 +249,11 @@ def test_market_event_feast():
     state.players[0].resources["food"] = 3
     state.players[1].resources["food"] = 0
     card = EventCard(
-        id="evt_26", name="Feast Day", card_type=CardType.EVENT,
-        description="", effect_id="market_feast",
+        id="evt_26",
+        name="Feast Day",
+        card_type=CardType.EVENT,
+        description="",
+        effect_id="market_feast",
     )
     msg = resolve_event(state, card, rng)
     assert state.players[0].resources["food"] == 2
@@ -258,8 +270,11 @@ def test_market_event_all_down():
     state, _ = new_town_hall_game(42, ["Alice", "Bob"])
     rng = GameRng(42)
     card = EventCard(
-        id="evt_28", name="Good Rains", card_type=CardType.EVENT,
-        description="", effect_id="market_all_down",
+        id="evt_28",
+        name="Good Rains",
+        card_type=CardType.EVENT,
+        description="",
+        effect_id="market_all_down",
     )
     resolve_event(state, card, rng)
     for r in RESOURCE_NAMES:
