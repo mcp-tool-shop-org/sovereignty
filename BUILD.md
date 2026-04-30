@@ -6,7 +6,7 @@ binaries for distribution via `npx @mcptoolshop/sovereignty`.
 ## Quick Build (local)
 
 ```bash
-uv venv && uv pip install . "pyinstaller>=6.9.0"
+uv venv && uv pip install . "pyinstaller==6.11.1"
 uv run pyinstaller --onefile --name sovereignty --console \
   --collect-submodules rich \
   --collect-data xrpl \
@@ -59,11 +59,13 @@ binary codec). PyInstaller doesn't include data files by default, so without
 `--collect-data xrpl` the binary will crash with `FileNotFoundError` when
 accessing XRPL binary codec functions or the `self-check` command.
 
-## Why `pyinstaller>=6.9.0`?
+## Why `pyinstaller==6.11.1`?
 
 PyInstaller 6.8.0 has a bug where `collect_submodules()` rejects module names
 containing hyphens (like `unicode17-0-0`). This was fixed in
 [PyInstaller 6.9.0](https://github.com/pyinstaller/pyinstaller/issues/8591).
+Release builds pin to 6.11.1 (the version vetted in CI) for reproducibility;
+bump deliberately after smoke-testing the binary across all matrix targets.
 
 **Do not downgrade below 6.9.0** or the binaries will crash with:
 

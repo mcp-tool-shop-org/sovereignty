@@ -86,7 +86,11 @@ def test_proof_has_required_v2_fields():
     assert "timestamp_utc" in proof
     assert "players" in proof
     assert "state" in proof
-    assert proof["envelope_hash"].startswith("sha256:")
+    # envelope_hash is the raw 64-char hex digest. The sha256: algorithm tag
+    # is added at the wire/memo layer, not stored in the field value (would
+    # cause double-prefix drift with the on-chain memo).
+    assert len(proof["envelope_hash"]) == 64
+    assert all(c in "0123456789abcdef" for c in proof["envelope_hash"])
 
 
 def test_proof_round_trip():

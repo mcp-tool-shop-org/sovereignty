@@ -29,11 +29,16 @@ PROOF_VERSION = 2
 
 
 def _compute_envelope_hash(envelope: dict[str, Any]) -> str:
-    """Compute sha256 over the canonical envelope, excluding ``envelope_hash``."""
+    """Compute sha256 over the canonical envelope, excluding ``envelope_hash``.
+
+    Returns the raw 64-char lowercase hex digest. The ``sha256:`` algorithm tag
+    is added at the wire/memo layer (see ``sov_cli/main.py`` anchor memo
+    construction); storing it in the field value would cause double-prefix
+    drift with the on-chain memo.
+    """
     payload = {k: v for k, v in envelope.items() if k != "envelope_hash"}
     payload_json = canonical_json(payload)
-    digest = hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
-    return f"sha256:{digest}"
+    return hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
 
 
 def make_round_proof(state: GameState) -> dict[str, Any]:
@@ -41,7 +46,7 @@ def make_round_proof(state: GameState) -> dict[str, Any]:
     snapshot = game_state_snapshot(state)
 
     envelope: dict[str, Any] = {
-        "game_id": f"sov_{state.config.seed}",
+        "game_id": f"s{state.config.seed}",
         "players": [p.name for p in state.players],
         "proof_version": PROOF_VERSION,
         "rng_seed": state.config.seed,

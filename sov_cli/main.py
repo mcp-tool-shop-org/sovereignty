@@ -811,8 +811,9 @@ def anchor(
     if not seed:
         _fail(no_wallet_error(seed_env))
 
-    # Build the memo (ruleset matches the proof, not hardcoded campfire)
-    game_id = f"s{seed_val}"
+    # Build the memo. game_id mirrors the proof envelope so a third-party
+    # verifier can join memo↔proof; sha256: is the wire-layer algorithm tag.
+    game_id = proof_data.get("game_id", f"s{seed_val}")
     memo = f"SOV|{ruleset}|{game_id}|r{rnd}|sha256:{envelope_hash}"
 
     console.print(f"\n  Anchoring Round {rnd}...")
@@ -1359,7 +1360,7 @@ def _update_season(state: GameState, story_points: dict[str, dict[str, int]]) ->
             votes["promise"] = text
 
     game_record = {
-        "game_id": f"sov_{state.config.seed}",
+        "game_id": f"s{state.config.seed}",
         "ruleset": state.config.ruleset,
         "players": [p.name for p in state.players],
         "winner": state.winner,
@@ -1502,7 +1503,7 @@ def game_end(
         import os
 
         seed_val = state.config.seed
-        game_id = f"s{seed_val}"
+        game_id = proof.get("game_id", f"s{seed_val}")
         memo = f"SOV|{state.config.ruleset}|{game_id}|FINAL|sha256:{proof['envelope_hash']}"
 
         wallet_file = SAVE_DIR / "wallet_seed.txt"
