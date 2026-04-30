@@ -69,15 +69,18 @@ sov status
 sov end-round
 ```
 
-Expected output for `sov status` after a few turns:
+`sov status` shows a Rich-formatted table with player coins, rep, upgrades,
+position, and goal. For a quick one-line glance between turns:
+
+```bash
+sov status --brief
+```
 
 ```
-Round 3 of 15
-
-  Alice   coins: 7   rep: 4   space: 11
-  Bob     coins: 4   rep: 3   space: 6
-  Carol   coins: 6   rep: 5   space: 13
+R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 ```
+
+(`Nc Nr Nu` = coins / rep / upgrades; `>` marks the active player.)
 
 Repeat for 15 rounds. `sov game-end` prints the final scores.
 

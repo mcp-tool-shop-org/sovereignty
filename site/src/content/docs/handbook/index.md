@@ -27,6 +27,7 @@ Most visitors land here with one of these questions:
 - [Diary Mode](/sovereignty/handbook/diary-mode/) — Optional XRPL Testnet verification
 - [Reference](/sovereignty/handbook/reference/) — Full CLI command reference
 - [Beginners](/sovereignty/handbook/beginners/) — New to Sovereignty? The longest, gentlest path through everything
+- [Print and Play](/sovereignty/handbook/print-and-play/) — Print the cards and quick references; play tonight without a screen
 
 ## Need help?
 

@@ -322,6 +322,71 @@ def market_error(detail: str) -> SovError:
     )
 
 
+def insufficient_resources_error(
+    target: str,
+    needed: dict[str, int],
+    have: dict[str, int],
+    hint: str,
+) -> SovError:
+    """Player can't afford an upgrade — name what's needed, have, and the next step.
+
+    ``target`` is the upgrade space ("workshop" / "builder").
+    ``needed`` and ``have`` map resource name -> count (e.g. {"coins": 2, "wood": 1}).
+    ``hint`` is the actionable next-step string the caller has computed
+    (e.g. "Earn 1 more coin via 'sov market sell'.").
+
+    Mirrors the Stage C humanization standard: structured code +
+    plain-English message + exactly-one actionable next step. Pluralizes
+    "coin/coins" but keeps resource names lowercase singular ("wood",
+    "tools") — they're mass nouns in the game's vocabulary.
+    """
+
+    def _fmt(parts: dict[str, int]) -> str:
+        chunks: list[str] = []
+        for name, count in parts.items():
+            if name == "coins":
+                unit = "coin" if count == 1 else "coins"
+                chunks.append(f"{count} {unit}")
+            else:
+                chunks.append(f"{count} {name}")
+        return " + ".join(chunks) if chunks else "nothing"
+
+    return SovError(
+        code="INPUT_UPGRADE",
+        message=(f"Cannot upgrade {target}: need {_fmt(needed)}, have {_fmt(have)}."),
+        hint=hint,
+    )
+
+
+def upgrade_rep_error(target: str, needed: int, have: int, hint: str) -> SovError:
+    """Player lacks the reputation gate for an upgrade (e.g. Builder needs Rep >= 3)."""
+    return SovError(
+        code="INPUT_UPGRADE",
+        message=(f"Cannot upgrade {target}: need Rep >= {needed}, have {have}."),
+        hint=hint,
+    )
+
+
+def upgrade_unavailable_error(ruleset_name: str) -> SovError:
+    """The current ruleset doesn't expose resource-cost upgrades.
+
+    Used when ``sov upgrade ...`` is called on Campfire (which uses the
+    coinless build path via ``sov build`` instead).
+    """
+    return SovError(
+        code="INPUT_UPGRADE",
+        message=(
+            f"Resource-cost upgrades are not available on {ruleset_name}. "
+            "This ruleset uses the coinless workshop."
+        ),
+        hint=(
+            "Use 'sov build' for free tier-1 builds, or start a new game on "
+            "Town Hall / Treaty Table / Market Day for resource-cost upgrades:"
+            "\n    sov new --tier town-hall -p Alice -p Bob"
+        ),
+    )
+
+
 def no_season_error() -> SovError:
     """No season data found."""
     return SovError(

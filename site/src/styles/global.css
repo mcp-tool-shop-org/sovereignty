@@ -15,3 +15,179 @@
 @source "../**/*.{astro,html,js,ts,md,mdx}";
 @source "../content/**/*.{md,mdx}";
 @source "../../node_modules/@mcptoolshop/site-theme/**/*.{astro,html,js,ts}";
+
+/*
+ * F-FE-002 (Wave 9, a11y): skip-to-content link.
+ *
+ * Off-screen by default (clip path + 1px box keeps it focusable but invisible
+ * to sighted users), then on :focus it pops into the top-left corner with
+ * high-contrast styling. Tabbing into the page surfaces it as the first
+ * focusable element (it is rendered first in index.astro's body slot).
+ *
+ * Hand-authored CSS rather than utility classes so it works without
+ * depending on Tailwind's focus-visible behaviour and so handbook routes
+ * (which don't use the landing-page CSS pipeline directly) can opt in
+ * later by importing this rule if needed.
+ */
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 50;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  margin: 0;
+  overflow: visible;
+  clip: auto;
+  white-space: normal;
+  background: var(--color-action, #34d399);
+  color: var(--color-action-text, #09090b);
+  border-radius: 0.5rem;
+  font-weight: 600;
+  text-decoration: none;
+  outline: 2px solid var(--color-action, #34d399);
+  outline-offset: 2px;
+}
+
+/*
+ * F-FE-003 (Wave 9): print stylesheet.
+ *
+ * Goals when a player hits Cmd-P / Ctrl-P on the landing page or any
+ * handbook page:
+ *   - Strip site chrome (header, footer, sidebar, nav) so only the
+ *     readable content remains
+ *   - Linearize the layout — no fixed widths, no multi-column grids
+ *   - Switch to a serif body font for sustained reading on paper
+ *   - Surface link destinations inline so a printed page is still useful
+ *     when offline
+ *   - Avoid awkward page breaks inside tables and card components
+ *
+ * Selectors target both the landing page (site-theme components) and the
+ * Starlight handbook (Starlight's own `.sl-*` classes). Tailwind utility
+ * classes that imply layout (grid, fixed widths) are reset where needed.
+ */
+@media print {
+  /* Reset surface to plain white-on-black for ink savings. */
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-family: Georgia, "Times New Roman", Times, serif !important;
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  /* Hide site chrome — landing page header/footer + Starlight nav/sidebar/footer. */
+  header,
+  footer,
+  nav,
+  .skip-link,
+  .sl-nav,
+  .sl-sidebar,
+  starlight-menu-button,
+  site-search,
+  mobile-starlight-toc,
+  starlight-toc,
+  .right-sidebar,
+  .sidebar,
+  .page-frame > header,
+  .page-frame > footer {
+    display: none !important;
+  }
+
+  /* Linearize: drop max-width caps and column grids. */
+  .mx-auto,
+  .max-w-6xl,
+  .max-w-2xl,
+  main,
+  article,
+  .sl-container,
+  .main-frame,
+  .content-panel {
+    max-width: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+
+  .grid,
+  [class*="md:grid-cols"] {
+    display: block !important;
+    grid-template-columns: none !important;
+  }
+
+  /* Cards / sections become flowing blocks with subtle separators. */
+  section,
+  .rounded-2xl,
+  .rounded-xl {
+    margin-top: 1rem !important;
+    padding: 0.5rem 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Headings stay in heading typeface for hierarchy. */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: Helvetica, Arial, sans-serif !important;
+    color: #000000 !important;
+    page-break-after: avoid;
+  }
+
+  /* Show full URLs after links so printed pages are still useful offline. */
+  a[href]:after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    color: #444;
+    word-break: break-all;
+  }
+  /* Don't expand fragment-only or javascript: links. */
+  a[href^="#"]:after,
+  a[href^="javascript:"]:after,
+  a[href^="mailto:"]:after {
+    content: "";
+  }
+
+  /* Avoid breaking tables and card-like blocks across pages. */
+  table,
+  pre,
+  blockquote,
+  figure,
+  .rounded-2xl,
+  .rounded-xl {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Code blocks: high-contrast, monospace, light background tolerated. */
+  pre, code {
+    background: #f3f3f3 !important;
+    color: #000000 !important;
+    border: 1px solid #cccccc !important;
+    font-family: "Courier New", Courier, monospace !important;
+  }
+
+  /* Tables: simple borders for legibility. */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+  th, td {
+    border: 1px solid #999999 !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+}

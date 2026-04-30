@@ -82,13 +82,9 @@ As of v2.0.0, round proofs use the **v2 envelope hash** format. The
 | `players`       | Top-level player list (names included — see below)   |
 | `state`         | Full snapshot of resources, positions, scores, queue |
 
-**v1 → v2 migration:**
-
-- Proof format v1 is **rejected** in v2.0.0+ — `sov verify` will refuse it.
-- To verify a legacy proof produced by sovereignty < 2.0.0, install the
-  matching legacy version: `pipx install 'sovereignty-game<2.0.0'` and run
-  `sov verify` from that environment.
-- v2 proofs are not backward-compatible with the v1 verifier.
+**v1 → v2 migration:** see [docs/migration-v1-to-v2.md](docs/migration-v1-to-v2.md)
+for the full migration guide (verifier compatibility, on-chain anchor format,
+tooling field-rename checklist, tamper-detection coverage).
 
 **Non-goals:**
 

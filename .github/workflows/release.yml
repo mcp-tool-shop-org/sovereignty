@@ -52,6 +52,46 @@ jobs:
       - name: Build package
         run: python -m build
 
+      # Pre-publish wheel smoke test. Catches the fail-open window between
+      # hatchling build success and PyPI push (import error, missing data
+      # file, broken entry point). Bounded ~2 min CI cost.
+      - name: Install jq for status assertion
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Smoke test built wheel in fresh venv
+        shell: bash
+        run: |
+          set -euo pipefail
+          SMOKE_DIR="$(mktemp -d)"
+          WHEEL=$(ls dist/sovereignty_game-*.whl dist/sovereignty-game-*.whl 2>/dev/null | head -n1)
+          if [ -z "$WHEEL" ]; then
+            echo "::error::No built wheel found under dist/"
+            ls -la dist/
+            exit 1
+          fi
+          echo "Smoke-testing wheel: $WHEEL"
+          python -m venv "$SMOKE_DIR/venv"
+          # shellcheck disable=SC1091
+          source "$SMOKE_DIR/venv/bin/activate"
+          pip install --upgrade pip
+          pip install "$WHEEL"
+          # 1. --version exits 0 with a non-empty version line
+          VERSION_OUT=$(sov --version)
+          echo "sov --version => $VERSION_OUT"
+          [ -n "$VERSION_OUT" ] || { echo "::error::sov --version produced empty output"; exit 1; }
+          # 2. --help exits 0 and mentions the binary name
+          HELP_OUT=$(sov --help)
+          echo "$HELP_OUT" | grep -q "sov" || { echo "::error::sov --help missing binary name"; exit 1; }
+          # 3. self-check JSON status must be ok or warn (not fail)
+          STATUS=$(sov self-check --json | jq -r .status)
+          echo "sov self-check --json status => $STATUS"
+          case "$STATUS" in
+            ok|warn) echo "Smoke test passed." ;;
+            *) echo "::error::sov self-check --json reported status=$STATUS (expected ok|warn)"; exit 1 ;;
+          esac
+          deactivate
+          rm -rf "$SMOKE_DIR"
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@67339c736fd9354cd4f8cb0b744f2b82a74b5c70 # release/v1 (v1.12.3)
 

@@ -183,6 +183,19 @@ uv run mypy sov_engine sov_transport sov_cli
 
 All tests must pass. Lint must be clean. mypy must be clean. No exceptions.
 
+## Shell completions
+
+Sovereignty's CLI supports tab completion via Typer's built-in completion installer. Install for your shell:
+
+```bash
+sov --install-completion              # Auto-detects bash/zsh/fish/powershell
+sov --install-completion bash         # Or specify explicitly
+```
+
+Then restart your shell or `source` the relevant rc file. Completions cover all top-level commands and the `--help` flag tree.
+
+(See Typer's [completion docs](https://typer.tiangolo.com/tutorial/launch/) for the full spec.)
+
 ## Logging and diagnostics
 
 The CLI uses the stdlib `logging` module. Override the level with the

@@ -107,7 +107,7 @@ existing rich-formatted console output and is unaffected.
 |-------------|-------------------------------|---------------------------------------------------------------|
 | `timestamp` | string (RFC 3339, UTC, `Z`)   | When the diagnostic ran. Always UTC, always `Z`-suffixed.     |
 | `command`   | string                        | The invoking command (e.g. `"sov doctor"`).                   |
-| `status`    | enum `"ok" \| "warn" \| "fail"` | Overall rollup. `fail` if any field is `fail`; `warn` if any field is `warn` and none are `fail`; otherwise `ok`. |
+| `status`    | enum `"ok" \| "warn" \| "fail" \| "info"` | Overall rollup. `fail` if any field is `fail`; `warn` if any field is `warn` and none are `fail`; otherwise `ok`. |
 | `fields`    | array of objects              | One entry per check. See below.                               |
 
 ### `fields[]` entries
@@ -115,7 +115,7 @@ existing rich-formatted console output and is unaffected.
 | Key       | Type                            | Description                                                      |
 |-----------|---------------------------------|------------------------------------------------------------------|
 | `name`    | string (snake_case stable id)   | Stable field identifier — never localized, never reformatted.    |
-| `status`  | enum `"ok" \| "warn" \| "fail"` | Outcome of this individual check.                                |
+| `status`  | enum `"ok" \| "warn" \| "fail" \| "info"` | Outcome of this individual check.                                |
 | `value`   | any JSON value (string, number, bool, null, object, array) | The observed value. Type is field-specific; consumers MUST tolerate any JSON type. |
 | `message` | string (optional)               | Human-readable explanation. Absent when no extra context exists. |
 

@@ -64,6 +64,9 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "integration: real-network tests requiring RUN_INTEGRATION=1 environment variable to opt in",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["sov_engine", "sov_transport", "sov_cli"]

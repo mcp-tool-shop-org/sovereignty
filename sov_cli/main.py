@@ -20,6 +20,7 @@ from sov_cli.errors import (
     SovError,
     anchor_error,
     anchor_mismatch_error,
+    insufficient_resources_error,
     invalid_action_error,
     market_error,
     no_game_error,
@@ -34,6 +35,8 @@ from sov_cli.errors import (
     state_corrupt_error,
     state_version_mismatch_error,
     treaty_error,
+    upgrade_rep_error,
+    upgrade_unavailable_error,
     wallet_error,
 )
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
@@ -49,6 +52,7 @@ from sov_engine.models import (
 )
 from sov_engine.rng import GameRng
 from sov_engine.rules.campfire import (
+    CAMPFIRE_UPGRADE_HINT,
     apologize,
     break_promise,
     check_deal_deadlines,
@@ -61,10 +65,13 @@ from sov_engine.rules.campfire import (
 )
 from sov_engine.rules.market_day import new_market_day_game
 from sov_engine.rules.town_hall import (
+    BUILDER_TOOLS_COST,
+    WORKSHOP_WOOD_COST,
     market_buy,
     market_sell,
     market_status,
     new_town_hall_game,
+    upgrade_with_resources,
 )
 from sov_engine.rules.treaty_table import (
     check_treaty_deadlines,
@@ -925,13 +932,33 @@ def tutorial() -> None:
 
 
 @app.command()
-def status() -> None:
-    """Show current game state."""
+def status(
+    brief: Annotated[
+        bool,
+        typer.Option(
+            "--brief",
+            help=(
+                "One-line per-player summary (stable format used by README "
+                "examples and the post-`sov turn` recap)."
+            ),
+        ),
+    ] = False,
+) -> None:
+    """Show current game state.
+
+    Default: a Rich-rendered table with full per-player columns. Pass
+    ``--brief`` for the one-line-per-player summary used in the README's
+    "Your first game" example — that output is part of the README contract
+    and is pinned by tests in ``tests/test_readme_examples.py``.
+    """
     result = _load_game()
     if result is None:
         _fail(no_game_error())
     state, _ = result
-    _print_status(state)
+    if brief:
+        _print_brief_status(state)
+    else:
+        _print_status(state)
 
 
 @app.command()
@@ -2133,6 +2160,150 @@ def market(
     _save_state(state)
     console.print()
     _print_market(state)
+
+
+# ---------------------------------------------------------------------------
+# Upgrades — Town Hall / Treaty Table / Market Day
+# ---------------------------------------------------------------------------
+
+# Resource-cost rulesets that expose ``upgrade_with_resources``. Kept here
+# (and not imported from campfire._RESOURCE_UPGRADE_RULESETS, which is a
+# private symbol) so the CLI's allow-list is independently auditable. The
+# string set must stay in sync with the engine's set; tests pin both.
+_UPGRADE_RULESETS = frozenset(
+    {"town_hall_v1", "treaty_table_v1", "market_day_v1"},
+)
+
+
+def _upgrade_cost_table(target: str) -> tuple[int, str, int]:
+    """Return (coin_cost, resource_name, resource_cost) for the upgrade.
+
+    Mirrors the constants the engine uses (WORKSHOP_WOOD_COST,
+    BUILDER_TOOLS_COST) so the CLI can render dry-run output without
+    re-implementing pricing. Engine remains the source of truth for the
+    resource amounts.
+    """
+    if target == "workshop":
+        return (2, "wood", WORKSHOP_WOOD_COST)
+    return (3, "tools", BUILDER_TOOLS_COST)
+
+
+@app.command()
+def upgrade(
+    target: Annotated[
+        str,
+        typer.Argument(help="workshop or builder"),
+    ],
+    player: Annotated[
+        str,
+        typer.Option("--player", "-p", help="Who's upgrading (defaults to active player)"),
+    ] = "",
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run",
+            help="Show the cost and target tier without spending resources.",
+        ),
+    ] = False,
+) -> None:
+    """Spend coins + a resource to gain an upgrade (Town Hall / Treaty Table / Market Day).
+
+    Costs:
+      workshop — 2 coins + 1 wood
+      builder  — 3 coins + 1 tools, requires Rep >= 3
+
+    Campfire uses the coinless workshop (``sov build``) and does not expose
+    this command. Defaulting and ergonomics mirror ``sov market buy|sell``.
+    """
+    target_norm = target.lower().strip()
+    if target_norm not in ("workshop", "builder"):
+        _fail(invalid_action_error(target, "upgrade workshop|builder"))
+
+    result = _load_game()
+    if result is None:
+        _fail(no_game_error())
+    state, _ = result
+
+    ruleset = state.config.ruleset
+    if ruleset not in _UPGRADE_RULESETS:
+        # Campfire (the documented coinless ruleset) — emit the locked
+        # coordination INFO and refuse the command. Tests pin this string
+        # via caplog (Wave 9 contract).
+        logger.info(CAMPFIRE_UPGRADE_HINT)
+        _fail(upgrade_unavailable_error(_tier_name(state)))
+
+    # Resolve player (mirror ``sov market`` defaulting).
+    if player:
+        target_player = next((p for p in state.players if p.name == player), None)
+    else:
+        target_player = state.current_player
+    if target_player is None:
+        _fail(player_not_found_error(player))
+
+    coin_cost, res_name, res_cost = _upgrade_cost_table(target_norm)
+
+    # --dry-run: describe the cost + tier without dispatching to engine.
+    if dry_run:
+        tier = _tier_name(state)
+        console.print(
+            f"\n  [bold]Dry run:[/bold] upgrade {target_norm} ({tier})\n"
+            f"  Cost: {coin_cost} coins + {res_cost} {res_name}"
+            + (" (requires Rep >= 3)" if target_norm == "builder" else "")
+        )
+        held_coins = target_player.coins
+        held_res = target_player.resources.get(res_name, 0)
+        console.print(
+            f"  {target_player.name} has: {held_coins} coins, {held_res} {res_name}, "
+            f"Rep {target_player.reputation}"
+        )
+        return
+
+    # Pre-validate so we can emit the actionable structured error rather
+    # than the engine's terse string. Engine remains authoritative for the
+    # actual mutation; we just front it with a humane error surface.
+    if target_norm == "builder" and target_player.reputation < 3:
+        _fail(
+            upgrade_rep_error(
+                target_norm,
+                3,
+                target_player.reputation,
+                "Earn Rep by keeping promises ('sov promise keep ...') "
+                "or apologizing ('sov apologize ...').",
+            )
+        )
+
+    held_coins = target_player.coins
+    held_res = target_player.resources.get(res_name, 0)
+    coins_short = max(0, coin_cost - held_coins)
+    res_short = max(0, res_cost - held_res)
+
+    if coins_short > 0 or res_short > 0:
+        # Pick the most actionable hint: the missing resource is usually the
+        # bigger blocker, so name it first when both are short. Mirror the
+        # patterns the rest of the CLI uses for "earn 1 more X via Y".
+        coin_unit = "coin" if coins_short == 1 else "coins"
+        if res_short > 0 and coins_short > 0:
+            hint = (
+                f"Earn {coins_short} more {coin_unit} via 'sov market sell', "
+                f"then pick up {res_short} {res_name} via 'sov market buy {res_name}'."
+            )
+        elif res_short > 0:
+            hint = f"Pick up {res_short} {res_name} via 'sov market buy {res_name}'."
+        else:
+            hint = f"Earn {coins_short} more {coin_unit} via 'sov market sell'."
+        _fail(
+            insufficient_resources_error(
+                target_norm,
+                {"coins": coin_cost, res_name: res_cost},
+                {"coins": held_coins, res_name: held_res},
+                hint,
+            )
+        )
+
+    # All gates passed — dispatch to the engine.
+    msg = upgrade_with_resources(state, target_player, target_norm)
+    console.print(f"\n  {msg}")
+    _save_state(state)
 
 
 # ---------------------------------------------------------------------------

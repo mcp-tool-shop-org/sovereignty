@@ -17,6 +17,35 @@ import { config } from '../site-config';
 // normalize trailing slash so we always emit `/sovereignty/#features`.
 const base = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : import.meta.env.BASE_URL + '/';
 
+// F-FE-001 (Wave 9): "What's new in v2.0.0" highlights surfaced as a
+// landing-page section. Modeled here in index.astro (rather than as an entry
+// in config.sections) because it carries inline links — site-theme's
+// FeatureGrid renders desc as plain text, so anchor markup would be escaped.
+// Keeping it local avoids touching site-theme's SectionConfig union and
+// stays surgical to this release.
+const whatsNewFeatures = [
+  {
+    title: 'Hardened proof format',
+    desc: 'The round-proof envelope now signs the full game context (game_id, round, ruleset, rng_seed, timestamp, players, state) — not just the player coins. Any tampering with envelope metadata invalidates the proof. v1 proofs are no longer accepted.',
+  },
+  {
+    title: 'Production-quality polish',
+    desc: 'Atomic writes everywhere (no half-written save files), structured logging for operators, --json output mode on diagnostic commands, and supply-chain attestation on released binaries.',
+  },
+  {
+    title: 'Beginner-friendlier',
+    desc: 'Install in 30 seconds with pipx install sovereignty-game, walk through the rules in 60 seconds with sov tutorial, and share scenario codes with friends.',
+  },
+];
+
+// F-FE-001 nav: prepend a "What's new" entry so the section is reachable
+// from the header on every page (the dispatch loop below renders it
+// out-of-band so it isn't auto-included by config.sections.map).
+const navItems = [
+  { href: `${base}#whats-new`, label: "What's new" },
+  ...config.sections.map(s => ({ href: `${base}#${s.id}`, label: s.title })),
+];
+
 // Exhaustiveness guard for section dispatch (Wave 5 / F-008).
 //
 // Two-layer guard:
@@ -62,20 +91,50 @@ for (const s of config.sections) {
   repoUrl={config.repoUrl}
   npmUrl={config.npmUrl}
   footerText={config.footerText}
-  nav={config.sections.map(s => ({ href: `${base}#${s.id}`, label: s.title }))}
+  nav={navItems}
 >
-  <Hero {...config.hero} />
+  {/*
+    F-FE-002 (Wave 9, a11y): skip-to-content link as the first focusable
+    element of the page. Hidden until focused (sr-only-style off-screen
+    positioning), then anchored top-left and high-contrast for keyboard
+    users. Target is the `#main` div below — site-theme's BaseLayout wraps
+    the slot in its own <main> with no id, and we can't edit that package
+    here, so we add a tabbable `#main` landmark inside the slot instead.
+  */}
+  <a href="#main" class="skip-link">Skip to main content</a>
 
-  {config.sections.map((s) => (
-    <Section id={s.id} title={s.title} subtitle={s.subtitle}>
-      {/*
-        Renderer branches. Keep this list in sync with KNOWN_SECTION_KINDS in
-        the frontmatter — the exhaustiveness loop above enforces that.
-      */}
-      {s.kind === 'features' && <FeatureGrid features={s.features} />}
-      {s.kind === 'data-table' && <DataTable columns={s.columns} rows={s.rows} />}
-      {s.kind === 'code-cards' && <CodeCardGrid cards={s.cards} />}
-      {s.kind === 'api' && <ApiList apis={s.apis} />}
+  <div id="main" tabindex="-1">
+    <Hero {...config.hero} />
+
+    {/*
+      F-FE-001 (Wave 9): "What's new in v2.0.0" — release highlights.
+      Positioned after Hero, before the existing Features section. Renders
+      via the standard Section + FeatureGrid pair so styling stays
+      consistent with the dispatched sections below; an extra paragraph
+      below the grid carries the migration / release-notes links (the
+      FeatureGrid `desc` field is plain text, so links live here instead).
+    */}
+    <Section id="whats-new" title="What's new in v2.0.0" subtitle="Three things to know about the v2 release.">
+      <FeatureGrid features={whatsNewFeatures} />
+      <p class="mt-6 text-sm text-dim">
+        Migrating from v1? See the
+        {' '}<a class="underline hover:text-heading" href="https://github.com/mcp-tool-shop-org/sovereignty/blob/main/docs/migration-v1-to-v2.md">migration guide</a>.
+        {' '}Or read the
+        {' '}<a class="underline hover:text-heading" href="https://github.com/mcp-tool-shop-org/sovereignty/blob/main/CHANGELOG.md">full release notes</a>.
+      </p>
     </Section>
-  ))}
+
+    {config.sections.map((s) => (
+      <Section id={s.id} title={s.title} subtitle={s.subtitle}>
+        {/*
+          Renderer branches. Keep this list in sync with KNOWN_SECTION_KINDS in
+          the frontmatter — the exhaustiveness loop above enforces that.
+        */}
+        {s.kind === 'features' && <FeatureGrid features={s.features} />}
+        {s.kind === 'data-table' && <DataTable columns={s.columns} rows={s.rows} />}
+        {s.kind === 'code-cards' && <CodeCardGrid cards={s.cards} />}
+        {s.kind === 'api' && <ApiList apis={s.apis} />}
+      </Section>
+    ))}
+  </div>
 </BaseLayout>

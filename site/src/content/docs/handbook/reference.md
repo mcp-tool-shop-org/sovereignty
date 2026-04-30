@@ -22,6 +22,7 @@ sidebar:
 |---------|-------------|
 | `sov turn` | Roll, move, and resolve your space |
 | `sov status` | Show current game state for all players |
+| `sov status --brief` | One-line per-player summary (between-turn glance) |
 | `sov board` | Show the board layout and player positions |
 | `sov recap` | Review what happened this round |
 | `sov end-round` | Generate a round proof (SHA-256 fingerprint) |
@@ -90,6 +91,17 @@ sidebar:
 | `sov support-bundle` | Write a diagnostic zip for bug reports |
 | `sov feedback` | Generate an issue-ready play report |
 | `sov --version` | Show version and exit |
+
+## Shell completions
+
+Tab completion is built in via Typer:
+
+```bash
+sov --install-completion              # Auto-detects bash/zsh/fish/powershell
+sov --install-completion bash         # Or specify explicitly
+```
+
+Restart your shell (or `source` the relevant rc file) and tab through every top-level command + flag tree.
 
 ## Links
 

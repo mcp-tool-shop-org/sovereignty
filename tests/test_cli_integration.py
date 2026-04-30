@@ -239,6 +239,249 @@ def test_sov_support_bundle_writes_zip_with_required_files_and_no_seed_material(
 
 
 # ---------------------------------------------------------------------------
+# JSON schema pin: doctor --json / support-bundle --json
+# ---------------------------------------------------------------------------
+#
+# Pairs with docs/cli-json-output.md (the canonical schema). Contract:
+#
+#   {
+#     "timestamp": "<ISO8601 RFC 3339, UTC, Z-suffix>",
+#     "command":   "<sov doctor | sov self-check | sov support-bundle>",
+#     "status":    "ok" | "warn" | "fail",
+#     "fields":    [
+#       { "name": str, "status": "ok|warn|fail", "value": Any, "message": Optional[str] },
+#       ...
+#     ]
+#   }
+#
+# We do an inline shape check (rather than depend on jsonschema as a new dev
+# dep) so the contract is enforced even in the slim dev environment. The
+# point is to fail loud the moment the engine drifts from the documented
+# envelope: maintainers, CI bug-report tooling, and incident-response
+# scripts all depend on this shape.
+
+
+# Doctor emits "info" for purely informational fields (e.g. "Version: 2.0.0rc1",
+# "No active game"); the locked schema accepts info as a non-actionable status
+# alongside the actionable ok/warn/fail trio. Documented in
+# docs/cli-json-output.md as the "informational" status category.
+_VALID_STATUSES = {"ok", "warn", "fail", "info"}
+
+
+def _extract_json_payload(output: str) -> dict:
+    """Find the first JSON object in *output* and parse it.
+
+    Implementations sometimes wrap the JSON in extra log lines; we locate
+    the first ``{`` and the last ``}`` and parse that window. This is
+    forgiving but the resulting object MUST still satisfy the locked
+    schema asserted by the caller.
+    """
+    start = output.find("{")
+    end = output.rfind("}")
+    assert start != -1 and end != -1 and end > start, (
+        f"--json mode must emit a JSON object; got: {output!r}"
+    )
+    return json.loads(output[start : end + 1])
+
+
+def _assert_locked_envelope(payload: dict, *, expected_command_contains: str) -> None:
+    """Assert *payload* matches the docs/cli-json-output.md envelope.
+
+    Pinned (any change here is a breaking-contract change and must bump the
+    docs version too).
+    """
+    # Top-level keys
+    for required in ("timestamp", "command", "status", "fields"):
+        assert required in payload, (
+            f"JSON envelope missing required key '{required}'; got keys: {sorted(payload.keys())!r}"
+        )
+
+    # timestamp: must be a non-empty string. We don't pin the exact format
+    # to the regex level here (the docs say RFC 3339 / ISO 8601 with a 'Z'
+    # suffix; engine validates that elsewhere) but it MUST at least be a
+    # string consumers can pass to a date parser.
+    assert isinstance(payload["timestamp"], str) and payload["timestamp"], (
+        f"'timestamp' must be a non-empty string; got: {payload['timestamp']!r}"
+    )
+
+    # command: must be a string and must mention the invoking subcommand.
+    assert isinstance(payload["command"], str), (
+        f"'command' must be a string; got type {type(payload['command']).__name__}"
+    )
+    assert expected_command_contains in payload["command"], (
+        f"'command' must include {expected_command_contains!r}; got: {payload['command']!r}"
+    )
+
+    # status: enum
+    assert payload["status"] in _VALID_STATUSES, (
+        f"'status' must be one of {sorted(_VALID_STATUSES)!r}; got: {payload['status']!r}"
+    )
+
+    # fields: list of dicts, each shaped {name, status, value, message?}.
+    fields = payload["fields"]
+    assert isinstance(fields, list), f"'fields' must be a list; got type {type(fields).__name__}"
+    for i, field in enumerate(fields):
+        assert isinstance(field, dict), (
+            f"fields[{i}] must be a dict; got type {type(field).__name__}"
+        )
+        for required in ("name", "status", "value"):
+            assert required in field, (
+                f"fields[{i}] missing required key '{required}'; got keys: {sorted(field.keys())!r}"
+            )
+        assert isinstance(field["name"], str) and field["name"], (
+            f"fields[{i}].name must be a non-empty string; got: {field['name']!r}"
+        )
+        assert field["status"] in _VALID_STATUSES, (
+            f"fields[{i}].status must be one of {sorted(_VALID_STATUSES)!r}; "
+            f"got: {field['status']!r}"
+        )
+        # value: any JSON value is allowed; just assert the key is present.
+        # message: optional, but if present must be a string.
+        if "message" in field and field["message"] is not None:
+            assert isinstance(field["message"], str), (
+                f"fields[{i}].message, if present, must be a string; "
+                f"got type {type(field['message']).__name__}"
+            )
+
+
+def test_sov_doctor_json_matches_locked_schema(monkeypatch, tmp_path):
+    """``sov doctor --json`` must match the schema in docs/cli-json-output.md.
+
+    Pin: top-level keys ``{timestamp, command, status, fields}``; ``status``
+    in the {ok, warn, fail} enum; ``fields[]`` is a list of
+    ``{name, status, value, message?}`` dicts. The ``command`` value must
+    contain ``"doctor"``.
+    """
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(app, ["doctor", "--json"])
+    assert result.exit_code == 0, f"doctor --json must exit 0; output={result.output!r}"
+
+    payload = _extract_json_payload(result.output)
+    _assert_locked_envelope(payload, expected_command_contains="doctor")
+
+
+def test_sov_doctor_json_contract_with_active_game(monkeypatch, tmp_path):
+    """``sov doctor --json`` with an active game still matches the schema.
+
+    Catches drift where the active-game branch synthesizes fields with a
+    different shape than the no-game branch.
+    """
+    monkeypatch.chdir(tmp_path)
+    _seed_minimal_game(tmp_path, players=["Alice", "Bob"])
+
+    result = runner.invoke(app, ["doctor", "--json"])
+    assert result.exit_code == 0, (
+        f"doctor --json with active game must exit 0; output={result.output!r}"
+    )
+
+    payload = _extract_json_payload(result.output)
+    _assert_locked_envelope(payload, expected_command_contains="doctor")
+    # At least one field must surface (game directory / active game / etc.).
+    assert payload["fields"], (
+        f"doctor --json must surface at least one field with an active "
+        f"game; got empty fields list: {payload!r}"
+    )
+
+
+def test_sov_support_bundle_json_matches_locked_schema(monkeypatch, tmp_path):
+    """``sov support-bundle --json`` must match the same locked envelope.
+
+    The support-bundle JSON output identifies what's IN the bundle (and the
+    diagnostic field rollup) — not the bundle contents themselves (those
+    are inside the zip). Schema is identical to ``sov doctor --json``.
+    """
+    monkeypatch.chdir(tmp_path)
+    _seed_minimal_game(tmp_path)
+
+    result = runner.invoke(app, ["support-bundle", "--json"])
+    assert result.exit_code == 0, f"support-bundle --json must exit 0; output={result.output!r}"
+
+    payload = _extract_json_payload(result.output)
+    _assert_locked_envelope(payload, expected_command_contains="support-bundle")
+
+
+# ---------------------------------------------------------------------------
+# Scenario-pack CliRunner walkthroughs (F-T-005)
+# ---------------------------------------------------------------------------
+#
+# Smoke tests for each shipped scenario pack. We don't try to assert exact
+# game outcomes (those are scenario-design concerns and shift with content
+# tuning) — we just prove the round-trip works:
+#
+#   sov scenario code <pack> -s 42  ->  share code
+#   sov new --code <code> -p Alice -p Bob  ->  game state on disk
+#   sov turn (x3)                          ->  all three exit 0
+#   sov status                             ->  exit 0, doesn't crash
+#
+# Each scenario gets its own test function so a failure points straight at
+# the scenario that broke. Tests use ``tmp_path`` + ``monkeypatch.chdir``
+# so each test gets an isolated ``.sov/`` directory.
+
+
+def _generate_share_code(pack: str, seed: int = 42) -> str:
+    """Run ``sov scenario code <pack> -s <seed>`` and extract the share code.
+
+    The CLI prints the code on its own line surrounded by Rich formatting;
+    we strip ANSI and grab the first ``SOV|...`` token we see.
+    """
+    result = runner.invoke(app, ["scenario", "code", pack, "-s", str(seed)])
+    assert result.exit_code == 0, f"scenario code {pack} must exit 0; output={result.output!r}"
+    # Find the SOV|...|s<digit> token in the output.
+    import re
+
+    match = re.search(r"SOV\|[^\s]+", result.output)
+    assert match, f"scenario code {pack} must print a SOV| share code; got: {result.output!r}"
+    return match.group(0)
+
+
+def _walkthrough_scenario(monkeypatch, tmp_path, pack: str) -> None:
+    """Drive one scenario pack through code -> new -> turn -> status."""
+    monkeypatch.chdir(tmp_path)
+
+    # 1. Generate share code
+    code = _generate_share_code(pack, seed=42)
+
+    # 2. Start a game with two players via the share code
+    result = runner.invoke(app, ["new", "--code", code, "-p", "Alice", "-p", "Bob"])
+    assert result.exit_code == 0, (
+        f"sov new --code {code} must exit 0 for pack {pack!r}; output={result.output!r}"
+    )
+
+    # 3. Run 3 turns. Each must exit 0 and not raise.
+    for i in range(3):
+        result = runner.invoke(app, ["turn"])
+        assert result.exit_code == 0, (
+            f"sov turn #{i + 1} must exit 0 for pack {pack!r}; output={result.output!r}"
+        )
+
+    # 4. Status must not crash.
+    result = runner.invoke(app, ["status"])
+    assert result.exit_code == 0, (
+        f"sov status must exit 0 after 3 turns for pack {pack!r}; output={result.output!r}"
+    )
+    # Sanity: status should at least mention the players.
+    assert "Alice" in result.output or "alice" in result.output.lower(), (
+        f"status must surface player names for pack {pack!r}; got: {result.output!r}"
+    )
+
+
+def test_scenario_walkthrough_cozy_night(monkeypatch, tmp_path):
+    _walkthrough_scenario(monkeypatch, tmp_path, "cozy-night")
+
+
+def test_scenario_walkthrough_market_panic(monkeypatch, tmp_path):
+    _walkthrough_scenario(monkeypatch, tmp_path, "market-panic")
+
+
+def test_scenario_walkthrough_promises_matter(monkeypatch, tmp_path):
+    _walkthrough_scenario(monkeypatch, tmp_path, "promises-matter")
+
+
+def test_scenario_walkthrough_treaty_night(monkeypatch, tmp_path):
+    _walkthrough_scenario(monkeypatch, tmp_path, "treaty-night")
+
+
+# ---------------------------------------------------------------------------
 # save / load round-trip with treaty dedup
 # ---------------------------------------------------------------------------
 

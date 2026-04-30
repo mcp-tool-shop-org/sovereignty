@@ -155,40 +155,43 @@ def resolve_space(state: GameState, rng: GameRng) -> str:
 
 
 # Rulesets where the resource-cost upgrade path (upgrade_with_resources) is the
-# documented rule. Hitting Campfire's coinless fall-through under one of these
-# rulesets means the CLI didn't dispatch to upgrade_with_resources — surface
-# a warning so operators can see (and ci-docs can document) the gap. This is
-# the FALL-THROUGH WARNING, not a feature wire-up — wiring is Phase 5.
+# documented rule. Wave 9 wired the CLI ``sov upgrade workshop|builder`` command
+# to dispatch directly to upgrade_with_resources for these rulesets, so the
+# Stage B "fall-through" warning has been REMOVED for them. The Campfire branch
+# below is retained as a one-time INFO so a player who runs ``sov upgrade ...``
+# under Campfire (the coinless ruleset) gets pointed at ``sov build`` instead
+# of seeing nothing happen.
 _RESOURCE_UPGRADE_RULESETS = frozenset(
     {"town_hall_v1", "treaty_table_v1", "market_day_v1"},
 )
 
+# Wave 9 locked coordination string — pinned by tests (caplog) and by the
+# ``sov upgrade`` Campfire-branch INFO. Do NOT reword without coordinating
+# with the tests + ci-docs domains.
+CAMPFIRE_UPGRADE_HINT = (
+    "Campfire ruleset uses the coinless workshop — use 'sov build' for free "
+    "tier-1 builds, or switch ruleset for resource-cost upgrades."
+)
+
 
 def _warn_fallthrough_workshop(state: GameState) -> None:
-    """Log a warning when Workshop falls through to coinless resolve.
+    """No-op on resource rulesets (Wave 9 wired the CLI); Campfire-only hint emitted by CLI.
 
-    EXACT key string is part of the engine<->ci-docs coordination contract
-    for finding F-engine-010 (Wave 5). ci-docs ensures the warning surfaces
-    to the user (not swallowed by quiet mode); the engine emits it via stdlib
-    logging from one source of truth.
+    The Stage B warning for Workshop fall-through under
+    Town Hall / Treaty Table / Market Day was REMOVED in Wave 9 once the
+    ``sov upgrade workshop`` CLI command became the dispatch path; the
+    fall-through is no longer a defensive surface there. The hint string for
+    Campfire callers lives at module scope as ``CAMPFIRE_UPGRADE_HINT`` and
+    is emitted by ``sov upgrade`` itself, not from this resolve path
+    (resolving the Workshop space on Campfire is the documented coinless
+    flow — no warning needed).
     """
-    if state.config.ruleset in _RESOURCE_UPGRADE_RULESETS:
-        logger.warning(
-            "Ruleset %s does not expose upgrade_with_resources; falling back to Campfire workshop",
-            state.config.ruleset,
-        )
+    return None
 
 
 def _warn_fallthrough_builder(state: GameState) -> None:
-    """Log a warning when Builder falls through to coinless resolve.
-
-    Twin of ``_warn_fallthrough_workshop`` — same coordination contract.
-    """
-    if state.config.ruleset in _RESOURCE_UPGRADE_RULESETS:
-        logger.warning(
-            "Ruleset %s does not expose upgrade_with_resources; falling back to Campfire builder",
-            state.config.ruleset,
-        )
+    """Twin of ``_warn_fallthrough_workshop`` — also a no-op post-Wave 9."""
+    return None
 
 
 def _resolve_workshop(player: PlayerState, state: GameState) -> str:
