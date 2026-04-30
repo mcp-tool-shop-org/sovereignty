@@ -63,7 +63,13 @@ jobs:
         run: |
           set -euo pipefail
           SMOKE_DIR="$(mktemp -d)"
-          WHEEL=$(ls dist/sovereignty_game-*.whl dist/sovereignty-game-*.whl 2>/dev/null | head -n1)
+          # hatchling produces sovereignty_game-*.whl (PEP 503 underscore form);
+          # `|| true` defangs `set -euo pipefail` propagating ls's nonzero exit
+          # when the glob has no matches, so the defensive empty-WHEEL check
+          # below can actually run. v2.0.0 shipped with two glob patterns
+          # (underscore + hyphen) — the hyphen variant matched nothing and
+          # killed the script via set -e BEFORE the if check; v2.0.1 fixes that.
+          WHEEL=$(ls dist/sovereignty_game-*.whl 2>/dev/null | head -n1 || true)
           if [ -z "$WHEEL" ]; then
             echo "::error::No built wheel found under dist/"
             ls -la dist/

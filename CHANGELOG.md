@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.0.1] - 2026-04-30
+
+### Fixed
+
+- `release.yml` wheel-smoke gate (added in v2.0.0 as Stage B "fail-closed" hardening) had a bash strict-mode interaction with `ls`'s exit code on no-match globs. The gate fired on its own first run and blocked PyPI publish for v2.0.0. v2.0.1 fixes the gate; functionally identical to v2.0.0 binaries published to GitHub Release.
+
+### Note
+
+- **`sovereignty-game==2.0.0` is not available on PyPI.** PyPI users should `pip install sovereignty-game==2.0.1`. GitHub Release v2.0.0 binaries (consumed by `npx @mcptoolshop/sovereignty`) and PyPI v2.0.1 ship the same code from the same source tree.
+
 ## [2.0.0] - 2026-04-30
 
 ### BREAKING
