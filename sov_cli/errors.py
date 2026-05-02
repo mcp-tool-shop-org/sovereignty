@@ -503,3 +503,56 @@ def mainnet_underfunded_error(balance_drops: int, required_drops: int) -> SovErr
             "`sov anchor --network testnet` (testnet XRP is play money)."
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# v2.1 daemon errors (per docs/v2.1-daemon-ipc.md §7)
+# ---------------------------------------------------------------------------
+
+
+def daemon_readonly_error() -> SovError:
+    """A write endpoint was called against a daemon started with --readonly.
+
+    Surfaced by the daemon HTTP layer (anchor / anchor-checkpoint endpoints)
+    when readonly mode is active, and re-emitted here so CLI surfaces that
+    proxy daemon responses can render the structured shape consistently.
+    """
+    return SovError(
+        code="DAEMON_READONLY",
+        message="daemon started with --readonly; anchor endpoints disabled",
+        hint="restart without --readonly to enable anchoring",
+    )
+
+
+def daemon_auth_missing_error() -> SovError:
+    """Authorization header missing on a daemon HTTP request."""
+    return SovError(
+        code="DAEMON_AUTH_MISSING",
+        message="Authorization header missing on daemon request",
+        hint=("include `Authorization: Bearer <token>`; token is in `.sov/daemon.json`"),
+    )
+
+
+def daemon_auth_invalid_error() -> SovError:
+    """Authorization token does not match the daemon's bearer token."""
+    return SovError(
+        code="DAEMON_AUTH_INVALID",
+        message="Authorization token does not match daemon's token",
+        hint="re-read token from `.sov/daemon.json` or restart daemon",
+    )
+
+
+def daemon_port_busy_error(port: int) -> SovError:
+    """Daemon could not bind because the requested port is already in use.
+
+    Spec §6 selects a fresh random port at every start; this surfaces when
+    a manually-pinned port (or a rare race) collides.
+    """
+    return SovError(
+        code="DAEMON_PORT_BUSY",
+        message=f"Port {port} already in use",
+        hint=(
+            "stop the conflicting process or restart `sov daemon start` "
+            "(which selects a fresh random port)"
+        ),
+    )

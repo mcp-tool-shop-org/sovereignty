@@ -87,6 +87,7 @@ Repeat for 15 rounds. `sov game-end` prints the final scores.
 - **Multiple saved games** (v2.1+): `sov games` lists saves, `sov resume <game-id>` switches between them.
 - **Batched anchoring** (v2.1+): `sov anchor` at game-end batches all pending rounds into a single XRPL transaction — one verifiable chain pointer per game, not one per round. Use `sov anchor --checkpoint` for mid-game flush.
 - **Network selection** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (or `SOV_XRPL_NETWORK` env var; default `testnet`).
+- **Daemon mode** (v2.1+, optional): `sov daemon start` runs a localhost HTTP/JSON server for desktop integration and background chain polling. See [Daemon mode](#daemon-mode-optional) below.
 
 > Want a guided in-app walkthrough first? Run `sov tutorial`.
 > Want to play with no software at all? See [Print & Play](docs/print-and-play.md).
@@ -145,6 +146,20 @@ sov support-bundle                   # diagnostic zip for bug reports
 </details>
 
 The console keeps score. You keep your word.
+
+## Daemon mode (optional)
+
+For desktop integration (Tauri shell, audit viewer) or background chain polling, run sovereignty as a localhost HTTP daemon:
+
+```bash
+pip install 'sovereignty-game[daemon]'
+sov daemon start --readonly        # audit-only, no wallet seed
+sov daemon start                   # full daemon with anchor endpoints (loads XRPL_SEED)
+sov daemon status                  # running | stale | none
+sov daemon stop
+```
+
+Daemon binds to `127.0.0.1` on a random port; connection details (port + bearer token) live in `.sov/daemon.json`. One daemon per project root. See [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) for the full IPC contract.
 
 ## How it works
 

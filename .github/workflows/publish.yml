@@ -80,7 +80,12 @@ jobs:
           # shellcheck disable=SC1091
           source "$SMOKE_DIR/venv/bin/activate"
           pip install --upgrade pip
-          pip install "$WHEEL"
+          # Install with both extras. The [daemon] extra brings in
+          # starlette/uvicorn/httpx — if any are missing, the daemon Typer
+          # subapp's import fails at CLI-load time and breaks ALL `sov`
+          # invocations (not just `sov daemon ...`). The `sov daemon --help`
+          # check below is a load-bearing surface verification.
+          pip install "${WHEEL}[xrpl,daemon]"
           # 1. --version exits 0 with a non-empty version line
           VERSION_OUT=$(sov --version)
           echo "sov --version => $VERSION_OUT"
@@ -95,6 +100,11 @@ jobs:
             ok|warn) echo "Smoke test passed." ;;
             *) echo "::error::sov self-check --json reported status=$STATUS (expected ok|warn)"; exit 1 ;;
           esac
+          # 4. Verify the daemon Typer subapp is wired (import surface check
+          # for the [daemon] extra — does NOT start the server). If
+          # uvicorn/starlette aren't actually installed, this fails because
+          # the subapp import chain hits a missing dep.
+          sov daemon --help > /dev/null || { echo "::error::sov daemon --help failed — [daemon] extra not wired"; exit 1; }
           deactivate
           rm -rf "$SMOKE_DIR"
 

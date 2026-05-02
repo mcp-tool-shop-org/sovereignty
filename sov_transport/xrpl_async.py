@@ -1,52 +1,64 @@
-"""XRPL transport — anchor round-proof hashes as memo transactions.
+"""Async XRPL transport sibling — ``AsyncXRPLTransport``.
 
-This module defines the **synchronous** ``XRPLTransport``. The async sibling
-``AsyncXRPLTransport`` lives at ``sov_transport.xrpl_async``; both consume
-shared deterministic helpers from ``sov_transport.xrpl_internals``.
+Parallel to the synchronous ``sov_transport.xrpl.XRPLTransport``. Both impls
+consume shared deterministic helpers from ``sov_transport.xrpl_internals``
+(memo grammar, retry-policy constants, error classification, network table,
+hex codecs) so they cannot drift on the wire format or the failure-mode
+vocabulary.
 
-This module replaces the v2.0.x ``sov_transport.xrpl_testnet`` surface. It
-parameterizes the network (testnet, mainnet, devnet) on a single
-``XRPLTransport`` class and adds multi-memo single-tx batching for game-end
-flush via ``anchor_batch``. The legacy ``xrpl_testnet`` module is kept as a
-thin compat shim and is removed in v2.2.
+Why a sibling instead of an ABC
+-------------------------------
 
-Architectural notes
--------------------
+There is intentionally **no** ``AsyncLedgerTransport`` ABC. Same logic as the
+v2.1 Wave 2 Signer-protocol skip: do not abstract without a second async impl
+pulling on it. ``AsyncXRPLTransport`` stands alone until a second async impl
+(EVM, Solana, etc.) materializes; introducing the ABC pre-emptively bakes the
+shape of *one* transport's surface into "the contract" and constrains the
+next async impl in the wrong direction.
 
-* **Transport surface stays pure-chain.** ``is_anchored_on_chain`` returns a
-  plain ``bool``. The 3-state ``AnchorStatus`` (anchored / pending / missing)
-  is composed in ``sov_engine.proof`` by consulting the local
-  ``pending-anchors.json`` index and then deferring to the transport for the
-  on-chain check. Keeping the transport pure-chain keeps it free of engine
-  state coupling.
-* **Multi-memo, not packed.** ``anchor_batch`` puts N memos on a single
-  ``Payment.Memos`` list — one ``SOV|...`` line per memo. Each memo is
-  individually capped at ``_MAX_MEMO_BYTES = 1024``; that cap is per-memo,
-  not per-tx, so the 16-round game flush fits comfortably without packing
-  logic. ``FINAL`` round_keys render as the literal string ``FINAL`` in
-  the memo (no ``r`` prefix); numeric round_keys render as ``r<N>``.
-* **Network parameterization.** ``XRPLNetwork`` selects the JSON-RPC URL +
-  explorer prefix. ``url=`` overrides the table; ``allow_insecure`` still
-  gates non-https.
-* **Shared internals.** Pure helpers + retry-policy constants + the network
-  table live in ``sov_transport.xrpl_internals`` so the async sibling shares
-  one source of truth. The retry **loop** stays per-impl: sync uses
-  ``time.sleep``, async uses ``await asyncio.sleep``.
+Driver
+------
+
+The daemon (Wave 3 sibling work) cannot block its event loop on synchronous
+xrpl-py calls — a 30-second submit deadline on the sync transport stalls SSE
+streaming + chain polling for every connected client. ``AsyncXRPLTransport``
+keeps the daemon's loop responsive: anchoring runs as an awaitable task, SSE
+keeps flowing, multiple endpoints can share one client instance.
+
+Wire-level parity with sync
+---------------------------
+
+* Same SOV memo grammar (``SOV|<ruleset>|<game-id>|r<round_key>|sha256:<hash>``).
+* Same per-memo size cap (``_MAX_MEMO_BYTES = 1024``).
+* Same retry-policy constants — ``_SUBMIT_MAX_ATTEMPTS = 3``,
+  ``_SUBMIT_BACKOFF_SECONDS = (1.0, 2.0, 4.0)``,
+  ``_SUBMIT_DEADLINE_SECONDS = 30.0``.
+* Same error classification (``_classify_submit_error`` token set).
+* Same secret-scrub ``try/finally`` discipline — ``signer`` is rebound to
+  the empty string on every exit path, ``__cause__`` is suppressed via
+  ``raise ... from None`` so traceback locals don't leak the seed.
+* Same logger name (``sov_transport``) and same structured ``anchor.*`` log
+  events so a single grep works across sync + async deployments.
+
+The retry **loop** is the only thing that diverges: ``await asyncio.sleep(...)``
+substitutes for ``time.sleep(...)``, and the loop body is otherwise a verbatim
+port. The ``submit_and_wait`` call site uses the async variants from
+``xrpl.asyncio.{clients, transaction}``.
 """
 
 from __future__ import annotations
 
+import asyncio
 import time
 
 from sov_transport import TransportError
-from sov_transport.base import BatchEntry, LedgerTransport
+from sov_transport.base import BatchEntry
 from sov_transport.xrpl_internals import (
     _MAX_MEMO_BYTES,
     _NETWORK_TABLE,
     _SUBMIT_BACKOFF_SECONDS,
     _SUBMIT_DEADLINE_SECONDS,
     _SUBMIT_MAX_ATTEMPTS,
-    MainnetFaucetError,
     XRPLNetwork,
     _classify_submit_error,
     _extract_memos,
@@ -56,38 +68,20 @@ from sov_transport.xrpl_internals import (
     logger,
 )
 
-# Re-export surface for back-compat. Test modules and the deprecated
-# ``xrpl_testnet`` shim import a handful of private helpers (``_to_hex``,
-# ``_from_hex``, ``_extract_memos``, ``_classify_submit_error``) from
-# ``sov_transport.xrpl`` directly. Keep them in ``__all__`` so mypy's
-# ``--strict`` ``attr-defined`` check sees them as explicitly re-exported and
-# the legacy compat layer keeps working without churn at every test site.
-__all__ = [
-    "MainnetFaucetError",
-    "XRPLNetwork",
-    "XRPLTransport",
-    "_MAX_MEMO_BYTES",
-    "_NETWORK_TABLE",
-    "_SUBMIT_BACKOFF_SECONDS",
-    "_SUBMIT_DEADLINE_SECONDS",
-    "_SUBMIT_MAX_ATTEMPTS",
-    "_classify_submit_error",
-    "_extract_memos",
-    "_format_memo",
-    "_from_hex",
-    "_to_hex",
-    "fund_dev_wallet",
-    "logger",
-]
+__all__ = ["AsyncXRPLTransport"]
 
 
-class XRPLTransport(LedgerTransport):
-    """Anchor round proof hashes on XRPL via self-payment memos.
+class AsyncXRPLTransport:
+    """Async sibling of ``XRPLTransport``. Same wire format, asyncio-friendly.
+
+    Stands alone — there is no ``AsyncLedgerTransport`` ABC. See module
+    docstring for the rationale (mirrors Wave 2's no-Signer-protocol stance).
 
     Network is selected by ``XRPLNetwork`` (testnet, mainnet, devnet); the
-    JSON-RPC endpoint and explorer URL prefix come from an internal table.
+    JSON-RPC endpoint and explorer URL prefix come from the same internal
+    table the sync impl uses (``sov_transport.xrpl_internals._NETWORK_TABLE``).
     Pass ``url=`` to override the endpoint without changing the explorer
-    prefix (useful for proxies or local testbeds against testnet).
+    prefix.
     """
 
     def __init__(
@@ -97,11 +91,10 @@ class XRPLTransport(LedgerTransport):
         url: str | None = None,
         allow_insecure: bool = False,
     ) -> None:
-        """Construct a transport bound to a network (and its endpoint).
+        """Construct an async transport bound to a network (and its endpoint).
 
         Args:
-            network: Which XRPL network to talk to. Defaults to TESTNET to
-                match v2.0.x defaults.
+            network: Which XRPL network to talk to. Defaults to TESTNET.
             url: Optional JSON-RPC endpoint override. When None, uses the
                 table entry for ``network``. MUST use ``https://`` unless
                 ``allow_insecure=True``.
@@ -117,7 +110,7 @@ class XRPLTransport(LedgerTransport):
 
         if not resolved_url.startswith("https://"):
             if allow_insecure:
-                logger.warning("XRPLTransport: allow_insecure=True; using non-https endpoint")
+                logger.warning("AsyncXRPLTransport: allow_insecure=True; using non-https endpoint")
             else:
                 raise ValueError("XRPL endpoint must use https:// scheme")
 
@@ -127,85 +120,67 @@ class XRPLTransport(LedgerTransport):
 
     def _explorer_root(self) -> str:
         """Return the network's explorer root (no path), e.g.
-        ``https://testnet.xrpl.org``. Used for non-tx surfaces (account
-        lookups, validator status pages) that want network-correct host
-        without the ``/transactions/`` segment.
+        ``https://testnet.xrpl.org``. Sync — no I/O. Used for non-tx surfaces
+        (account lookups, validator status pages) that want network-correct
+        host without the ``/transactions/`` segment.
         """
         return self._explorer_prefix.rsplit("/transactions/", 1)[0]
 
     def explorer_tx_url(self, txid: str) -> str:
         """Return the explorer URL for ``txid`` on the configured network.
 
-        Surfacing this here keeps explorer URLs out of CLI hardcoding — the
-        v2.0.x ``testnet.xrpl.org`` literals at ``sov_cli/main.py:1241,1317``
-        were the most visible network leak that drove the v2.1 redesign.
+        Sync — pure string formatting, no I/O. Kept sync intentionally so
+        callers don't have to ``await`` for what is just a URL build.
         """
         return f"{self._explorer_prefix}{txid}"
 
-    def anchor(self, round_hash: str, memo: str, signer: str) -> str:
-        """Anchor a single round-proof hash. (Legacy single-round path.)
+    async def anchor(self, round_hash: str, memo: str, signer: str) -> str:
+        """Async anchor a single round-proof hash. (Legacy single-round path.)
 
-        Kept for backward compatibility with the deprecated
-        ``sov anchor <proof_file>`` CLI form. New CLI surfaces should prefer
-        ``anchor_batch`` (one tx per game with N memos) for audit ergonomics.
-        The ``round_hash`` parameter is unused inside the impl — the memo
-        string already carries the hash — but is part of the legacy API
-        surface; it is removed with the deprecated form in v2.2.
+        Mirrors the sync ``XRPLTransport.anchor`` API exactly. ``round_hash``
+        is unused (the memo carries the hash); preserved for API parity with
+        the sync impl. Prefer ``anchor_batch`` for new call sites.
 
         Args:
             round_hash: The SHA-256 hash of the round proof. (Currently
-                unused — kept for v2.0.x API compatibility.)
-            memo: Formatted memo string (e.g.
-                ``SOV|campfire_v1|...|sha256:...``). Capped at 1024 UTF-8
-                bytes.
-            signer: The wallet seed (SECRET). This value is sensitive —
-                callers SHOULD source it from an environment variable or
-                secret store and MUST NOT log it. The seed is scrubbed from
-                local scope in a finally block, and any exception raised here
-                is sanitized to avoid leaking the seed via traceback locals
-                or chained causes.
+                unused — kept for API parity.)
+            memo: Formatted memo string. Capped at 1024 UTF-8 bytes.
+            signer: The wallet seed (SECRET). Same secret-scrub discipline
+                as the sync impl: rebound to ``""`` on every exit path,
+                ``__cause__`` suppressed, exception messages sanitized.
 
         Returns:
-            The XRPL transaction hash (a hex string suitable for explorer
-            lookup).
+            The XRPL transaction hash.
 
         Raises:
             ValueError: If the memo exceeds 1024 UTF-8 bytes.
-            TransportError: If the network call exhausts retries within the
-                deadline, the response indicates failure, or the response
-                shape is missing the expected ``hash`` field.
+            TransportError: On retry exhaustion / network failure / unexpected
+                response shape.
         """
         del round_hash  # unused — preserved for legacy API surface
         if len(memo.encode("utf-8")) > _MAX_MEMO_BYTES:
             raise ValueError(f"memo exceeds {_MAX_MEMO_BYTES} bytes")
-        return self._submit([memo], signer)
+        return await self._submit([memo], signer)
 
-    def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> str:
-        """Anchor N rounds in one Payment via N memos. Returns single txid.
+    async def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> str:
+        """Async anchor N rounds in one Payment via N memos. Returns single txid.
 
-        Each ``BatchEntry`` becomes one ``Memo`` field on the same Payment,
-        carrying the SOV grammar string ``SOV|<ruleset>|<game-id>|r<N>|
-        sha256:<envelope_hash>`` (or ``FINAL`` literal for the final round).
-        Each memo is individually capped at ``_MAX_MEMO_BYTES``; XRPL itself
-        accepts ~150 memo fields per tx, so a 16-round game (15 + FINAL) is
-        well inside the per-tx ceiling. This is the audit-ergonomics primary:
-        one verifiable chain pointer per game, not a 16-tx trail.
+        Same wire format as the sync impl — one verifiable chain pointer per
+        game, not a 16-tx trail. The async path lets the daemon flush a batch
+        without blocking its event loop on the 30s submit deadline.
 
         Args:
-            rounds: Non-empty list of ``BatchEntry`` dicts. Order is
-                preserved on the wire (the round_key is in the memo, so
-                consumers can reorder by round_key if needed).
-            signer: The wallet seed (SECRET). Same sensitivity as ``anchor``.
+            rounds: Non-empty list of ``BatchEntry`` dicts.
+            signer: The wallet seed (SECRET).
 
         Returns:
-            The XRPL transaction hash for the single Payment carrying all
-            memos.
+            The XRPL transaction hash for the single Payment.
 
         Raises:
-            ValueError: If ``rounds`` is empty, or any individual rendered
-                memo exceeds 1024 UTF-8 bytes.
-            TransportError: If submission fails after the bounded retry /
-                deadline.
+            ValueError: If ``rounds`` is empty, or any rendered memo exceeds
+                1024 UTF-8 bytes.
+            TransportError: On retry exhaustion / network failure / unexpected
+                response shape.
         """
         if not rounds:
             raise ValueError("anchor_batch requires at least one round entry")
@@ -220,20 +195,22 @@ class XRPLTransport(LedgerTransport):
                 )
             memos.append(rendered)
 
-        return self._submit(memos, signer)
+        return await self._submit(memos, signer)
 
-    def _submit(self, memos: list[str], signer: str) -> str:
-        """Submit a Payment carrying one or more memos. Internal helper.
+    async def _submit(self, memos: list[str], signer: str) -> str:
+        """Async submit a Payment carrying one or more memos. Internal helper.
 
-        Centralizes the retry policy, secret scrub, and error classification
-        so ``anchor`` and ``anchor_batch`` can't drift apart. The caller is
-        responsible for size-validation of each memo string before this
-        helper sees it.
+        Verbatim port of the sync ``_submit`` retry loop with
+        ``await asyncio.sleep(...)`` substituted for ``time.sleep(...)`` and
+        the async variants of ``JsonRpcClient`` / ``submit_and_wait`` from
+        ``xrpl.asyncio``. All retry-policy constants, the error
+        classification, the secret scrub, and the structured log events are
+        shared with the sync impl via ``sov_transport.xrpl_internals``.
         """
         try:
-            from xrpl.clients import JsonRpcClient
+            from xrpl.asyncio.clients import AsyncJsonRpcClient
+            from xrpl.asyncio.transaction import submit_and_wait
             from xrpl.models import Memo, Payment
-            from xrpl.transaction import submit_and_wait
             from xrpl.wallet import Wallet
         except ImportError as e:
             raise RuntimeError(
@@ -242,7 +219,7 @@ class XRPLTransport(LedgerTransport):
 
         wallet = None
         try:
-            client = JsonRpcClient(self.url)
+            client = AsyncJsonRpcClient(self.url)
             wallet = Wallet.from_seed(signer)
 
             # Log address (PUBLIC) — never the seed.
@@ -269,9 +246,10 @@ class XRPLTransport(LedgerTransport):
                 memos=tx_memos,
             )
 
-            # Bounded retry loop with overall deadline. Transient errors
-            # (network blips, LedgerNotFound) are retried with exponential
-            # backoff; the loop exits early if the overall deadline is hit.
+            # Bounded retry loop with overall deadline. Verbatim from sync
+            # impl with ``await asyncio.sleep`` substituted for ``time.sleep``.
+            # Deadline tracking still uses ``time.monotonic()`` — that's a
+            # pure clock read, not a blocking call.
             deadline = time.monotonic() + _SUBMIT_DEADLINE_SECONDS
             response = None
             last_exc: Exception | None = None
@@ -281,7 +259,7 @@ class XRPLTransport(LedgerTransport):
                     break
                 attempts_made = attempt + 1
                 try:
-                    response = submit_and_wait(payment, client, wallet)
+                    response = await submit_and_wait(payment, client, wallet)
                     break
                 except Exception as submit_exc:
                     last_exc = submit_exc
@@ -309,7 +287,7 @@ class XRPLTransport(LedgerTransport):
                         sleep_for,
                         sleep_for,
                     )
-                    time.sleep(sleep_for)
+                    await asyncio.sleep(sleep_for)
 
             if response is None:
                 last_reason = _classify_submit_error(last_exc) if last_exc else "deadline"
@@ -389,7 +367,7 @@ class XRPLTransport(LedgerTransport):
             # frame (which holds `signer` and `wallet`) does not propagate
             # to logging.exception / Sentry / observability layers.
             sanitized = (
-                f"{type(e).__name__} in XRPLTransport submission "
+                f"{type(e).__name__} in AsyncXRPLTransport submission "
                 "(details suppressed to protect signer secret)"
             )
             logger.error(
@@ -408,26 +386,21 @@ class XRPLTransport(LedgerTransport):
             wallet = None
             signer = ""  # noqa: F841 — intentional scrub of caller's seed
 
-    def is_anchored_on_chain(self, txid: str, expected_hash: str) -> bool:
-        """Pure on-chain lookup: does ``txid`` carry a memo with ``expected_hash``?
+    async def is_anchored_on_chain(self, txid: str, expected_hash: str) -> bool:
+        """Async pure on-chain lookup: does ``txid`` carry ``expected_hash``?
 
-        Returns ``True`` if any memo on the transaction encodes
-        ``sha256:<expected_hash>`` via the SOV grammar (split on ``|``,
-        equality-check the suffix). Returns ``False`` if the tx exists but no
-        matching memo is found. The 3-state ``AnchorStatus`` (anchored /
-        pending / missing) is composed in ``sov_engine.proof.proof_anchor_status``
-        — this method intentionally returns a plain ``bool`` so the transport
-        does not couple to engine state.
+        Same semantics as the sync impl: returns ``True`` if any memo on the
+        transaction encodes ``sha256:<expected_hash>`` via the SOV grammar,
+        ``False`` if the tx exists but no matching memo is found. The 3-state
+        ``AnchorStatus`` composition lives in the engine layer; this method
+        intentionally returns a plain ``bool``.
 
         Args:
-            txid: The XRPL transaction hash (as returned by ``anchor`` or
-                ``anchor_batch``).
-            expected_hash: The SHA-256 hash we expect to find inside one of
-                the tx's memos. Must be non-empty.
+            txid: The XRPL transaction hash.
+            expected_hash: Non-empty SHA-256 hex digest to match.
 
         Returns:
-            ``True`` if any memo on the transaction encodes the expected
-            hash; ``False`` otherwise.
+            ``True`` if any memo encodes the expected hash; ``False`` otherwise.
 
         Raises:
             ValueError: If ``expected_hash`` is empty.
@@ -437,15 +410,15 @@ class XRPLTransport(LedgerTransport):
             raise ValueError("expected_hash must be non-empty")
 
         try:
-            from xrpl.clients import JsonRpcClient
+            from xrpl.asyncio.clients import AsyncJsonRpcClient
             from xrpl.models import Tx
         except ImportError as e:
             raise RuntimeError(
                 "xrpl-py is not installed. Install with: pip install 'sovereignty-game[xrpl]'"
             ) from e
 
-        client = JsonRpcClient(self.url)
-        response = client.request(Tx(transaction=txid))
+        client = AsyncJsonRpcClient(self.url)
+        response = await client.request(Tx(transaction=txid))
 
         memos = _extract_memos(response.result)
         for m in memos:
@@ -462,23 +435,23 @@ class XRPLTransport(LedgerTransport):
                     return True
         return False
 
-    def get_memo_text(self, txid: str) -> str | None:
-        """Retrieve the first decodable memo text from a transaction.
+    async def get_memo_text(self, txid: str) -> str | None:
+        """Async retrieve the first decodable memo text from a transaction.
 
-        Returns None if no memos are present or none decode cleanly. Memos
-        that fail to decode are skipped rather than raising, so an
-        adversarial memo cannot DoS this call.
+        Returns ``None`` if no memos are present or none decode cleanly. Memos
+        that fail to decode are skipped rather than raising, so an adversarial
+        memo cannot DoS this call.
         """
         try:
-            from xrpl.clients import JsonRpcClient
+            from xrpl.asyncio.clients import AsyncJsonRpcClient
             from xrpl.models import Tx
         except ImportError as e:
             raise RuntimeError(
                 "xrpl-py is not installed. Install with: pip install 'sovereignty-game[xrpl]'"
             ) from e
 
-        client = JsonRpcClient(self.url)
-        response = client.request(Tx(transaction=txid))
+        client = AsyncJsonRpcClient(self.url)
+        response = await client.request(Tx(transaction=txid))
 
         memos = _extract_memos(response.result)
         for m in memos:
@@ -491,54 +464,3 @@ class XRPLTransport(LedgerTransport):
             if data:
                 return data
         return None
-
-
-def fund_dev_wallet(network: XRPLNetwork = XRPLNetwork.TESTNET) -> tuple[str, str]:
-    """Generate a faucet-funded wallet for testnet or devnet.
-
-    When to use: call this once during first-time onboarding to mint a fresh
-    wallet you control. For repeat play, DO NOT call this again — instead,
-    store the seed via the OS keychain or set the ``XRPL_SEED`` env var, then
-    reuse that seed. Funding the faucet repeatedly wastes capacity and
-    creates orphan wallets.
-
-    Args:
-        network: Which network to mint against. ``TESTNET`` and ``DEVNET``
-            have public faucets; ``MAINNET`` does not and raises
-            ``MainnetFaucetError``.
-
-    Returns:
-        A ``(address, seed)`` tuple. The ``seed`` is a SECRET — see security
-        note below.
-
-    Raises:
-        MainnetFaucetError: If ``network=XRPLNetwork.MAINNET``. Operator
-            action: provide a funded mainnet seed via ``XRPL_SEED``, or run
-            ``sov wallet --network testnet`` for a testnet wallet.
-        RuntimeError: If xrpl-py is not installed.
-
-    SECURITY: The returned seed is a SECRET. Do not log, print, or transmit.
-    Store via the OS keychain or set ``XRPL_SEED``. Treat the seed with the
-    same care as a private key — anyone holding it can sign transactions
-    from the wallet.
-    """
-    if network is XRPLNetwork.MAINNET:
-        raise MainnetFaucetError(
-            "mainnet has no faucet — set XRPL_SEED to a funded mainnet wallet, "
-            "or run sov wallet --network testnet."
-        )
-
-    try:
-        from xrpl.clients import JsonRpcClient
-        from xrpl.wallet import generate_faucet_wallet
-    except ImportError as e:
-        raise RuntimeError(
-            "xrpl-py is not installed. Install with: pip install 'sovereignty-game[xrpl]'"
-        ) from e
-
-    rpc_url, _ = _NETWORK_TABLE[network]
-    client = JsonRpcClient(rpc_url)
-    wallet = generate_faucet_wallet(client)
-    if wallet.seed is None:
-        raise RuntimeError("xrpl wallet has no seed")
-    return wallet.address, wallet.seed

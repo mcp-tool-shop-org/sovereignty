@@ -49,6 +49,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Mainnet wallet seed management beyond plain-file `.sov/wallet_seed.txt` is explicit out-of-scope for v2.1 — deferred to v2.2 (keychain integration / hardware wallet support).
 - Existing v2.0.2 testnet anchors continue to verify cleanly under v2.1; the multi-memo verify path is forward-compatible with single-memo legacy.
 
+### Added (Wave 3)
+
+- `sov daemon` HTTP/JSON daemon: long-running localhost server (Starlette + uvicorn) for IPC-driven consumers (Tauri shell, audit viewer). 10 read endpoints + 2 write endpoints + SSE event stream.
+- `AsyncXRPLTransport`: real-async sibling to `XRPLTransport` using `xrpl-py.AsyncJsonRpcClient`. Same retry policy, secret scrub, and BatchEntry contract; used by daemon's anchor flow.
+- Shared internals module `sov_transport.xrpl_internals` lifted from `xrpl.py` — pure helpers + types consumed by sync + async impls. No behavior change in sync `XRPLTransport`.
+- `sov daemon start [--readonly] [--network <n>] [--seed-env VAR | --signer-file PATH]` — detached background daemon. Token + port written to `.sov/daemon.json`.
+- `sov daemon stop` — clean SIGTERM + cleanup.
+- `sov daemon status` — `running` / `stale` / `none`.
+- `sov daemon` (no subcommand) — foreground server (test/dev mode).
+- `sov status --brief` extended with daemon presence (human + `--json`).
+- 4 new structured error codes: `DAEMON_READONLY`, `DAEMON_AUTH_MISSING`, `DAEMON_AUTH_INVALID`, `DAEMON_PORT_BUSY`.
+- New `[daemon]` opt-in extra: `pip install 'sovereignty-game[daemon]'` for users who want the desktop IPC surface; CLI-only users don't pay the dep cost.
+- SSE event stream `GET /events`: `daemon.ready`, `daemon.shutdown`, `anchor.pending_added`, `anchor.batch_complete`, `game.state_changed`, `error`. Fire-and-forget — reconnecting clients re-fetch state (no `Last-Event-ID` buffer in v2.1).
+
+### Notes (Wave 3)
+
+- Daemon serves audit + anchor coordination only. Gameplay verbs (`sov play`, `sov upgrade`, etc.) stay CLI-only in v2.1; v2.2+ may extend if Tauri shell UX demands it.
+- Wallet seed is loaded once at daemon start and held in memory only; never written to `.sov/daemon.json`. `tests/test_daemon_seed_leak.py` mechanically pins the trust boundary.
+- CORS is `*` on the localhost daemon (bearer token is the actual auth gate). Locked at the contract level so Wave 4 (Tauri shell) doesn't break on origin restrictions.
+- State-change detection is 1s mtime polling when ≥1 SSE client is connected — cross-platform, no fsevents/inotify in v2.1.
+- One daemon per project root. Multi-daemon coordination is v2.2+.
+
 ## [2.0.2] - 2026-04-30
 
 ### Fixed

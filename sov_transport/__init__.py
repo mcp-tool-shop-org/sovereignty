@@ -28,8 +28,10 @@ from sov_transport.xrpl import (  # noqa: E402
     XRPLTransport,
     fund_dev_wallet,
 )
+from sov_transport.xrpl_async import AsyncXRPLTransport  # noqa: E402
 
 __all__ = [
+    "AsyncXRPLTransport",
     "BatchEntry",
     "LedgerTransport",
     "MainnetFaucetError",

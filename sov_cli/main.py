@@ -3051,6 +3051,77 @@ def _print_status(state: GameState) -> None:
     if is_town_hall:
         console.print()
         _print_market(state)
+    # v2.1: daemon presence line under the player table.
+    try:
+        daemon_st = _query_daemon_status()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "status.daemon_probe.failed exc=%s detail=%s",
+            type(exc).__name__,
+            exc,
+        )
+    else:
+        if daemon_st is not None:
+            console.print(f"  [dim]{_daemon_status_human_line(daemon_st)}[/dim]")
+
+
+def _query_daemon_status() -> Any:
+    """Probe the daemon's pid-based status without crashing on missing extras.
+
+    Returns the daemon ``DaemonStatus`` object on success, or ``None`` if the
+    ``[daemon]`` opt-in extra isn't installed (so daemon-aware surfaces in
+    the CLI degrade gracefully on stripped installs). Any other exception is
+    re-raised — a malformed ``.sov/daemon.json`` is a real diagnostic, not
+    a "daemon not installed" signal.
+
+    The import goes through ``importlib`` (rather than a ``from sov_daemon
+    import …`` statement) so that the wave-3 split between the cli and
+    daemon agents stays clean: the daemon-domain agent owns the public
+    surface, and the CLI binds to it at runtime, not at type-check time.
+    """
+    import importlib
+
+    try:
+        daemon_mod = importlib.import_module("sov_daemon")
+    except ImportError:
+        return None
+    return daemon_mod.daemon_status()
+
+
+def _daemon_status_human_line(status: Any) -> str:
+    """Render a daemon-status object for `sov status` human output.
+
+    Shape examples (per docs/v2.1-daemon-ipc.md §13):
+        daemon: running (port 47823, network=testnet, readonly=false)
+        daemon: stale (last pid 12345 — run `sov daemon start` to start a fresh one)
+        daemon: none
+    """
+    state = getattr(status, "state", None)
+    if state == "running":
+        port = getattr(status, "port", "?")
+        network = getattr(status, "network", "?")
+        readonly = getattr(status, "readonly", False)
+        return (
+            f"daemon: running (port {port}, network={network}, "
+            f"readonly={'true' if readonly else 'false'})"
+        )
+    if state == "stale":
+        pid = getattr(status, "pid", "?")
+        return f"daemon: stale (last pid {pid} — run `sov daemon start` to start a fresh one)"
+    return "daemon: none"
+
+
+def _daemon_status_json_field(status: Any) -> dict[str, Any]:
+    """Render a daemon-status object as the ``daemon`` field for `sov status --json`."""
+    if status is None:
+        return {"state": "none"}
+    state = getattr(status, "state", "none")
+    field: dict[str, Any] = {"state": state}
+    for attr in ("port", "pid", "network", "readonly", "started_iso"):
+        val = getattr(status, attr, None)
+        if val is not None:
+            field[attr] = val
+    return field
 
 
 def _print_brief_status(state: GameState) -> None:
@@ -3059,6 +3130,21 @@ def _print_brief_status(state: GameState) -> None:
         marker = ">" if i == state.current_player_index else " "
         parts.append(f"{marker}{p.name}: {p.coins}c {p.reputation}r {p.upgrades}u")
     console.print(f"[dim]R{state.current_round} | {' | '.join(parts)}[/dim]")
+    # v2.1: daemon presence line — surfaced in both --brief and full modes
+    # so audit-tier consumers know whether a daemon is up without grepping
+    # `sov daemon status` separately.
+    try:
+        daemon_st = _query_daemon_status()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "status.daemon_probe.failed exc=%s detail=%s",
+            type(exc).__name__,
+            exc,
+        )
+        return
+    if daemon_st is None:
+        return
+    console.print(f"[dim]{_daemon_status_human_line(daemon_st)}[/dim]")
 
 
 def _status_json_payload(state: GameState) -> dict[str, Any]:
@@ -3133,6 +3219,21 @@ def _status_json_payload(state: GameState) -> dict[str, Any]:
             entry["txid"] = anchored[round_key]
         rounds_payload.append(entry)
 
+    # v2.1: daemon presence as an additive field. Probe is best-effort —
+    # a stripped install without the [daemon] extra renders ``state: none``
+    # so JSON consumers don't have to special-case the optional dependency.
+    try:
+        daemon_st = _query_daemon_status()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "status.daemon_probe.failed exc=%s detail=%s",
+            type(exc).__name__,
+            exc,
+        )
+        daemon_field: dict[str, Any] = {"state": "none"}
+    else:
+        daemon_field = _daemon_status_json_field(daemon_st)
+
     return {
         "timestamp": _json_status(),
         "command": "status",
@@ -3153,6 +3254,7 @@ def _status_json_payload(state: GameState) -> dict[str, Any]:
         ],
         "rounds": rounds_payload,
         "pending_count": len(pending),
+        "daemon": daemon_field,
     }
 
 
@@ -3764,6 +3866,316 @@ def feedback() -> None:
 
     output = "\n".join(lines)
     console.print(output, highlight=False)
+
+
+# ---------------------------------------------------------------------------
+# v2.1 daemon Typer sub-app (per docs/v2.1-daemon-ipc.md §13)
+# ---------------------------------------------------------------------------
+#
+# `sov daemon`           foreground HTTP server — blocks on SIGINT
+# `sov daemon start`     detached background server (writes .sov/daemon.json)
+# `sov daemon stop`      stop running daemon for active project root
+# `sov daemon status`    report running / stale / none
+#
+# The daemon package itself (`sov_daemon`) lives behind the optional
+# `[daemon]` extra and is owned by the daemon-domain agent in this wave.
+# Imports are deferred until each subcommand actually needs them so the
+# CLI loads cleanly on stripped installs that didn't pip-install the extra.
+
+daemon_app = typer.Typer(
+    name="daemon",
+    help=(
+        "Local HTTP/JSON daemon for Tauri shell + audit viewer (v2.1). "
+        "With no subcommand, runs the server in the foreground; "
+        "use `start` / `stop` / `status` for the detached lifecycle."
+    ),
+    invoke_without_command=True,
+    no_args_is_help=False,
+)
+
+
+def _import_daemon_api() -> Any:
+    """Import the daemon's public API or fail with an actionable hint.
+
+    The daemon module isn't installed by default — `pip install
+    'sovereignty-game[daemon]'` opts in. ``ImportError`` here is a missing
+    extra, not a programming error, so we render a structured CLI message.
+
+    Uses ``importlib`` so the typecheck / runtime split between the cli and
+    daemon-domain agents stays clean — the CLI does not hard-import any
+    sov_daemon symbol at module load time.
+    """
+    import importlib
+
+    try:
+        return importlib.import_module("sov_daemon")
+    except ImportError as exc:
+        _fail(
+            SovError(
+                code="DAEMON_NOT_INSTALLED",
+                message=f"Daemon support is not installed: {exc}",
+                hint=("Install the daemon extra: pip install 'sovereignty-game[daemon]'"),
+            )
+        )
+
+
+@daemon_app.callback()
+def _daemon_root(
+    ctx: typer.Context,
+    readonly: Annotated[
+        bool,
+        typer.Option("--readonly", help="Run without seed; anchor endpoints disabled."),
+    ] = False,
+    network: Annotated[
+        str | None,
+        typer.Option(
+            "--network",
+            help=(
+                "XRPL network: testnet, mainnet, or devnet. "
+                "Per-invocation override (precedence #1)."
+            ),
+        ),
+    ] = None,
+    seed_env: Annotated[
+        str,
+        typer.Option("--seed-env", help="Env var containing wallet seed."),
+    ] = "XRPL_SEED",
+    signer_file: Annotated[
+        Path | None,
+        typer.Option("--signer-file", help="File containing wallet seed."),
+    ] = None,
+) -> None:
+    """Run the local daemon in the foreground (test/dev mode).
+
+    With a subcommand (`start` / `stop` / `status`), this callback only
+    parses the global daemon options and dispatches. Without a subcommand,
+    runs uvicorn in the current process and blocks until SIGINT.
+    """
+    if ctx.invoked_subcommand is not None:
+        # Subcommand path — let the dedicated handlers do the work.
+        return
+    daemon_mod = _import_daemon_api()
+    resolved_network = _resolve_network(network)
+    daemon_mod.run_foreground(
+        network=resolved_network,
+        readonly=readonly,
+        seed_env=seed_env,
+        signer_file=signer_file,
+    )
+
+
+@daemon_app.command("start")
+def daemon_start(
+    readonly: Annotated[
+        bool,
+        typer.Option("--readonly", help="Run without seed; anchor endpoints disabled."),
+    ] = False,
+    network: Annotated[
+        str | None,
+        typer.Option(
+            "--network",
+            help=(
+                "XRPL network: testnet, mainnet, or devnet. "
+                "Per-invocation override (precedence #1)."
+            ),
+        ),
+    ] = None,
+    seed_env: Annotated[
+        str,
+        typer.Option("--seed-env", help="Env var containing wallet seed."),
+    ] = "XRPL_SEED",
+    signer_file: Annotated[
+        Path | None,
+        typer.Option("--signer-file", help="File containing wallet seed."),
+    ] = None,
+) -> None:
+    """Start the daemon as a detached background process.
+
+    Writes ``.sov/daemon.json`` (port + bearer token + pid) and returns
+    immediately. Subsequent ``sov daemon status`` / ``sov daemon stop``
+    operate on the recorded pid.
+    """
+    daemon_mod = _import_daemon_api()
+    resolved_network = _resolve_network(network)
+    info = daemon_mod.start_daemon(
+        network=resolved_network,
+        readonly=readonly,
+        seed_env=seed_env,
+        signer_file=signer_file,
+    )
+    # `info` is the daemon-side handle exposing port / pid / token plus the
+    # network + readonly echo. We accept attribute or dict shape so a
+    # daemon-side schema tweak doesn't immediately break the CLI.
+    port = _daemon_field(info, "port")
+    pid = _daemon_field(info, "pid")
+    token = _daemon_field(info, "token")
+    panel_lines = [
+        f"port:    {port}",
+        f"pid:     {pid}",
+        f"network: {resolved_network}",
+        f"readonly: {'true' if readonly else 'false'}",
+        f"token:   {token}",
+    ]
+    console.print(
+        Panel(
+            "\n".join(panel_lines),
+            title="sov daemon started",
+            border_style="green",
+        )
+    )
+    console.print(
+        "  [dim]Connection details persist in `.sov/daemon.json`. "
+        "Stop with `sov daemon stop`.[/dim]"
+    )
+
+
+@daemon_app.command("stop")
+def daemon_stop() -> None:
+    """Stop the running daemon for the current project root."""
+    daemon_mod = _import_daemon_api()
+    console.print("  Stopping daemon...")
+    try:
+        result = daemon_mod.stop_daemon()
+    except FileNotFoundError:
+        _fail(
+            SovError(
+                code="DAEMON_NOT_RUNNING",
+                message="No daemon is recorded for this project root.",
+                hint=(
+                    "Start one with `sov daemon start`, or check "
+                    "`sov daemon status` to inspect the recorded state."
+                ),
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        _fail(
+            SovError(
+                code="DAEMON_STOP_FAILED",
+                message=f"Daemon stop failed: {exc}",
+                hint=(
+                    "Inspect `.sov/daemon.json` for the recorded pid, then "
+                    "kill it manually if needed."
+                ),
+            )
+        )
+    # Most daemon impls return None on success. Tolerate either shape.
+    pid = _daemon_field(result, "pid", default=None) if result is not None else None
+    if pid is not None:
+        console.print(f"  [green]Daemon stopped (pid {pid}).[/green]")
+    else:
+        console.print("  [green]Daemon stopped.[/green]")
+
+
+@daemon_app.command("status")
+def daemon_status_cmd(
+    json_out: Annotated[
+        bool,
+        typer.Option("--json", help="Emit machine-readable JSON to stdout."),
+    ] = False,
+) -> None:
+    """Report whether a daemon is running, stale, or absent."""
+    daemon_mod = _import_daemon_api()
+    status = daemon_mod.daemon_status()
+    state_val = _daemon_field(status, "state", default="none")
+
+    if json_out:
+        # Mirror the `sov doctor --json` envelope shape from
+        # docs/cli-json-output.md (timestamp / command / status / fields[]).
+        # The per-field "status" axis is local-evidence-derived: a running
+        # daemon is "ok"; stale recovery state is "warn"; absent is "ok"
+        # (not a failure — daemon is opt-in).
+        if state_val == "running":
+            field_status = _JSON_OUTPUT_OK
+            overall = _JSON_OUTPUT_OK
+            state_msg = "Daemon process is alive."
+        elif state_val == "stale":
+            field_status = _JSON_OUTPUT_WARN
+            overall = _JSON_OUTPUT_WARN
+            state_msg = "Recorded daemon pid is dead — `sov daemon start` auto-cleans + proceeds."
+        else:
+            field_status = _JSON_OUTPUT_OK
+            overall = _JSON_OUTPUT_OK
+            state_msg = "No daemon recorded for this project root."
+        fields: list[dict[str, Any]] = [
+            {
+                "name": "state",
+                "status": field_status,
+                "value": state_val,
+                "message": state_msg,
+            },
+        ]
+        for attr in ("port", "pid", "network", "readonly", "started_iso"):
+            val = _daemon_field(status, attr, default=None)
+            if val is None:
+                continue
+            fields.append(
+                {
+                    "name": attr,
+                    "status": _JSON_OUTPUT_OK,
+                    "value": val,
+                }
+            )
+        payload = {
+            "timestamp": _json_status(),
+            "command": "daemon status",
+            "status": overall,
+            "fields": fields,
+        }
+        typer.echo(json.dumps(payload, indent=2))
+        return
+
+    if state_val == "running":
+        port = _daemon_field(status, "port", default="?")
+        pid = _daemon_field(status, "pid", default="?")
+        network = _daemon_field(status, "network", default="?")
+        readonly = _daemon_field(status, "readonly", default=False)
+        started = _daemon_field(status, "started_iso", default="?")
+        rows = [
+            ("state", "running"),
+            ("port", str(port)),
+            ("pid", str(pid)),
+            ("network", str(network)),
+            ("readonly", "true" if readonly else "false"),
+            ("started_iso", str(started)),
+        ]
+        table = Table(title="sov daemon status", show_header=False)
+        table.add_column("field", style="dim")
+        table.add_column("value")
+        for k, v in rows:
+            table.add_row(k, v)
+        console.print(table)
+    elif state_val == "stale":
+        pid = _daemon_field(status, "pid", default="?")
+        console.print(
+            f"  [yellow]daemon: stale[/yellow] (last pid {pid} — recorded process is dead)"
+        )
+        console.print(
+            "  [dim]Run `sov daemon start` to start a fresh one "
+            "(auto-cleans the stale entry).[/dim]"
+        )
+    else:
+        console.print("  [dim]daemon: none[/dim]")
+        console.print("  [dim]Start one with `sov daemon start`.[/dim]")
+
+
+def _daemon_field(obj: Any, name: str, *, default: Any = "?") -> Any:
+    """Pull ``name`` off either an attribute-style or mapping-style object.
+
+    The daemon-side public API is owned by the daemon-domain agent in this
+    wave. Tolerating both shapes here keeps the CLI/daemon contract tight at
+    the call sites (positional args + named return field) without locking
+    the return type to a specific dataclass-vs-dict choice.
+    """
+    if obj is None:
+        return default
+    if hasattr(obj, name):
+        return getattr(obj, name)
+    if isinstance(obj, dict):
+        return obj.get(name, default)
+    return default
+
+
+app.add_typer(daemon_app, name="daemon")
 
 
 if __name__ == "__main__":
