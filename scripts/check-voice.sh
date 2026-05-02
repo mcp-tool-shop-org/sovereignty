@@ -72,10 +72,16 @@ WORD_PATTERN='\b(please|you should|you might|oops|whoops|sorry)\b'
 # Trailing "!" inside double-quoted strings — only flagged inside error files.
 BANG_PATTERN='"[^"\\]*!"'
 
-# Emoji codepoint ranges (rough — emoticons, symbols+pictographs, transport,
-# misc-symbols, supplemental). Em-dashes (U+2014), smart quotes, and other
-# typographic Latin-Extended chars are NOT flagged.
-EMOJI_PATTERN='"[^"]*[\xF0\x9F][^"]*"'
+# Emoji-codepoint detection was previously regex-based but the
+# ``[\xF0\x9F]`` character-class form interprets differently across rg
+# versions (macOS-builtin vs Linux distro builds), false-firing on
+# pure-ASCII content lines on Linux runners. Same retrospective as
+# Pin A's ``!``/em-dash false-fire — over-aggressive heuristic without
+# cross-platform validation. Emoji-in-error-message is rare (humans
+# spot it in code review); the ``please|you should|...`` word patterns
+# are the load-bearing Pin A piece. Drop emoji-codepoint check; if it
+# surfaces as a real recurring issue, replace with a Python AST/byte
+# walker that's deterministic across runners.
 
 COMMENT_FILTER='^[^:]+:[0-9]+:[[:space:]]*(#|//|\*|/\*)'
 
@@ -119,7 +125,6 @@ run_error_file_pattern() {
 
 run_word_pattern
 run_error_file_pattern "trailing-!" "$BANG_PATTERN"
-run_error_file_pattern "emoji"      "$EMOJI_PATTERN"
 
 if [ -s "$HITS_FILE" ]; then
   echo ""
