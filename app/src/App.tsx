@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import { DaemonDisconnectedBanner } from "./components/DaemonDisconnectedBanner";
 import { DaemonProvider } from "./hooks/useDaemon";
 import Audit from "./routes/Audit";
 import Game from "./routes/Game";
@@ -8,6 +9,7 @@ import Settings from "./routes/Settings";
 export default function App() {
   return (
     <DaemonProvider>
+      <DaemonDisconnectedBanner />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/audit" element={<Audit />} />

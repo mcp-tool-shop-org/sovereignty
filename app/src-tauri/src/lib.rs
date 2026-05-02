@@ -40,6 +40,13 @@ pub fn run() {
         )
         .try_init();
 
+    // TAURI-SHELL-C-008: install a panic hook so the shell emits a structured
+    // event instead of hitting the user with a raw Rust traceback. The hook
+    // logs a `shell.panic` event with the same `event` / structured-fields
+    // shape used by the close-handler (TAURI-SHELL-B-006), so `sov doctor`
+    // and operators see panics in the same trail as other lifecycle events.
+    install_panic_hook();
+
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(ShellState {
@@ -60,6 +67,59 @@ pub fn run() {
         // lifecycle surface explicit.
         let _ = RunEvent::Ready;
     });
+}
+
+/// Format a panic location into a stable `file:line:col` string. Returns
+/// `"<unknown>"` when the panic info has no location attached (rare, but
+/// possible for panics that originate outside Rust source — e.g. an FFI
+/// boundary). Lifted out of the panic-hook closure so tests can pin the
+/// payload shape without spawning a panicking thread.
+pub(crate) fn format_panic_location(info: &std::panic::PanicHookInfo<'_>) -> String {
+    info.location()
+        .map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column()))
+        .unwrap_or_else(|| "<unknown>".to_string())
+}
+
+/// Format a panic payload into a stable string. Panics carry a `&'static str`
+/// or a `String` payload in the common case; anything else surfaces as a
+/// generic placeholder so the panic-hook payload is always a printable
+/// string. Lifted out for test parity with [`format_panic_location`].
+pub(crate) fn format_panic_payload(info: &std::panic::PanicHookInfo<'_>) -> String {
+    let payload = info.payload();
+    if let Some(s) = payload.downcast_ref::<&'static str>() {
+        (*s).to_string()
+    } else if let Some(s) = payload.downcast_ref::<String>() {
+        s.clone()
+    } else {
+        "(non-string panic payload)".to_string()
+    }
+}
+
+/// Install a panic hook that emits a structured `shell.panic` log event.
+///
+/// TAURI-SHELL-C-008: a raw Rust traceback is a developer-grade error surface;
+/// the user-facing path is the structured event captured by the same tracing
+/// subscriber the rest of the shell uses. The hook calls back into the
+/// previous panic hook so test harnesses (which install their own hooks for
+/// `should_panic` machinery) keep working.
+///
+/// The hook does NOT crash the process — Rust's default behavior of aborting
+/// on an unhandled panic still applies after the hook returns. The structured
+/// log line gives `sov doctor` and the close-handler trail a breadcrumb to
+/// surface in support bundles.
+fn install_panic_hook() {
+    let prev = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let location = format_panic_location(info);
+        let payload = format_panic_payload(info);
+        tracing::error!(
+            event = "shell.panic",
+            location = %location,
+            payload = %payload,
+            "shell panicked; see structured log for context"
+        );
+        prev(info);
+    }));
 }
 
 /// Handle window events. Specifically: on close, if the shell started the
@@ -148,6 +208,67 @@ mod tests {
         assert!(s.started_by_shell.load(Ordering::SeqCst));
         s.started_by_shell.store(false, Ordering::SeqCst);
         assert!(!s.started_by_shell.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn panic_hook_formatters_handle_str_payload() {
+        // TAURI-SHELL-C-008: the payload formatter must turn a `&'static str`
+        // payload into a printable string. We can't easily synthesize a
+        // `PanicHookInfo` directly (the struct constructor is private), so
+        // drive the formatters through `catch_unwind` with a captured
+        // `Arc<Mutex<...>>` to record what a custom hook saw.
+        use std::sync::{Arc, Mutex};
+        let captured: Arc<Mutex<(String, String)>> =
+            Arc::new(Mutex::new((String::new(), String::new())));
+        let prev = std::panic::take_hook();
+        let captured_in_hook = Arc::clone(&captured);
+        std::panic::set_hook(Box::new(move |info| {
+            let location = format_panic_location(info);
+            let payload = format_panic_payload(info);
+            *captured_in_hook.lock().unwrap() = (location, payload);
+        }));
+        let result = std::panic::catch_unwind(|| {
+            panic!("test panic with str payload");
+        });
+        std::panic::set_hook(prev);
+        assert!(result.is_err());
+        let g = captured.lock().unwrap();
+        assert!(
+            g.0.contains("lib.rs"),
+            "panic location should name source file; got: {:?}",
+            g.0
+        );
+        assert!(
+            g.0.contains(':'),
+            "panic location should be `file:line:col`; got: {:?}",
+            g.0
+        );
+        assert_eq!(
+            g.1, "test panic with str payload",
+            "panic payload should round-trip the panic message"
+        );
+    }
+
+    #[test]
+    fn panic_hook_formatters_handle_string_payload() {
+        // TAURI-SHELL-C-008: `panic!("{}", String::from("..."))` produces a
+        // `String` payload (not `&'static str`); the formatter must handle
+        // both branches.
+        use std::sync::{Arc, Mutex};
+        let captured: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
+        let prev = std::panic::take_hook();
+        let captured_in_hook = Arc::clone(&captured);
+        std::panic::set_hook(Box::new(move |info| {
+            *captured_in_hook.lock().unwrap() = format_panic_payload(info);
+        }));
+        let result = std::panic::catch_unwind(|| {
+            let s = String::from("string panic payload");
+            panic!("{s}");
+        });
+        std::panic::set_hook(prev);
+        assert!(result.is_err());
+        let g = captured.lock().unwrap();
+        assert_eq!(*g, "string panic payload");
     }
 
     #[test]

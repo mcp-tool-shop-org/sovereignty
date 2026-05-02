@@ -124,6 +124,17 @@ class EventBroadcaster:
                     self._poll_task = asyncio.create_task(self._poll_state_changes())
         return queue
 
+    def subscribers_count(self) -> int:
+        """Return the current number of active SSE subscribers.
+
+        DAEMON-C-006 (Wave 11): public surface so callers (e.g.
+        ``server.events_handler``'s pre-cap-check) don't need to reach
+        into the name-mangled ``_subscribers`` set. The lock is held
+        only for the size read — small and contention-free in practice.
+        """
+        with self._lock:
+            return len(self._subscribers)
+
     async def unsubscribe(self, queue: asyncio.Queue[tuple[str, dict[str, Any]]]) -> None:
         """Drop a listener. Stops the poll task when the last one leaves."""
         task_to_cancel: asyncio.Task[None] | None = None
@@ -436,10 +447,10 @@ async def sse_stream(app: Starlette, *, network: str, readonly: bool) -> AsyncIt
     consumer). Bytes are encoded ``utf-8`` with the standard SSE framing
     ``event: <type>\\ndata: <json>\\n\\n``.
     """
-    logger.debug("sse_stream: starting")
+    logger.debug("sse.stream.starting")
     broadcaster = get_broadcaster(app)
     queue = await broadcaster.subscribe()
-    logger.debug("sse_stream: subscribed")
+    logger.debug("sse.stream.subscribed")
     try:
         ready_payload = {
             "network": network,

@@ -19,6 +19,7 @@ import { useDaemonEvents } from "../hooks/useDaemonEvents";
 import { type RoundVerifyState, useVerifyFlow } from "../hooks/useVerifyFlow";
 import { DaemonClient } from "../lib/daemonClient";
 import { isSafeExplorerUrl } from "../lib/url";
+import { anchorStatusDisplay, verifyFailureDisplay } from "../lib/verifyDisplay";
 import type { AnchorStatusResponse, GameSummary, SSEEvent } from "../types/daemon";
 import styles from "./Audit.module.css";
 
@@ -210,7 +211,7 @@ export default function Audit() {
 
   // Cancel any in-flight verify on route unmount handled inside useVerifyFlow's cancel.
 
-  if (status === "loading" || games === null) {
+  if (status === "loading") {
     return (
       <main className={styles.main}>
         <Nav />
@@ -219,16 +220,35 @@ export default function Audit() {
     );
   }
 
+  // Daemon-down branch must precede the games-loading branch — otherwise the
+  // LoadingSpinner masks the empty state when `games` is null because the
+  // games-load effect only runs on `status === "running"`. WEB-UI-C-001.
   if (status !== "running" || !config) {
     return (
       <main className={styles.main}>
         <Nav />
-        <EmptyState title="Daemon not running" body="Start the daemon to verify anchored proofs." />
+        <EmptyState
+          title="Daemon not running"
+          body={
+            <>
+              Run <code>sov daemon start</code> in your terminal to begin verifying anchored proofs.
+            </>
+          }
+        />
         {daemonError ? (
           <p className={styles.error} role="alert">
             {daemonError}
           </p>
         ) : null}
+      </main>
+    );
+  }
+
+  if (games === null) {
+    return (
+      <main className={styles.main}>
+        <Nav />
+        <LoadingSpinner label="Loading audit view" />
       </main>
     );
   }
@@ -419,20 +439,26 @@ function RoundRowView({ row, verifyState }: { row: RoundRow; verifyState: RoundV
       </Pill>
     );
   } else if (verifyState.kind === "failed") {
+    // WEB-UI-C-005 / C-006: render human copy + recovery hint, not the raw
+    // enum identifier the state machine uses internally.
+    const display = verifyFailureDisplay(verifyState.reason);
     verifyCell = (
-      <Pill variant="error" title={verifyState.reason}>
-        ✗ {verifyState.reason}
+      <Pill variant="error" title={display.detail}>
+        ✗ {display.short}
       </Pill>
     );
   }
+
+  // WEB-UI-C-005: title-case display copy for the anchor pill (was raw enum).
+  const anchorLabel = anchorStatusDisplay(status.anchor_status);
 
   return (
     <tr>
       <td>{row.round}</td>
       <td>
-        <Pill variant={anchorVariant} title={status.anchor_status}>
-          <span aria-label={`anchor status: ${status.anchor_status}`}>
-            {anchorIcon} {status.anchor_status}
+        <Pill variant={anchorVariant} title={anchorLabel}>
+          <span aria-label={`anchor status: ${anchorLabel}`}>
+            {anchorIcon} {anchorLabel}
           </span>
         </Pill>
       </td>

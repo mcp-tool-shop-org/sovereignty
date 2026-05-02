@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 import { Pill } from "../components/Pill";
 import { useDaemon } from "../hooks/useDaemon";
 import { DaemonClient } from "../lib/daemonClient";
@@ -39,7 +40,14 @@ export default function Index() {
         <div className={styles.pills}>
           <DaemonStatusPill />
           {config ? <Pill variant="neutral">{config.network}</Pill> : null}
-          {config?.readonly ? <Pill variant="warn">readonly</Pill> : null}
+          {config?.readonly ? (
+            <Pill
+              variant="warn"
+              title="Read-only mode — anchor writes disabled. Restart with `sov daemon start` (no --readonly) to enable anchor writes."
+            >
+              readonly
+            </Pill>
+          ) : null}
         </div>
       </header>
 
@@ -48,7 +56,7 @@ export default function Index() {
           Error: {error}
         </p>
       ) : null}
-      {status === "loading" ? <p>Connecting to daemon…</p> : null}
+      {status === "loading" ? <LoadingSpinner label="Connecting to daemon" /> : null}
 
       {games !== null && games.length === 0 ? (
         <EmptyState

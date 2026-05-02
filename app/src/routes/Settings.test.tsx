@@ -95,6 +95,20 @@ describe("Settings — network switcher guardrails (spec §4)", () => {
     vi.clearAllMocks();
   });
 
+  it("daemon-down empty state names `sov daemon start` (WEB-UI-C-003)", async () => {
+    mocks.daemonStatus.mockResolvedValue({ state: "none" });
+    mocks.daemonStart.mockRejectedValue(new Error("daemon start failed"));
+    vi.stubGlobal("fetch", makeFetchMock());
+    renderSettings();
+    await waitFor(() => {
+      expect(screen.getByText("Daemon not running")).toBeTruthy();
+    });
+    expect(screen.getByText("sov daemon start")).toBeTruthy();
+    // The fieldsets-disabled-only path is gone — empty state replaces it
+    // entirely. No "Switch XRPL network" legend rendered when daemon is down.
+    expect(screen.queryByText(/Switch XRPL network/i)).toBeNull();
+  });
+
   it("disables Apply when daemon was started externally (started_by_shell=false)", async () => {
     mocks.daemonStatus.mockResolvedValue({
       state: "running",
@@ -107,9 +121,12 @@ describe("Settings — network switcher guardrails (spec §4)", () => {
     renderSettings();
 
     await waitFor(() => {
-      expect(screen.getByText(/started externally/i)).toBeTruthy();
+      // WEB-UI-C-008: copy refresh — "started outside the desktop app"
+      // (was "started externally"). Names recovery up front.
+      expect(screen.getByText(/started outside the desktop app/i)).toBeTruthy();
     });
-    const apply = screen.getByText(/Apply/i) as HTMLButtonElement;
+    // WEB-UI-C-018: button copy is "Switch network" (was "Apply (restarts daemon)").
+    const apply = screen.getByRole("button", { name: /Switch network/i }) as HTMLButtonElement;
     // Change select target to mainnet.
     const select = screen.getByLabelText(/Target network/i) as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "mainnet" } });
@@ -132,7 +149,8 @@ describe("Settings — network switcher guardrails (spec §4)", () => {
     });
     const select = screen.getByLabelText(/Target network/i) as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "devnet" } });
-    const apply = screen.getByText(/Apply/i) as HTMLButtonElement;
+    // WEB-UI-C-018: button copy is "Switch network" (was "Apply (restarts daemon)").
+    const apply = screen.getByRole("button", { name: /Switch network/i }) as HTMLButtonElement;
     expect(apply.disabled).toBe(true);
   });
 
@@ -164,7 +182,8 @@ describe("Settings — network switcher guardrails (spec §4)", () => {
     });
     const select = screen.getByLabelText(/Target network/i) as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "mainnet" } });
-    const apply = screen.getByText(/Apply/i) as HTMLButtonElement;
+    // WEB-UI-C-018: button copy is "Switch network" (was "Apply (restarts daemon)").
+    const apply = screen.getByRole("button", { name: /Switch network/i }) as HTMLButtonElement;
     expect(apply.disabled).toBe(false);
     fireEvent.click(apply);
 
@@ -202,7 +221,8 @@ describe("Settings — network switcher guardrails (spec §4)", () => {
     });
     const select = screen.getByLabelText(/Target network/i) as HTMLSelectElement;
     fireEvent.change(select, { target: { value: "devnet" } });
-    const apply = screen.getByText(/Apply/i) as HTMLButtonElement;
+    // WEB-UI-C-018: button copy is "Switch network" (was "Apply (restarts daemon)").
+    const apply = screen.getByRole("button", { name: /Switch network/i }) as HTMLButtonElement;
     fireEvent.click(apply);
 
     // No modal should open for testnet→devnet.

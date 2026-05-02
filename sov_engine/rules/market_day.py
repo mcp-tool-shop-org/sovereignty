@@ -60,7 +60,9 @@ def new_market_day_game(
 ) -> tuple[GameState, GameRng]:
     """Create a Market Day game — Campfire + fixed-price Market Board."""
     if len(player_names) < 2 or len(player_names) > 4:
-        raise ValueError("Market Day supports 2-4 players")
+        raise ValueError(
+            "Market Day supports 2-4 players. Run `sov new -p Alice -p Bob` for 2-player."
+        )
 
     rng = GameRng(seed)
     config = GameConfig(seed=seed, ruleset="market_day_v1")

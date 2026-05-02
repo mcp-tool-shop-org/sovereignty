@@ -15,12 +15,32 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ConfirmDialog } from "../components/ConfirmDialog";
+import { EmptyState } from "../components/EmptyState";
 import { Pill } from "../components/Pill";
 import { useDaemon } from "../hooks/useDaemon";
+import type { DaemonUiStatus } from "../hooks/useDaemon";
 import { DaemonClient } from "../lib/daemonClient";
 import { daemonStatus } from "../lib/invoke";
 import type { GameSummary, XRPLNetwork } from "../types/daemon";
 import styles from "./Settings.module.css";
+
+/** Title-case display label for the daemon status pill. Maps the raw
+ *  DaemonUiStatus tokens (which include the awkward "none") to user-facing
+ *  copy. WEB-UI-C-020. */
+function statusLabel(status: DaemonUiStatus): string {
+  switch (status) {
+    case "loading":
+      return "Loading";
+    case "running":
+      return "Running";
+    case "stale":
+      return "Stale";
+    case "error":
+      return "Error";
+    default:
+      return "Stopped";
+  }
+}
 
 const NETWORKS: XRPLNetwork[] = ["testnet", "mainnet", "devnet"];
 
@@ -104,11 +124,13 @@ export default function Settings() {
   const totalPending = Array.from(pendingByGame.values()).reduce((a, b) => a + b, 0);
   const externallyStarted = startedByShell === false;
 
-  // Guardrails 1 + 2 — disable Apply on either switcher.
+  // Guardrails 1 + 2 — disable Apply on either switcher. Copy refresh per
+  // WEB-UI-C-008 (lead with situation, name recovery, drop "shell" ambiguity)
+  // and WEB-UI-C-009 (name the consequence — orphaned anchors — first).
   const guardrailMessage = externallyStarted
-    ? "Daemon was started externally — stop it via `sov daemon stop` and restart from the shell to manage networks here."
+    ? "This daemon was started outside the desktop app. Run `sov daemon stop` to stop it; the desktop app will auto-start a shell-managed daemon on next launch."
     : totalPending > 0
-      ? "Pending anchors target the current network. Run `sov anchor` to flush them first, then switch networks."
+      ? "Switching networks would orphan the pending anchors targeted at the current network. Run `sov anchor` to flush them first."
       : null;
 
   const canApplyNetwork =
@@ -179,21 +201,40 @@ export default function Settings() {
     setPendingMode(null);
   }, [targetNetwork, performRestart, pendingMode, config]);
 
+  // Daemon-down empty state — WEB-UI-C-003. Mirrors the Audit + Game routes:
+  // names the recovery command up front so the user is never silently blocked.
+  // Loading state passes through (the page chrome renders with the loading
+  // pill); only the explicit "not running" cases short-circuit here.
+  if (status !== "running" && status !== "loading") {
+    return (
+      <main className={styles.main}>
+        <Nav />
+        <EmptyState
+          title="Daemon not running"
+          body={
+            <>
+              Run <code>sov daemon start</code> in your terminal to manage daemon configuration
+              here.
+            </>
+          }
+        />
+        {error ? (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        ) : null}
+      </main>
+    );
+  }
+
   return (
     <main className={styles.main}>
-      <nav aria-label="primary">
-        <Link to="/">Home</Link>
-        <Link to="/audit">Audit</Link>
-        <Link to="/game">Game</Link>
-        <Link to="/settings" aria-current="page">
-          Settings
-        </Link>
-      </nav>
+      <Nav />
 
       <header className={styles.header}>
         <h1>Settings</h1>
         <Pill variant={status === "running" ? "success" : "warn"} live>
-          {status}
+          {statusLabel(status)}
         </Pill>
       </header>
 
@@ -233,7 +274,9 @@ export default function Settings() {
             </dd>
           </dl>
         ) : (
-          <p className={styles.muted}>(no daemon config available)</p>
+          <p className={styles.muted}>
+            Daemon config unavailable. Run <code>sov daemon status --json</code> to inspect.
+          </p>
         )}
       </section>
 
@@ -261,8 +304,9 @@ export default function Settings() {
             onClick={onApplyNetworkClick}
             disabled={!canApplyNetwork}
             aria-busy={busy}
+            title="Restarts the daemon to apply the network change."
           >
-            {busy ? "Restarting…" : "Apply (restarts daemon)"}
+            {busy ? "Restarting…" : "Switch network"}
           </button>
           {guardrailMessage ? (
             <p className={styles.guardrail} role="alert">
@@ -324,5 +368,18 @@ export default function Settings() {
         }}
       />
     </main>
+  );
+}
+
+function Nav() {
+  return (
+    <nav aria-label="primary">
+      <Link to="/">Home</Link>
+      <Link to="/audit">Audit</Link>
+      <Link to="/game">Game</Link>
+      <Link to="/settings" aria-current="page">
+        Settings
+      </Link>
+    </nav>
   );
 }

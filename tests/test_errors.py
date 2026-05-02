@@ -215,12 +215,19 @@ def test_anchor_pending_error_renders_round_keys() -> None:
 
 
 def test_anchor_pending_error_handles_empty_list() -> None:
-    """Empty round_keys still produces a sensible "(none)" message."""
+    """Empty round_keys still produces a sensible message.
+
+    Wave 11 (CLI-C-015) replaced the previous "Round(s) (none)" mixed
+    plural/singular form with runtime-pluralized sentence-case copy.
+    The empty-list path now produces a clean "No rounds queued..." line
+    rather than a "Round(s) (none)" awkward shell-form.
+    """
     from sov_cli.errors import anchor_pending_error
 
     err = anchor_pending_error([])
     assert err.code == "ANCHOR_PENDING"
-    assert "(none)" in err.message
+    # Empty list = sentence describing the lack of queued rounds.
+    assert "no rounds" in err.message.lower()
 
 
 def test_mainnet_underfunded_error_renders_xrp() -> None:

@@ -28,21 +28,31 @@ class SchemaVersionUnsupportedError(Exception):
     """Raised when a versioned JSON file declares ``schema_version`` this
     binary doesn't recognize.
 
-    Operator action: upgrade sovereignty or downgrade the file via export-
-    and-reimport. The exception carries ``path``, ``found``, ``expected``,
-    and ``file_class`` attributes so structured-error consumers (CLI
-    ``SovError``, daemon error envelopes) can surface a precise hint.
+    Operator action: upgrade sovereignty or re-export the file via the
+    binary that wrote it. The exception carries ``path``, ``found``,
+    ``expected``, and ``file_class`` attributes so structured-error
+    consumers (CLI ``SovError``, daemon error envelopes) can surface a
+    precise hint. The ``hint`` attribute carries the recovery sentence
+    so ``str(err)`` renders it on any uncaught surface (third-party
+    tools, debug stderr, support-bundle tracebacks).
     """
 
     def __init__(self, path: Path, found: int, expected: int, file_class: str):
+        hint = (
+            f"This binary supports schema_version={expected}. "
+            f"Re-export the file via the binary that wrote it, or upgrade "
+            f"sovereignty if a newer release supports v{found}. "
+            f"See docs/v2.1-bridge-changes.md for the supported range."
+        )
         super().__init__(
             f"{file_class} at {path} has schema_version={found!r} "
-            f"but this binary expects schema_version={expected}"
+            f"but this binary expects schema_version={expected}. {hint}"
         )
         self.path = path
         self.found = found
         self.expected = expected
         self.file_class = file_class
+        self.hint = hint
 
 
 _MIGRATIONS: dict[tuple[int, int], Callable[[dict[str, Any]], dict[str, Any]]] = {

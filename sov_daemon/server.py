@@ -1013,13 +1013,15 @@ async def events_handler(request: Request) -> Any:
     """
     state = request.app.state
     broadcaster = get_broadcaster(request.app)
-    if len(broadcaster._subscribers) >= broadcaster.MAX_SUBSCRIBERS:
+    # DAEMON-C-006 (Wave 11): use the public ``subscribers_count`` surface
+    # rather than reaching into the name-mangled ``_subscribers`` set.
+    subscriber_count = broadcaster.subscribers_count()
+    if subscriber_count >= broadcaster.MAX_SUBSCRIBERS:
         return _error_response(
             status_code=503,
             code="SSE_SUBSCRIBERS_EXHAUSTED",
             message=(
-                f"SSE subscriber cap reached: "
-                f"{len(broadcaster._subscribers)}/{broadcaster.MAX_SUBSCRIBERS}"
+                f"SSE subscriber cap reached: {subscriber_count}/{broadcaster.MAX_SUBSCRIBERS}"
             ),
             hint=(
                 "close stale EventSource connections; daemon caps SSE "

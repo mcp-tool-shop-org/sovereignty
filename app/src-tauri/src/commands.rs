@@ -59,29 +59,45 @@ pub struct DaemonStatus {
 /// `exit_code` for the numeric exit-code field on `SubprocessFailed` to keep
 /// the serialized shape `{"code": "...", ...}` while sidestepping the
 /// `tag-conflicts-with-field` derive error.
+///
+/// User-facing copy contract (TAURI-SHELL-C-001..C-009): every variant's
+/// `Display` (the `#[error(...)]` string) names a recovery command in
+/// backticks. The frontend forwards these strings to the user via
+/// `String(e)` for un-coded fallback rendering, so the message IS the UX
+/// surface. Internal logging may keep Rust-internal vocabulary; user copy
+/// uses "the daemon" / "the config file" / "the command", not "subprocess"
+/// or "stderr".
 #[derive(Debug, thiserror::Error, Serialize)]
 #[serde(tag = "code")]
 pub enum ShellError {
-    #[error("daemon not running")]
+    #[error("Daemon is not running. Start it with `sov daemon start`.")]
     DaemonNotRunning,
 
-    #[error("daemon start failed: {stderr}")]
+    #[error("Daemon start failed: {stderr}. Run `sov doctor` for diagnostics.")]
     DaemonStartFailed { stderr: String },
 
-    #[error("daemon not installed (sov daemon --help fails)")]
+    #[error("Daemon is not installed. Install with `pip install 'sovereignty-game[daemon]'`.")]
     DaemonNotInstalled,
 
-    #[error("config file missing")]
+    #[error("Config file `.sov/daemon.json` is missing. Run `sov daemon start` to create it (or write the file manually).")]
     ConfigFileMissing,
 
-    #[error("config file malformed: {detail}")]
+    #[error("Config file `.sov/daemon.json` is malformed: {detail}. Delete the file and run `sov daemon start` to regenerate.")]
     ConfigFileMalformed { detail: String },
 
-    #[error("config schema unsupported: found {found}, expected {expected}")]
+    #[error("Config schema version {found} is unsupported (expected {expected}). Upgrade with `pip install -U sovereignty-game`.")]
     ConfigSchemaUnsupported { found: u32, expected: u32 },
 
-    #[error("subprocess failed: exit_code={exit_code}")]
+    #[error("The `sov daemon` command failed (exit code {exit_code}): {stderr}")]
     SubprocessFailed { exit_code: i32, stderr: String },
+
+    /// Emitted by the panic hook installed in `lib.rs::run()` when the shell
+    /// itself panics. The frontend renders this as a structured crash banner
+    /// rather than letting a raw Rust traceback hit the user. Cross-domain:
+    /// the TS mirror at `app/src/types/shell.ts` needs this variant added so
+    /// the frontend's `ShellError` discriminator covers it (web-ui owns).
+    #[error("The Sovereignty shell crashed at {location}: {message}. Restart the app and run `sov doctor` for diagnostics.")]
+    Panic { message: String, location: String },
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -292,6 +308,271 @@ mod tests {
             let s = serde_json::to_string(&variant).unwrap();
             let back: DaemonState = serde_json::from_str(&s).unwrap();
             assert_eq!(variant, back);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // ShellError Display copy — recovery-command discipline
+    // (TAURI-SHELL-C-001..C-009 + C-008 panic variant)
+    //
+    // Every variant's Display string MUST contain a backticked recovery
+    // command. The frontend forwards these strings to the user verbatim
+    // when no per-code translation exists, so the recovery command must
+    // be embedded in the message itself.
+    // ──────────────────────────────────────────────────────────────────
+
+    fn assert_backticked_command(msg: &str, variant: &str) {
+        let backtick_count = msg.matches('`').count();
+        assert!(
+            backtick_count >= 2,
+            "{variant} Display message must contain a backticked recovery command; got: {msg:?}"
+        );
+    }
+
+    #[test]
+    fn shell_error_daemon_not_running_names_recovery_command() {
+        // TAURI-SHELL-C-001
+        let msg = format!("{}", ShellError::DaemonNotRunning);
+        assert_backticked_command(&msg, "DaemonNotRunning");
+        assert!(
+            msg.contains("`sov daemon start`"),
+            "must name `sov daemon start`; got: {msg:?}"
+        );
+    }
+
+    #[test]
+    fn shell_error_daemon_not_installed_names_pip_install() {
+        // TAURI-SHELL-C-002
+        let msg = format!("{}", ShellError::DaemonNotInstalled);
+        assert_backticked_command(&msg, "DaemonNotInstalled");
+        assert!(
+            msg.contains("pip install"),
+            "must name pip install command; got: {msg:?}"
+        );
+        assert!(
+            msg.contains("sovereignty-game[daemon]"),
+            "must name the [daemon] extra; got: {msg:?}"
+        );
+    }
+
+    #[test]
+    fn shell_error_config_file_missing_names_path_and_recovery() {
+        // TAURI-SHELL-C-003
+        let msg = format!("{}", ShellError::ConfigFileMissing);
+        assert_backticked_command(&msg, "ConfigFileMissing");
+        assert!(
+            msg.contains(".sov/daemon.json"),
+            "must name the config file path; got: {msg:?}"
+        );
+        assert!(
+            msg.contains("`sov daemon start`"),
+            "must name `sov daemon start` recovery; got: {msg:?}"
+        );
+    }
+
+    #[test]
+    fn shell_error_config_file_malformed_names_recovery() {
+        // TAURI-SHELL-C-004
+        let err = ShellError::ConfigFileMalformed {
+            detail: "missing field `pid`".to_string(),
+        };
+        let msg = format!("{err}");
+        assert_backticked_command(&msg, "ConfigFileMalformed");
+        assert!(
+            msg.contains("`sov daemon start`"),
+            "must name `sov daemon start` recovery; got: {msg:?}"
+        );
+        assert!(
+            msg.contains("missing field"),
+            "must forward serde detail; got: {msg:?}"
+        );
+    }
+
+    #[test]
+    fn shell_error_config_schema_unsupported_names_upgrade_path() {
+        // TAURI-SHELL-C-005
+        let err = ShellError::ConfigSchemaUnsupported {
+            found: 999,
+            expected: 1,
+        };
+        let msg = format!("{err}");
+        assert_backticked_command(&msg, "ConfigSchemaUnsupported");
+        assert!(
+            msg.contains("pip install -U sovereignty-game") || msg.contains("`pip install -U"),
+            "must name the upgrade command; got: {msg:?}"
+        );
+        assert!(
+            msg.contains("999"),
+            "must name the found version; got: {msg:?}"
+        );
+        assert!(
+            msg.contains('1'),
+            "must name the expected version; got: {msg:?}"
+        );
+    }
+
+    #[test]
+    fn shell_error_subprocess_failed_includes_exit_code_and_stderr() {
+        // TAURI-SHELL-C-006 / C-007 — subprocess failure surfaces both the
+        // numeric exit code and the stderr payload (which now carries the
+        // timeout sentence on the timeout path; see daemon.rs).
+        let err = ShellError::SubprocessFailed {
+            exit_code: 137,
+            stderr: "out of memory".to_string(),
+        };
+        let msg = format!("{err}");
+        assert!(msg.contains("137"), "must name the exit code; got: {msg:?}");
+        assert!(
+            msg.contains("out of memory"),
+            "must surface the stderr payload; got: {msg:?}"
+        );
+        // C-007 voice — the user-facing noun is "the `sov daemon` command",
+        // not "subprocess".
+        assert!(
+            !msg.starts_with("subprocess"),
+            "must not lead with Rust-internal 'subprocess' vocabulary; got: {msg:?}"
+        );
+    }
+
+    #[test]
+    fn shell_error_daemon_start_failed_appends_doctor_hint() {
+        // TAURI-SHELL-C-009 — when the relayed CLI stderr does not carry a
+        // recovery, the shell appends a `sov doctor` cross-reference.
+        let err = ShellError::DaemonStartFailed {
+            stderr: "port already in use".to_string(),
+        };
+        let msg = format!("{err}");
+        assert_backticked_command(&msg, "DaemonStartFailed");
+        assert!(
+            msg.contains("`sov doctor`"),
+            "must append `sov doctor` cross-reference; got: {msg:?}"
+        );
+        assert!(
+            msg.contains("port already in use"),
+            "must forward the upstream stderr; got: {msg:?}"
+        );
+    }
+
+    #[test]
+    fn shell_error_panic_variant_serializes_with_code_tag() {
+        // TAURI-SHELL-C-008 — the panic-hook variant is a structured
+        // ShellError so the frontend can render it through the same
+        // discriminator-driven path as every other variant.
+        let err = ShellError::Panic {
+            message: "index out of bounds".to_string(),
+            location: "src/foo.rs:42:10".to_string(),
+        };
+        let json = serde_json::to_string(&err).unwrap();
+        assert!(
+            json.contains("\"code\":\"Panic\""),
+            "must serialize with code=Panic; got: {json}"
+        );
+        assert!(
+            json.contains("index out of bounds"),
+            "must carry the panic message; got: {json}"
+        );
+        assert!(
+            json.contains("src/foo.rs:42:10"),
+            "must carry the panic location; got: {json}"
+        );
+    }
+
+    #[test]
+    fn shell_error_panic_display_names_recovery() {
+        // TAURI-SHELL-C-008 — Display copy points the user at restart +
+        // `sov doctor` so a crash modal has a real next step.
+        let err = ShellError::Panic {
+            message: "boom".to_string(),
+            location: "src/lib.rs:99:1".to_string(),
+        };
+        let msg = format!("{err}");
+        assert_backticked_command(&msg, "Panic");
+        assert!(
+            msg.contains("`sov doctor`"),
+            "must name `sov doctor` recovery; got: {msg:?}"
+        );
+    }
+
+    #[test]
+    fn shell_error_messages_avoid_voice_anti_patterns() {
+        // TAURI-SHELL-C-007 + Pin A — none of the user-facing Display
+        // strings should contain please/oops/whoops/sorry or end with `!`
+        // (urgency punctuation reads as alarm to a screen-reader user).
+        let cases: Vec<(String, &'static str)> = vec![
+            (
+                format!("{}", ShellError::DaemonNotRunning),
+                "DaemonNotRunning",
+            ),
+            (
+                format!(
+                    "{}",
+                    ShellError::DaemonStartFailed {
+                        stderr: "x".to_string(),
+                    }
+                ),
+                "DaemonStartFailed",
+            ),
+            (
+                format!("{}", ShellError::DaemonNotInstalled),
+                "DaemonNotInstalled",
+            ),
+            (
+                format!("{}", ShellError::ConfigFileMissing),
+                "ConfigFileMissing",
+            ),
+            (
+                format!(
+                    "{}",
+                    ShellError::ConfigFileMalformed {
+                        detail: "x".to_string(),
+                    }
+                ),
+                "ConfigFileMalformed",
+            ),
+            (
+                format!(
+                    "{}",
+                    ShellError::ConfigSchemaUnsupported {
+                        found: 2,
+                        expected: 1,
+                    }
+                ),
+                "ConfigSchemaUnsupported",
+            ),
+            (
+                format!(
+                    "{}",
+                    ShellError::SubprocessFailed {
+                        exit_code: 1,
+                        stderr: "x".to_string(),
+                    }
+                ),
+                "SubprocessFailed",
+            ),
+            (
+                format!(
+                    "{}",
+                    ShellError::Panic {
+                        message: "x".to_string(),
+                        location: "y".to_string(),
+                    }
+                ),
+                "Panic",
+            ),
+        ];
+        let banned = ["please", "oops", "whoops", "sorry"];
+        for (msg, name) in &cases {
+            let lower = msg.to_ascii_lowercase();
+            for word in &banned {
+                assert!(
+                    !lower.contains(word),
+                    "{name} contains banned voice anti-pattern '{word}': {msg:?}"
+                );
+            }
+            assert!(
+                !msg.ends_with('!'),
+                "{name} must not end with '!' (urgency punctuation): {msg:?}"
+            );
         }
     }
 

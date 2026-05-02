@@ -152,6 +152,20 @@ describe("Audit /audit route", () => {
     });
   });
 
+  it("daemon-down empty state names `sov daemon start` (WEB-UI-C-001)", async () => {
+    mocks.daemonStatus.mockResolvedValue({ state: "none" });
+    // Auto-start failure surfaces as a thrown error from daemonStart — keeps
+    // the Provider's status === "error" branch from kicking in here.
+    mocks.daemonStart.mockRejectedValue(new Error("daemon start failed"));
+    vi.stubGlobal("fetch", fetchMockFor([]));
+    renderAudit();
+    await waitFor(() => {
+      expect(screen.getByText("Daemon not running")).toBeTruthy();
+    });
+    // The recovery command must be surfaced verbatim — pinned by snapshot.
+    expect(screen.getByText("sov daemon start")).toBeTruthy();
+  });
+
   it("expanding a row fetches proofs + statuses (rounds table)", async () => {
     vi.stubGlobal(
       "fetch",

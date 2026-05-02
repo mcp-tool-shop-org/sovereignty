@@ -86,7 +86,9 @@ def verify_proof(proof_path: Path) -> tuple[bool, str]:
         text = proof_path.read_text(encoding="utf-8")
         proof = json.loads(text)
     except (OSError, json.JSONDecodeError) as e:
-        return False, f"Failed to read proof: {e}"
+        return False, (
+            f"Failed to read proof: {e}. Run `sov verify --tx <tx-hash>` to verify on-chain."
+        )
 
     version = proof.get("proof_version")
     if version is None or version == 1:

@@ -18,6 +18,14 @@ def test_null_transport_anchor() -> None:
 
 
 def test_null_transport_verify() -> None:
+    """Legacy ``verify()`` shim — DeprecationWarning expected; suppressed
+    in this test because the deprecation contract is covered by
+    ``tests/test_xrpl_transport_legacy.py``.
+    """
+    import warnings
+
     t = NullTransport()
-    assert t.verify("offline:abc123", "anything") is True
-    assert t.verify("xrpl:abc123", "anything") is False
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        assert t.verify("offline:abc123", "anything") is True
+        assert t.verify("xrpl:abc123", "anything") is False

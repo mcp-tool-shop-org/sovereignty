@@ -15,13 +15,17 @@ import { useCallback, useRef, useState } from "react";
 import { DaemonClient } from "../lib/daemonClient";
 import { useDaemon } from "./useDaemon";
 
+// WEB-UI-C-006: split `unreachable` into `daemon_unreachable` (proof fetch
+// threw — daemon side) and `chain_unreachable` (anchor-status threw — chain
+// lookup transient). The two have distinct recovery commands; collapsing
+// them lost that signal pre-Stage-C.
 export type RoundVerifyState =
   | { kind: "idle" }
   | { kind: "verifying" }
   | { kind: "verified" }
   | {
       kind: "failed";
-      reason: "envelope_mismatch" | "not_on_chain" | "unreachable";
+      reason: "envelope_mismatch" | "not_on_chain" | "daemon_unreachable" | "chain_unreachable";
       detail?: string;
     };
 
@@ -172,9 +176,11 @@ export function useVerifyFlow(): UseVerifyFlow {
             >;
           } catch (e) {
             if (cancelledRef.current) break;
+            // Proof endpoint hit the daemon; failure here means daemon-side
+            // unreachable (down, restarting, 5xx). WEB-UI-C-006.
             setRoundState(round, {
               kind: "failed",
-              reason: "unreachable",
+              reason: "daemon_unreachable",
               detail: String(e),
             });
             continue;
@@ -224,9 +230,12 @@ export function useVerifyFlow(): UseVerifyFlow {
             }
           } catch (e) {
             if (cancelledRef.current) break;
+            // anchor-status failure here surfaces transient chain lookup
+            // failure (LOOKUP_FAILED on the Python side or daemon proxy
+            // 5xx). Distinct recovery from daemon_unreachable. WEB-UI-C-006.
             setRoundState(round, {
               kind: "failed",
-              reason: "unreachable",
+              reason: "chain_unreachable",
               detail: String(e),
             });
           }

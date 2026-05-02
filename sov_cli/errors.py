@@ -1,4 +1,17 @@
-"""Structured error handling for Sovereignty CLI."""
+"""Structured error handling for Sovereignty CLI.
+
+Naming convention:
+
+* Factories prefixed ``daemon_`` originate on the daemon HTTP layer (4xx/5xx
+  responses). Their messages and hints are still authored for human operators
+  — backticked CLI commands (e.g. ``sov games --json``), not raw HTTP paths
+  — because every consumer of these structured shapes (CLI proxy, audit
+  viewer, Tauri shell banners) ultimately renders them to a person.
+* All other factories are CLI-side and follow the same voice: structured
+  code + sentence-case message + actionable hint with ≥1 backtick-quoted
+  command. Pin B (``tests/test_error_hints_have_commands.py``) enforces this
+  mechanically.
+"""
 
 from __future__ import annotations
 
@@ -53,9 +66,7 @@ def no_game_error() -> SovError:
     return SovError(
         code="STATE_NO_GAME",
         message="No active game found in .sov/.",
-        hint=(
-            "Start one with: sov new -p Alice -p Bob   (swap in your players' names, 2-4 total)."
-        ),
+        hint=("Start one with `sov new -p Alice -p Bob` (swap in your players' names; 2-4 total)."),
     )
 
 
@@ -64,7 +75,10 @@ def game_over_error(winner: str) -> SovError:
     return SovError(
         code="STATE_GAME_OVER",
         message=f"The game is over. {winner} won.",
-        hint="Record the season and start a new game: sov game-end, then sov new -p ...",
+        hint=(
+            "Record the season with `sov game-end`, then start fresh "
+            "with `sov new -p Alice -p Bob`."
+        ),
     )
 
 
@@ -74,12 +88,12 @@ def player_count_error(count: int) -> SovError:
         return SovError(
             code="INPUT_PLAYERS",
             message=f"Need at least 2 players (got {count}).",
-            hint="Add another -p flag, e.g.: sov new -p Alice -p Bob",
+            hint="Add another `-p <name>` flag, e.g. `sov new -p Alice -p Bob -p Carol`.",
         )
     return SovError(
         code="INPUT_PLAYERS",
         message=f"Maximum 4 players (got {count}).",
-        hint="Drop a -p flag and try again.",
+        hint="Drop a `-p` flag and re-run, e.g. `sov new -p Alice -p Bob`.",
     )
 
 
@@ -97,7 +111,7 @@ def invalid_action_error(action: str, valid: str) -> SovError:
     return SovError(
         code="INPUT_ACTION",
         message=f"Unknown action: '{action}'.",
-        hint=f"Use one of: {valid}",
+        hint=f"Re-run with one of: {valid}. Example: `sov promise make 'I will help'`.",
     )
 
 
@@ -119,8 +133,8 @@ def no_proof_error() -> SovError:
         code="STATE_NO_PROOF",
         message="No proof files found in .sov/proofs/.",
         hint=(
-            "Generate one with: sov end-round   "
-            "(closes the current round and writes a round_NNN.proof.json)."
+            "Generate one with `sov end-round` "
+            "(closes the current round and writes a `round_NNN.proof.json`)."
         ),
     )
 
@@ -131,8 +145,8 @@ def proof_file_error(path: str) -> SovError:
         code="IO_PROOF",
         message=f"Proof file not found: {path}",
         hint=(
-            "Double-check the path. To list available proofs: "
-            "ls .sov/proofs/   (or omit the path to use the latest)."
+            "Double-check the path. List available proofs with `ls .sov/proofs/` "
+            "(or omit the path to use the latest)."
         ),
     )
 
@@ -225,7 +239,8 @@ def state_version_mismatch_error(found: object) -> SovError:
             "         sov new -p Alice -p Bob   # use your actual player names"
         ),
         hint=(
-            "If you needed that save, downgrade sovereignty before deleting — "
+            "If you needed that save, downgrade sovereignty with "
+            "`pipx install 'sovereignty-game<2.0.0'` before deleting — "
             "this binary cannot read it."
         ),
     )
@@ -237,9 +252,9 @@ def anchor_mismatch_error() -> SovError:
         code="NET_ANCHOR_MISMATCH",
         message=("Anchor mismatch — the on-chain memo doesn't match this proof's hash."),
         hint=(
-            "Either you passed the wrong --tx (check anchors.json), "
+            "Either you passed the wrong `--tx` (check `anchors.json`), "
             "or the proof file changed after it was anchored. "
-            "If you re-ran end-round after anchoring, the new hash won't match."
+            "If you re-ran `sov end-round` after anchoring, the new hash won't match."
         ),
     )
 
@@ -279,8 +294,8 @@ def anchor_error(detail: str) -> SovError:
         message=f"Anchor submission failed: {detail}",
         hint=(
             "Anchoring is optional — your game state is intact and proofs are saved "
-            "locally. Try again in a minute (XRPL Testnet can be flaky), or skip "
-            "anchoring and continue play."
+            "locally. Retry with `sov anchor` in a minute (XRPL Testnet can be flaky), "
+            "or skip anchoring and continue play with `sov turn`."
         ),
         retryable=True,
     )
@@ -300,7 +315,7 @@ def scenario_error(detail: str) -> SovError:
     return SovError(
         code="INPUT_SCENARIO",
         message=detail,
-        hint="See available scenarios with: sov scenario list",
+        hint="See available scenarios with `sov scenario list`.",
     )
 
 
@@ -309,7 +324,7 @@ def treaty_error(detail: str) -> SovError:
     return SovError(
         code="INPUT_TREATY",
         message=detail,
-        hint=("List your active treaties with `sov treaty list` (treaty IDs look like t_0001)."),
+        hint=("List your active treaties with `sov treaty list` (treaty IDs look like `t_0001`)."),
     )
 
 
@@ -318,7 +333,7 @@ def market_error(detail: str) -> SovError:
     return SovError(
         code="INPUT_MARKET",
         message=detail,
-        hint="See current prices and your balance with: sov market",
+        hint="See current prices and your balance with `sov market show`.",
     )
 
 
@@ -380,9 +395,9 @@ def upgrade_unavailable_error(ruleset_name: str) -> SovError:
             "This ruleset uses the coinless workshop."
         ),
         hint=(
-            "Use 'sov build' for free tier-1 builds, or start a new game on "
-            "Town Hall / Treaty Table / Market Day for resource-cost upgrades:"
-            "\n    sov new --tier town-hall -p Alice -p Bob"
+            "Use `sov build` for free tier-1 builds, or start a new game on "
+            "Town Hall / Treaty Table / Market Day for resource-cost upgrades, "
+            "e.g. `sov new --tier town-hall -p Alice -p Bob`."
         ),
     )
 
@@ -403,8 +418,8 @@ def reset_error() -> SovError:
         message="Nothing to reset — no .sov/ directory in the current working directory.",
         hint=(
             "Sovereignty stores state in a `.sov/` folder next to where you run "
-            "the CLI. If you expected a game here, check your working directory "
-            "(`pwd`)."
+            "the CLI. Check your working directory with `pwd`, or start fresh "
+            "with `sov new -p Alice -p Bob`."
         ),
     )
 
@@ -441,9 +456,9 @@ def mainnet_faucet_rejected_error() -> SovError:
     """
     return SovError(
         code="MAINNET_FAUCET_REJECTED",
-        message="mainnet has no faucet.",
+        message="Mainnet has no faucet.",
         hint=(
-            "Set XRPL_SEED to a funded mainnet wallet, "
+            "Set `XRPL_SEED` to a funded mainnet wallet, "
             "or run `sov wallet --network testnet` to generate a play-money "
             "Testnet wallet instead."
         ),
@@ -451,16 +466,22 @@ def mainnet_faucet_rejected_error() -> SovError:
 
 
 def anchor_pending_error(round_keys: list[str]) -> SovError:
-    """One or more rounds are queued in pending-anchors.json, not yet on chain.
+    """One or more rounds are queued for anchoring, not yet on the chain.
 
     ``round_keys`` follows the existing anchors.json convention (stringified
     round number ``"1"``…``"15"`` or ``"FINAL"``). Empty list still produces
-    a sensible message — the rounds field renders as "(none)".
+    a sensible message via runtime pluralization.
     """
-    rounds_str = ", ".join(round_keys) if round_keys else "(none)"
+    n = len(round_keys)
+    if n == 0:
+        message = "No rounds queued for anchoring yet."
+    else:
+        plural = "" if n == 1 else "s"
+        rounds_str = ", ".join(round_keys)
+        message = f"{n} round{plural} ({rounds_str}) queued, not yet on-chain."
     return SovError(
         code="ANCHOR_PENDING",
-        message=(f"Round(s) {rounds_str} are queued in pending-anchors.json, not yet on chain."),
+        message=message,
         hint="Run `sov anchor` to flush pending anchors in a single batched tx.",
     )
 
@@ -474,7 +495,10 @@ def invalid_network_error(value: str) -> SovError:
     return SovError(
         code="INVALID_NETWORK",
         message=f"'{value}' is not a valid XRPL network.",
-        hint="Valid networks: testnet, mainnet, devnet.",
+        hint=(
+            "Valid networks: testnet, mainnet, devnet. "
+            "Try `sov anchor --network testnet` (the default)."
+        ),
     )
 
 
@@ -519,8 +543,11 @@ def daemon_readonly_error() -> SovError:
     """
     return SovError(
         code="DAEMON_READONLY",
-        message="daemon started with --readonly; anchor endpoints disabled",
-        hint="restart without --readonly to enable anchoring",
+        message="Daemon started with `--readonly`; anchor endpoints disabled.",
+        hint=(
+            "Stop the daemon with `sov daemon stop`, then restart without "
+            "`--readonly`: `sov daemon start --network testnet`."
+        ),
     )
 
 
@@ -528,8 +555,11 @@ def daemon_auth_missing_error() -> SovError:
     """Authorization header missing on a daemon HTTP request."""
     return SovError(
         code="DAEMON_AUTH_MISSING",
-        message="Authorization header missing on daemon request",
-        hint=("include `Authorization: Bearer <token>`; token is in `.sov/daemon.json`"),
+        message="Authorization header missing on daemon request.",
+        hint=(
+            "Include `Authorization: Bearer <token>`. Read the current token "
+            "with `sov daemon status --json` (or from `.sov/daemon.json`)."
+        ),
     )
 
 
@@ -537,8 +567,11 @@ def daemon_auth_invalid_error() -> SovError:
     """Authorization token does not match the daemon's bearer token."""
     return SovError(
         code="DAEMON_AUTH_INVALID",
-        message="Authorization token does not match daemon's token",
-        hint="re-read token from `.sov/daemon.json` or restart daemon",
+        message="Authorization token does not match daemon's token.",
+        hint=(
+            "Re-read the current token with `sov daemon status --json`, or "
+            "restart the daemon: `sov daemon stop` then `sov daemon start`."
+        ),
     )
 
 
@@ -550,10 +583,50 @@ def daemon_port_busy_error(port: int) -> SovError:
     """
     return SovError(
         code="DAEMON_PORT_BUSY",
-        message=f"Port {port} already in use",
+        message=f"Port {port} already in use.",
         hint=(
-            "stop the conflicting process or restart `sov daemon start` "
-            "(which selects a fresh random port)"
+            f"Stop the conflicting process (e.g. `lsof -ti :{port} | xargs kill`), "
+            "or run `sov daemon stop` then `sov daemon start` "
+            "(which selects a fresh random port)."
+        ),
+    )
+
+
+def payload_too_large_error(limit_bytes: int) -> SovError:
+    """The daemon rejected an HTTP request body that exceeded the size cap.
+
+    Surfaced by the daemon HTTP layer when an inbound request body breaches
+    the configured byte limit. Emitted here as a CLI-side factory so any
+    surface that proxies daemon responses (audit viewer / Tauri shell) can
+    render the same structured shape.
+
+    ``limit_bytes`` is the daemon's configured cap (parsed from daemon
+    config); the hint names both the discovery command and the recovery
+    options (lift the limit on restart, or split the request).
+    """
+    return SovError(
+        code="PAYLOAD_TOO_LARGE",
+        message=f"Request body exceeds the daemon's {limit_bytes}-byte limit.",
+        hint=(
+            "Run `sov daemon stop` then restart with a larger limit, or split "
+            "the request into smaller batches."
+        ),
+    )
+
+
+def sse_subscribers_exhausted_error(active: int, cap: int) -> SovError:
+    """The daemon's SSE subscriber pool is at capacity.
+
+    Surfaced when a fresh ``GET /events`` connection arrives and the
+    subscriber count is already at the configured cap. Hint points at the
+    inspection command and the restart-recovery path.
+    """
+    return SovError(
+        code="SSE_SUBSCRIBERS_EXHAUSTED",
+        message=(f"Daemon SSE subscriber pool exhausted ({active}/{cap} active)."),
+        hint=(
+            "Inspect subscriber count with `sov daemon status --json`, then "
+            "free a slot — or run `sov daemon stop` and restart."
         ),
     )
 
@@ -580,7 +653,7 @@ def daemon_not_installed_error(detail: str) -> SovError:
     return SovError(
         code="DAEMON_NOT_INSTALLED",
         message=f"Daemon support is not installed: {detail}",
-        hint="Install the daemon extra: pip install 'sovereignty-game[daemon]'",
+        hint="Install the daemon extra: `pip install 'sovereignty-game[daemon]'`.",
     )
 
 
@@ -606,7 +679,10 @@ def daemon_stop_failed_error(detail: str) -> SovError:
     return SovError(
         code="DAEMON_STOP_FAILED",
         message=f"Daemon stop failed: {detail}",
-        hint=("Inspect `.sov/daemon.json` for the recorded pid, then kill it manually if needed."),
+        hint=(
+            "Read the recorded pid from `.sov/daemon.json`, then `kill <pid>` "
+            "(or `kill -9 <pid>` if it ignores SIGTERM)."
+        ),
     )
 
 
@@ -662,14 +738,17 @@ def daemon_invalid_game_id_error(value: str) -> SovError:
     """HTTP 400 — the path-param ``game_id`` does not match ``s<digits>``.
 
     Daemon-side counterpart to ``invalid_game_id_error`` (CLI-side
-    Typer-Exit). Same code, daemon-flavored message + hint so
-    ``GET /games/<bad>/state`` produces a clean 400 response with an
-    operator-actionable next step.
+    Typer-Exit). Same code, daemon-flavored message + hint. CLI surfaces
+    that proxy this response (audit viewer / Tauri shell) render the
+    backticked CLI command — operators don't read raw HTTP paths.
     """
     return SovError(
         code="INVALID_GAME_ID",
-        message=f"game_id {value!r} does not match the allowed format",
-        hint="game_id must match s<digits> (e.g. s42). GET /games to list valid ids.",
+        message=f"game_id {value!r} does not match the allowed format.",
+        hint=(
+            "Game ids match the `s<digits>` convention (e.g. `s42`). "
+            "Run `sov games --json` to list valid ids."
+        ),
     )
 
 
@@ -678,12 +757,16 @@ def daemon_invalid_round_error(value: str) -> SovError:
 
     Surfaced when the daemon's anchor-status / proof-detail endpoints
     receive a round identifier that fails the allowlist. The hint names
-    the canonical shapes the daemon accepts.
+    the canonical shapes the daemon accepts and the CLI discovery
+    command.
     """
     return SovError(
         code="INVALID_ROUND",
-        message=f"round {value!r} is not a valid round identifier",
-        hint="rounds are integers 1..15 or the literal FINAL.",
+        message=f"round {value!r} is not a valid round identifier.",
+        hint=(
+            "Rounds are integers `1..15` or the literal `FINAL`. "
+            "Run `sov status --json` to inspect the active game's rounds."
+        ),
     )
 
 
@@ -693,12 +776,12 @@ def daemon_game_not_found_error(game_id: str) -> SovError:
     Surfaced by the daemon's ``GET /games/<id>/state``,
     ``GET /games/<id>/proofs``, ``GET /games/<id>/pending-anchors``, and
     ``POST /games/<id>/anchor`` paths when the per-game directory is
-    absent. Hint points at the listing endpoint.
+    absent. Hint points at the CLI listing command.
     """
     return SovError(
         code="GAME_NOT_FOUND",
-        message=f"no saved game with id '{game_id}'",
-        hint="GET /games to list saved games.",
+        message=f"No saved game with id '{game_id}'.",
+        hint="Run `sov games --json` to list saved games.",
     )
 
 
@@ -707,13 +790,16 @@ def daemon_proof_not_found_error(game_id: str, round_key: str) -> SovError:
 
     Surfaced by the daemon's ``GET /games/<id>/proofs/<round>`` and
     ``GET /games/<id>/anchor-status/<round>`` paths. Hint directs the
-    consumer at the proofs-listing endpoint so they can pick a real
-    round key.
+    operator at the CLI verify + status flow rather than the raw
+    HTTP path.
     """
     return SovError(
         code="PROOF_NOT_FOUND",
-        message=f"no proof for round '{round_key}' in game '{game_id}'",
-        hint="GET /games/{game_id}/proofs to list available rounds.",
+        message=f"No proof for round '{round_key}' in game '{game_id}'.",
+        hint=(
+            "Run `sov status --json` to list available rounds, "
+            "or `sov verify --tx <hash>` to verify an anchor."
+        ),
     )
 
 
@@ -726,8 +812,8 @@ def daemon_proof_unreadable_error(exc_type: str) -> SovError:
     """
     return SovError(
         code="PROOF_UNREADABLE",
-        message=f"proof file exists but could not be read: {exc_type}",
-        hint="check disk integrity; re-run `sov end-round` from the original save.",
+        message=f"Proof file exists but could not be read: {exc_type}.",
+        hint="Check disk integrity; re-run `sov end-round` from the original save.",
     )
 
 
@@ -747,8 +833,12 @@ def daemon_invalid_network_error(detail: str) -> SovError:
     """
     return SovError(
         code="INVALID_NETWORK",
-        message=f"daemon configured with invalid network: {detail}",
-        hint="restart the daemon with --network testnet|mainnet|devnet.",
+        message=f"Daemon configured with invalid network: {detail}.",
+        hint=(
+            "Restart the daemon with a valid network: "
+            "`sov daemon stop` then `sov daemon start --network testnet` "
+            "(or `mainnet` / `devnet`)."
+        ),
     )
 
 
@@ -762,8 +852,8 @@ def daemon_xrpl_not_installed_error(exc_type: str) -> SovError:
     """
     return SovError(
         code="XRPL_NOT_INSTALLED",
-        message=f"async XRPL transport unavailable: {exc_type}",
-        hint="install with: pip install 'sovereignty-game[xrpl,daemon]'",
+        message=f"Async XRPL transport unavailable: {exc_type}.",
+        hint="Install with `pip install 'sovereignty-game[xrpl,daemon]'`.",
     )
 
 
@@ -780,8 +870,8 @@ def daemon_anchor_failed_error(exc_type: str, detail: str) -> SovError:
         code="ANCHOR_FAILED",
         message=f"anchor_batch failed: {exc_type}: {detail}",
         hint=(
-            "your game state is intact and proofs are saved locally. "
+            "Your game state is intact and proofs are saved locally. "
             "Try again in a minute (XRPL can be flaky), or run "
-            "`sov anchor` from the CLI to retry."
+            "`sov anchor` to retry from the CLI."
         ),
     )

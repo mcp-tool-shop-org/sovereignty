@@ -167,7 +167,11 @@ _configure_default_logging()
 
 app = typer.Typer(
     name="sov",
-    help="Sovereignty — a strategy game about governance, trust, and trade.",
+    help=(
+        "Sovereignty — a strategy game about governance, trust, and trade.\n\n"
+        "Quickstart: `sov play campfire_v1` (solo-vs-AI) or `sov tutorial` "
+        "(60-second walkthrough). For multi-player, use `sov new -p Alice -p Bob`."
+    ),
     no_args_is_help=True,
     callback=None,
 )
@@ -618,7 +622,7 @@ def doctor(
     if SAVE_DIR.exists():
         checks.append(("ok", "Game directory exists (.sov/)", ""))
     else:
-        checks.append(("info", "No game directory yet", "Run: sov new -p Alice -p Bob"))
+        checks.append(("info", "No game directory yet", "Run `sov new -p Alice -p Bob`."))
 
     # 2. Active game
     # Trigger migration before probing — a v1 tree should appear as a v2 tree.
@@ -636,7 +640,7 @@ def doctor(
                 (
                     "warn",
                     f"Active game {active_id} state.json is unreadable",
-                    f"Inspect {sf} or run: sov new",
+                    f"Inspect `{sf}`, or run `sov new -p Alice -p Bob`.",
                 )
             )
         else:
@@ -644,7 +648,7 @@ def doctor(
                 (
                     "warn",
                     f"Active game pointer {active_id} but state.json is missing",
-                    "Run: sov games   or   sov new",
+                    "Run `sov games`, or start fresh with `sov new -p Alice -p Bob`.",
                 )
             )
     elif saved:
@@ -661,7 +665,7 @@ def doctor(
                         (
                             "ok",
                             f"Game complete: {tier} ({names})",
-                            "Run: sov game-end",
+                            "Run `sov game-end` to wrap up.",
                         )
                     )
                 else:
@@ -673,7 +677,13 @@ def doctor(
                         )
                     )
             else:
-                checks.append(("warn", "Game state exists but can't load", "Try: sov new"))
+                checks.append(
+                    (
+                        "warn",
+                        "Game state exists but can't load",
+                        "Try `sov new -p Alice -p Bob`.",
+                    )
+                )
         elif len(saved) == 1:
             # Single save without an explicit pointer — _load_game would
             # auto-resolve, but to keep doctor side-effect-free we just
@@ -683,7 +693,7 @@ def doctor(
                 (
                     "info",
                     f"{len(saved)} saved game ({only.game_id}); no active-game pointer",
-                    f"Run: sov resume {only.game_id}",
+                    f"Run `sov resume {only.game_id}`.",
                 )
             )
         else:
@@ -691,11 +701,11 @@ def doctor(
                 (
                     "info",
                     f"{len(saved)} saved games; no active-game pointer",
-                    "Run: sov games  then  sov resume <game-id>",
+                    "Run `sov games`, then `sov resume <game-id>`.",
                 )
             )
     else:
-        checks.append(("info", "No active game", "Run: sov new -p Alice -p Bob"))
+        checks.append(("info", "No active game", "Run `sov new -p Alice -p Bob`."))
 
     # 3. Season file
     if SEASON_FILE.exists():
@@ -722,7 +732,7 @@ def doctor(
                 (
                     "warn",
                     "Season file exists but can't parse",
-                    "Delete .sov/season.json to start fresh",
+                    "Delete `.sov/season.json` to start fresh.",
                 )
             )
     else:
@@ -730,7 +740,7 @@ def doctor(
             (
                 "info",
                 "No season file yet (that's fine)",
-                "Seasons start after sov game-end",
+                "Seasons start after `sov game-end`.",
             )
         )
 
@@ -761,9 +771,9 @@ def doctor(
                     "info",
                     "No wallet set up — Diary Mode (XRPL anchoring) is disabled",
                     (
-                        "Optional. To enable: set XRPL_SEED in your environment, "
-                        "or run `sov wallet` to generate a Testnet seed and store "
-                        "it at .sov/wallet_seed.txt (gitignored)."
+                        "Optional. To enable: set `XRPL_SEED` in your environment, "
+                        "or run `sov wallet` to generate a Testnet seed (saved to "
+                        "`.sov/wallet_seed.txt`, gitignored)."
                     ),
                 )
             )
@@ -817,7 +827,7 @@ def doctor(
                         (
                             "ok",
                             f"{n} pending anchor{plural} (timestamps unparseable)",
-                            "Run: sov anchor   to flush.",
+                            "Run `sov anchor` to flush pending entries.",
                         )
                     )
                 else:
@@ -827,16 +837,18 @@ def doctor(
                     if age_seconds <= one_hour:
                         checks.append(("ok", f"{n} pending anchor{plural} (fresh)", ""))
                     else:
-                        # Render age human-friendly: hours when ≥ 1h.
+                        # Render age human-friendly: "hour" singular when
+                        # 1.0–1.9h, "hours" plural at ≥ 2h. The format
+                        # specifier already pluralizes the rendered number;
+                        # the previous double-append produced "hourss" at
+                        # ages ≥ 2h — fixed (CLI-C-032).
                         hours = age_seconds / 3600.0
                         age_str = f"{hours:.1f} hour" if hours < 2 else f"{hours:.0f} hours"
-                        if hours >= 2:
-                            age_str += "s" if hours >= 2 else ""
                         checks.append(
                             (
                                 "warn",
                                 (f"{n} pending anchor{plural}, oldest {age_str} old"),
-                                "Run: sov anchor   to flush.",
+                                "Run `sov anchor` to flush pending entries.",
                             )
                         )
             except Exception as exc:
@@ -884,7 +896,17 @@ def doctor(
         return
 
     # Print
-    icons = {"ok": "[green]OK[/green]", "warn": "[yellow]!![/yellow]", "info": "[dim]--[/dim]"}
+    # CLI-C-030: word-glyph icons matching `sov self-check` ("OK" / "FAIL"
+    # word-glyphs), with "WARN" replacing the previous "!!" double-bang.
+    # The "!!" form both visually shouts and rubs against Pin A (no `!` in
+    # warning copy); switching to a word-glyph aligns voice across surfaces
+    # and keeps the icon dict reachable for any check that emits "fail".
+    icons = {
+        "ok": "[green]OK[/green]",
+        "warn": "[yellow]WARN[/yellow]",
+        "fail": "[red]FAIL[/red]",
+        "info": "[dim]--[/dim]",
+    }
     console.print()
     for status, msg, hint in checks:
         icon = icons.get(status, "[dim]--[/dim]")
@@ -892,6 +914,24 @@ def doctor(
         if hint:
             line += f"  [dim]({hint})[/dim]"
         console.print(line)
+    # CLI-C-029: friendly summary tally so `sov doctor` ends with a clear
+    # pass/warn/fail count rather than trailing whitespace. Mirrors the
+    # tally `_print_checks` emits for `self-check` / `support-bundle`.
+    from collections import Counter
+
+    tally = Counter(s for s, _, _ in checks)
+    passed = tally.get("ok", 0)
+    warns = tally.get("warn", 0)
+    fails = tally.get("fail", 0)
+    info = tally.get("info", 0)
+    summary_parts = [f"{passed} passed"]
+    if warns:
+        summary_parts.append(f"{warns} warn")
+    if fails:
+        summary_parts.append(f"{fails} fail")
+    if info:
+        summary_parts.append(f"{info} info")
+    console.print(f"  [dim]Summary: {', '.join(summary_parts)}.[/dim]")
     console.print()
 
 
@@ -945,7 +985,7 @@ def _doctor_check_daemon_presence(checks: list[tuple[str, str, str]]) -> None:
             (
                 "warn",
                 f"Daemon stale (pid {pid} dead)",
-                "Run: sov daemon start  (auto-cleans the stale entry).",
+                "Run `sov daemon start` (auto-cleans the stale entry).",
             )
         )
     # state == "none" → nothing to report; daemon is opt-in.
@@ -986,7 +1026,7 @@ def _doctor_check_daemon_extra_coherence(checks: list[tuple[str, str, str]]) -> 
             (
                 "warn",
                 "Tauri shell present but \\[daemon] extra not installed",
-                "Run: pip install 'sovereignty-game\\[daemon]'",
+                "Install with `pip install 'sovereignty-game\\[daemon]'`.",
             )
         )
     elif tauri_shell_present and daemon_extra:
@@ -1046,7 +1086,7 @@ def _doctor_check_multi_save_layout(
         (
             "warn",
             f"Active-game pointer {active_id} but target game is missing",
-            "Run: sov games  then  sov resume <game-id>",
+            "Run `sov games`, then `sov resume <game-id>`.",
         )
     )
 
@@ -1150,7 +1190,7 @@ def _collect_checks() -> list[tuple[str, str, str]]:
     checks: list[tuple[str, str, str]] = []
 
     # 1. App version
-    checks.append(("ok", "Version", SOV_VERSION))
+    checks.append(("ok", "Version", _resolve_version()))
 
     # 2. Platform
     py = f"{_sys.version_info.major}.{_sys.version_info.minor}.{_sys.version_info.micro}"
@@ -1332,7 +1372,7 @@ def support_bundle(
         # 5. Environment summary
         env_info = {
             "tool": "sovereignty",
-            "version": SOV_VERSION,
+            "version": _resolve_version(),
             "platform": _platform.platform(),
             "arch": _platform.machine(),
             "python": _sys.version,
@@ -1367,15 +1407,29 @@ def new(
     ] = None,
     tier: Annotated[
         str,
-        typer.Option("--tier", "-t", help="campfire, market-day, town-hall, or treaty-table"),
+        typer.Option(
+            "--tier",
+            "-t",
+            help=(
+                "Game tier: campfire (default; coinless), market-day "
+                "(fixed prices), town-hall (dynamic prices + resources), "
+                "treaty-table (binding agreements)."
+            ),
+        ),
     ] = "campfire",
     recipe: Annotated[
         str,
-        typer.Option("--recipe", "-r", help="cozy, spicy, or market"),
+        typer.Option("--recipe", "-r", help="cozy, spicy, market, or promise"),
     ] = "",
     code: Annotated[
         str,
-        typer.Option("--code", help="Share code from sov scenario code"),
+        typer.Option(
+            "--code",
+            help=(
+                "Share code from `sov scenario code <name>` — format: "
+                "`SOV|<scenario>|<tier>|<recipe>|s<seed>`."
+            ),
+        ),
     ] = "",
 ) -> None:
     """Start a new game. Use --tier or --code to configure."""
@@ -1445,6 +1499,47 @@ def new(
         )
     )
     _print_status(state)
+
+
+@app.command()
+def play(
+    ruleset: Annotated[
+        str,
+        typer.Argument(help="Ruleset to play (e.g. `campfire_v1`). Maps to a tier."),
+    ] = "campfire_v1",
+    seed: Annotated[int, typer.Option("--seed", "-s", help="RNG seed")] = 42,
+) -> None:
+    """Quickstart: solo-vs-AI on the named ruleset.
+
+    Thin alias to ``sov new`` with a default 1-human + 1-AI roster so a
+    cold-start operator can run ``sov play campfire_v1`` and be playing
+    in one command. Power users still use ``sov new -p Alice -p Bob -p Carol``
+    for multi-player setups.
+
+    Ruleset → tier mapping mirrors ``sov new --tier``:
+      ``campfire_v1`` → campfire (default), ``market_day_v1`` → market-day,
+      ``town_hall_v1`` → town-hall, ``treaty_table_v1`` → treaty-table.
+    """
+    # Map ruleset slug to the tier value sov new accepts. Tolerate both
+    # the engine-canonical form (`campfire_v1`) and the tier-flag form
+    # (`campfire`) so operators who think in either vocabulary land here.
+    ruleset_to_tier = {
+        "campfire_v1": "campfire",
+        "campfire": "campfire",
+        "market_day_v1": "market-day",
+        "market-day": "market-day",
+        "market_day": "market-day",
+        "town_hall_v1": "town-hall",
+        "town-hall": "town-hall",
+        "town_hall": "town-hall",
+        "treaty_table_v1": "treaty-table",
+        "treaty-table": "treaty-table",
+        "treaty_table": "treaty-table",
+    }
+    tier = ruleset_to_tier.get(ruleset, "campfire")
+    # Default solo-vs-AI roster: one human ("You") + one AI opponent ("Rival").
+    # Multi-player setups still go through `sov new -p ... -p ...`.
+    new(seed=seed, players=["You", "Rival"], tier=tier, recipe="", code="")
 
 
 @app.command()
@@ -1522,8 +1617,8 @@ def tutorial() -> None:
         Panel(
             "  That's Campfire. Roll, land, trade, promise, repeat.\n"
             "  The console keeps score. You keep your word.\n\n"
-            "  [dim]Start a real game: sov new -p Alice -p Bob[/dim]\n"
-            "  [dim]Continue this demo: sov turn[/dim]",
+            "  [dim]Start a real game with `sov new -p Alice -p Bob`.[/dim]\n"
+            "  [dim]Continue this demo with `sov turn`.[/dim]",
             title="You're ready",
         )
     )
@@ -1583,7 +1678,7 @@ def turn() -> None:
 
     if state.game_over:
         console.print(f"\n  The game is over. [bold]{state.winner}[/bold] won.")
-        console.print("  [dim]Wrap up: sov game-end[/dim]")
+        console.print("  [dim]Wrap up with `sov game-end`.[/dim]")
         raise typer.Exit(0)
 
     player = state.current_player
@@ -1622,7 +1717,7 @@ def turn() -> None:
     winner = state.check_winner()
     if winner:
         console.print(f"\n  [bold green]{winner} wins![/bold green]")
-        console.print("  [dim]Record the season: sov game-end[/dim]")
+        console.print("  [dim]Record the season with `sov game-end`.[/dim]")
         _save_state(state)
         raise typer.Exit(0)
 
@@ -1661,7 +1756,15 @@ def turn() -> None:
 def end_round(
     output: Annotated[
         Path | None,
-        typer.Option("--output", "-o", help="Directory for proof files"),
+        typer.Option(
+            "--output",
+            "-o",
+            help=(
+                "Save the proof to a custom directory (default: "
+                "`.sov/games/<game-id>/proofs/`). When set, the round is "
+                "NOT queued for the next anchor batch."
+            ),
+        ),
     ] = None,
 ) -> None:
     """Generate a round proof for the current state."""
@@ -1694,7 +1797,13 @@ def end_round(
 @app.command()
 def verify(
     proof_file: Annotated[Path, typer.Argument(help="Path to proof JSON file")],
-    tx: Annotated[str, typer.Option("--tx", help="XRPL tx hash to verify against")] = "",
+    tx: Annotated[
+        str,
+        typer.Option(
+            "--tx",
+            help=("XRPL transaction hash (64 hex chars) to verify the proof's anchor against."),
+        ),
+    ] = "",
     network: Annotated[
         str | None,
         typer.Option(
@@ -1817,7 +1926,10 @@ def anchor(
             # the structured no_active_game_error rather than swallowing.
             raise
         if not read_pending_anchors(active_id_for_noop_check):
-            console.print("  [dim]No pending anchors to flush.[/dim]")
+            console.print(
+                "  [dim]No pending anchors. Run `sov end-round` to queue a "
+                "round, or `sov game-end` to wrap up.[/dim]"
+            )
             raise typer.Exit(0)
 
     # Resolve wallet seed once — both paths need it. (Move-up from the
@@ -1887,7 +1999,7 @@ def anchor(
                     f"  TX: [bold]{txid}[/bold]\n"
                     f"  Hash: [dim]{envelope_hash}[/dim]\n"
                     f"  Explorer: [dim]{explorer}[/dim]\n\n"
-                    f"  [dim]Verify later: sov verify {proof_file} --tx {txid}[/dim]",
+                    f"  [dim]Verify later with `sov verify {proof_file} --tx {txid}`.[/dim]",
                     title="Anchored",
                 )
             )
@@ -2106,8 +2218,8 @@ def wallet(
                 f"  Address: [bold]{address}[/bold]\n"
                 f"  Network: {network_label}\n"
                 f"  Seed saved to: {wallet_file}\n\n"
-                f"  [dim]Use it: sov anchor --signer-file {wallet_file}[/dim]\n"
-                f"  [dim]Or set: export XRPL_SEED=<your-seed>[/dim]",
+                f"  [dim]Use it with `sov anchor --signer-file {wallet_file}`.[/dim]\n"
+                "  [dim]Or set `export XRPL_SEED=<your-seed>`.[/dim]",
                 title=f"{network_label} Wallet",
             )
         )
@@ -2125,7 +2237,11 @@ def wallet(
 def postcard(
     style: Annotated[
         str,
-        typer.Option("--style", "-s", help="cozy, spicy, economic, or all"),
+        typer.Option(
+            "--style",
+            "-s",
+            help="Story style: cozy, spicy, economic, or all (default).",
+        ),
     ] = "all",
 ) -> None:
     """Share your game in one screenshot. The campfire postcard."""
@@ -2233,7 +2349,7 @@ def promise(
             console.print(f"\n  {msg}")
             if not target.apology_used:
                 console.print(
-                    "  [dim]You can Apologize once per game: sov apologize <name>[/dim]",
+                    "  [dim]You can Apologize once per game: `sov apologize <name>`.[/dim]",
                 )
         case _:
             _fail(invalid_action_error(action, "promise make/keep/break 'text'"))
@@ -2244,7 +2360,7 @@ def promise(
 @app.command(name="apologize")
 def apologize_cmd(
     to: Annotated[str, typer.Argument(help="Who you're apologizing to")],
-    player: Annotated[str, typer.Option("--player", "-p", help="Who's sorry")] = "",
+    player: Annotated[str, typer.Option("--player", "-p", help="Player apologizing")] = "",
 ) -> None:
     """Apologize for a broken promise. Once per game. Costs 1 coin."""
     result = _load_game()
@@ -2400,7 +2516,7 @@ def treaty(
 
         case "keep":
             if not text:
-                _fail(treaty_error("Specify the treaty ID, e.g. 'sov treaty keep t_0001'"))
+                _fail(treaty_error("Specify the treaty ID, e.g. `sov treaty keep t_0001`."))
             t = next(
                 (t for t in source.active_treaties if t.treaty_id == text),
                 None,
@@ -2426,7 +2542,11 @@ def treaty(
         case "list":
             treaties = treaty_list(source)
             if not treaties:
-                console.print(f"  {source.name} has no treaties.")
+                console.print(
+                    f"  {source.name} has no treaties. Try "
+                    "`sov treaty make 'mutual aid' --with <player> "
+                    "--stake '2 coins' --their-stake '1 wood'`."
+                )
                 return
             table = Table(title=f"{source.name}'s Treaties")
             table.add_column("ID", style="bold")
@@ -2517,7 +2637,7 @@ def toast(
 
     if target.toasted:
         console.print(f"  {target.name} has already been toasted this game.")
-        console.print("  [dim]One toast per player. Make it count.[/dim]")
+        console.print("  [dim]One toast per player. Try `sov toast <other-player>` instead.[/dim]")
         raise typer.Exit(0)
 
     target.toasted = True
@@ -2697,7 +2817,13 @@ def _update_season(
 def game_end(
     do_anchor: Annotated[
         bool,
-        typer.Option("--anchor", help="Stamp the final hash on XRPL Testnet"),
+        typer.Option(
+            "--anchor",
+            help=(
+                "Stamp the final hash on XRPL (testnet by default; honors "
+                "`SOV_XRPL_NETWORK` and `--network`)."
+            ),
+        ),
     ] = False,
 ) -> None:
     """End the game. Final recap, Story Points, season standings, FINAL proof."""
@@ -2833,9 +2959,9 @@ def game_end(
             console.print(
                 "\n  [yellow]No wallet seed found for anchoring.[/yellow]"
                 "\n  [dim]Pick one of:[/dim]"
-                "\n  [dim]  - Generate a Testnet wallet:  sov wallet[/dim]"
-                "\n  [dim]  - Set XRPL_SEED in your environment[/dim]"
-                "\n  [dim]  - Save a seed at .sov/wallet_seed.txt[/dim]"
+                "\n  [dim]  - Generate a Testnet wallet with `sov wallet`.[/dim]"
+                "\n  [dim]  - Set `XRPL_SEED` in your environment.[/dim]"
+                "\n  [dim]  - Save a seed at `.sov/wallet_seed.txt`.[/dim]"
                 "\n  [dim]The final proof is already saved locally — anchoring is optional.[/dim]"
             )
         else:
@@ -2915,8 +3041,8 @@ def game_end(
         Panel(
             "  Game over. Story Points recorded.\n"
             "  Share a screenshot of this recap with your group.\n\n"
-            "  [dim]Start the next game: sov new -p ...[/dim]\n"
-            "  [dim]Season standings: cat .sov/season.json[/dim]",
+            "  [dim]Start the next game: `sov new -p Alice -p Bob`.[/dim]\n"
+            "  [dim]Season standings: `sov season-postcard`.[/dim]",
             title="That's a wrap",
         )
     )
@@ -2927,7 +3053,7 @@ def season_postcard() -> None:
     """Share your season in one screenshot."""
     if not SEASON_FILE.exists():
         console.print("  [yellow]No season yet.[/yellow]")
-        console.print("  [dim]Finish a game with sov game-end to start tracking.[/dim]")
+        console.print("  [dim]Finish a game with `sov game-end` to start tracking.[/dim]")
         raise typer.Exit(0)
 
     # Stage 7-B amend: read via the schema-version-tolerant helper so this
@@ -3031,7 +3157,7 @@ def recap() -> None:
     state, _ = result
 
     if not state.log:
-        console.print("  Nothing has happened yet.")
+        console.print("  Nothing has happened yet. Run `sov turn` to take your first action.")
         return
 
     # Show log entries from the current round (and previous if we just started)
@@ -3253,8 +3379,8 @@ def upgrade(
                 target_norm,
                 3,
                 target_player.reputation,
-                "Earn Rep by keeping promises ('sov promise keep ...') "
-                "or apologizing ('sov apologize ...').",
+                "Earn Rep by keeping promises (`sov promise keep <text>`) "
+                "or apologizing (`sov apologize <name>`).",
             )
         )
 
@@ -3270,13 +3396,14 @@ def upgrade(
         coin_unit = "coin" if coins_short == 1 else "coins"
         if res_short > 0 and coins_short > 0:
             hint = (
-                f"Earn {coins_short} more {coin_unit} via 'sov market sell', "
-                f"then pick up {res_short} {res_name} via 'sov market buy {res_name}'."
+                f"Earn {coins_short} more {coin_unit} via `sov market sell`, "
+                f"then pick up {res_short} {res_name} via "
+                f"`sov market buy {res_name}`."
             )
         elif res_short > 0:
-            hint = f"Pick up {res_short} {res_name} via 'sov market buy {res_name}'."
+            hint = f"Pick up {res_short} {res_name} via `sov market buy {res_name}`."
         else:
-            hint = f"Earn {coins_short} more {coin_unit} via 'sov market sell'."
+            hint = f"Earn {coins_short} more {coin_unit} via `sov market sell`."
         _fail(
             insufficient_resources_error(
                 target_norm,
@@ -3588,7 +3715,7 @@ def _print_brief_status(state: GameState) -> None:
     if pending:
         n = len(pending)
         plural = "s" if n != 1 else ""
-        console.print(f"[dim]  {n} pending anchor{plural} — run sov anchor to flush.[/dim]")
+        console.print(f"[dim]  {n} pending anchor{plural} — run `sov anchor` to flush.[/dim]")
     # v2.1: daemon presence line — surfaced in both --brief and full modes
     # so audit-tier consumers know whether a daemon is up without grepping
     # `sov daemon status` separately.
@@ -3777,7 +3904,31 @@ _SCENARIOS = [
 
 _SCENARIO_BY_SLUG = {s["slug"]: s for s in _SCENARIOS}
 
-SOV_VERSION = "1.4.7"
+
+def _resolve_version() -> str:
+    """Resolve the running CLI's version dynamically.
+
+    Reads the installed ``sovereignty-game`` distribution metadata first
+    (the canonical answer for an installed package), then falls back to
+    parsing ``pyproject.toml`` so a checkout-only / editable install still
+    surfaces the right version. Mirrors the strategy used by
+    ``_version_callback`` so the ``--version`` flag and the diagnostic
+    surfaces (``sov self-check``, ``sov support-bundle``, ``sov feedback``)
+    all agree.
+
+    Replaces the previous hard-coded ``SOV_VERSION = "1.4.7"`` constant
+    that drifted four releases stale by v2.0.2 (CLI-C-036).
+    """
+    try:
+        return _pkg_version("sovereignty-game")
+    except Exception:
+        pyproject = Path(__file__).parent.parent / "pyproject.toml"
+        try:
+            content = pyproject.read_text(encoding="utf-8")
+        except OSError:
+            return "unknown"
+        match = re.search(r'^version\s*=\s*"([^"]+)"', content, re.MULTILINE)
+        return match.group(1) if match else "unknown"
 
 
 # ---------------------------------------------------------------------------
@@ -4169,7 +4320,11 @@ def games_cmd(
         return
 
     if not saved:
-        console.print("  No saved games. Run `sov new` to start one.")
+        console.print(
+            "  No saved games. Try `sov tutorial` for a 60-second walkthrough, "
+            "`sov play campfire_v1` for solo-vs-AI, or `sov new -p Alice -p Bob` "
+            "to start a real game."
+        )
         return
 
     table = Table(title="Saved Games")
@@ -4201,7 +4356,12 @@ def games_cmd(
 def resume_cmd(
     game_id: Annotated[
         str,
-        typer.Argument(help="Game id to resume (e.g. s42)."),
+        typer.Argument(
+            help=(
+                "Game id to resume (format `s<seed>`, e.g. `s42`). "
+                "Run `sov games` to list saved games."
+            ),
+        ),
     ],
 ) -> None:
     """Switch the active game. Game must already exist on disk."""
@@ -4314,12 +4474,13 @@ def feedback() -> None:
                 anchor_line = f" | [XRPL TX]({url})"
 
     # Build markdown output (plain text, no Rich)
+    sov_version = _resolve_version()
     lines = [
         "## Sovereignty Play Report",
         "",
         "| Field | Value |",
         "|-------|-------|",
-        f"| Version | {SOV_VERSION} |",
+        f"| Version | {sov_version} |",
         f"| Tier | {tier} |",
         f"| Recipe | {recipe_used} |",
         f"| Seed | {seed_str} |",
@@ -4343,7 +4504,7 @@ def feedback() -> None:
     lines.append(f"{proof_line}{anchor_line}")
     lines.append("")
     lines.append("---")
-    lines.append(f"*Generated by `sov feedback` v{SOV_VERSION}*")
+    lines.append(f"*Generated by `sov feedback` v{sov_version}*")
 
     output = "\n".join(lines)
     console.print(output, highlight=False)
@@ -4366,8 +4527,8 @@ def feedback() -> None:
 daemon_app = typer.Typer(
     name="daemon",
     help=(
-        "Local HTTP/JSON daemon for Tauri shell + audit viewer (v2.1). "
-        "With no subcommand, runs the server in the foreground; "
+        "Local HTTP/JSON daemon for the Tauri shell and audit viewer. "
+        "Without a subcommand, runs in the foreground (dev mode); "
         "use `start` / `stop` / `status` for the detached lifecycle."
     ),
     invoke_without_command=True,
@@ -4406,8 +4567,8 @@ def _daemon_root(
         typer.Option(
             "--network",
             help=(
-                "XRPL network: testnet, mainnet, or devnet. "
-                "Per-invocation override (precedence #1)."
+                "XRPL network: testnet, mainnet, or devnet. Overrides "
+                "`SOV_XRPL_NETWORK`. Default: testnet."
             ),
         ),
     ] = None,
@@ -4450,8 +4611,8 @@ def daemon_start(
         typer.Option(
             "--network",
             help=(
-                "XRPL network: testnet, mainnet, or devnet. "
-                "Per-invocation override (precedence #1)."
+                "XRPL network: testnet, mainnet, or devnet. Overrides "
+                "`SOV_XRPL_NETWORK`. Default: testnet."
             ),
         ),
     ] = None,

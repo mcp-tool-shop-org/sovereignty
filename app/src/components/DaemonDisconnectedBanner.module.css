@@ -1,0 +1,37 @@
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--sov-warn) 18%, var(--sov-bg-elevated));
+  border-bottom: 1px solid var(--sov-warn);
+  color: var(--sov-fg);
+  font-size: 0.95rem;
+}
+
+.message {
+  flex: 1;
+  margin: 0;
+}
+
+.message code {
+  font-family: var(--sov-font-mono);
+  background: var(--sov-bg-elevated);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+
+.button {
+  background: var(--sov-bg);
+  color: var(--sov-fg);
+  border: 1px solid var(--sov-border);
+  border-radius: 4px;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.button:hover {
+  background: var(--sov-bg-elevated);
+}

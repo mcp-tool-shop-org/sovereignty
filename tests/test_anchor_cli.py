@@ -264,26 +264,24 @@ def test_anchor_legacy_proof_file_emits_deprecation_warning(
 
     factory = _make_mock_transport_factory(txid="LEGACYTX")
 
-    captured_warnings: list[tuple[Any, type]] = []
-    real_warn = __import__("warnings").warn
+    # Use catch_warnings so the deprecation propagates to the recorder
+    # without being promoted to an error by the CI ``-W error`` filter
+    # (which converts a re-raised ``warnings.warn`` into a hard exception
+    # that CliRunner stuffs into ``result.exception``).
+    import warnings
 
-    def _capturing_warn(message: Any, category: type = UserWarning, **kwargs: Any) -> None:
-        captured_warnings.append((message, category))
-        real_warn(message, category, **kwargs)
-
-    with (
-        patch("sov_transport.xrpl.XRPLTransport", factory),
-        patch("warnings.warn", side_effect=_capturing_warn),
-    ):
-        result = runner.invoke(app, ["anchor", str(proof_path)])
+    with warnings.catch_warnings(record=True) as captured:
+        warnings.simplefilter("always")
+        with patch("sov_transport.xrpl.XRPLTransport", factory):
+            result = runner.invoke(app, ["anchor", str(proof_path)])
 
     assert result.exit_code == 0, f"output: {result.output!r}"
     # Single anchor (legacy path) → transport.anchor, NOT anchor_batch.
     factory.return_value.anchor.assert_called_once()
     factory.return_value.anchor_batch.assert_not_called()
     # DeprecationWarning was emitted.
-    assert any(cat is DeprecationWarning for _, cat in captured_warnings), (
-        f"expected DeprecationWarning; got: {captured_warnings!r}"
+    assert any(issubclass(w.category, DeprecationWarning) for w in captured), (
+        f"expected DeprecationWarning; got: {[w.category for w in captured]!r}"
     )
 
 
@@ -458,9 +456,16 @@ def test_anchor_legacy_clears_pending_after_success(
     # Sanity: pending starts populated.
     assert set(read_pending_anchors(game_id).keys()) == {"1", "2"}
 
+    # The legacy path emits DeprecationWarning; catch it so the CI
+    # ``-W error::DeprecationWarning`` filter doesn't promote it to an
+    # exception inside CliRunner.
+    import warnings
+
     factory = _make_mock_transport_factory(txid="LEGACYTX")
-    with patch("sov_transport.xrpl.XRPLTransport", factory):
-        result = runner.invoke(app, ["anchor", str(proof_path)])
+    with warnings.catch_warnings():
+        warnings.simplefilter("always")
+        with patch("sov_transport.xrpl.XRPLTransport", factory):
+            result = runner.invoke(app, ["anchor", str(proof_path)])
 
     assert result.exit_code == 0, f"output: {result.output!r}"
     factory.return_value.anchor.assert_called_once()

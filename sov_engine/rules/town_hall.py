@@ -77,7 +77,9 @@ def new_town_hall_game(
 ) -> tuple[GameState, GameRng]:
     """Create a fresh Town Hall game — Campfire + Market Board."""
     if len(player_names) < 2 or len(player_names) > 4:
-        raise ValueError("Town Hall supports 2-4 players")
+        raise ValueError(
+            "Town Hall supports 2-4 players. Run `sov new -p Alice -p Bob` for 2-player."
+        )
 
     rng = GameRng(seed)
     config = GameConfig(seed=seed, ruleset="town_hall_v1")

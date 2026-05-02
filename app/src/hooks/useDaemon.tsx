@@ -4,8 +4,18 @@
 // with --readonly (default per spec §4). Routes consume via useDaemon().
 
 import { type ReactNode, createContext, useCallback, useContext, useEffect, useState } from "react";
+import { formatError } from "../lib/errorFormat";
 import { daemonStart, daemonStatus, daemonStop, getDaemonConfig } from "../lib/invoke";
 import type { DaemonConfig, DaemonState, XRPLNetwork } from "../types/daemon";
+
+/** Compose a typed daemon/shell error into one rendered string. Until the
+ *  banner UI is split into separate message + hint slots, the hint trails
+ *  the message in the same `error` field — surfaces the recovery copy that
+ *  was previously dropped by `String(e)`. WEB-UI-C-007. */
+function renderTypedError(e: unknown): string {
+  const { message, hint } = formatError(e);
+  return hint ? `${message} — ${hint}` : message;
+}
 
 export type DaemonUiStatus = "loading" | DaemonState | "error";
 
@@ -43,7 +53,7 @@ export function DaemonProvider({ children, autoStart = true }: DaemonProviderPro
       }
     } catch (e) {
       setStatus("error");
-      setError(String(e));
+      setError(renderTypedError(e));
     }
   }, []);
 
@@ -54,7 +64,7 @@ export function DaemonProvider({ children, autoStart = true }: DaemonProviderPro
       setStatus("running");
       setError(null);
     } catch (e) {
-      setError(String(e));
+      setError(renderTypedError(e));
       throw e;
     }
   }, []);
@@ -65,7 +75,7 @@ export function DaemonProvider({ children, autoStart = true }: DaemonProviderPro
       setStatus("none");
       setConfig(null);
     } catch (e) {
-      setError(String(e));
+      setError(renderTypedError(e));
       throw e;
     }
   }, []);
@@ -86,7 +96,7 @@ export function DaemonProvider({ children, autoStart = true }: DaemonProviderPro
         }
       } catch (e) {
         if (cancelled) return;
-        setError(String(e));
+        setError(renderTypedError(e));
         setStatus("error");
       }
     })();

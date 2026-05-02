@@ -69,7 +69,10 @@ def _validate_game_id(game_id: str) -> None:
     boundaries (defense in depth).
     """
     if not isinstance(game_id, str) or not VALID_GAME_ID_PATTERN.fullmatch(game_id):
-        raise ValueError(f"invalid game_id (must match s<integer>, got): {game_id!r}")
+        raise ValueError(
+            f"invalid game_id {game_id!r}: must match s<digits> "
+            f"(e.g. s42). Run `sov games --json` to list valid game-ids."
+        )
 
 
 def atomic_write_text(path: Path, content: str, *, mode: int | None = None) -> None:
@@ -420,7 +423,7 @@ def migrate_v1_layout() -> str | None:
     except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
         logger.warning(
             "migrate_v1_layout.skip path=%s exc=%s detail=%s "
-            "(unreadable v1 state.json — leaving layout alone)",
+            "(unreadable v1 state.json; leaving layout alone)",
             legacy_state,
             type(exc).__name__,
             exc,
@@ -461,8 +464,8 @@ def migrate_v1_layout() -> str | None:
     except OSError as exc:
         logger.error(
             "migrate_v1_layout.partial_failure target=%s exc=%s detail=%s "
-            "— breadcrumb at %s names the in-flight step. The next invocation "
-            "will retry the remaining moves.",
+            "(breadcrumb at %s names the in-flight step; next invocation "
+            "will retry the remaining moves)",
             target,
             type(exc).__name__,
             exc,
@@ -475,7 +478,7 @@ def migrate_v1_layout() -> str | None:
 
     # One-line stderr breadcrumb so operators know what happened.
     print(
-        f"[multi-save] migrated v1 layout → .sov/games/{game_id}/",
+        f"sovereignty: migrated v1 layout to .sov/games/{game_id}/",
         file=sys.stderr,
     )
     return game_id
@@ -521,7 +524,7 @@ def _recover_partial_migration(crumb: dict[str, object]) -> str | None:
     except OSError as exc:
         logger.error(
             "migrate_v1_layout.recover.partial_failure target=%s exc=%s detail=%s "
-            "— breadcrumb retained; next invocation will retry.",
+            "(breadcrumb retained; next invocation will retry)",
             target,
             type(exc).__name__,
             exc,
@@ -531,7 +534,7 @@ def _recover_partial_migration(crumb: dict[str, object]) -> str | None:
     _clear_migration_breadcrumb()
     set_active_game_id(target_game_id)
     print(
-        f"[multi-save] completed interrupted migration → .sov/games/{target_game_id}/",
+        f"sovereignty: completed interrupted migration to .sov/games/{target_game_id}/",
         file=sys.stderr,
     )
     return target_game_id
@@ -633,7 +636,7 @@ def _quarantine_malformed(path: Path) -> Path | None:
     except OSError as exc:
         logger.error(
             "pending_anchors.quarantine.failed path=%s exc=%s detail=%s "
-            "(proceeding with overwrite — malformed bytes lost)",
+            "(proceeding with overwrite; malformed bytes lost)",
             path,
             type(exc).__name__,
             exc,

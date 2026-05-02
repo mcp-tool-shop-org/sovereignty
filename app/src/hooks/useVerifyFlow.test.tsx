@@ -246,7 +246,10 @@ describe("useVerifyFlow", () => {
     }
   });
 
-  it("transitions to failed:unreachable when proof fetch errors", async () => {
+  it("transitions to failed:daemon_unreachable when proof fetch errors", async () => {
+    // WEB-UI-C-006: proof endpoint is daemon-side, so a fetch reject here
+    // means the daemon isn't reachable (down, restarting, 5xx). Distinct
+    // from chain_unreachable.
     fetchMock.mockRejectedValue(new Error("network down"));
 
     const { result } = renderHook(() => useVerifyFlow());
@@ -257,7 +260,41 @@ describe("useVerifyFlow", () => {
     const state = result.current.perRound.get("1");
     expect(state?.kind).toBe("failed");
     if (state?.kind === "failed") {
-      expect(state.reason).toBe("unreachable");
+      expect(state.reason).toBe("daemon_unreachable");
+    }
+  });
+
+  it("transitions to failed:chain_unreachable when anchor-status fetch errors", async () => {
+    // WEB-UI-C-006: anchor-status failure (after a successful proof fetch)
+    // surfaces transient chain lookup failure, distinct from daemon_unreachable.
+    const envelope = { game_id: "s42", round: "1" };
+    const expectedHash = await sha256Hex(canonicalJson(envelope));
+    const proof = { ...envelope, envelope_hash: expectedHash };
+
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/proofs/1")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(proof), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      }
+      if (url.includes("/anchor-status/1")) {
+        return Promise.reject(new Error("chain rpc 503"));
+      }
+      return Promise.reject(new Error("unexpected"));
+    });
+
+    const { result } = renderHook(() => useVerifyFlow());
+    await act(async () => {
+      await result.current.start("s42", ["1"]);
+    });
+
+    const state = result.current.perRound.get("1");
+    expect(state?.kind).toBe("failed");
+    if (state?.kind === "failed") {
+      expect(state.reason).toBe("chain_unreachable");
     }
   });
 

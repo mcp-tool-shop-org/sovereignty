@@ -76,10 +76,34 @@ jobs:
         if: matrix.python-version == '3.12'
         run: uv run mypy sov_engine sov_transport sov_cli sov_daemon
 
+      # Stage C voice anti-pattern gate. Sub-second grep over user-facing
+      # strings; runs before pytest so a copy-style regression fails fast
+      # instead of waiting on the full suite. Single-leg policy mirrors
+      # mypy: voice copy is a source-tree property, not a Python version
+      # property — running it 3x adds zero signal. CI-TOOLING-C-001.
+      - name: Voice anti-pattern gate
+        if: matrix.python-version == '3.12'
+        timeout-minutes: 1
+        run: bash scripts/check-voice.sh
+
       # Curated -W error filters: catch our own deprecations without failing
-      # on third-party noise (parking F-593530-014).
+      # on third-party noise (parking F-593530-014). The websockets/uvicorn
+      # ignores come AFTER the error filters because pytest registers -W
+      # flags at the front of ``warnings.filters`` in CLI order, so the
+      # last-listed (=most-specific) filter wins for that module while the
+      # broad error filter still catches our own deprecations elsewhere.
+      # uvicorn 0.46 imports ``websockets.legacy`` + ``websockets.server``,
+      # both deprecated in websockets 14.0; the warning fires inside the
+      # SSE fixture's asyncio uvicorn-startup task, which pyproject-level
+      # filterwarnings can't reach (the inner task has its own context).
       - name: Run tests
-        run: uv run pytest tests/ -v -W error::DeprecationWarning -W error::PendingDeprecationWarning
+        run: |
+          uv run pytest tests/ -v \
+            -W error::DeprecationWarning \
+            -W error::PendingDeprecationWarning \
+            -W "ignore::DeprecationWarning:websockets" \
+            -W "ignore::DeprecationWarning:websockets.legacy" \
+            -W "ignore::DeprecationWarning:uvicorn.protocols.websockets.websockets_impl"
 
   # Wave 4 (v2.1) — Tauri shell + frontend gates. Linux-only by org policy
   # (.claude/rules/github-actions.md: macos ≈ 10× cost; cross-platform

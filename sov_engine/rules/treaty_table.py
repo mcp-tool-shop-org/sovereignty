@@ -72,7 +72,9 @@ def new_treaty_table_game(
 ) -> tuple[GameState, GameRng]:
     """Create a Treaty Table game — Town Hall + Treaty Stakes."""
     if len(player_names) < 2 or len(player_names) > 4:
-        raise ValueError("Treaty Table supports 2-4 players")
+        raise ValueError(
+            "Treaty Table supports 2-4 players. Run `sov new -p Alice -p Bob` for 2-player."
+        )
 
     rng = GameRng(seed)
     config = GameConfig(seed=seed, ruleset="treaty_table_v1")

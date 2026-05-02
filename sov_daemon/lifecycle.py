@@ -435,7 +435,10 @@ def _wait_for_handshake() -> dict[str, Any]:
             return info
         time.sleep(_START_HANDSHAKE_POLL_INTERVAL_SECONDS)
     raise RuntimeError(
-        f"daemon did not write .sov/daemon.json within {_START_HANDSHAKE_TIMEOUT_SECONDS:.0f}s."
+        f"daemon did not write .sov/daemon.json within "
+        f"{_START_HANDSHAKE_TIMEOUT_SECONDS:.0f}s. "
+        "Check the `python -m sov_daemon` import path is reachable; "
+        "run `sov daemon status` to inspect any partial state."
     )
 
 
@@ -555,10 +558,17 @@ def stop_daemon() -> bool:
             return True
         time.sleep(_STOP_POLL_INTERVAL_SECONDS)
 
+    # DAEMON-C-012 (Wave 11): cross-platform kill hint. ``kill -9`` is
+    # POSIX-only; Windows operators get ``taskkill /F /PID`` instead so
+    # the recovery command actually runs on the host they're on.
+    if sys.platform == "win32":
+        kill_hint = f"taskkill /F /PID {pid}"
+    else:
+        kill_hint = f"kill -9 {pid}"
     raise RuntimeError(
         f"daemon pid {pid} did not exit within "
         f"{_STOP_POLL_TIMEOUT_SECONDS:.0f}s after SIGTERM. "
-        "Investigate or kill by hand: kill -9 " + str(pid)
+        f"Investigate or kill by hand: {kill_hint}"
     )
 
 

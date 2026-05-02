@@ -33,22 +33,22 @@
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## Install in 30 seconds
+## Install + first game
 
-The fastest way — Python users:
+The fastest path — install, then start playing:
 
 ```bash
-pipx install sovereignty-game
-sov tutorial
+pip install sovereignty-game
+sov play campfire_v1
 ```
 
-No Python? No problem. The `npx` path downloads a prebuilt binary:
+`sov play campfire_v1` is the no-config quickstart — one human plus a default opponent on the Campfire ruleset. For multi-player at the table, use `sov new -p Alice -p Bob -p Carol`. For a guided 60-second walkthrough, use `sov tutorial`.
+
+No Python? The `npx` path downloads a prebuilt binary:
 
 ```bash
 npx @mcptoolshop/sovereignty tutorial
 ```
-
-That's it. `sov tutorial` walks you through the rules in about 60 seconds.
 
 ## Your first game
 
@@ -84,11 +84,11 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 
 Repeat for 15 rounds. `sov game-end` prints the final scores.
 
-- **Multiple saved games** (v2.1+): `sov games` lists saves, `sov resume <game-id>` switches between them.
-- **Batched anchoring** (v2.1+): `sov anchor` at game-end batches all pending rounds into a single XRPL transaction — one verifiable chain pointer per game, not one per round. Use `sov anchor --checkpoint` for mid-game flush.
+- **Multiple saved games** (v2.1+): `sov games` lists saves; `sov resume <game-id>` switches between them.
+- **Batched anchoring** (v2.1+): `sov anchor` at game-end batches all pending rounds into a single XRPL transaction — one verifiable chain pointer per game. Use `sov anchor --checkpoint` for mid-game flush.
 - **Network selection** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (or `SOV_XRPL_NETWORK` env var; default `testnet`).
-- **Daemon mode** (v2.1+, optional): `sov daemon start` runs a localhost HTTP/JSON server for desktop integration and background chain polling. See [Daemon mode](#daemon-mode-optional) below.
-- **Tauri 2 desktop shell** (v2.1+, optional): `npm --prefix app run tauri dev`. See [Desktop shell](#desktop-shell-optional-v21) below.
+- **Daemon mode** (v2.1+, optional): `sov daemon start` runs a localhost HTTP/JSON server for desktop integration and background chain polling. See [Daemon mode](#daemon-mode-optional-v21) below.
+- **Audit Viewer desktop app** (v2.1+, optional): `npm --prefix app run tauri dev`. See [Desktop app](#desktop-app-optional-v21) below.
 
 > Want a guided in-app walkthrough first? Run `sov tutorial`.
 > Want to play with no software at all? See [Print & Play](docs/print-and-play.md).
@@ -109,10 +109,12 @@ The game works fully on the table.
 <summary>Full command reference</summary>
 
 ```bash
+sov play campfire_v1                 # no-config quickstart (v2.1+) — alias for sov new
 sov new --recipe cozy -p ...         # curated vibe (cozy/spicy/market/promise)
 sov new --tier treaty-table -p ...   # pick a tier
 sov new --code "SOV|..." -p ...      # play from a share code
 sov games                            # list saved games (multi-save, v2.1+)
+sov games --json                     # machine-readable saves list (v2.1+)
 sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
@@ -133,8 +135,16 @@ sov vote mvp Alice                   # table votes: mvp/chaos/promise
 sov toast Alice                      # +1 Rep, once per player per game
 sov end-round                        # generate round proof
 sov game-end                         # final scores + Story Points
+sov anchor                           # batch pending rounds to XRPL (v2.1+)
+sov anchor --checkpoint              # mid-game flush (v2.1+)
+sov anchor --network mainnet         # network selection (v2.1+)
+sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
+sov daemon status                    # running | stale | none
+sov daemon stop                      # SIGTERM + cleanup
 sov postcard                         # shareable summary
-sov season-postcard                  # season standings across games
+sov season                           # season standings across games (v2.1+)
+sov season-postcard                  # printable season recap
 sov feedback                         # issue-ready play report
 sov scenario list                    # browse scenario packs
 sov scenario code cozy-night -s 42   # generate a share code
@@ -148,9 +158,9 @@ sov support-bundle                   # diagnostic zip for bug reports
 
 The console keeps score. You keep your word.
 
-## Daemon mode (optional)
+## Daemon mode (optional, v2.1+)
 
-For desktop integration (Tauri shell, audit viewer) or background chain polling, run sovereignty as a localhost HTTP daemon:
+For desktop integration (Audit Viewer, Tauri shell) or background chain polling, run sovereignty as a localhost HTTP daemon:
 
 ```bash
 pip install 'sovereignty-game[daemon]'
@@ -162,9 +172,9 @@ sov daemon stop
 
 Daemon binds to `127.0.0.1` on a random port; connection details (port + bearer token) live in `.sov/daemon.json`. One daemon per project root. See [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) for the full IPC contract.
 
-## Desktop shell (optional, v2.1+)
+## Desktop app (optional, v2.1+)
 
-The v2.1 Tauri 2 shell runs the audit viewer + game shell on top of the daemon. Local dev:
+The Audit Viewer is the v2.1 desktop app — a Tauri shell (Rust + webview) that runs the audit viewer and a read-only game view on top of the daemon. Local dev:
 
 ```bash
 # 1. Install Python + daemon deps
@@ -178,11 +188,11 @@ cargo build --manifest-path app/src-tauri/Cargo.toml
 npm --prefix app run tauri dev
 ```
 
-The shell auto-starts a readonly daemon on launch and auto-stops it on exit. Externally-started daemons (`sov daemon start`) stay alive across shell restarts.
+The Tauri shell auto-starts a readonly daemon on launch and auto-stops it on exit. Externally-started daemons (`sov daemon start`) stay alive across shell restarts.
 
-Cross-platform release binaries land in v2.1 final (Wave 11). For now, the shell runs from source on the dev machine. See [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) for the full contract.
+Currently runs from source for developers (`npm --prefix app run tauri dev`); signed binaries ship in v2.1 final via Wave 11. See [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) for the full contract.
 
-The shell ships with three views:
+The Audit Viewer ships with three views:
 
 - **`/audit`** — XRPL-anchored proof viewer. Collapsible per-game list, per-round anchor status, "Verify all rounds" runs local proof recompute + chain lookup in series. The auditor's view: confirm a game ran honestly without reading raw JSON.
 - **`/game`** — passive real-time state display for the active game. Player resource cards, round timeline, last-20 SSE events log. Read-only; play in the CLI in another terminal.

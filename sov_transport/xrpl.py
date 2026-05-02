@@ -401,17 +401,19 @@ class XRPLTransport(LedgerTransport):
                 raise TransportError(
                     "XRPL submit_and_wait response was successful but missing "
                     f"the expected result dict (got {type(result).__name__}). "
-                    "This is unexpected; please file an issue at "
+                    "This is an unexpected response shape from xrpl-py. "
+                    "File an issue at "
                     "https://github.com/mcp-tool-shop-org/sovereignty/issues "
-                    "with the xrpl-py version you have installed."
+                    "with your installed xrpl-py version."
                 )
             tx_hash = result.get("hash")
             if not isinstance(tx_hash, str) or not tx_hash:
                 shape_keys = sorted(result.keys()) if result else []
                 raise TransportError(
-                    "XRPL response was successful but missing 'hash' field. "
+                    "XRPL response was successful but missing the 'hash' field. "
                     f"Response shape (keys only): {shape_keys}. "
-                    "This is unexpected; please file an issue at "
+                    "This is an unexpected response shape from xrpl-py. "
+                    "File an issue at "
                     "https://github.com/mcp-tool-shop-org/sovereignty/issues "
                     "with this shape and your xrpl-py version."
                 )
@@ -510,10 +512,17 @@ class XRPLTransport(LedgerTransport):
                 # raised exception by xrpl-py. The chain has not given us
                 # a verdict; surface LOOKUP_FAILED so engine-side composition
                 # can render this differently from a real "not on chain".
+                # BRIDGE-C-005: log the cause category alongside the exception
+                # type so an operator triaging the log immediately sees why
+                # the lookup didn't reach a verdict (transient network vs
+                # malformed response). The engine still collapses to MISSING
+                # for the public AnchorStatus contract.
                 logger.warning(
-                    "is_anchored_on_chain.lookup_failed txid=%s exc=%s",
+                    "is_anchored_on_chain.lookup_failed txid=%s "
+                    "category=network_unreachable exc=%s detail=%s",
                     txid,
                     type(e).__name__,
+                    str(e) or "no detail",
                 )
                 return ChainLookupResult.LOOKUP_FAILED
 
@@ -534,10 +543,15 @@ class XRPLTransport(LedgerTransport):
                         err_token = result_for_err.get("error")
                     if err_token == "txnNotFound":
                         return ChainLookupResult.NOT_FOUND
+                    # BRIDGE-C-005: distinguish a known RPC error token from a
+                    # missing/malformed envelope so the operator can tell
+                    # whether the chain refused the lookup or returned junk.
+                    category = "rpc_error" if err_token else "malformed_response"
                     logger.warning(
-                        "is_anchored_on_chain.lookup_failed txid=%s error=%s",
+                        "is_anchored_on_chain.lookup_failed txid=%s category=%s error=%s",
                         txid,
-                        err_token,
+                        category,
+                        err_token or "none",
                     )
                     return ChainLookupResult.LOOKUP_FAILED
 
@@ -635,8 +649,11 @@ def fund_dev_wallet(network: XRPLNetwork = XRPLNetwork.TESTNET) -> tuple[str, st
     """
     if network is XRPLNetwork.MAINNET:
         raise MainnetFaucetError(
-            "mainnet has no faucet — set XRPL_SEED to a funded mainnet wallet, "
-            "or run sov wallet --network testnet."
+            "Mainnet has no faucet. Set `XRPL_SEED` to a funded mainnet "
+            "wallet seed, or run `sov wallet --network testnet` to mint "
+            "a free testnet wallet. See "
+            "https://github.com/mcp-tool-shop-org/sovereignty#network-selection "
+            "for mainnet seed management."
         )
 
     try:

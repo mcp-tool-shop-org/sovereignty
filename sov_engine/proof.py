@@ -81,22 +81,56 @@ def _compute_envelope_hash(envelope: dict[str, Any]) -> str:
     return hashlib.sha256(payload_json.encode("utf-8")).hexdigest()
 
 
+def _render_proof_path(proof_path: Path) -> str:
+    """Render ``proof_path`` for display in error messages.
+
+    BACKEND-C-004: when the path lives under a ``.sov/`` ancestor, render
+    it relative to that ancestor's parent so the message shows the
+    canonical short form (``.sov/games/sNNN/proofs/round_001.proof.json``)
+    instead of an absolute path that may leak the operator's home dir to
+    support bundles. Otherwise fall back to the absolute path supplied by
+    the caller. Platform separators are honored — ``Path`` renders with
+    the platform-correct separator on both POSIX and Windows.
+    """
+    try:
+        absolute = proof_path.resolve()
+    except OSError:
+        return str(proof_path)
+    for ancestor in absolute.parents:
+        if ancestor.name == ".sov":
+            try:
+                return str(absolute.relative_to(ancestor.parent))
+            except ValueError:
+                break
+    return str(proof_path)
+
+
 def _load_proof(proof_path: Path) -> dict[str, Any]:
     """Load and validate the structural shape of a v2 proof file.
 
     Returns the parsed dict. Raises ``ProofFormatError`` for v1 / unknown
-    proof_version, missing required fields, or unparseable JSON.
+    proof_version, missing required fields, or unparseable JSON. Each
+    structural-error message names a recovery action so the user surface
+    (uncaught traceback or wrapped SovError fallback) carries an
+    actionable hint.
     """
+    rendered_path = _render_proof_path(proof_path)
     try:
         text = proof_path.read_text(encoding="utf-8")
         proof = json.loads(text)
     except (OSError, json.JSONDecodeError) as exc:
         raise ProofFormatError(
-            f"Could not read proof file {proof_path}: {type(exc).__name__}: {exc}"
+            f"Could not read proof file {rendered_path}: {type(exc).__name__}: {exc}. "
+            f"Regenerate with `sov end-round` from the original save, "
+            f"or report a bug if the file should be intact."
         ) from exc
 
     if not isinstance(proof, dict):
-        raise ProofFormatError(f"Proof file {proof_path} is not a JSON object.")
+        raise ProofFormatError(
+            f"Proof file {rendered_path} is not a JSON object — file may "
+            f"be truncated or corrupted. Regenerate with `sov end-round` "
+            f"from the original save."
+        )
 
     version = proof.get("proof_version")
     if version is None or version == 1:
@@ -107,14 +141,23 @@ def _load_proof(proof_path: Path) -> dict[str, Any]:
         )
     if version != PROOF_VERSION:
         raise ProofFormatError(
-            f"Unknown proof_version: {version} (this binary supports v{PROOF_VERSION})."
+            f"Unknown proof_version: {version} (this binary supports "
+            f"v{PROOF_VERSION}). Upgrade sovereignty if {version} is from a "
+            f"newer release, or regenerate with `sov end-round`."
         )
 
     for required in ("envelope_hash", "round", "game_id"):
         if required not in proof:
-            raise ProofFormatError(f"Proof file {proof_path} missing required field '{required}'.")
+            raise ProofFormatError(
+                f"Proof file {rendered_path} missing required field "
+                f"{required!r}. Regenerate with `sov end-round` from the "
+                f"original save."
+            )
     if not isinstance(proof["envelope_hash"], str):
-        raise ProofFormatError(f"Proof file {proof_path} 'envelope_hash' must be a string.")
+        raise ProofFormatError(
+            f"Proof file {rendered_path} 'envelope_hash' must be a string. "
+            f"Regenerate with `sov end-round` from the original save."
+        )
 
     return proof
 

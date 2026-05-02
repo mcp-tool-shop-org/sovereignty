@@ -59,7 +59,15 @@ export default function Game() {
     return (
       <main className={styles.main}>
         <Nav />
-        <EmptyState title="Daemon not running" body="Start the daemon to view the active game." />
+        <EmptyState
+          title="Daemon not running"
+          body={
+            <>
+              Run <code>sov daemon start</code> in your terminal, then come back here to watch the
+              game live.
+            </>
+          }
+        />
         {daemonError ? (
           <p className={styles.error} role="alert">
             {daemonError}

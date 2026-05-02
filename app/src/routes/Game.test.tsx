@@ -127,6 +127,17 @@ describe("Game /game route", () => {
     expect(screen.queryByText("food")).toBeNull();
   });
 
+  it("daemon-down empty state names `sov daemon start` (WEB-UI-C-002)", async () => {
+    mocks.daemonStatus.mockResolvedValue({ state: "none" });
+    mocks.daemonStart.mockRejectedValue(new Error("daemon start failed"));
+    vi.stubGlobal("fetch", makeFetch({ games: [] }));
+    renderGame();
+    await waitFor(() => {
+      expect(screen.getByText("Daemon not running")).toBeTruthy();
+    });
+    expect(screen.getByText("sov daemon start")).toBeTruthy();
+  });
+
   it("nav uses aria-current='page' for /game", async () => {
     vi.stubGlobal("fetch", makeFetch({ games: [] }));
     renderGame();

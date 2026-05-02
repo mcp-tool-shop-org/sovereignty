@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## v2.1.0 (unreleased)
 
+### Highlights
+
+Multiple saved games at once. Sovereignty now keeps every game you start under `.sov/games/<game-id>/`. List them with `sov games`, switch with `sov resume <game-id>`. Starting a new game no longer overwrites the old one. Existing v1 layouts (`.sov/game_state.json`) auto-migrate on first invocation — transparent, one-shot, with a stderr notice.
+
+Batched anchoring with one chain pointer per game. `sov anchor` at game-end now batches all pending rounds into a single XRPL transaction with N memos, instead of one transaction per round. A verifier needs one tx URL per game, not sixteen. Pending hashes queue in `pending-anchors.json`; `sov anchor --checkpoint` flushes mid-game when a checkpoint is needed.
+
+Network selection. `sov anchor --network testnet|mainnet|devnet` and the `SOV_XRPL_NETWORK` env var join the existing testnet default. Mainnet anchors cost real XRP; the network switcher in the desktop app asks for confirmation before crossing that boundary. `XRPLTransport(network=…)` replaces `XRPLTestnetTransport`.
+
+Optional daemon mode. `sov daemon start` runs sovereignty as a localhost HTTP/JSON server with bearer-token auth. Install with `pip install 'sovereignty-game[daemon]'`. Required by the desktop app; optional for everyone else. CLI-only users skip the dep cost.
+
+Audit Viewer desktop app. The Tauri shell ships three views: `/audit` (XRPL-anchored proof viewer with verify-all-rounds), `/game` (passive real-time state display for the active game), `/settings` (daemon config + network switcher with three guardrails). Currently runs from source for developers (`npm --prefix app run tauri dev`); signed binaries ship in v2.1 final via Wave 11.
+
+Migration + deprecation calendar. v1 game-state files (`.sov/game_state.json`) auto-migrate to the multi-save layout on first v2.1 invocation — transparent, one-shot, with a stderr notice. Four shims emit `DeprecationWarning` and remove in v2.2: `fund_testnet_wallet()`, `XRPLTestnetTransport`, `sov anchor <proof_file>` (single-round legacy form), `LedgerTransport.verify()`.
+
 ### Added
 
 - Multi-save model: persistence layer is now plural under `.sov/games/<game-id>/`. Switch between saved games with the new `sov resume <game-id>` command; list all saves with `sov games`.
@@ -51,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added (Wave 3)
 
-- `sov daemon` HTTP/JSON daemon: long-running localhost server (Starlette + uvicorn) for IPC-driven consumers (Tauri shell, audit viewer). 8 read endpoints + 2 write endpoints + SSE event stream.
+- `sov daemon` HTTP/JSON daemon: long-running localhost server (Starlette + uvicorn) for IPC-driven consumers (Tauri shell, Audit Viewer). 8 read endpoints + 2 write endpoints + SSE event stream.
 - `AsyncXRPLTransport`: real-async sibling to `XRPLTransport` using `xrpl-py.AsyncJsonRpcClient`. Same retry policy, secret scrub, and BatchEntry contract; used by daemon's anchor flow.
 - Shared internals module `sov_transport.xrpl_internals` lifted from `xrpl.py` — pure helpers + types consumed by sync + async impls. No behavior change in sync `XRPLTransport`.
 - `sov daemon start [--readonly] [--network <n>] [--seed-env VAR | --signer-file PATH]` — detached background daemon. Token + port written to `.sov/daemon.json`.
@@ -72,7 +86,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - One daemon per project root. Multi-daemon coordination is v2.2+.
 
 ### Added (Wave 4)
-- Tauri 2 desktop shell scaffold at `app/`: Rust shell hosts a webview window with React 19 + Vite 6 + TypeScript 5.7 frontend. Run locally with `npm --prefix app run tauri dev` after `npm install --prefix app && cargo build --manifest-path app/src-tauri/Cargo.toml`.
+- Tauri 2 desktop app scaffold at `app/`: the Tauri shell (Rust + webview container) hosts a React 19 + Vite 6 + TypeScript 5.7 frontend. Run locally with `npm --prefix app run tauri dev` after `npm install --prefix app && cargo build --manifest-path app/src-tauri/Cargo.toml`.
 - 4 Tauri commands for daemon discovery + lifecycle: `daemon_status`, `daemon_start(readonly, network)`, `daemon_stop`, `get_daemon_config`. Webview talks directly to daemon over HTTP/SSE for everything else (no Rust proxy hop).
 - Frontend hooks `useDaemon` (Context provider) + `useDaemonEvents` (SSE subscription) for v2.1 daemon connection state.
 - Typed daemon client (`app/src/lib/daemonClient.ts`) with bearer-token injection. Manual TypeScript mirror at `app/src/types/daemon.ts` of the daemon IPC contract.
