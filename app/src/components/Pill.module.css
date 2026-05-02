@@ -1,0 +1,38 @@
+.pill {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: var(--sov-bg-elevated);
+  border: 1px solid var(--sov-border);
+  color: var(--sov-fg);
+  font-family: var(--sov-font-mono);
+}
+
+.success {
+  background: color-mix(in srgb, var(--sov-success) 18%, var(--sov-bg-elevated));
+  border-color: var(--sov-success);
+  color: var(--sov-success);
+}
+
+.warn {
+  background: color-mix(in srgb, var(--sov-warn) 18%, var(--sov-bg-elevated));
+  border-color: var(--sov-warn);
+  color: var(--sov-warn);
+}
+
+.error {
+  background: color-mix(in srgb, var(--sov-error) 18%, var(--sov-bg-elevated));
+  border-color: var(--sov-error);
+  color: var(--sov-error);
+}
+
+.accent {
+  background: color-mix(in srgb, var(--sov-accent) 18%, var(--sov-bg-elevated));
+  border-color: var(--sov-accent);
+  color: var(--sov-accent);
+}
+
+.neutral {
+  /* uses base .pill — no override */
+}

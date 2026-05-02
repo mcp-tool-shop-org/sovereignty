@@ -1,0 +1,36 @@
+.details {
+  border: 1px solid var(--sov-border);
+  border-radius: var(--sov-radius);
+  background: var(--sov-bg-elevated);
+  margin-bottom: 0.5rem;
+}
+
+.summary {
+  cursor: pointer;
+  padding: 0.6rem 0.75rem;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary::before {
+  content: "▶";
+  display: inline-block;
+  font-size: 0.7em;
+  color: var(--sov-fg-muted);
+  transition: transform 0.15s ease;
+}
+
+.details[open] > .summary::before {
+  transform: rotate(90deg);
+}
+
+.body {
+  padding: 0.5rem 1rem 1rem 2rem;
+  border-top: 1px solid var(--sov-border);
+}

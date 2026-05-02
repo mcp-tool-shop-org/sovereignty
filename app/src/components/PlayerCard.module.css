@@ -1,0 +1,50 @@
+.card {
+  border: 1px solid var(--sov-border);
+  border-radius: var(--sov-radius);
+  background: var(--sov-bg-elevated);
+  padding: 0.85rem 1rem;
+  min-width: 180px;
+}
+
+.header {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--sov-accent);
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--sov-border);
+  padding-bottom: 0.3rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: max-content auto;
+  gap: 0.2rem 1rem;
+  font-family: var(--sov-font-mono);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.grid dt {
+  color: var(--sov-fg-muted);
+}
+
+.grid dd {
+  margin: 0;
+  text-align: right;
+  color: var(--sov-fg);
+}
+
+.resources {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--sov-border);
+}
+
+.resourcesTitle {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--sov-fg-muted);
+  margin: 0 0 0.3rem 0;
+  font-weight: normal;
+}

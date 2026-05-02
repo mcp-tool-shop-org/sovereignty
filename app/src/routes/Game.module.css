@@ -1,0 +1,57 @@
+.main {
+  padding: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.75rem 0 1rem 0;
+  border-bottom: 1px solid var(--sov-border);
+  padding-bottom: 0.6rem;
+}
+
+.pills {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.gameMeta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  align-items: center;
+  font-size: 0.95rem;
+}
+
+.gameId {
+  font-family: var(--sov-font-mono);
+  color: var(--sov-accent);
+}
+
+.muted {
+  color: var(--sov-fg-muted);
+}
+
+.players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.section {
+  margin-bottom: 1.5rem;
+}
+
+.h2 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.error {
+  color: var(--sov-error);
+  margin-bottom: 1rem;
+}

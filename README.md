@@ -182,6 +182,14 @@ The shell auto-starts a readonly daemon on launch and auto-stops it on exit. Ext
 
 Cross-platform release binaries land in v2.1 final (Wave 11). For now, the shell runs from source on the dev machine. See [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) for the full contract.
 
+The shell ships with three views:
+
+- **`/audit`** — XRPL-anchored proof viewer. Collapsible per-game list, per-round anchor status, "Verify all rounds" runs local proof recompute + chain lookup in series. The auditor's view: confirm a game ran honestly without reading raw JSON.
+- **`/game`** — passive real-time state display for the active game. Player resource cards, round timeline, last-20 SSE events log. Read-only; play in the CLI in another terminal.
+- **`/settings`** — daemon config display + network switcher (testnet / mainnet / devnet) with mainnet-confirmation guardrail.
+
+Full view spec at [docs/v2.1-views.md](docs/v2.1-views.md).
+
 ## How it works
 
 You start with **5 coins** and **3 reputation**. Roll a die, move around

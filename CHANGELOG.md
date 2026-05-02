@@ -90,6 +90,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Distribution (cross-platform release matrix, code signing, notarization, GitHub Release artifacts, npm-launcher Tauri-binary wrapper) is **out of scope for Wave 4** — coordinated as part of Wave 11 Treatment alongside the existing PyPI + npm-launcher CLI flow.
 - v2.1 ships React + Vite + TypeScript matching GlyphStudio's stack for skill compounding. Sovereignty is not a monorepo (single `app/`, npm not pnpm).
 
+### Added (Wave 5)
+- `/audit` view — XRPL-anchored proof viewer. Collapsible per-game list with per-round anchor status (`anchored` / `pending` / `missing`), truncated txid, explorer links, and a "Verify all rounds" flow that runs `verify_proof_local` (browser-side canonical hash recompute via Web Crypto) + `is_anchored_on_chain` per round in series. Sequential by design — XRPL has implicit per-IP rate limits. Per-round progress, cancel button, session-cached results.
+- `/game` view — passive real-time state display for the active game. Header (game-id, ruleset, round indicator, player count, live pulse), per-player resource cards (`coins`, `reputation`, `upgrades`, `vouchers`, `deals`, `treaties`; Town Hall ruleset adds `food`/`wood`/`tools`), round timeline dot strip, and last-20 SSE events log. Read-only — gameplay verbs stay CLI-only.
+- `/settings` view — daemon config display + network switcher with three guardrails: refuses on externally-started daemon, refuses with non-empty pending-anchors, prompts a `<dialog>` confirm when crossing the mainnet boundary ("Mainnet anchors cost real XRP").
+- `/` index polish — empty-state onboarding when no games exist, daemon connection pill, large nav links to `/audit` and `/game`.
+- 8 shared components: `Pill`, `EmptyState`, `LoadingSpinner`, `ConfirmDialog`, `ExpandableRow`, `EventFeed`, `RoundTimeline`, `PlayerCard`. Hand-built with CSS modules; no component library, no charting library.
+- Theme tokens (`--sov-bg`, `--sov-fg`, `--sov-accent`, …) in `app/src/styles/theme.css` matching Sovereignty's existing dark branding.
+- Game state TypeScript types at `app/src/types/game.ts`, manually mirroring the UI-consumed subset of `sov_engine/models.py`. Pinned by `tests/test_game_types_ts_in_sync.py` (parametrized over 18 fields — gameplay-internal fields deliberately omitted so schema additions don't break CI).
+- SSE consumption is payload-driven for `anchor.pending_added` and `anchor.batch_complete` (audit viewer flips rounds in place from the event payload, no re-fetch); only `game.state_changed` triggers a single re-fetch (state JSON is too large for SSE).
+- New frontend dev dep: `msw` (Mock Service Worker) — daemon endpoint mocks for vitest tests; daemon does not run in CI.
+
+### Changed (Wave 5)
+- Wave 4's placeholder routes (`Audit.tsx`, `Game.tsx`, `Settings.tsx`, `Index.tsx`) replaced with full Wave 5 views.
+- `useDaemon` context extended to expose `started_by_shell` (read from `daemon_status` Tauri command response) so `/settings` can enforce the externally-started-daemon guardrail.
+
+### Notes (Wave 5)
+- Player primitive vocabulary is `coins` (NOT votes), matching `sov_engine/models.py` `PlayerState`. Real fields: `coins`, `reputation`, `upgrades`, `vouchers_held`, `active_deals`, `active_treaties`, plus `resources` (food/wood/tools) for Town Hall ruleset only.
+- Resources row in `PlayerCard` is ruleset-aware: rendered when `state.config.ruleset.startsWith("town_hall")`, omitted otherwise (cleaner Campfire UX).
+- Semantic HTML is non-negotiable: `<details><summary>` for collapsibles, `<select>` for dropdowns, `<dialog>` for modals, `<ul aria-live="polite">` for live regions, `aria-current="page"` for active nav, `aria-busy` on long-running buttons. Pinned at the spec level because Mike has reduced vision and div+role degrades keyboard nav silently.
+- Bundle-size budget: ≤ 400KB raw / ≤ 120KB gzipped. Wave 4 baseline was 220KB / 69KB; Wave 5 adds the views + components within budget.
+- Component libraries (Mantine / MUI / Radix / shadcn / Chakra) and charting libraries (d3 / recharts / chart.js) deliberately rejected for v2.1. Hand-built CSS modules + semantic HTML keep the bundle lean and the accessibility contract enforceable.
+- E2E test framework (Playwright / Cypress) deferred to v2.2+. v2.1 ships with vitest + msw daemon mocks at the unit level.
+- Replay walkthrough view and cross-game anchor index deferred to v2.2 — neither has a known consumer at v2.1 scope.
+
 ## [2.0.2] - 2026-04-30
 
 ### Fixed

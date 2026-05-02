@@ -1,0 +1,96 @@
+.main {
+  padding: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.75rem 0 1rem 0;
+  border-bottom: 1px solid var(--sov-border);
+  padding-bottom: 0.6rem;
+}
+
+.pills {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.intro {
+  color: var(--sov-fg-muted);
+  margin-bottom: 0.75rem;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.summaryRow {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex: 1;
+}
+
+.gameId {
+  font-family: var(--sov-font-mono);
+  color: var(--sov-accent);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--sov-fg-muted);
+  font-size: 0.9rem;
+}
+
+.roundsTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-family: var(--sov-font-mono);
+  font-size: 0.85rem;
+}
+
+.roundsTable th,
+.roundsTable td {
+  text-align: left;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--sov-border);
+}
+
+.roundsTable th {
+  color: var(--sov-fg-muted);
+  font-weight: normal;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.verifyBar {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  align-items: center;
+}
+
+.verifyStatus {
+  color: var(--sov-fg-muted);
+  font-size: 0.9rem;
+}
+
+.gameEvents {
+  margin-top: 1rem;
+}
+
+.h4 {
+  font-size: 0.9rem;
+  margin-bottom: 0.4rem;
+  color: var(--sov-fg-muted);
+}
+
+.error {
+  color: var(--sov-error);
+  margin: 1rem 0;
+}

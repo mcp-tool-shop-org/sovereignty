@@ -1,0 +1,45 @@
+/* Sovereignty theme tokens — locked at v2.1 spec §1.
+ * Components consume tokens via var(--sov-*); no inline color literals. */
+:root {
+  --sov-bg: #0a0e14;
+  --sov-bg-elevated: #131820;
+  --sov-fg: #d8dee9;
+  --sov-fg-muted: #8a96a8;
+  --sov-accent: #e0af68;
+  --sov-success: #88c0d0;
+  --sov-warn: #ebcb8b;
+  --sov-error: #bf616a;
+  --sov-border: #2a323d;
+  --sov-radius: 4px;
+  --sov-font-mono: "SF Mono", "Menlo", "Consolas", monospace;
+}
+
+body {
+  background: var(--sov-bg);
+  color: var(--sov-fg);
+}
+
+a {
+  color: var(--sov-accent);
+}
+
+a[aria-current="page"] {
+  text-decoration: underline;
+  font-weight: 600;
+}
+
+button {
+  background: var(--sov-bg-elevated);
+  color: var(--sov-fg);
+  border: 1px solid var(--sov-border);
+  border-radius: var(--sov-radius);
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--sov-accent);
+}
+
+button[aria-busy="true"] {
+  opacity: 0.7;
+  cursor: progress;
+}

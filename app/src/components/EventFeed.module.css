@@ -1,0 +1,51 @@
+.feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--sov-font-mono);
+  font-size: 0.85rem;
+  border: 1px solid var(--sov-border);
+  border-radius: var(--sov-radius);
+  background: var(--sov-bg-elevated);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 80px 200px 1fr;
+  gap: 0.6rem;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--sov-border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.error {
+  color: var(--sov-error);
+}
+
+.time {
+  color: var(--sov-fg-muted);
+}
+
+.type {
+  color: var(--sov-accent);
+}
+
+.summary {
+  color: var(--sov-fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty {
+  color: var(--sov-fg-muted);
+  font-style: italic;
+  padding: 0.5rem;
+}

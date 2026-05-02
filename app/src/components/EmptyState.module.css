@@ -1,0 +1,23 @@
+.root {
+  border: 1px dashed var(--sov-border);
+  border-radius: var(--sov-radius);
+  padding: 2rem;
+  text-align: center;
+  background: var(--sov-bg-elevated);
+  color: var(--sov-fg-muted);
+}
+
+.title {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem 0;
+  color: var(--sov-fg);
+}
+
+.body {
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.cta {
+  margin-top: 1rem;
+}

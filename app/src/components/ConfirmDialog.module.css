@@ -1,0 +1,41 @@
+.dialog {
+  background: var(--sov-bg-elevated);
+  color: var(--sov-fg);
+  border: 1px solid var(--sov-border);
+  border-radius: var(--sov-radius);
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 90vw;
+}
+
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.title {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem 0;
+}
+
+.body {
+  font-size: 0.95rem;
+  margin-bottom: 1.25rem;
+  color: var(--sov-fg-muted);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.confirm {
+  border-color: var(--sov-accent);
+  color: var(--sov-accent);
+}
+
+.warn {
+  border-color: var(--sov-error);
+  color: var(--sov-error);
+  background: color-mix(in srgb, var(--sov-error) 12%, var(--sov-bg-elevated));
+}

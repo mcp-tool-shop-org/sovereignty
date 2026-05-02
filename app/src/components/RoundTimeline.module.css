@@ -1,0 +1,41 @@
+.timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+}
+
+.dots {
+  display: flex;
+  gap: 0.25rem;
+  font-family: var(--sov-font-mono);
+  font-size: 1.1rem;
+  flex-wrap: wrap;
+}
+
+.dot {
+  width: 1em;
+  text-align: center;
+}
+
+.complete {
+  color: var(--sov-accent);
+}
+
+.active {
+  color: var(--sov-accent);
+  font-weight: bold;
+}
+
+.pending {
+  color: var(--sov-fg-muted);
+}
+
+.labels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--sov-font-mono);
+  font-size: 0.75rem;
+  color: var(--sov-fg-muted);
+  width: 100%;
+}

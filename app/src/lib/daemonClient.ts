@@ -12,6 +12,7 @@ import type {
   HealthResponse,
   PendingEntry,
 } from "../types/daemon";
+import type { GameState } from "../types/game";
 
 export class DaemonClient {
   constructor(private readonly config: DaemonConfig) {}
@@ -41,11 +42,30 @@ export class DaemonClient {
     return (await r.json()) as GameSummary[];
   }
 
-  async game(gameId: string): Promise<unknown> {
+  async game(gameId: string): Promise<GameState> {
     const r = await fetch(this.url(`/games/${encodeURIComponent(gameId)}`), {
       headers: this.headers(),
     });
     if (!r.ok) throw new Error(`game ${gameId}: ${r.status}`);
+    return (await r.json()) as GameState;
+  }
+
+  /** GET /games/{id}/proofs — list of round keys with proofs on disk. */
+  async proofs(gameId: string): Promise<string[]> {
+    const r = await fetch(this.url(`/games/${encodeURIComponent(gameId)}/proofs`), {
+      headers: this.headers(),
+    });
+    if (!r.ok) throw new Error(`proofs ${gameId}: ${r.status}`);
+    return (await r.json()) as string[];
+  }
+
+  /** GET /games/{id}/proofs/{round} — full proof envelope contents. */
+  async proof(gameId: string, round: string): Promise<unknown> {
+    const r = await fetch(
+      this.url(`/games/${encodeURIComponent(gameId)}/proofs/${encodeURIComponent(round)}`),
+      { headers: this.headers() },
+    );
+    if (!r.ok) throw new Error(`proof ${gameId}/${round}: ${r.status}`);
     return r.json();
   }
 
