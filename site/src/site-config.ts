@@ -25,7 +25,7 @@ export const config: SiteConfig = {
   footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
-    badge: 'v2.0.2 — multi-save · daemon · audit viewer (dev preview)',
+    badge: 'v2.1.0 — multi-save · daemon · audit viewer (attested binaries)',
     headline: 'Sovereignty',
     headlineAccent: 'a board game about keeping your word.',
     description: 'Roll, trade, promise, betray. 2-4 players, 30 minutes, no screens required. The console keeps score — you keep your word. Optionally anchor results on the XRPL Testnet.',

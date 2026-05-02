@@ -174,7 +174,35 @@ Daemon binds to `127.0.0.1` on a random port; connection details (port + bearer 
 
 ## Desktop app (optional, v2.1+)
 
-The Audit Viewer is the v2.1 desktop app — a Tauri shell (Rust + webview) that runs the audit viewer and a read-only game view on top of the daemon. Local dev:
+The Audit Viewer is the v2.1 desktop app — a Tauri shell (Rust + webview) that runs the audit viewer and a read-only game view on top of the daemon.
+
+### Install (binaries)
+
+v2.1.0 ships pre-built binaries on the [GitHub Releases page](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
+
+- **macOS (universal):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
+- **Linux (x64):** `sovereignty-app-2.1.0-linux-x64.AppImage`
+
+You also need the Python daemon backing the app: `pip install 'sovereignty-game[daemon]'==2.1.0`.
+
+> **First-launch warning is expected.** macOS will say "unidentified developer" — control-click the .app, choose Open, confirm. Windows SmartScreen will say "unrecognized publisher" — click "More info" then "Run anyway." Both warnings reflect that v2.1 ships with build-provenance attestation only (verify with `gh attestation verify`), not OS-level code signing. Workspace-level signing infrastructure ships in v2.2.
+
+### Verify provenance
+
+Every release artifact carries a SLSA build-provenance attestation. Verify before running:
+
+```bash
+gh attestation verify \
+  --repo mcp-tool-shop-org/sovereignty \
+  ./sovereignty-app-2.1.0-darwin-universal.dmg
+```
+
+A clean verification proves the binary was built from a specific commit, by the release workflow, in this repo. Different layer of trust than OS-level code signing — the binary still triggers the OS warning, but its supply-chain provenance is cryptographically pinned.
+
+### Run from source
+
+If you'd rather build from source (or the binary won't run on your platform):
 
 ```bash
 # 1. Install Python + daemon deps
@@ -190,7 +218,7 @@ npm --prefix app run tauri dev
 
 The Tauri shell auto-starts a readonly daemon on launch and auto-stops it on exit. Externally-started daemons (`sov daemon start`) stay alive across shell restarts.
 
-Currently runs from source for developers (`npm --prefix app run tauri dev`); signed binaries ship in v2.1 final via Wave 11. See [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) for the full contract.
+See [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) for the full contract.
 
 <p align="center">
   <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
