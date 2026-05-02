@@ -57,17 +57,43 @@ from sov_transport.base import BatchEntry, ChainLookupResult
 # Maximum memo length in bytes. XRPL allows ~1KB per memo field; we cap at
 # 1024 to give the user a clear, actionable error before submission rather
 # than a silent network-side rejection or truncation. NOTE: this cap is
-# per-memo, not per-tx — multi-memo batching can carry N memos × 1024 B in
-# the same Payment, which is the design driver for ``anchor_batch``.
+# per-memo, not per-tx — multi-memo batching with ``anchor_batch`` is
+# bounded by ``_MAX_MEMOS_PER_TX`` below, not by the per-memo cap.
 _MAX_MEMO_BYTES = 1024
 
-# Per-tx ceiling for the sum of memo bytes in a single ``anchor_batch`` call.
-# XRPL's practical Payment-tx wire limit is ~10KB; we cap the memo total at
-# 8KB to leave headroom for the rest of the Payment envelope (account,
-# destination, fee, sequence, signature, flags). Pre-submit validation against
-# this ceiling raises an early, operator-actionable ``ValueError`` instead of
-# burning the bounded retry loop on a deterministic xrpl-py rejection.
-_MAX_BATCH_MEMO_BYTES = 8 * 1024
+# Wave 10 BRIDGE-A-bis-003: the binding constraint for multi-memo batching
+# is rippled's aggregate-Memos-field cap, not the per-memo cap. Empirical
+# boundary on testnet at the SOV grammar (``SOV|<ruleset>|<game-id>|r<N>|
+# sha256:<64-hex>``, ~95 bytes/memo): 8 memos submit OK, 9 memos reject
+# with "fails local checks: The memo exceeds the maximum allowed size."
+# That's rippled's ``Memos`` field aggregate limit (~1 KB on the wire,
+# including hex encoding + per-memo struct overhead).
+#
+# The cap below is a hard mechanical bound that ``anchor_batch`` honors by
+# splitting batches >8 memos into N sequential txs of ≤8 memos each. The
+# audit thesis remains "small constant of chain pointers per game, not
+# 30+"; a typical 16-round Campfire game produces 2 anchor txs at game-end,
+# indexed by ``round_key`` in memo body — operators verify by walking the
+# trail. The single-tx aspiration was a Wave-2 idealization based on
+# per-memo size; the actual XRPL constraint is aggregate.
+#
+# Pinned by ``tests/test_xrpl_integration.py::
+# test_real_testnet_anchor_batch_boundary_8_memos_succeeds`` and
+# ``test_real_testnet_anchor_batch_boundary_9_memos_rejected_locally``.
+# Future memo-format changes (longer game-id, longer ruleset, additional
+# grammar fields) that shift the empirical boundary get caught by these
+# real-testnet tests rather than discovered at production submit time.
+_MAX_MEMOS_PER_TX = 8
+
+# Per-tx ceiling for the sum of memo bytes in a single submit call. The
+# binding constraint is ``_MAX_MEMOS_PER_TX`` above (rippled aggregate
+# Memos-field cap); this byte-level cap is a defensive secondary guard
+# for unusually long memo strings that might push 8 memos past ~960 bytes.
+# Set conservatively at 1 KB (matching rippled's observed aggregate limit)
+# rather than 8 KB so the byte-check fires before the count-check on
+# pathological long-memo inputs. ValueError raised pre-submit with an
+# operator-actionable message.
+_MAX_BATCH_MEMO_BYTES = 1024
 
 # submit_and_wait retry policy. Bounded retry with exponential backoff
 # guards against transient testnet glitches (LedgerNotFound, brief network
@@ -244,6 +270,7 @@ __all__ = [
     "XRPLNetwork",
     "_MAX_BATCH_MEMO_BYTES",
     "_MAX_MEMO_BYTES",
+    "_MAX_MEMOS_PER_TX",
     "_NETWORK_TABLE",
     "_SUBMIT_BACKOFF_SECONDS",
     "_SUBMIT_DEADLINE_SECONDS",

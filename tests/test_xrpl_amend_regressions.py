@@ -243,29 +243,32 @@ async def test_bridge_001_async_anchor_batch_caller_frame_signer_scrubbed(
 # ---------------------------------------------------------------------------
 
 
-def test_bridge_002_anchor_batch_rejects_oversized_total_payload(
+def test_bridge_002_anchor_batch_rejects_oversized_chunk_payload(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
-    """16 memos at max per-memo size → operator-actionable ValueError.
+    """Per-chunk byte cap fires for pathological long-memo input (Wave 10
+    BRIDGE-A-bis-003 update).
 
-    Per-memo cap is 1024 bytes; total cap is 8192 bytes. 16 entries with
-    1000-byte memos = 16000 bytes total > 8192 → ValueError must fire
-    BEFORE submit so the bounded retry loop doesn't burn 3 attempts on a
-    deterministic xrpl-py rejection.
+    With Wave 10's chunking, the per-chunk byte cap is the SECONDARY guard
+    for unusually long memos (long ruleset / game-id) that would push
+    8 memos past the ~960-byte aggregate. Per-memo cap is 1024 bytes;
+    per-chunk cap is ``_MAX_BATCH_MEMO_BYTES`` (1024 bytes). A single
+    chunk of 8 memos with ~900-byte renderings sums to ~7200 bytes,
+    well above the chunk cap → ValueError fires BEFORE submit so the
+    bounded retry loop doesn't burn attempts on a deterministic
+    rippled rejection.
     """
     from sov_transport.base import BatchEntry
     from sov_transport.xrpl import XRPLTransport
 
-    # Build 16 entries, each shaped to render at ~1000 bytes via a long
-    # ruleset name. SOV grammar prefix is short; padding the ruleset is
-    # the cheapest way to control rendered length.
-    ruleset = "x" * 920
+    # Build 8 entries (single chunk), each shaped to render at ~900 bytes
+    # via a long ruleset name. The chunk total exceeds the byte cap.
+    ruleset = "x" * 820
     rounds: list[BatchEntry] = []
-    for i in range(16):
-        rk = "FINAL" if i == 15 else str(i + 1)
+    for i in range(8):
         rounds.append(
             {
-                "round_key": rk,
+                "round_key": str(i + 1),
                 "ruleset": ruleset,
                 "game_id": "s42",
                 "envelope_hash": "a" * 64,
@@ -273,18 +276,19 @@ def test_bridge_002_anchor_batch_rejects_oversized_total_payload(
         )
 
     t = XRPLTransport()
-    with pytest.raises(ValueError, match="exceeds XRPL Payment ceiling"):
+    with pytest.raises(ValueError, match="exceeds aggregate cap"):
         t.anchor_batch(rounds, _TEST_SEED)
 
 
 def test_bridge_002_anchor_batch_accepts_typical_16_round_payload(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
-    """Realistic 16-round batch (~110 B per memo) sits well under the cap.
+    """Realistic 16-round batch chunks into 2 txs of 8 memos each.
 
-    Pins that the new total-bytes check does NOT regress today's typical
-    use case — a 15+FINAL game with the default ``campfire_v1`` ruleset
-    name produces ~110 byte memos, ~1.7KB total, well below the 8KB cap.
+    Wave 10 BRIDGE-A-bis-003: a 15+FINAL game with the default
+    ``campfire_v1`` ruleset produces ~95 byte memos. 16 memos chunk into
+    2 txs of 8 each, both well under the per-chunk byte cap. Returns a
+    2-element txid list.
     """
     from sov_transport.base import BatchEntry
     from sov_transport.xrpl import XRPLTransport
@@ -314,24 +318,24 @@ def test_bridge_002_anchor_batch_accepts_typical_16_round_payload(
         )
 
     t = XRPLTransport()
-    tx_hash = t.anchor_batch(rounds, _TEST_SEED)
-    assert tx_hash == "DEADBEEF"
+    txids = t.anchor_batch(rounds, _TEST_SEED)
+    # 16 memos / 8 per chunk = 2 chunks. Mock returns "DEADBEEF" for both.
+    assert txids == ["DEADBEEF", "DEADBEEF"]
 
 
-async def test_bridge_002_async_anchor_batch_rejects_oversized_total_payload(
+async def test_bridge_002_async_anchor_batch_rejects_oversized_chunk_payload(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
-    """Mirror sync ``BRIDGE-002`` for ``AsyncXRPLTransport``."""
+    """Mirror sync ``BRIDGE-002`` per-chunk byte cap for ``AsyncXRPLTransport``."""
     from sov_transport.base import BatchEntry
     from sov_transport.xrpl_async import AsyncXRPLTransport
 
-    ruleset = "x" * 920
+    ruleset = "x" * 820
     rounds: list[BatchEntry] = []
-    for i in range(16):
-        rk = "FINAL" if i == 15 else str(i + 1)
+    for i in range(8):
         rounds.append(
             {
-                "round_key": rk,
+                "round_key": str(i + 1),
                 "ruleset": ruleset,
                 "game_id": "s42",
                 "envelope_hash": "a" * 64,
@@ -339,7 +343,7 @@ async def test_bridge_002_async_anchor_batch_rejects_oversized_total_payload(
         )
 
     t = AsyncXRPLTransport()
-    with pytest.raises(ValueError, match="exceeds XRPL Payment ceiling"):
+    with pytest.raises(ValueError, match="exceeds aggregate cap"):
         await t.anchor_batch(rounds, _TEST_SEED)
 
 

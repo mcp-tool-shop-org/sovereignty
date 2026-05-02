@@ -134,15 +134,15 @@ def _captured_memos(
 def test_anchor_batch_n_eq_1_single_memo(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
-    """N=1: one BatchEntry produces one memo on the Payment."""
+    """N=1: single BatchEntry returns a 1-element txid list (Wave 10 BRIDGE-A-bis-003)."""
     from sov_transport.xrpl import XRPLTransport
 
     _stub_wallet(fake_xrpl)
     _stub_submit_response(fake_xrpl, tx_hash="TX1")
 
     t = XRPLTransport()
-    txid = t.anchor_batch([_make_entry("1", "a" * 64)], _TEST_SEED)
-    assert txid == "TX1"
+    txids = t.anchor_batch([_make_entry("1", "a" * 64)], _TEST_SEED)
+    assert txids == ["TX1"]
 
     memos = _captured_memos(fake_xrpl)
     sov_memos = [m for m in memos if m.startswith("SOV|")]
@@ -153,10 +153,12 @@ def test_anchor_batch_n_eq_1_single_memo(
 def test_anchor_batch_n_eq_15_full_round_set(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
-    """N=15: 15 rounds → 15 memos in one Payment, all SOV grammar lines present.
+    """N=15: chunks into 2 txs (8 + 7 memos) per Wave 10 BRIDGE-A-bis-003.
 
-    15 is ``MAX_ROUNDS`` from sov_engine.models. This is the steady-state
-    flush size for a campfire game played to completion (without FINAL).
+    15 is ``MAX_ROUNDS`` from sov_engine.models. The rippled aggregate
+    Memos-field cap (~1 KB on the wire, ≤8 SOV-grammar memos) forces the
+    split. All 15 SOV grammar lines still appear, partitioned across 2
+    txs in round-key order.
     """
     from sov_transport.xrpl import XRPLTransport
 
@@ -169,8 +171,10 @@ def test_anchor_batch_n_eq_15_full_round_set(
     ]
 
     t = XRPLTransport()
-    txid = t.anchor_batch(entries, _TEST_SEED)
-    assert txid == "TX15"
+    txids = t.anchor_batch(entries, _TEST_SEED)
+    # 15 memos / 8 per tx = 2 chunks (8 + 7). Mock returns "TX15" for
+    # both submit_and_wait calls (since we stubbed a single response).
+    assert txids == ["TX15", "TX15"]
 
     memos = _captured_memos(fake_xrpl)
     sov_memos = [m for m in memos if m.startswith("SOV|")]
@@ -184,7 +188,12 @@ def test_anchor_batch_n_eq_15_full_round_set(
 def test_anchor_batch_n_eq_16_with_final(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
-    """N=16: 15 rounds + FINAL → 16 memos. ``FINAL`` renders without ``r``-prefix."""
+    """N=16: 15 rounds + FINAL → 2 txs (8 + 8). ``FINAL`` renders without ``r``-prefix.
+
+    Wave 10 BRIDGE-A-bis-003: 16 memos chunk into 2 txs of 8 each. FINAL
+    lands in the second chunk (sort order places FINAL last via
+    ``_sort_key``).
+    """
     from sov_transport.xrpl import XRPLTransport
 
     _stub_wallet(fake_xrpl)
@@ -194,8 +203,9 @@ def test_anchor_batch_n_eq_16_with_final(
     entries.append(_make_entry("FINAL", "f" * 64))
 
     t = XRPLTransport()
-    txid = t.anchor_batch(entries, _TEST_SEED)
-    assert txid == "TX16"
+    txids = t.anchor_batch(entries, _TEST_SEED)
+    # 16 memos / 8 per tx = 2 chunks of 8.
+    assert txids == ["TX16", "TX16"]
 
     memos = _captured_memos(fake_xrpl)
     sov_memos = [m for m in memos if m.startswith("SOV|")]
@@ -209,6 +219,39 @@ def test_anchor_batch_n_eq_16_with_final(
     assert not any("rFINAL" in m for m in sov_memos), (
         f"FINAL memo must NOT carry an 'rFINAL' field; got: {sov_memos!r}"
     )
+
+
+# Wave 10 BRIDGE-A-bis-003: explicit chunking-boundary regression tests.
+
+
+def test_anchor_batch_n_eq_8_single_chunk(
+    fake_xrpl: dict[str, types.ModuleType],
+) -> None:
+    """N=8: at the per-tx cap, returns a single-element txid list."""
+    from sov_transport.xrpl import XRPLTransport
+
+    _stub_wallet(fake_xrpl)
+    _stub_submit_response(fake_xrpl, tx_hash="TX8")
+
+    entries = [_make_entry(str(i), format(i, "064x")) for i in range(1, 9)]
+    t = XRPLTransport()
+    txids = t.anchor_batch(entries, _TEST_SEED)
+    assert txids == ["TX8"]
+
+
+def test_anchor_batch_n_eq_9_chunks_to_two(
+    fake_xrpl: dict[str, types.ModuleType],
+) -> None:
+    """N=9: just over the cap chunks into 2 txs (8 + 1)."""
+    from sov_transport.xrpl import XRPLTransport
+
+    _stub_wallet(fake_xrpl)
+    _stub_submit_response(fake_xrpl, tx_hash="TX9")
+
+    entries = [_make_entry(str(i), format(i, "064x")) for i in range(1, 10)]
+    t = XRPLTransport()
+    txids = t.anchor_batch(entries, _TEST_SEED)
+    assert txids == ["TX9", "TX9"]
 
 
 # ---------------------------------------------------------------------------

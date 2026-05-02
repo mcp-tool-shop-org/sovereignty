@@ -113,9 +113,14 @@ def _seed_proof_file(game_id: str, round_num: int, envelope_hash: str) -> Path:
 
 
 def _make_mock_transport_factory(*, txid: str = "BATCHTX") -> MagicMock:
-    """Build a factory that returns a mock transport with anchor_batch wired."""
+    """Build a factory that returns a mock transport with anchor_batch wired.
+
+    Wave 10 BRIDGE-A-bis-003: ``anchor_batch`` returns ``list[str]``;
+    single-tx batches are 1-element lists. ``anchor`` (legacy single-round)
+    still returns a bare ``str``.
+    """
     transport = MagicMock()
-    transport.anchor_batch.return_value = txid
+    transport.anchor_batch.return_value = [txid]
     transport.anchor.return_value = txid
     transport.explorer_tx_url.side_effect = lambda t: f"https://explorer.example/{t}"
 
@@ -503,6 +508,43 @@ def test_anchor_empty_pending_succeeds_without_wallet(
     assert "No wallet seed" not in result.output
     factory.return_value.anchor_batch.assert_not_called()
     factory.return_value.anchor.assert_not_called()
+
+
+# CLI-D-bis-001: `sov anchor` auto-discovers `.sov/wallet_seed.txt` without
+# the operator needing to set XRPL_SEED env var or pass --signer-file.
+# Wave 10 smoke surfaced that `sov wallet` writes the file but `sov anchor`
+# never read it — silent UX gap for the canonical post-`sov wallet` flow.
+def test_anchor_auto_discovers_dotsov_wallet_seed_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """`sov anchor` reads `.sov/wallet_seed.txt` when XRPL_SEED is unset.
+
+    Precedence after CLI-D-bis-001 fix:
+      1. ``--signer-file`` (operator override; not exercised here)
+      2. ``.sov/wallet_seed.txt`` (the file ``sov wallet`` writes)
+      3. ``XRPL_SEED`` env var (fallback)
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("XRPL_SEED", raising=False)
+    monkeypatch.delenv("SOV_XRPL_NETWORK", raising=False)
+    game_id = _seed_game(tmp_path, game_over=True)
+    add_pending_anchor(game_id, "1", _HASH_A)
+    add_pending_anchor(game_id, "FINAL", _HASH_FINAL)
+
+    # Write a wallet seed file at the canonical path.
+    wallet_file = tmp_path / ".sov" / "wallet_seed.txt"
+    wallet_file.parent.mkdir(parents=True, exist_ok=True)
+    wallet_file.write_text(_TEST_SEED, encoding="utf-8")
+
+    factory = _make_mock_transport_factory(txid="WALLETFILETX")
+    with patch("sov_transport.xrpl.XRPLTransport", factory):
+        result = runner.invoke(app, ["anchor"])
+
+    # Anchoring proceeds — no "No wallet seed" surface.
+    assert result.exit_code == 0, f"output: {result.output!r}"
+    assert "No wallet seed" not in result.output
+    assert "CONFIG_NO_WALLET" not in result.output
+    factory.return_value.anchor_batch.assert_called_once()
 
 
 # CLI-004: structured ANCHOR_PENDING surfaces in `sov status --json` when

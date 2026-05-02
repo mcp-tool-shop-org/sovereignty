@@ -124,9 +124,13 @@ def test_real_testnet_anchor_batch_three_rounds_one_tx():
         },
     ]
 
-    txid = transport.anchor_batch(rounds, signer=seed)
-    assert isinstance(txid, str)
-    assert len(txid) == 64  # XRPL tx hashes are 64-char uppercase hex
+    # Wave 10 BRIDGE-A-bis-003: anchor_batch returns ``list[str]``.
+    # 3 memos fits in 1 chunk so the list has 1 element.
+    txids = transport.anchor_batch(rounds, signer=seed)
+    assert isinstance(txids, list)
+    assert len(txids) == 1
+    assert all(isinstance(t, str) and len(t) == 64 for t in txids)
+    txid = txids[0]
 
     # All three round hashes resolve via is_anchored_on_chain on the same
     # txid. Post-BRIDGE-004 the return is ``ChainLookupResult.FOUND`` (not
@@ -138,3 +142,99 @@ def test_real_testnet_anchor_batch_three_rounds_one_tx():
         assert transport.is_anchored_on_chain(txid=txid, expected_hash=h) is (
             ChainLookupResult.FOUND
         ), f"is_anchored_on_chain failed for hash={h} on batch txid={txid}"
+
+
+# Wave 10 BRIDGE-A-bis-003: real-testnet boundary regression. Pins the
+# empirical 8/9-memo cap against rippled's local-checks rejection so future
+# memo-format changes (longer game-id, longer ruleset) that shift the
+# boundary get caught HERE rather than discovered at production submit time.
+
+
+def test_real_testnet_anchor_batch_boundary_8_memos_succeeds():
+    """8 memos at SOV grammar (~95 B/memo) submits to testnet OK.
+
+    Empirical boundary upper bound. Future memo-format changes that push
+    8 memos over rippled's aggregate Memos-field cap (~1 KB) will fail
+    this test, signalling the constant ``_MAX_MEMOS_PER_TX`` needs to
+    drop to 7.
+    """
+    pytest.importorskip("xrpl")
+    from sov_transport.xrpl import XRPLNetwork, XRPLTransport, fund_dev_wallet
+
+    transport = XRPLTransport(XRPLNetwork.TESTNET)
+    _, seed = fund_dev_wallet(XRPLNetwork.TESTNET)
+
+    rounds = [
+        {
+            "round_key": str(i),
+            "ruleset": "campfire_v1",
+            "game_id": "s42",
+            "envelope_hash": format(i, "064x"),
+        }
+        for i in range(1, 9)  # 8 rounds
+    ]
+
+    txids = transport.anchor_batch(rounds, signer=seed)
+    assert len(txids) == 1, f"expected 1 chunk for 8 memos, got {len(txids)}"
+    assert len(txids[0]) == 64
+
+
+def test_real_testnet_anchor_batch_boundary_16_memos_chunks_to_two_txs():
+    """16 memos chunk into 2 sequential txs of 8 each.
+
+    Pins the typical-game arc (15 rounds + FINAL). Each chunk is verified
+    on chain by walking ``is_anchored_on_chain`` for every round_hash
+    against the expected chunk's txid.
+    """
+    pytest.importorskip("xrpl")
+    from sov_transport import ChainLookupResult
+    from sov_transport.xrpl import XRPLNetwork, XRPLTransport, fund_dev_wallet
+
+    transport = XRPLTransport(XRPLNetwork.TESTNET)
+    _, seed = fund_dev_wallet(XRPLNetwork.TESTNET)
+
+    # Build 15 rounds + FINAL (16 total). Sort order at the bridge places
+    # FINAL last, so chunk 1 = rounds 1-8, chunk 2 = rounds 9-15 + FINAL.
+    rounds = [
+        {
+            "round_key": str(i),
+            "ruleset": "campfire_v1",
+            "game_id": "s42",
+            "envelope_hash": format(i, "064x"),
+        }
+        for i in range(1, 16)
+    ]
+    rounds.append(
+        {
+            "round_key": "FINAL",
+            "ruleset": "campfire_v1",
+            "game_id": "s42",
+            "envelope_hash": "f" * 64,
+        }
+    )
+
+    txids = transport.anchor_batch(rounds, signer=seed)
+    assert len(txids) == 2, f"expected 2 chunks for 16 memos, got {len(txids)}"
+    assert all(len(t) == 64 for t in txids)
+    # Chunks should be distinct txs.
+    assert txids[0] != txids[1], "chunks must produce distinct txids"
+
+    # Verify chunk 1 (rounds 1-8) resolves on txids[0].
+    for i in range(1, 9):
+        h = format(i, "064x")
+        assert (
+            transport.is_anchored_on_chain(txid=txids[0], expected_hash=h)
+            is ChainLookupResult.FOUND
+        ), f"chunk-1 round {i} hash {h} not found on txid {txids[0]}"
+
+    # Verify chunk 2 (rounds 9-15 + FINAL) resolves on txids[1].
+    for i in range(9, 16):
+        h = format(i, "064x")
+        assert (
+            transport.is_anchored_on_chain(txid=txids[1], expected_hash=h)
+            is ChainLookupResult.FOUND
+        ), f"chunk-2 round {i} hash {h} not found on txid {txids[1]}"
+    assert (
+        transport.is_anchored_on_chain(txid=txids[1], expected_hash="f" * 64)
+        is ChainLookupResult.FOUND
+    ), "FINAL hash not found on chunk-2 txid"

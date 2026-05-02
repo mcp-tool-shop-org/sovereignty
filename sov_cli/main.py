@@ -1988,13 +1988,21 @@ def anchor(
             )
             raise typer.Exit(0)
 
-    # Resolve wallet seed once — both paths need it. (Move-up from the
-    # legacy path so the batch path doesn't duplicate the seed-resolution
-    # logic.)
+    # Resolve wallet seed once — both paths need it. Precedence:
+    # explicit ``--signer-file`` (operator override) > ``.sov/wallet_seed.txt``
+    # (the file ``sov wallet`` writes; the canonical convention surfaced
+    # by ``sov doctor`` and the ``sov game-end --anchor`` path) > env var.
+    # Wave 10 CLI-D-bis-001: previously this command only checked
+    # signer_file + env var, so users who ran ``sov wallet`` then
+    # ``sov anchor`` saw CONFIG_NO_WALLET despite the wallet file existing.
     seed: str | None = None
     if signer_file and signer_file.exists():
         seed = signer_file.read_text(encoding="utf-8").strip()
-    else:
+    if not seed:
+        wallet_file = SAVE_DIR / "wallet_seed.txt"
+        if wallet_file.exists():
+            seed = wallet_file.read_text(encoding="utf-8").strip()
+    if not seed:
         seed = os.environ.get(seed_env)
     if not seed:
         _fail(no_wallet_error(seed_env))
@@ -2167,13 +2175,26 @@ def anchor(
 
     try:
         from sov_transport.xrpl import XRPLTransport
+        from sov_transport.xrpl_internals import _MAX_MEMOS_PER_TX
 
         transport = XRPLTransport(network=resolved_network)
-        txid = transport.anchor_batch(rounds, seed)
+        # Wave 10 BRIDGE-A-bis-003: anchor_batch returns ``list[str]``.
+        # Single-tx batches (≤8 memos) get a 1-element list; >8-memo
+        # batches get one txid per chunk in submission order.
+        txids = transport.anchor_batch(rounds, seed)
 
-        # All rounds in the batch land on the same txid — anchors.json keeps
-        # round_key → txid so the existing readers (postcard / feedback /
-        # status) keep working without any schema bump.
+        # Map each round_key to the txid that carried it on the wire.
+        # Chunks are contiguous slices of ``rounds`` in ``_MAX_MEMOS_PER_TX``-
+        # sized blocks (matching the bridge's chunking).
+        round_to_txid: dict[str, str] = {}
+        for chunk_idx, txid in enumerate(txids):
+            chunk_start = chunk_idx * _MAX_MEMOS_PER_TX
+            chunk_end = min(chunk_start + _MAX_MEMOS_PER_TX, len(rounds))
+            for entry in rounds[chunk_start:chunk_end]:
+                round_to_txid[entry["round_key"]] = txid
+
+        # anchors.json keeps round_key → txid; multi-tx batches just mean
+        # different keys map to different txids. No schema bump needed.
         for entry in rounds:
             rk = entry["round_key"]
             round_key_for_record: int | str
@@ -2184,29 +2205,57 @@ def anchor(
                     round_key_for_record = int(rk)
                 except ValueError:
                     round_key_for_record = rk
-            _record_anchor(round_key_for_record, txid, game_id)
+            _record_anchor(round_key_for_record, round_to_txid[rk], game_id)
 
-        # Clear the flushed entries from pending. On a partial-failure mid-batch
-        # we wouldn't get here — anchor_batch is all-or-nothing per XRPL Payment
-        # semantics — so a no-error path means every entry in `rounds` landed.
+        # Clear the flushed entries from pending. The bridge's per-chunk
+        # submission has partial-success semantics (Wave 10 BRIDGE-A-bis-003);
+        # if any chunk fails the bridge raises and we don't reach this clear,
+        # leaving pending populated for retry. Reaching here means every
+        # chunk succeeded — every entry in ``rounds`` is on chain.
         clear_pending_anchors(game_id, list(sorted_keys))
         logger.info(
-            "anchor_batch.success rounds=%d txid=%s game_id=%s",
+            "anchor_batch.success rounds=%d txs=%d txids=%s game_id=%s",
             n,
-            txid,
+            len(txids),
+            ",".join(txids),
             game_id,
         )
 
-        explorer = transport.explorer_tx_url(txid)
         rounds_summary = ", ".join(sorted_keys)
+        if len(txids) == 1:
+            # Single-tx batch (≤8 memos): preserve original copy.
+            tx_line = f"  TX: [bold]{txids[0]}[/bold]\n"
+            explorer_line = f"  Explorer: [dim]{transport.explorer_tx_url(txids[0])}[/dim]\n"
+            title = "Anchored (batch)"
+        else:
+            # Multi-tx batch (>8 memos): show the txid trail. Wave 10
+            # BRIDGE-A-bis-003 — rippled's aggregate Memos-field cap forces
+            # split. Each chunk's rounds are listed under its txid.
+            chunk_lines: list[str] = []
+            for chunk_idx, txid in enumerate(txids):
+                chunk_start = chunk_idx * _MAX_MEMOS_PER_TX
+                chunk_end = min(chunk_start + _MAX_MEMOS_PER_TX, len(rounds))
+                chunk_keys = ", ".join(
+                    rounds[i]["round_key"] for i in range(chunk_start, chunk_end)
+                )
+                explorer = transport.explorer_tx_url(txid)
+                chunk_lines.append(
+                    f"  TX {chunk_idx + 1}/{len(txids)}: [bold]{txid}[/bold]\n"
+                    f"    Rounds: [dim]{chunk_keys}[/dim]\n"
+                    f"    Explorer: [dim]{explorer}[/dim]"
+                )
+            tx_line = "\n".join(chunk_lines) + "\n"
+            explorer_line = ""
+            title = f"Anchored (batch — {len(txids)} txs)"
+
         console.print(
             Panel(
                 f"  {n} round{plural} anchored on XRPL "
-                f"{resolved_network.value} in one tx.\n\n"
-                f"  TX: [bold]{txid}[/bold]\n"
-                f"  Rounds: [dim]{rounds_summary}[/dim]\n"
-                f"  Explorer: [dim]{explorer}[/dim]\n",
-                title="Anchored (batch)",
+                f"{resolved_network.value}.\n\n"
+                f"{tx_line}"
+                f"{'' if len(txids) > 1 else f'  Rounds: [dim]{rounds_summary}[/dim]'}\n"
+                f"{explorer_line}",
+                title=title,
             )
         )
     except RuntimeError as e:
@@ -3058,12 +3107,22 @@ def game_end(
 
                 n = len(rounds)
                 plural = "s" if n != 1 else ""
-                console.print(f"\n  Anchoring {n} pending round{plural} as one batched tx...")
+                console.print(f"\n  Anchoring {n} pending round{plural}...")
                 try:
                     from sov_transport.xrpl import XRPLTransport
+                    from sov_transport.xrpl_internals import _MAX_MEMOS_PER_TX
 
                     transport = XRPLTransport(network=resolved_network)
-                    txid = transport.anchor_batch(rounds, wallet_seed)
+                    # Wave 10 BRIDGE-A-bis-003: list[str] of txids; one per
+                    # ≤8-memo chunk. Map each round_key to its chunk's txid.
+                    txids = transport.anchor_batch(rounds, wallet_seed)
+
+                    round_to_txid: dict[str, str] = {}
+                    for chunk_idx, txid in enumerate(txids):
+                        chunk_start = chunk_idx * _MAX_MEMOS_PER_TX
+                        chunk_end = min(chunk_start + _MAX_MEMOS_PER_TX, len(rounds))
+                        for chunk_entry in rounds[chunk_start:chunk_end]:
+                            round_to_txid[chunk_entry["round_key"]] = txid
 
                     for batch_entry in rounds:
                         rk = batch_entry["round_key"]
@@ -3075,18 +3134,25 @@ def game_end(
                                 round_key_for_record = int(rk)
                             except ValueError:
                                 round_key_for_record = rk
-                        _record_anchor(round_key_for_record, txid, game_id)
+                        _record_anchor(round_key_for_record, round_to_txid[rk], game_id)
 
                     clear_pending_anchors(active_id, list(sorted_keys))
                     logger.info(
-                        "anchor_batch.success rounds=%d txid=%s game_id=%s",
+                        "anchor_batch.success rounds=%d txs=%d txids=%s game_id=%s",
                         n,
-                        txid,
+                        len(txids),
+                        ",".join(txids),
                         game_id,
                     )
-                    explorer = transport.explorer_tx_url(txid)
-                    console.print(f"  [green]Anchored.[/green] TX: [dim]{txid}[/dim]")
-                    console.print(f"  [dim]{explorer}[/dim]")
+                    if len(txids) == 1:
+                        explorer = transport.explorer_tx_url(txids[0])
+                        console.print(f"  [green]Anchored.[/green] TX: [dim]{txids[0]}[/dim]")
+                        console.print(f"  [dim]{explorer}[/dim]")
+                    else:
+                        console.print(f"  [green]Anchored across {len(txids)} txs.[/green]")
+                        for chunk_idx, txid in enumerate(txids):
+                            console.print(f"  TX {chunk_idx + 1}/{len(txids)}: [dim]{txid}[/dim]")
+                            console.print(f"    [dim]{transport.explorer_tx_url(txid)}[/dim]")
                 except Exception as e:
                     # Batch anchor failed; the proof files are still saved
                     # locally and pending-anchors.json is intact. Operator

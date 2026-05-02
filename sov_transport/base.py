@@ -106,12 +106,19 @@ class LedgerTransport(ABC):
         ...
 
     @abstractmethod
-    def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> str:
-        """Anchor N rounds in a single transaction. Returns one txid.
+    def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> list[str]:
+        """Anchor N rounds across one or more transactions. Returns txid trail.
 
-        On XRPL, this packs N memos onto one ``Payment.Memos``. ``rounds``
-        must be non-empty; empty input raises ``ValueError`` at the
-        implementation layer.
+        On XRPL, each transaction (an AccountSet carrying memos) is bounded
+        by rippled's aggregate Memos-field cap (~1 KB on the wire, ≤8
+        memos for the SOV grammar). When ``rounds`` exceeds the per-tx cap,
+        the implementation splits the batch into N sequential txs of ≤cap
+        memos each and returns one txid per tx in submission order.
+
+        ``rounds`` must be non-empty; empty input raises ``ValueError`` at
+        the implementation layer. A 1-element ``rounds`` list returns a
+        1-element txid list. Order is preserved across chunk boundaries
+        (the first chunk carries the lowest round_keys).
         """
         ...
 

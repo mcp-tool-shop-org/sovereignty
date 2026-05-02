@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 Multiple saved games at once. Sovereignty now keeps every game you start under `.sov/games/<game-id>/`. List them with `sov games`, switch with `sov resume <game-id>`. Starting a new game no longer overwrites the old one. Existing v1 layouts (`.sov/game_state.json`) auto-migrate on first invocation — transparent, one-shot, with a stderr notice.
 
-Batched anchoring with one chain pointer per game. `sov anchor` at game-end now batches all pending rounds into a single XRPL transaction with N memos, instead of one transaction per round. A verifier needs one tx URL per game, not sixteen. Pending hashes queue in `pending-anchors.json`; `sov anchor --checkpoint` flushes mid-game when a checkpoint is needed.
+Batched anchoring across a small constant of chain pointers per game. `sov anchor` at game-end batches pending rounds into ≤8-memo AccountSet transactions on XRPL — a typical 16-round Campfire game produces 2 anchor txs at game-end, indexed by `round_key` in memo body. A verifier walks the trail (1-2 tx URLs per game) instead of the 30+ baseline a per-round-anchor design would produce. Pending hashes queue in `pending-anchors.json`; `sov anchor --checkpoint` flushes mid-game when a checkpoint is needed. The per-tx cap reflects rippled's aggregate `Memos`-field constraint, pinned mechanically by real-testnet boundary tests.
 
 Network selection. `sov anchor --network testnet|mainnet|devnet` and the `SOV_XRPL_NETWORK` env var join the existing testnet default. Mainnet anchors cost real XRP; the network switcher in the desktop app asks for confirmation before crossing that boundary. `XRPLTransport(network=…)` replaces `XRPLTestnetTransport`.
 
@@ -30,7 +30,7 @@ Migration + deprecation calendar. v1 game-state files (`.sov/game_state.json`) a
 ### Added (Wave 2)
 
 - XRPL network parameterization: `XRPLTransport(network=XRPLNetwork.TESTNET|MAINNET|DEVNET)` replaces `XRPLTestnetTransport`. Single class, single module (`sov_transport.xrpl`). Endpoint table built-in; `url=` kwarg overrides.
-- Multi-tx anchor consolidation: rounds queue in `.sov/games/<game-id>/pending-anchors.json` and flush as a single Payment with N memos at game-end (or via `sov anchor --checkpoint` mid-game). One verifiable chain pointer per game — Sovereignty's audit thesis intact.
+- Multi-tx anchor consolidation: rounds queue in `.sov/games/<game-id>/pending-anchors.json` and flush at game-end (or via `sov anchor --checkpoint` mid-game). The bridge submits one or more AccountSet txs with up to 8 memos each; a 16-round game produces 2 txs. The `transport.anchor_batch(rounds, signer)` method returns `list[str]` of txids in submission order. Audit thesis intact: small constant of chain pointers per game, not the 30+ baseline.
 - New `sov anchor --network <network>` flag. Network selection precedence: CLI flag → `SOV_XRPL_NETWORK` env var → `testnet` default.
 - New `sov anchor --checkpoint` flag for mid-game flush.
 - Verify contract split: `verify_proof_local(proof_path)` (pure local recompute) and `proof_anchor_status(proof_path, transport) -> AnchorStatus` (3-state: ANCHORED / PENDING / MISSING) live in new `sov_engine.proof` module.
@@ -151,6 +151,40 @@ Migration + deprecation calendar. v1 game-state files (`.sov/game_state.json`) a
 - `wallet_seed.txt` write site upgraded to `mode=0o600` (was reliant on default umask).
 - Supply-chain gates: `pip-audit --strict` graduated from advisory to hard gate (CI fails on HIGH; allowlist via `--ignore-vuln`); `cargo-audit --deny warnings` integrated for the Tauri shell (`app/src-tauri/audit.toml` allowlist with per-ID rationale); `npm audit signatures` integrated warn-only at v2.1 (promotion to hard gate is v2.2 work once signature coverage baseline is known).
 - Job-level CI timeouts: 10/20/30/10-minute bounds per workspace job (2× headroom).
+
+### Added (Wave 8 Stage C — humanization)
+
+- Three mechanical pins for voice/help/hint discipline. Pin A (`scripts/check-voice.sh`) greps user-facing strings for banned voice patterns (please / you should / oops / etc.) plus trailing `!"` and emoji codepoints in error files. Pin B (`tests/test_error_hints_have_commands.py`) AST-walks `sov_cli/errors.py` factories asserting every non-None `hint=` contains ≥2 backticks. Pin C (`tests/test_cli_help_no_placeholders.py`) dynamically walks Typer's app structure and asserts zero TODO/WIP/FIXME/XXX/<placeholder> matches in `--help`. All three integrated into CI as fast pre-test gates.
+- `tests/test_errors_registry_no_inline_codes.py` extended to recursive AST walk over `sov_daemon/` + `sov_cli/`. Pins the inline-code boundary mechanically rather than via an enumerated file list.
+- `sov play <ruleset>` thin alias to `sov new` with default solo-vs-AI roster — the no-config quickstart referenced by empty states + README + onboarding panels. Power users keep `sov new -p Alice -p Bob -p Carol` for multi-player.
+- `SOV_VERSION` constant removed from `sov_cli/main.py`; version resolves via `importlib.metadata.version("sovereignty-game")` with `pyproject.toml` fallback. Pinned by `tests/test_version_in_sync.py`.
+- `DaemonDisconnectedBanner` consumer wiring (Stage A miss bundled as Stage C carryover): SSE `daemonConnectionLost` CustomEvent had no listener — banner mounted at App root inside `<DaemonProvider>` so all routes see disconnect events.
+- Three daemon-down empty states (`/audit`, `/game`, `/settings`) name `sov daemon start` recovery command.
+- Recovery-hint sweep across 21 SovError factories — every non-None hint contains a backticked recovery command. Migrated 8 daemon HTTP-style factories from endpoint paths to CLI commands.
+- ShellError Display impls surface backticked recovery commands across all 6 variants. `ShellError::Panic` variant + panic hook in `lib.rs` (event-channel completion landed in Wave 9).
+
+### Added (Wave 9 Stage D — visual polish)
+
+- Pin D (`scripts/check-theme-tokens.sh`) — theme-token discipline grep. Greps `app/src/**/*.{tsx,module.css}` for bare `#hex` / `rgba?(` outside `app/src/styles/theme.css`. Allowlist covers `var(--sov-*)`, CSS keywords, `color-mix(in srgb, var(--sov-*) ...)`, `/* legacy: ... */` migration markers. Integrated into ci.yml `tauri-and-frontend` job + `scripts/verify.sh` as a peer gate alongside Pin A.
+- Loading-state pattern: four-rule decision tree (skeleton for initial route loads, spinner with `aria-busy` for inline ops, invisible for SSE state updates, bespoke per-flow UI for long flows). Documented in CLAUDE.md.
+- ShellError Panic event-channel completion (Stage 8-C carryover): Rust `install_panic_hook()` emits `app.emit("shell-panic", PanicPayload { message, location, timestamp_iso })`. Frontend `app/src/components/PanicModal.tsx` mounted at App root OUTSIDE `<DaemonProvider>` (shell panic must surface even if DaemonProvider fails to initialize). Consumer-listener pinned by `app/src/App.test.tsx` mechanical assertion mirroring Stage 8-C SSE-banner consumer pin.
+- Empty-state glyphs: inline SVG only (`EmptyBoxGlyph`, `PausedGameGlyph`, `DisconnectedPlugGlyph`) using `currentColor`, `role="img"` + `aria-label`. ~900 bytes total bundle delta.
+- `:focus-visible` baseline in `globals.css` (var(--sov-accent) outline). Mike has reduced vision — keyboard focus is real, not theoretical.
+- Pill text token sweep: pill variants (success/warn/error/accent) keep tinted bg + colored border but switch text to `var(--sov-fg)` for AA-clean reads. Saturated foreground tokens failed AA 4.5:1 at 2.7-4.3:1.
+- SSE banner UX: `position: sticky; top: 0; z-index: 100;` (above route content, below `<dialog>` z=10000); auto-dismiss when daemon status flips back to `running`; slide-in + fade animation 200ms wrapped in `prefers-reduced-motion: no-preference`.
+- Tauri shell icon source upgraded from 256×256 scaffold placeholder to canonical 1024×1024 brand-derived RGBA. Wave 11 derives platform-specific bundles (`.icns`, `.ico`, multi-size `.png`) from this.
+- README v2.1 desktop-app section: 3 screenshot embeds (Audit Viewer, Game Shell, Settings) at 1280×800. Generation recipe at `site/public/screenshots/README.md`.
+- Hero badge bumped from `v2.0.0rc1` to `v2.0.2 — multi-save · daemon · audit viewer (dev preview)`. Wave 11 release commit bumps to `v2.1.0` separately.
+
+### Added (Wave 10 Stage A-bis — final-test cumulative-drift fixes)
+
+- BRIDGE-A-bis-001: anchor transaction type swapped from `Payment` to `AccountSet`. xrpl-py 4.5.0 added a hard validator rejecting self-payment (`account == destination`); Sovereignty's anchor pattern is a self-addressed memo vehicle (no value transfer intended). `AccountSet` is the canonical XRPL no-op transaction type accepting memos without payment semantics. Verify side reads `response.result.tx_json.Memos` and is transaction-type agnostic — swap is mechanically invisible to consumers.
+- BRIDGE-A-bis-002: `_extract_memos` (`sov_transport/xrpl_internals.py`) added a `result.tx_json.Memos` branch. xrpl-py 4.5.0 wraps the `Tx` response body in `result.tx_json` (alongside `meta`, `hash`, `ledger_index`); legacy `result.Memos` and `result.tx.Memos` shapes preserved for back-compat against pinned older xrpl-py installs.
+- BRIDGE-A-bis-003: `anchor_batch` chunks batches into `_MAX_MEMOS_PER_TX = 8`-sized AccountSet txs. Returns `list[str]` of txids in submission order. rippled's aggregate `Memos`-field cap (~1 KB on the wire) is the binding constraint, not per-memo size — empirical boundary at SOV grammar (~95 B/memo) is exactly 8 memos. A typical 16-round Campfire game produces 2 anchor txs at game-end. Audit thesis intact: small constant of chain pointers per game, not the 30+ baseline. Pinned by `tests/test_xrpl_integration.py::test_real_testnet_anchor_batch_boundary_8_memos_succeeds` and `test_real_testnet_anchor_batch_boundary_16_memos_chunks_to_two_txs`.
+- CLI-D-bis-001: `sov anchor` auto-discovers `.sov/wallet_seed.txt` with precedence `--signer-file` > `.sov/wallet_seed.txt` > `XRPL_SEED` env var. Previously skipped the file (matching the canonical `sov wallet` write path), so users who ran `sov wallet` then `sov anchor` saw `CONFIG_NO_WALLET` despite the wallet file existing.
+- Daemon endpoint response shape extended: `flush_pending_anchors` returns `{txids, rounds, explorer_urls}` (parallel lists, one entry per chunk). Single-tx batches return 1-element lists; legacy mock fixtures using the singular `txid` shape are transparently coerced.
+- `null` transport `anchor_batch` returns `list[str]` (1-element offline marker) for shape parity.
+- Spec doc (`docs/v2.1-bridge-changes.md`) §Driver and §2 updated with the audit-pointer-per-batch framing and the empirical aggregate-Memos-field constraint.
 
 ## [2.0.2] - 2026-04-30
 

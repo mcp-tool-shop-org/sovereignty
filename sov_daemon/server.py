@@ -705,19 +705,21 @@ async def flush_pending_anchors(
     ``unittest.mock.patch("sov_daemon.server.flush_pending_anchors",
     new=AsyncMock(return_value={"txid": ..., "rounds": [...]}))``.
 
-    Returns ``{txid, rounds, explorer_url}`` on success. Empty pending
-    index is treated as a no-op (returns ``{txid: "", rounds: [],
-    explorer_url: ""}``) so test fixtures with empty pending can still
-    exercise the 200/202 path. Real-world callers gate this with a
-    "is there anything pending?" check before calling.
+    Returns ``{txids, rounds, explorer_urls}`` on success. Wave 10
+    BRIDGE-A-bis-003: ``txids`` is a list (one per ≤8-memo chunk),
+    ``explorer_urls`` is a parallel list. Single-tx batches return a
+    1-element pair. Empty pending is a no-op (returns the empty shape)
+    so test fixtures with empty pending can still exercise 200/202.
+    Real-world callers gate this with a "is there anything pending?"
+    check before calling.
     """
     from sov_transport.base import BatchEntry
     from sov_transport.xrpl_async import AsyncXRPLTransport
-    from sov_transport.xrpl_internals import XRPLNetwork
+    from sov_transport.xrpl_internals import _MAX_MEMOS_PER_TX, XRPLNetwork
 
     pending = read_pending_anchors(game_id)
     if not pending:
-        return {"txid": "", "rounds": [], "explorer_url": ""}
+        return {"txids": [], "rounds": [], "explorer_urls": []}
 
     network_enum = XRPLNetwork(network)
     rounds: list[BatchEntry] = []
@@ -751,14 +753,25 @@ async def flush_pending_anchors(
             required_drops=required_drops,
         )
 
-    txid = await transport.anchor_batch(rounds, seed)
-    _record_anchors(game_id, round_keys, txid)
+    # Wave 10 BRIDGE-A-bis-003: ``anchor_batch`` returns ``list[str]``;
+    # one txid per ≤8-memo chunk. Build a round_key → txid map matching
+    # the bridge's chunking so anchors.json records the correct txid per
+    # round.
+    txids = await transport.anchor_batch(rounds, seed)
+    round_to_txid: dict[str, str] = {}
+    for chunk_idx, txid in enumerate(txids):
+        chunk_start = chunk_idx * _MAX_MEMOS_PER_TX
+        chunk_end = min(chunk_start + _MAX_MEMOS_PER_TX, len(rounds))
+        for entry in rounds[chunk_start:chunk_end]:
+            round_to_txid[entry["round_key"]] = txid
+
+    _record_anchors(game_id, round_to_txid)
     clear_pending_anchors(game_id, round_keys)
-    explorer_url = transport.explorer_tx_url(txid)
+    explorer_urls = [transport.explorer_tx_url(t) for t in txids]
     return {
-        "txid": txid,
+        "txids": txids,
         "rounds": round_keys,
-        "explorer_url": explorer_url,
+        "explorer_urls": explorer_urls,
     }
 
 
@@ -905,14 +918,32 @@ async def _do_anchor(
             status_code=502,
         )
 
-    txid = str(result.get("txid", ""))
+    # Wave 10 BRIDGE-A-bis-003: ``flush_pending_anchors`` returns
+    # ``txids`` + ``explorer_urls`` (parallel lists, one entry per
+    # ≤8-memo chunk). Single-tx batches return 1-element lists; legacy
+    # mock fixtures still using the singular ``txid`` shape are
+    # transparently coerced.
+    txids_raw = result.get("txids")
+    if txids_raw is None:
+        # Back-compat: legacy mocks return ``{"txid": "..."}``.
+        legacy_txid = str(result.get("txid", ""))
+        txids = [legacy_txid] if legacy_txid else []
+    else:
+        txids = [str(t) for t in txids_raw]
+
+    explorer_urls_raw = result.get("explorer_urls")
+    if explorer_urls_raw is None:
+        legacy_url = str(result.get("explorer_url", ""))
+        explorer_urls = [legacy_url] if legacy_url else []
+    else:
+        explorer_urls = [str(u) for u in explorer_urls_raw]
+
     round_keys = list(result.get("rounds", []))
-    explorer_url = str(result.get("explorer_url", ""))
 
     payload: dict[str, Any] = {
-        "txid": txid,
+        "txids": txids,
         "rounds": round_keys,
-        "explorer_url": explorer_url,
+        "explorer_urls": explorer_urls,
         "checkpoint": checkpoint,
     }
 
@@ -922,9 +953,9 @@ async def _do_anchor(
         "anchor.batch_complete",
         {
             "game_id": game_id,
-            "txid": txid,
+            "txids": txids,
             "rounds": round_keys,
-            "explorer_url": explorer_url,
+            "explorer_urls": explorer_urls,
         },
     )
 
@@ -945,8 +976,12 @@ def _round_sort_key(round_key: str) -> tuple[int, int]:
         return (2, 0)
 
 
-def _record_anchors(game_id: str, round_keys: list[str], txid: str) -> None:
+def _record_anchors(game_id: str, round_to_txid: dict[str, str]) -> None:
     """Append ``{round_key: txid}`` rows to ``anchors.json``.
+
+    Wave 10 BRIDGE-A-bis-003: caller passes a precomputed ``round_to_txid``
+    mapping so multi-tx batches (>8 memos) record the correct txid per
+    round_key. Single-tx batches still pass a single-value mapping.
 
     Preserves any existing rows so re-anchoring on a fresh checkpoint
     doesn't drop earlier rounds. Atomic-write via the same engine
@@ -956,8 +991,7 @@ def _record_anchors(game_id: str, round_keys: list[str], txid: str) -> None:
 
     path = anchors_file(game_id)
     existing = _read_anchors(game_id)
-    for key in round_keys:
-        existing[key] = txid
+    existing.update(round_to_txid)
     path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(
         path,

@@ -44,6 +44,7 @@ from sov_transport.base import BatchEntry, LedgerTransport
 from sov_transport.xrpl_internals import (
     _MAX_BATCH_MEMO_BYTES,
     _MAX_MEMO_BYTES,
+    _MAX_MEMOS_PER_TX,
     _NETWORK_TABLE,
     _SUBMIT_BACKOFF_SECONDS,
     _SUBMIT_DEADLINE_SECONDS,
@@ -196,39 +197,48 @@ class XRPLTransport(LedgerTransport):
             # refs) before the frame's locals are captured by tooling.
             signer = ""  # noqa: F841 — intentional caller-frame scrub
 
-    def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> str:
-        """Anchor N rounds in one Payment via N memos. Returns single txid.
+    def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> list[str]:
+        """Anchor N rounds across one or more AccountSet txs. Returns txid trail.
 
-        Each ``BatchEntry`` becomes one ``Memo`` field on the same Payment,
-        carrying the SOV grammar string ``SOV|<ruleset>|<game-id>|r<N>|
-        sha256:<envelope_hash>`` (or ``FINAL`` literal for the final round).
-        Each memo is individually capped at ``_MAX_MEMO_BYTES``; XRPL itself
-        accepts ~150 memo fields per tx, so a 16-round game (15 + FINAL) is
-        well inside the per-tx ceiling. This is the audit-ergonomics primary:
-        one verifiable chain pointer per game, not a 16-tx trail.
+        Each ``BatchEntry`` becomes one ``Memo`` field. **Wave 10 BRIDGE-A-bis-003:**
+        rippled enforces an aggregate Memos-field cap on the wire (~1 KB total,
+        empirically ≤8 SOV-grammar memos at ~95 B/memo). When ``rounds`` carries
+        more than ``_MAX_MEMOS_PER_TX`` entries, this method splits the batch
+        into N sequential AccountSet submissions of ≤8 memos each and returns
+        the resulting txid trail. A typical 16-round Campfire game (15 rounds +
+        FINAL) produces 2 txs at game-end. Each chunk preserves SOV-grammar
+        memo body, so the ``round_key`` field lets operators walk the trail.
+
+        The audit thesis remains: small constant of chain pointers per game,
+        not the 30+ baseline a single-anchor-per-round design would produce.
 
         Args:
-            rounds: Non-empty list of ``BatchEntry`` dicts. Order is
-                preserved on the wire (the round_key is in the memo, so
-                consumers can reorder by round_key if needed).
+            rounds: Non-empty list of ``BatchEntry`` dicts. Order is preserved
+                on the wire and across chunk boundaries (the first chunk
+                carries the lowest round_keys, then the next chunk, etc.).
             signer: The wallet seed (SECRET). Same sensitivity as ``anchor``.
 
         Returns:
-            The XRPL transaction hash for the single Payment carrying all
-            memos.
+            A non-empty list of XRPL transaction hashes. Single-tx batches
+            (≤8 memos) return a 1-element list; >8-memo batches return one
+            txid per chunk in submission order.
 
         Raises:
-            ValueError: If ``rounds`` is empty, or any individual rendered
-                memo exceeds 1024 UTF-8 bytes.
-            TransportError: If submission fails after the bounded retry /
-                deadline.
+            ValueError: If ``rounds`` is empty, any rendered memo exceeds
+                ``_MAX_MEMO_BYTES``, or any chunk's aggregate memo bytes
+                exceed ``_MAX_BATCH_MEMO_BYTES``.
+            TransportError: If any chunk's submission fails after the bounded
+                retry / deadline. Earlier chunks that succeeded remain
+                anchored on chain — partial-success semantics; the engine /
+                CLI caller is responsible for resuming pending state.
         """
         try:
             if not rounds:
                 raise ValueError("anchor_batch requires at least one round entry")
 
-            memos: list[str] = []
-            total_bytes = 0
+            # Render + per-memo size validation up front so a single oversized
+            # memo fails before any chunk hits the wire.
+            rendered_memos: list[str] = []
             for entry in rounds:
                 rendered = _format_memo(entry)
                 memo_bytes = len(rendered.encode("utf-8"))
@@ -237,27 +247,35 @@ class XRPLTransport(LedgerTransport):
                         f"memo for round_key={entry['round_key']!r} exceeds "
                         f"{_MAX_MEMO_BYTES} bytes ({memo_bytes})"
                     )
-                total_bytes += memo_bytes
-                memos.append(rendered)
+                rendered_memos.append(rendered)
 
-            # BRIDGE-002: pre-submit total-tx-size validation. The XRPL
-            # Payment wire limit is ~10KB practical; we cap the memo total
-            # at 8KB to leave headroom for the rest of the envelope. Without
-            # this guard a 16-round batch with a long ruleset / game-id
-            # would push past the wire ceiling, the bounded retry loop
-            # would classify the rejection as ``unknown`` and burn 3
-            # attempts on a deterministic failure before surfacing an
-            # opaque TransportError.
-            if total_bytes > _MAX_BATCH_MEMO_BYTES:
-                raise ValueError(
-                    f"Batch payload {total_bytes} bytes exceeds XRPL Payment "
-                    f"ceiling {_MAX_BATCH_MEMO_BYTES} bytes; reduce round "
-                    "count or shorten ruleset / game-id to fit. "
-                    "(Per-memo cap is unchanged at "
-                    f"{_MAX_MEMO_BYTES} bytes; this is the per-tx total.)"
-                )
+            # Wave 10 BRIDGE-A-bis-003: chunk into ``_MAX_MEMOS_PER_TX``-sized
+            # batches. Order is preserved across chunks so the txid trail
+            # matches round_key order.
+            chunks: list[list[str]] = [
+                rendered_memos[i : i + _MAX_MEMOS_PER_TX]
+                for i in range(0, len(rendered_memos), _MAX_MEMOS_PER_TX)
+            ]
 
-            return self._submit(memos, signer)
+            # Per-chunk byte-level guard (defensive secondary gate against
+            # pathological long-memo inputs that fit under the count cap but
+            # exceed the aggregate-bytes cap).
+            for chunk_idx, chunk in enumerate(chunks):
+                chunk_bytes = sum(len(m.encode("utf-8")) for m in chunk)
+                if chunk_bytes > _MAX_BATCH_MEMO_BYTES:
+                    raise ValueError(
+                        f"Chunk {chunk_idx + 1}/{len(chunks)} payload "
+                        f"{chunk_bytes} bytes exceeds aggregate cap "
+                        f"{_MAX_BATCH_MEMO_BYTES} bytes; shorten ruleset / "
+                        "game-id, or split rounds further. (Per-memo cap is "
+                        f"unchanged at {_MAX_MEMO_BYTES} bytes; "
+                        f"per-tx count cap is {_MAX_MEMOS_PER_TX} memos.)"
+                    )
+
+            txids: list[str] = []
+            for chunk in chunks:
+                txids.append(self._submit(chunk, signer))
+            return txids
         finally:
             # Caller-frame seed scrub (BRIDGE-001). See anchor() finally
             # block for rationale; same gap, same fix.

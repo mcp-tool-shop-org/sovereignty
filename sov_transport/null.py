@@ -40,17 +40,20 @@ class NullTransport(LedgerTransport):
     def anchor(self, round_hash: str, memo: str, signer: str) -> str:
         return f"offline:{round_hash[:16]}"
 
-    def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> str:
-        """Return a deterministic local marker for an offline batch.
+    def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> list[str]:
+        """Return a deterministic local-marker trail for an offline batch.
 
-        Keyed off the first entry's envelope_hash so the marker is stable
-        for a given batch contents. Empty input is rejected to mirror the
-        XRPL transport's contract (which would otherwise produce an empty
-        Payment.Memos).
+        Wave 10 BRIDGE-A-bis-003: matches the XRPL transports' txid-trail
+        return shape (``list[str]``). Offline mode is a single conceptual
+        anchor regardless of round count, but mirrors the chunked shape so
+        callers don't branch on transport identity. The marker is keyed off
+        the first entry's envelope_hash for stability.
+
+        Empty input is rejected to mirror the XRPL transport's contract.
         """
         if not rounds:
             raise ValueError("anchor_batch requires at least one round entry")
-        return f"offline:batch:{rounds[0]['envelope_hash'][:16]}"
+        return [f"offline:batch:{rounds[0]['envelope_hash'][:16]}"]
 
     def is_anchored_on_chain(self, txid: str, expected_hash: str) -> ChainLookupResult:
         # In offline mode, verification is done via local proof files; this

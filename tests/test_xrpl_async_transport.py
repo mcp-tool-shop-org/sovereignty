@@ -317,8 +317,10 @@ async def test_async_anchor_batch_happy_path_returns_tx_hash(
     ]
 
     t = AsyncXRPLTransport()
-    tx_hash = await t.anchor_batch(rounds, _TEST_SEED)
-    assert tx_hash == "ASYNCDEADBEEF"
+    # Wave 10 BRIDGE-A-bis-003: anchor_batch returns ``list[str]``;
+    # 2 memos fits in a single chunk so the list has 1 element.
+    txids = await t.anchor_batch(rounds, _TEST_SEED)
+    assert txids == ["ASYNCDEADBEEF"]
     wallet_mod.Wallet.from_seed.assert_called_once_with(_TEST_SEED)
 
 

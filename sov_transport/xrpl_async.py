@@ -56,6 +56,7 @@ from sov_transport.base import BatchEntry
 from sov_transport.xrpl_internals import (
     _MAX_BATCH_MEMO_BYTES,
     _MAX_MEMO_BYTES,
+    _MAX_MEMOS_PER_TX,
     _NETWORK_TABLE,
     _SUBMIT_BACKOFF_SECONDS,
     _SUBMIT_DEADLINE_SECONDS,
@@ -170,32 +171,37 @@ class AsyncXRPLTransport:
             # walking ``tb.tb_frame.f_locals`` up to this frame), same fix.
             signer = ""  # noqa: F841 — intentional caller-frame scrub
 
-    async def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> str:
-        """Async anchor N rounds in one Payment via N memos. Returns single txid.
+    async def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> list[str]:
+        """Async anchor N rounds across one or more AccountSet txs. Returns trail.
 
-        Same wire format as the sync impl — one verifiable chain pointer per
-        game, not a 16-tx trail. The async path lets the daemon flush a batch
-        without blocking its event loop on the 30s submit deadline.
+        Mirror of the sync impl in ``xrpl.py`` — see that method's docstring
+        for the BRIDGE-A-bis-003 chunking rationale (rippled aggregate
+        Memos-field cap, ≤8 memos/tx empirical boundary, audit-thesis
+        framing). The async path lets the daemon flush a batch without
+        blocking its event loop on the 30s per-chunk submit deadline.
 
         Args:
             rounds: Non-empty list of ``BatchEntry`` dicts.
             signer: The wallet seed (SECRET).
 
         Returns:
-            The XRPL transaction hash for the single Payment.
+            A non-empty list of XRPL transaction hashes in submission order
+            (chunk order matches round_key order).
 
         Raises:
-            ValueError: If ``rounds`` is empty, or any rendered memo exceeds
-                1024 UTF-8 bytes.
-            TransportError: On retry exhaustion / network failure / unexpected
-                response shape.
+            ValueError: If ``rounds`` is empty, any rendered memo exceeds
+                ``_MAX_MEMO_BYTES``, or any chunk's aggregate memo bytes
+                exceed ``_MAX_BATCH_MEMO_BYTES``.
+            TransportError: If any chunk's submission fails after the bounded
+                retry / deadline. Earlier chunks that succeeded remain anchored
+                on chain — partial-success semantics; daemon caller is
+                responsible for resuming pending state.
         """
         try:
             if not rounds:
                 raise ValueError("anchor_batch requires at least one round entry")
 
-            memos: list[str] = []
-            total_bytes = 0
+            rendered_memos: list[str] = []
             for entry in rounds:
                 rendered = _format_memo(entry)
                 memo_bytes = len(rendered.encode("utf-8"))
@@ -204,22 +210,32 @@ class AsyncXRPLTransport:
                         f"memo for round_key={entry['round_key']!r} exceeds "
                         f"{_MAX_MEMO_BYTES} bytes ({memo_bytes})"
                     )
-                total_bytes += memo_bytes
-                memos.append(rendered)
+                rendered_memos.append(rendered)
 
-            # BRIDGE-002: pre-submit total-tx-size validation. See sync
-            # sibling for the design rationale (8KB cap leaves headroom
-            # under the ~10KB XRPL Payment wire limit).
-            if total_bytes > _MAX_BATCH_MEMO_BYTES:
-                raise ValueError(
-                    f"Batch payload {total_bytes} bytes exceeds XRPL Payment "
-                    f"ceiling {_MAX_BATCH_MEMO_BYTES} bytes; reduce round "
-                    "count or shorten ruleset / game-id to fit. "
-                    "(Per-memo cap is unchanged at "
-                    f"{_MAX_MEMO_BYTES} bytes; this is the per-tx total.)"
-                )
+            # Wave 10 BRIDGE-A-bis-003: chunk into _MAX_MEMOS_PER_TX-sized
+            # batches (rippled aggregate Memos-field cap is the binding
+            # constraint, not per-memo size).
+            chunks: list[list[str]] = [
+                rendered_memos[i : i + _MAX_MEMOS_PER_TX]
+                for i in range(0, len(rendered_memos), _MAX_MEMOS_PER_TX)
+            ]
 
-            return await self._submit(memos, signer)
+            for chunk_idx, chunk in enumerate(chunks):
+                chunk_bytes = sum(len(m.encode("utf-8")) for m in chunk)
+                if chunk_bytes > _MAX_BATCH_MEMO_BYTES:
+                    raise ValueError(
+                        f"Chunk {chunk_idx + 1}/{len(chunks)} payload "
+                        f"{chunk_bytes} bytes exceeds aggregate cap "
+                        f"{_MAX_BATCH_MEMO_BYTES} bytes; shorten ruleset / "
+                        "game-id, or split rounds further. (Per-memo cap is "
+                        f"unchanged at {_MAX_MEMO_BYTES} bytes; "
+                        f"per-tx count cap is {_MAX_MEMOS_PER_TX} memos.)"
+                    )
+
+            txids: list[str] = []
+            for chunk in chunks:
+                txids.append(await self._submit(chunk, signer))
+            return txids
         finally:
             # Caller-frame seed scrub (BRIDGE-001) — see anchor() finally
             # block for rationale; same gap, same fix.
