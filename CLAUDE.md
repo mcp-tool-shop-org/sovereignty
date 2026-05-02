@@ -75,6 +75,7 @@ Stage B-2 audit-lens improvement note for next swarm: cross-check workflow filen
 
 ## Decisions worth knowing
 
+- **Multi-save model (v2.1)**: persistence is plural at `.sov/games/<game-id>/`. Game-id format is `s{seed}` (existing convention from `sov_engine/hashing.py`). Active-game pointer at `.sov/active-game`. Cross-game files (`wallet_seed.txt`, `season.json`) stay at `.sov/` root. Reference: `docs/multi-save.md`.
 - **Proof format v2 hard cut** (not backward-compat): `state_hash` → `envelope_hash` covers full envelope (game_id, round, ruleset, rng_seed, timestamp_utc, players, state). `proof_version: 2`. v1 proofs raise `ProofFormatError` with migration text pointing at `pipx install 'sovereignty-game<2.0.0'` for legacy verify.
 - **State schema_version** mirrors proof_version naming. Currently `schema_version: 1`. Bump on any field rename or removal; new optional fields don't require a bump.
 - **Atomic writes**: single helper `sov_engine/io_utils.py::atomic_write_text` (Stage C consolidated the duplicate). Used for state, season, rng_seed, proof, anchors.json — all four persistence paths uniformly.
@@ -96,7 +97,7 @@ Stage B-2 audit-lens improvement note for next swarm: cross-check workflow filen
 ## Where things live
 
 - **Game vocabulary**: rulesets are Campfire / Town Hall / Treaty Table / Market Day. Mechanics: vouchers (promises with deadlines), deals (trades), treaties (multi-round agreements), anchors (XRPL memos), postcards (season recap output).
-- **Persistence**: `.sov/game_state.json` (current game, schema_version=1), `.sov/proofs/*.json` (round + final proofs, includes `anchors.json` index added Stage B), `.sov/rng_seed.txt` (deterministic seed). All atomic-written via `sov_engine/io_utils.py::atomic_write_text`.
+- **Persistence**: Multi-save layout under `.sov/games/<game-id>/{state.json, rng_seed.txt, proofs/}` (game-id is `s{seed}`). `.sov/active-game` pointer tracks the current game. Cross-game state (`wallet_seed.txt`, `season.json`) stays at `.sov/` root. State `schema_version=1` (unchanged — multi-save is layout, not content). All persistence atomic-written via `sov_engine/io_utils.py::atomic_write_text`. v1 layout (`.sov/game_state.json`) auto-migrates on first v2.1 invocation. Multi-save reference: `docs/multi-save.md`.
 - **Landing page + handbook**: `site/` (Astro + Starlight via @mcptoolshop/site-theme), live at https://mcp-tool-shop-org.github.io/sovereignty/. Two `HACK:` comments link to upstream issues #4 (`packageUrl`) and #5 (`<slot name="head"/>`).
 - **Release pipeline**: `.github/workflows/publish.yml` ships PyPI + PyInstaller binaries (3 platforms) + npm-launcher. PyPI publish gates on `needs: [build-binaries]` (fail-closed) + wheel-smoke gate (fresh-venv install + `sov self-check --json` status check). Renamed from `release.yml` in v2.0.2 to match the pre-existing PyPI Trusted Publisher record.
 - **Repo-knowledge DB**: `mcp-tool-shop-org/sovereignty` indexed at `/Users/michaelfrilot/AI/repos/data/knowledge.db` (last sync at v2.0.2).

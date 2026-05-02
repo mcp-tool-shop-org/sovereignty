@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## v2.1.0 (unreleased)
+
+### Added
+
+- Multi-save model: persistence layer is now plural under `.sov/games/<game-id>/`. Switch between saved games with the new `sov resume <game-id>` command; list all saves with `sov games`.
+- `.sov/active-game` pointer file tracks which game is current.
+- Auto-migration from v1 layout (`.sov/game_state.json`) on first invocation under v2.1 — one-shot, transparent, with a stderr notice.
+
+### Changed
+
+- `sov new` now writes to `.sov/games/<game-id>/` and sets the active-game pointer.
+
+### Notes
+
+- `.sov/wallet_seed.txt` and `.sov/season.json` remain at `.sov/` root (cross-game state).
+- State `schema_version` stays `1` — multi-save is a layout reorg, not a content change.
+- See [docs/multi-save.md](docs/multi-save.md) for the operator-facing reference.
+
 ## [2.0.2] - 2026-04-30
 
 ### Fixed

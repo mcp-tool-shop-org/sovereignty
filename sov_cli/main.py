@@ -23,6 +23,7 @@ from sov_cli.errors import (
     insufficient_resources_error,
     invalid_action_error,
     market_error,
+    no_active_game_error,
     no_game_error,
     no_proof_error,
     no_wallet_error,
@@ -40,7 +41,19 @@ from sov_cli.errors import (
     wallet_error,
 )
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
-from sov_engine.io_utils import atomic_write_text
+from sov_engine.io_utils import (
+    GameSummary,
+    anchors_file,
+    atomic_write_text,
+    game_dir,
+    get_active_game_id,
+    list_saved_games,
+    migrate_v1_layout,
+    proofs_dir,
+    rng_seed_file,
+    set_active_game_id,
+    state_file,
+)
 from sov_engine.models import (
     RESOURCE_NAMES,
     GameState,
@@ -170,32 +183,71 @@ def main(
 # ---------------------------------------------------------------------------
 
 SAVE_DIR = Path(".sov")
-STATE_FILE = SAVE_DIR / "game_state.json"
-RNG_SEED_FILE = SAVE_DIR / "rng_seed.txt"
-PROOFS_DIR = SAVE_DIR / "proofs"
 
 # State schema version this binary understands. Bump on any field rename or
 # removal in ``game_state_snapshot``; new optional fields don't require bump.
 SUPPORTED_STATE_SCHEMA_VERSION = 1
 
 
+def _resolve_active_game_id() -> str:
+    """Resolve the current active game-id, applying migration + fallback.
+
+    Order of resolution:
+      1. If a v1 layout (``.sov/game_state.json``) is present, migrate it
+         to v2. Migration sets the active-game pointer as a side effect.
+      2. Read ``.sov/active-game``; if non-empty, return its value.
+      3. If exactly one saved game exists, set it active and return its id.
+      4. Otherwise, raise ``SovError(no-active-game)`` via ``_fail`` so the
+         operator can pick one with ``sov resume`` or start fresh.
+    """
+    migrated = migrate_v1_layout()
+    if migrated is not None:
+        return migrated
+
+    active = get_active_game_id()
+    if active:
+        return active
+
+    saved = list_saved_games()
+    if len(saved) == 1:
+        set_active_game_id(saved[0].game_id)
+        return saved[0].game_id
+
+    _fail(no_active_game_error())
+
+
+def _has_any_saved_game() -> bool:
+    """Return True iff at least one saved game exists on disk.
+
+    Cheap check used by commands that need to know "is anything saved here"
+    without resolving (and thus failing on) an ambiguous active-game state.
+    Triggers migration of a v1 layout as a side effect — same one-shot
+    convergence point as ``_resolve_active_game_id``.
+    """
+    migrate_v1_layout()
+    return bool(list_saved_games())
+
+
 def _save_state(state: GameState) -> None:
-    """Persist game state to disk atomically."""
-    SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    """Persist game state to disk atomically (per-game subtree)."""
+    game_id = f"s{state.config.seed}"
+    target = state_file(game_id)
+    target.parent.mkdir(parents=True, exist_ok=True)
     snapshot = game_state_snapshot(state)
-    atomic_write_text(STATE_FILE, canonical_json(snapshot))
-    logger.info("save_state path=%s round=%d", STATE_FILE, state.current_round)
+    atomic_write_text(target, canonical_json(snapshot))
+    logger.info("save_state path=%s round=%d", target, state.current_round)
 
 
-def _record_anchor(round_key: int | str, txid: str) -> None:
+def _record_anchor(round_key: int | str, txid: str, game_id: str) -> None:
     """Persist an XRPL anchor txid keyed by round (or "FINAL") to anchors.json.
 
     Schema matches what postcard / feedback already read:
     ``{round_str: txid}``. Called after a successful ``transport.anchor()``
     so subsequent invocations can surface the explorer link.
     """
-    PROOFS_DIR.mkdir(parents=True, exist_ok=True)
-    anchor_file = PROOFS_DIR / "anchors.json"
+    pdir = proofs_dir(game_id)
+    pdir.mkdir(parents=True, exist_ok=True)
+    anchor_file = anchors_file(game_id)
     anchors: dict[str, str] = {}
     if anchor_file.exists():
         try:
@@ -224,18 +276,29 @@ def _record_anchor(round_key: int | str, txid: str) -> None:
 def _load_game() -> tuple[GameState, GameRng] | None:
     """Load game state from disk.
 
-    Returns None if no active game (missing files). On a corrupted save or a
-    schema_version we don't understand, prints a structured ``SovError`` and
+    Returns None if no game has ever been saved here. On a corrupted save or
+    a schema_version we don't understand, prints a structured ``SovError`` and
     exits via ``_fail`` — the same path the rest of the CLI uses for
     unrecoverable user-facing failures.
+
+    When multiple saved games exist but no active-game pointer is set, this
+    fails with ``no_active_game_error`` (operator must pick one).
     """
-    if not STATE_FILE.exists():
+    # Trigger migration before any pointer / listing lookup.
+    migrate_v1_layout()
+    if not _has_any_saved_game():
         return None
-    if not RNG_SEED_FILE.exists():
+
+    game_id = _resolve_active_game_id()
+    sf = state_file(game_id)
+    rf = rng_seed_file(game_id)
+    if not sf.exists() or not rf.exists():
+        # Active pointer references a game whose files were partially removed.
+        # Treat as corrupt — operator can `sov resume <other>` or `sov new`.
         return None
 
     try:
-        return _load_game_inner()
+        return _load_game_inner(sf, rf)
     except (
         json.JSONDecodeError,
         KeyError,
@@ -246,16 +309,16 @@ def _load_game() -> tuple[GameState, GameRng] | None:
         logger.error(
             "load_game.failed exc_type=%s state_file=%s detail=%s",
             type(e).__name__,
-            STATE_FILE,
+            sf,
             e,
         )
         _fail(state_corrupt_error(f"{type(e).__name__}: {e}"))
 
 
-def _load_game_inner() -> tuple[GameState, GameRng] | None:
+def _load_game_inner(sf: Path, rf: Path) -> tuple[GameState, GameRng] | None:
     """Load implementation — exceptions are caught by ``_load_game``."""
-    seed = int(RNG_SEED_FILE.read_text().strip())
-    data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+    seed = int(rf.read_text().strip())
+    data = json.loads(sf.read_text(encoding="utf-8"))
 
     schema_version = data.get("schema_version")
     if schema_version != SUPPORTED_STATE_SCHEMA_VERSION:
@@ -440,32 +503,79 @@ def doctor(
         checks.append(("info", "No game directory yet", "Run: sov new -p Alice -p Bob"))
 
     # 2. Active game
-    if STATE_FILE.exists():
-        result = _load_game()
-        if result:
-            state, _ = result
-            tier = _tier_name(state)
-            n = len(state.players)
-            names = ", ".join(p.name for p in state.players)
-            rnd = state.current_round
-            if state.game_over:
-                checks.append(
-                    (
-                        "ok",
-                        f"Game complete: {tier} ({names})",
-                        "Run: sov game-end",
-                    )
+    # Trigger migration before probing — a v1 tree should appear as a v2 tree.
+    migrate_v1_layout()
+    saved = list_saved_games()
+    active_id = get_active_game_id()
+    # Active-game pointer set but list_saved_games skipped its directory:
+    # state.json is unreadable or the directory is missing. Surface this
+    # explicitly rather than falling through to "no active game" — the user
+    # has a save they care about that we can't load.
+    if active_id and not any(s.game_id == active_id for s in saved):
+        sf = state_file(active_id)
+        if sf.exists():
+            checks.append(
+                (
+                    "warn",
+                    f"Active game {active_id} state.json is unreadable",
+                    f"Inspect {sf} or run: sov new",
                 )
-            else:
-                checks.append(
-                    (
-                        "ok",
-                        f"Ready to play {tier} — {n} players ({names}), round {rnd}",
-                        "",
-                    )
-                )
+            )
         else:
-            checks.append(("warn", "Game state exists but can't load", "Try: sov new"))
+            checks.append(
+                (
+                    "warn",
+                    f"Active game pointer {active_id} but state.json is missing",
+                    "Run: sov games   or   sov new",
+                )
+            )
+    elif saved:
+        if active_id and any(s.game_id == active_id for s in saved):
+            result = _load_game()
+            if result:
+                state, _ = result
+                tier = _tier_name(state)
+                n = len(state.players)
+                names = ", ".join(p.name for p in state.players)
+                rnd = state.current_round
+                if state.game_over:
+                    checks.append(
+                        (
+                            "ok",
+                            f"Game complete: {tier} ({names})",
+                            "Run: sov game-end",
+                        )
+                    )
+                else:
+                    checks.append(
+                        (
+                            "ok",
+                            f"Ready to play {tier} — {n} players ({names}), round {rnd}",
+                            "",
+                        )
+                    )
+            else:
+                checks.append(("warn", "Game state exists but can't load", "Try: sov new"))
+        elif len(saved) == 1:
+            # Single save without an explicit pointer — _load_game would
+            # auto-resolve, but to keep doctor side-effect-free we just
+            # report and recommend the explicit resume.
+            only = saved[0]
+            checks.append(
+                (
+                    "info",
+                    f"{len(saved)} saved game ({only.game_id}); no active-game pointer",
+                    f"Run: sov resume {only.game_id}",
+                )
+            )
+        else:
+            checks.append(
+                (
+                    "info",
+                    f"{len(saved)} saved games; no active-game pointer",
+                    "Run: sov games  then  sov resume <game-id>",
+                )
+            )
     else:
         checks.append(("info", "No active game", "Run: sov new -p Alice -p Bob"))
 
@@ -533,12 +643,15 @@ def doctor(
                 )
             )
 
-    # 5. Proofs
-    PROOFS_DIR.mkdir(parents=True, exist_ok=True)
-    proofs = list(PROOFS_DIR.glob("*.proof.json"))
-    if proofs:
-        s = "s" if len(proofs) != 1 else ""
-        checks.append(("ok", f"{len(proofs)} proof file{s} saved", ""))
+    # 5. Proofs (count across all saved games)
+    proof_total = 0
+    for summary in list_saved_games():
+        pdir = proofs_dir(summary.game_id)
+        if pdir.exists():
+            proof_total += sum(1 for _ in pdir.glob("*.proof.json"))
+    if proof_total:
+        s = "s" if proof_total != 1 else ""
+        checks.append(("ok", f"{proof_total} proof file{s} saved", ""))
 
     if json_out:
         # Doctor uses ("status","message","hint") triples; map to the
@@ -714,10 +827,17 @@ def support_bundle(
         zf.writestr("self-check.txt", _checks_to_text(checks))
         zf.writestr("self-check.json", json.dumps(json_payload, indent=2))
 
-        # 2. Sanitized config (game state, no wallet secrets)
-        if STATE_FILE.exists():
+        # 2. Sanitized config (active game's state.json, no wallet secrets)
+        migrate_v1_layout()
+        active_id = get_active_game_id()
+        if active_id is None:
+            saved = list_saved_games()
+            if len(saved) == 1:
+                active_id = saved[0].game_id
+        sf = state_file(active_id) if active_id else None
+        if sf is not None and sf.exists():
             try:
-                data = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+                data = json.loads(sf.read_text(encoding="utf-8"))
                 zf.writestr("game_state.json", json.dumps(data, indent=2))
             except Exception as exc:
                 # Non-fatal: bundle still produced, just with a placeholder
@@ -726,7 +846,7 @@ def support_bundle(
                 logger.warning(
                     "support_bundle.read_state.failed path=%s exc=%s detail=%s "
                     "(bundle still written; game_state.json contains placeholder)",
-                    STATE_FILE,
+                    sf,
                     type(exc).__name__,
                     exc,
                 )
@@ -734,13 +854,20 @@ def support_bundle(
 
         # 3. State file listing (names only, no content)
         if SAVE_DIR.exists():
-            listing = "\n".join(f.name for f in sorted(SAVE_DIR.iterdir()))
-            zf.writestr("state-listing.txt", listing)
+            listing_lines = [f.name for f in sorted(SAVE_DIR.iterdir())]
+            for s in list_saved_games():
+                gd = game_dir(s.game_id)
+                listing_lines.append(f"games/{s.game_id}/")
+                listing_lines.extend(f"games/{s.game_id}/{f.name}" for f in sorted(gd.iterdir()))
+            zf.writestr("state-listing.txt", "\n".join(listing_lines))
 
         # 4. Proof count (no proof content — those are large)
-        if PROOFS_DIR.exists():
-            proofs = list(PROOFS_DIR.glob("*.proof.json"))
-            zf.writestr("proof-count.txt", f"{len(proofs)} proof file(s)")
+        proof_total = 0
+        for summary in list_saved_games():
+            pdir = proofs_dir(summary.game_id)
+            if pdir.exists():
+                proof_total += sum(1 for _ in pdir.glob("*.proof.json"))
+        zf.writestr("proof-count.txt", f"{proof_total} proof file(s)")
 
         # 5. Environment summary
         env_info = {
@@ -808,7 +935,13 @@ def new(
     if len(players) > 4:
         _fail(player_count_error(len(players)))
 
-    if STATE_FILE.exists() and not typer.confirm("Active game found. Overwrite?"):
+    # Migrate v1 layout (if any) before checking for an existing game with
+    # the same seed; otherwise we'd silently shadow a legacy save.
+    migrate_v1_layout()
+    new_game_id = f"s{seed}"
+    if state_file(new_game_id).exists() and not typer.confirm(
+        f"Saved game {new_game_id} already exists. Overwrite?"
+    ):
         raise typer.Exit(0)
 
     if tier in ("treaty-table", "treaty_table", "treatytable"):
@@ -833,10 +966,12 @@ def new(
     if recipe:
         recipe_note = _apply_recipe(state, recipe)
 
-    # Save seed for reloading
-    SAVE_DIR.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(RNG_SEED_FILE, str(seed))
+    # Save the new game's per-game subtree, then mark it active.
+    game_id = f"s{state.config.seed}"
+    game_dir(game_id).mkdir(parents=True, exist_ok=True)
+    atomic_write_text(rng_seed_file(game_id), str(seed))
     _save_state(state)
+    set_active_game_id(game_id)
 
     console.print(
         Panel(
@@ -869,8 +1004,11 @@ def tutorial() -> None:
 
     # Set up a 2-player demo game
     state, rng = new_game(seed=1, player_names=["You", "Friend"])
-    SAVE_DIR.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(RNG_SEED_FILE, "1")
+    migrate_v1_layout()
+    demo_id = f"s{state.config.seed}"
+    game_dir(demo_id).mkdir(parents=True, exist_ok=True)
+    atomic_write_text(rng_seed_file(demo_id), "1")
+    set_active_game_id(demo_id)
 
     console.print("\n  You and Friend sit down with 5 coins and 3 reputation each.")
     console.print("  [dim]Goal: be the first to reach 20 coins (Prosperity).[/dim]\n")
@@ -1059,7 +1197,8 @@ def end_round(
     state, _ = result
 
     proof = make_round_proof(state)
-    out_dir = output or PROOFS_DIR
+    game_id = f"s{state.config.seed}"
+    out_dir = output or proofs_dir(game_id)
     path = save_proof(proof, out_dir)
 
     console.print(
@@ -1127,9 +1266,11 @@ def anchor(
 
     # Find the proof file
     if proof_file is None:
-        # Find the latest proof file
-        PROOFS_DIR.mkdir(parents=True, exist_ok=True)
-        proofs = sorted(PROOFS_DIR.glob("round_*.proof.json"))
+        # Find the latest proof file in the active game's proofs/ dir.
+        active_id = _resolve_active_game_id()
+        pdir = proofs_dir(active_id)
+        pdir.mkdir(parents=True, exist_ok=True)
+        proofs = sorted(pdir.glob("round_*.proof.json"))
         if not proofs:
             _fail(no_proof_error())
         proof_file = proofs[-1]
@@ -1170,7 +1311,7 @@ def anchor(
 
         # Persist txid so postcard / feedback can surface the explorer link
         # in future invocations (the anchor receipt was previously read-only).
-        _record_anchor(rnd, txid)
+        _record_anchor(rnd, txid, game_id)
         logger.info("anchor.success round=%s txid=%s", rnd, txid)
 
         explorer = f"https://testnet.xrpl.org/transactions/{txid}"
@@ -1214,10 +1355,10 @@ def wallet() -> None:
 
         address, seed = fund_testnet_wallet()
 
-        # Save seed to .sov/wallet_seed.txt
+        # Save seed to .sov/wallet_seed.txt (cross-game, lives at root)
         wallet_file = SAVE_DIR / "wallet_seed.txt"
         SAVE_DIR.mkdir(parents=True, exist_ok=True)
-        wallet_file.write_text(seed, encoding="utf-8")
+        atomic_write_text(wallet_file, seed)
 
         console.print(
             Panel(
@@ -1253,14 +1394,16 @@ def postcard(
     # Find the latest proof for the hash
     proof_hash = "[dim]no proof yet -- run sov end-round[/dim]"
     anchor_line = ""
-    PROOFS_DIR.mkdir(parents=True, exist_ok=True)
-    proofs = sorted(PROOFS_DIR.glob("round_*.proof.json"))
+    game_id = f"s{state.config.seed}"
+    pdir = proofs_dir(game_id)
+    pdir.mkdir(parents=True, exist_ok=True)
+    proofs = sorted(pdir.glob("round_*.proof.json"))
     if proofs:
         latest = json.loads(proofs[-1].read_text(encoding="utf-8"))
         h = latest["envelope_hash"]
         proof_hash = f"[bold]{h}[/bold]"
 
-        anchor_file = PROOFS_DIR / "anchors.json"
+        anchor_file = anchors_file(game_id)
         if anchor_file.exists():
             anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
             tx = anchors.get(str(latest["round"]))
@@ -1866,11 +2009,12 @@ def game_end(
     # Generate FINAL proof
     proof = make_round_proof(state)
     proof["final"] = True
-    out_dir = PROOFS_DIR
+    active_id = f"s{state.config.seed}"
+    out_dir = proofs_dir(active_id)
     out_dir.mkdir(parents=True, exist_ok=True)
     proof_path = out_dir / "final.proof.json"
     proof_content = canonical_json(proof)
-    proof_path.write_text(proof_content, encoding="utf-8", newline="\n")
+    atomic_write_text(proof_path, proof_content)
     h = proof["envelope_hash"]
     console.print(f"\n  Final proof: [dim]{h}[/dim]")
     console.print(f"  Saved to: [dim]{proof_path}[/dim]")
@@ -1909,7 +2053,7 @@ def game_end(
 
                 transport = XRPLTestnetTransport()
                 txid = transport.anchor(proof["envelope_hash"], memo, wallet_seed)
-                _record_anchor("FINAL", txid)
+                _record_anchor("FINAL", txid, game_id)
                 logger.info("anchor.success round=FINAL txid=%s", txid)
                 explorer = f"https://testnet.xrpl.org/transactions/{txid}"
                 console.print(f"  [green]Anchored.[/green] TX: [dim]{txid}[/dim]")
@@ -2898,6 +3042,128 @@ _NOTABLE_PATTERNS = (
 )
 
 
+# ---------------------------------------------------------------------------
+# Multi-save: list + resume
+# ---------------------------------------------------------------------------
+
+
+def _summary_to_dict(s: GameSummary) -> dict[str, Any]:
+    """Render a ``GameSummary`` as a JSON-serializable dict.
+
+    The shape is the public schema for ``sov games --json`` consumers
+    (audit viewer, game shell). Add new fields at the end; do not rename.
+    """
+    return {
+        "game_id": s.game_id,
+        "ruleset": s.ruleset,
+        "current_round": s.current_round,
+        "max_rounds": s.max_rounds,
+        "players": list(s.players),
+        "last_modified_iso": s.last_modified_iso,
+    }
+
+
+def _format_last_played(iso: str) -> str:
+    """Render an ISO-8601 UTC timestamp as ``YYYY-MM-DD HH:MM UTC`` for the table.
+
+    Falls back to the raw string when parsing fails so we never crash a
+    listing on an unexpected format.
+    """
+    try:
+        from datetime import datetime as _dt
+
+        dt = _dt.strptime(iso, "%Y-%m-%dT%H:%M:%SZ")
+        return dt.strftime("%Y-%m-%d %H:%M UTC")
+    except (ValueError, TypeError):
+        return iso
+
+
+@app.command(name="games")
+def games_cmd(
+    json_out: Annotated[
+        bool,
+        typer.Option("--json", help="Emit machine-readable JSON to stdout."),
+    ] = False,
+) -> None:
+    """List saved games. Pick one with `sov resume <game-id>`."""
+    # v1 layouts auto-migrate before listing — stays consistent with other
+    # commands that funnel through _resolve_active_game_id / _load_game.
+    migrate_v1_layout()
+    saved = list_saved_games()
+    active = get_active_game_id()
+
+    if json_out:
+        payload = [_summary_to_dict(s) for s in saved]
+        # Annotate the active row so consumers can highlight it without
+        # cross-referencing .sov/active-game themselves.
+        for entry in payload:
+            entry["active"] = entry["game_id"] == active
+        typer.echo(json.dumps(payload, indent=2))
+        return
+
+    if not saved:
+        console.print("  No saved games. Run `sov new` to start one.")
+        return
+
+    table = Table(title="Saved Games")
+    table.add_column("GAME-ID", style="bold")
+    table.add_column("RULESET")
+    table.add_column("ROUND", justify="right")
+    table.add_column("PLAYERS")
+    table.add_column("LAST PLAYED")
+    table.add_column("ACTIVE", justify="center")
+    for s in saved:
+        round_col = f"{s.current_round}/{s.max_rounds}" if s.max_rounds else str(s.current_round)
+        active_marker = "[bold green]*[/bold green]" if s.game_id == active else ""
+        table.add_row(
+            s.game_id,
+            s.ruleset,
+            round_col,
+            ", ".join(s.players),
+            _format_last_played(s.last_modified_iso),
+            active_marker,
+        )
+    console.print(table)
+    if active is None:
+        console.print(
+            "\n  [dim]No active game pointer. Run `sov resume <game-id>` to pick one.[/dim]"
+        )
+
+
+@app.command(name="resume")
+def resume_cmd(
+    game_id: Annotated[
+        str,
+        typer.Argument(help="Game id to resume (e.g. s42)."),
+    ],
+) -> None:
+    """Switch the active game. Game must already exist on disk."""
+    migrate_v1_layout()
+    sf = state_file(game_id)
+    if not sf.exists():
+        console.print(f"  [red]No saved game with id '{game_id}'.[/red]")
+        console.print("  [dim]Run `sov games` to list saved games.[/dim]")
+        raise typer.Exit(1)
+
+    set_active_game_id(game_id)
+
+    # Read enough state to print a confirmation matching the spec example.
+    try:
+        data = json.loads(sf.read_text(encoding="utf-8"))
+        cfg = data.get("config", {})
+        ruleset = cfg.get("ruleset", "unknown")
+        rnd = data.get("current_round", "?")
+        max_rounds = cfg.get("max_rounds", "?")
+        console.print(
+            f"  Switched to game [bold]{game_id}[/bold] "
+            f"(round {rnd}/{max_rounds}, ruleset {ruleset})."
+        )
+    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        # Pointer was set even if the read failed — operator can still
+        # dig into the per-game directory by hand. Keep the surface honest.
+        console.print(f"  Switched to game [bold]{game_id}[/bold].")
+
+
 @app.command()
 def feedback() -> None:
     """Print an issue-ready play report. Paste into GitHub Issues."""
@@ -2907,7 +3173,9 @@ def feedback() -> None:
     state, _ = result
 
     tier = _tier_name(state)
-    seed_str = RNG_SEED_FILE.read_text().strip() if RNG_SEED_FILE.exists() else "?"
+    game_id = f"s{state.config.seed}"
+    rf = rng_seed_file(game_id)
+    seed_str = rf.read_text().strip() if rf.exists() else "?"
     winner = state.winner or "(in progress)"
     rnd = state.current_round
     player_count = len(state.players)
@@ -2950,13 +3218,14 @@ def feedback() -> None:
     # Proof
     proof_line = "No proof generated."
     anchor_line = ""
-    PROOFS_DIR.mkdir(parents=True, exist_ok=True)
-    proofs = sorted(PROOFS_DIR.glob("*.proof.json"))
+    pdir = proofs_dir(game_id)
+    pdir.mkdir(parents=True, exist_ok=True)
+    proofs = sorted(pdir.glob("*.proof.json"))
     if proofs:
         latest = json.loads(proofs[-1].read_text(encoding="utf-8"))
         proof_line = f"`{latest['envelope_hash']}`"
 
-        anchor_file = PROOFS_DIR / "anchors.json"
+        anchor_file = anchors_file(game_id)
         if anchor_file.exists():
             anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
             tx = anchors.get(str(latest["round"]))

@@ -407,3 +407,21 @@ def reset_error() -> SovError:
             "(`pwd`)."
         ),
     )
+
+
+def no_active_game_error() -> SovError:
+    """No active game pointer and the layout has zero or multiple games.
+
+    Distinct from ``no_game_error`` (which fires when the entire ``.sov/``
+    layout is empty). This one fires when saved games exist but the CLI
+    cannot pick one without operator input — typically after a fresh
+    multi-save migration where the user has more than one save.
+    """
+    return SovError(
+        code="STATE_NO_ACTIVE_GAME",
+        message="No active game.",
+        hint=(
+            "Run `sov games` to list saved games, then `sov resume <game-id>` "
+            "to pick one. Or `sov new` to start fresh."
+        ),
+    )

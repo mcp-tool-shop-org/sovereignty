@@ -127,16 +127,25 @@ def test_f010_sov_upgrade_workshop_on_campfire_surfaces_hint():
     with runner.isolated_filesystem():
         from pathlib import Path
 
+        from sov_engine.io_utils import (
+            active_game_pointer_path,
+            game_dir,
+            rng_seed_file,
+            state_file,
+        )
+
         state, _ = new_game(42, ["Alice", "Bob"])
         state.players[0].coins = 10  # afford the upgrade if it were allowed
         sov_dir = Path(".sov")
         sov_dir.mkdir(parents=True, exist_ok=True)
-        (sov_dir / "game_state.json").write_text(
+        game_dir("s42").mkdir(parents=True, exist_ok=True)
+        state_file("s42").write_text(
             canonical_json(game_state_snapshot(state)),
             encoding="utf-8",
             newline="\n",
         )
-        (sov_dir / "rng_seed.txt").write_text("42", encoding="utf-8")
+        rng_seed_file("s42").write_text("42", encoding="utf-8")
+        active_game_pointer_path().write_text("s42", encoding="utf-8")
 
         result = runner.invoke(app, ["upgrade", "workshop"])
 

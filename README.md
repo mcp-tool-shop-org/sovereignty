@@ -84,6 +84,8 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 
 Repeat for 15 rounds. `sov game-end` prints the final scores.
 
+- **Multiple saved games** (v2.1+): `sov games` lists saves, `sov resume <game-id>` switches between them.
+
 > Want a guided in-app walkthrough first? Run `sov tutorial`.
 > Want to play with no software at all? See [Print & Play](docs/print-and-play.md).
 > Want a deeper rules tour? See [Start here](docs/start_here.md) or
@@ -106,6 +108,8 @@ The game works fully on the table.
 sov new --recipe cozy -p ...         # curated vibe (cozy/spicy/market/promise)
 sov new --tier treaty-table -p ...   # pick a tier
 sov new --code "SOV|..." -p ...      # play from a share code
+sov games                            # list saved games (multi-save, v2.1+)
+sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
 sov status                           # show current game state

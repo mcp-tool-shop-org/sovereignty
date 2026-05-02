@@ -33,26 +33,38 @@ runner = CliRunner()
 # ---------------------------------------------------------------------------
 
 
-def _seed_minimal_game(cwd: Path, *, players: list[str] | None = None) -> None:
-    """Write a minimal valid ``.sov/`` directory under *cwd*.
+def _seed_minimal_game(cwd: Path, *, players: list[str] | None = None, seed: int = 42) -> None:
+    """Write a minimal valid v2 ``.sov/games/<game-id>/`` directory under *cwd*.
 
-    Mirrors what ``sov new`` does: ``.sov/game_state.json`` (canonical
-    snapshot) and ``.sov/rng_seed.txt`` (the integer seed). Avoids invoking
-    ``sov new`` directly to keep these tests independent of the ``new``
-    command surface (which is tested elsewhere) and to side-step its
+    Mirrors what ``sov new`` does on the v2 multi-save layout: writes
+    ``state.json`` + ``rng_seed.txt`` under ``.sov/games/s{seed}/`` and
+    sets the ``.sov/active-game`` pointer. Avoids invoking ``sov new``
+    directly to keep these tests independent of the ``new`` command
+    surface (which is tested elsewhere) and to side-step its
     ``typer.confirm`` overwrite prompt.
     """
+    from sov_engine.io_utils import (
+        active_game_pointer_path,
+        game_dir,
+        rng_seed_file,
+        state_file,
+    )
+
     players = players or ["Alice", "Bob"]
-    state, _ = new_game(42, players)
-    sov_dir = cwd / ".sov"
-    sov_dir.mkdir(parents=True, exist_ok=True)
+    state, _ = new_game(seed, players)
+    game_id = f"s{seed}"
+    # Establish .sov/ root then per-game directory under cwd. Helpers are
+    # cwd-relative because Path(".sov") in io_utils resolves at call time.
+    (cwd / ".sov").mkdir(parents=True, exist_ok=True)
+    game_dir(game_id).mkdir(parents=True, exist_ok=True)
     snapshot = game_state_snapshot(state)
-    (sov_dir / "game_state.json").write_text(
+    state_file(game_id).write_text(
         canonical_json(snapshot),
         encoding="utf-8",
         newline="\n",
     )
-    (sov_dir / "rng_seed.txt").write_text("42", encoding="utf-8")
+    rng_seed_file(game_id).write_text(str(seed), encoding="utf-8")
+    active_game_pointer_path().write_text(game_id, encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
@@ -84,20 +96,32 @@ def test_sov_doctor_with_active_game_lists_state(monkeypatch, tmp_path):
 
 
 def test_sov_doctor_with_corrupted_game_state_emits_clean_error(monkeypatch, tmp_path):
-    """Corrupted ``.sov/game_state.json`` must produce a structured, non-bare
-    error path (no raw ``json.JSONDecodeError`` traceback to the user).
+    """Corrupted state.json must produce a structured, non-bare error path
+    (no raw ``json.JSONDecodeError`` traceback to the user).
 
     Pairs with engine F-432101-008 (``_load_game`` defensive try/except).
     Today ``doctor`` already catches the load failure and reports
     ``"Game state exists but can't load"``; this test pins that observable
     behavior so a regression that drops the catch will fail loud.
+
+    Updated for the v2 multi-save layout: state lives at
+    ``.sov/games/s42/state.json``, with the active-game pointer set so the
+    CLI tries to load it.
     """
+    from sov_engine.io_utils import (
+        active_game_pointer_path,
+        game_dir,
+        rng_seed_file,
+        state_file,
+    )
+
     monkeypatch.chdir(tmp_path)
-    sov_dir = tmp_path / ".sov"
-    sov_dir.mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".sov").mkdir(parents=True, exist_ok=True)
+    game_dir("s42").mkdir(parents=True, exist_ok=True)
     # Garbage JSON -- must NOT crash with a bare JSONDecodeError trace.
-    (sov_dir / "game_state.json").write_text("{ not json garbage", encoding="utf-8")
-    (sov_dir / "rng_seed.txt").write_text("42", encoding="utf-8")
+    state_file("s42").write_text("{ not json garbage", encoding="utf-8")
+    rng_seed_file("s42").write_text("42", encoding="utf-8")
+    active_game_pointer_path().write_text("s42", encoding="utf-8")
 
     result = runner.invoke(app, ["doctor"])
 
@@ -514,7 +538,11 @@ def test_save_load_round_trip_preserves_treaties_with_dedup(monkeypatch, tmp_pat
     from sov_cli.main import _load_game, _save_state
 
     _save_state(state)
-    (tmp_path / ".sov" / "rng_seed.txt").write_text("42", encoding="utf-8")
+    # _save_state writes the rng_seed under the per-game directory now.
+    # The treaty-table game uses seed 42, so the active-game id is "s42".
+    from sov_engine.io_utils import rng_seed_file
+
+    rng_seed_file("s42").write_text("42", encoding="utf-8")
 
     # Reload and assert the treaty is deduped.
     loaded = _load_game()
