@@ -59,8 +59,14 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       # Parking F-593530-023: --frozen ensures CI uses locked versions.
+      # --all-extras pulls in [xrpl] + [daemon] so mypy can resolve the
+      # starlette/uvicorn imports in sov_daemon and pytest can exercise
+      # the daemon test paths. Pre-Wave-11 CI used --dev only; that
+      # broke the moment Wave 7-B's daemon code paths landed because
+      # mypy + pytest don't know about optional extras at install time
+      # (locally we install via `uv sync --all-extras` per CLAUDE.md).
       - name: Install dependencies
-        run: uv sync --frozen --dev
+        run: uv sync --frozen --all-extras --dev
 
       # Parking F-593530-014: --output-format=github surfaces inline PR
       # annotations on failed lint instead of forcing reviewers into raw logs.
@@ -135,7 +141,7 @@ jobs:
       # Cache Cargo registry + git index + target dir. Tauri cold builds
       # add minutes per CI run without this (coordinator-attention #4).
       - name: Cache Cargo
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: |
             ~/.cargo/registry
@@ -186,7 +192,7 @@ jobs:
         run: cargo install cargo-audit --locked --version "^0.21"
 
       - name: Cache cargo advisory DB
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.cargo/advisory-db
           # run_id key forces a refresh per CI run; advisories are
@@ -253,13 +259,16 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: uv sync --frozen --dev
+        # --all-extras includes [xrpl] + [daemon] so pip-audit covers the
+        # full transitive set users actually install (matches lint-and-test
+        # job; mirrors local `uv sync --all-extras` per CLAUDE.md).
+        run: uv sync --frozen --all-extras --dev
 
       # Cache PyPA advisory DB to amortize the network fetch. run_id key
       # forces a refresh per run — advisories are fast-moving and a stale
       # cache is more dangerous than the per-run fetch cost.
       - name: Cache pip-audit advisory DB
-        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.cache/pip-audit
           key: pip-audit-db-${{ github.run_id }}
@@ -309,7 +318,11 @@ jobs:
         with:
           python-version: "3.12"
 
-      - run: uv sync --frozen
+      # --all-extras so the canary smoke can exercise `sov daemon --help`
+      # (the daemon Typer subapp's import chain hits starlette/uvicorn at
+      # CLI-load time when [daemon] is installed). Mirrors lint-and-test +
+      # security job dependency installs.
+      - run: uv sync --frozen --all-extras
 
       - name: CLI smoke
         run: |
