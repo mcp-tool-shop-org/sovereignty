@@ -176,11 +176,16 @@ def _extract_memos(result: dict[str, Any]) -> list[Any]:
     """Extract the Memos list from an xrpl-py Tx response result.
 
     The xrpl-py Tx response shape varies across versions: memos may live at
-    the top level of ``result``, nested under ``result['tx']`` (which may be a
-    dict or, in some response variants, a list whose first element is the tx
-    dict), or be entirely absent. We try the documented shapes and fall back
-    to an empty list with a WARNING log on unexpected shapes so operators can
-    see the drift instead of silently getting empty results.
+    the top level of ``result``, nested under ``result['tx_json']`` (xrpl-py
+    4.5.0+), nested under ``result['tx']`` (legacy; dict or list-of-dicts),
+    or be entirely absent. We try the documented shapes and fall back to an
+    empty list with a WARNING log on unexpected shapes so operators can see
+    the drift instead of silently getting empty results.
+
+    Wave 10 BRIDGE-A-bis-002: xrpl-py 4.5.0 wraps the transaction body in
+    ``result.tx_json`` (alongside ``meta``, ``hash``, ``ledger_index``).
+    The legacy ``result.tx`` and top-level ``result.Memos`` shapes are
+    preserved for back-compat against pinned older xrpl-py installs.
     """
     if not isinstance(result, dict):
         logger.warning(
@@ -192,6 +197,13 @@ def _extract_memos(result: dict[str, Any]) -> list[Any]:
     memos = result.get("Memos")
     if isinstance(memos, list) and memos:
         return memos
+
+    # xrpl-py 4.5.0+ envelope.
+    tx_json = result.get("tx_json")
+    if isinstance(tx_json, dict):
+        nested = tx_json.get("Memos")
+        if isinstance(nested, list):
+            return nested
 
     tx = result.get("tx")
     if isinstance(tx, dict):

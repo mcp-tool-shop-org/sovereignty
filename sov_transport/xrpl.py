@@ -273,7 +273,7 @@ class XRPLTransport(LedgerTransport):
         """
         try:
             from xrpl.clients import JsonRpcClient
-            from xrpl.models import Memo, Payment
+            from xrpl.models import AccountSet, Memo
             from xrpl.transaction import submit_and_wait
             from xrpl.wallet import Wallet
         except ImportError as e:
@@ -303,10 +303,18 @@ class XRPLTransport(LedgerTransport):
                 for m in memos
             ]
 
-            payment = Payment(
+            # Wave 10 BRIDGE-A-bis-001: ``Payment`` was the original anchor
+            # vehicle, but xrpl-py 4.5.0 added a hard validation rejecting
+            # self-payment ("An XRPL payment transaction cannot have the
+            # same sender and destination") — and our anchor pattern is
+            # explicitly self-addressed (account == destination, 1 drop)
+            # because the memo IS the payload; no value transfer intended.
+            # ``AccountSet`` is the canonical XRPL no-op transaction type
+            # that accepts memos without value-transfer semantics. Verify
+            # side reads ``response.result.Memos`` and is transaction-type
+            # agnostic — the swap is mechanically invisible to consumers.
+            payment = AccountSet(
                 account=wallet.address,
-                destination=wallet.address,
-                amount="1",  # 1 drop
                 memos=tx_memos,
             )
 

@@ -238,7 +238,7 @@ class AsyncXRPLTransport:
         try:
             from xrpl.asyncio.clients import AsyncJsonRpcClient
             from xrpl.asyncio.transaction import submit_and_wait
-            from xrpl.models import Memo, Payment
+            from xrpl.models import AccountSet, Memo
             from xrpl.wallet import Wallet
         except ImportError as e:
             raise RuntimeError(
@@ -267,10 +267,13 @@ class AsyncXRPLTransport:
                 for m in memos
             ]
 
-            payment = Payment(
+            # Wave 10 BRIDGE-A-bis-001 (mirror of sync xrpl.py): Payment →
+            # AccountSet swap. xrpl-py 4.5.0 added a self-payment validator
+            # rejecting account == destination. AccountSet is the canonical
+            # XRPL no-op memo vehicle. Verify side is transaction-type
+            # agnostic. See sov_transport/xrpl.py for full rationale.
+            payment = AccountSet(
                 account=wallet.address,
-                destination=wallet.address,
-                amount="1",  # 1 drop
                 memos=tx_memos,
             )
 

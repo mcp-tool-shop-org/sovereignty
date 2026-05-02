@@ -49,7 +49,10 @@ def _install_fake_xrpl_modules() -> dict[str, types.ModuleType]:
 
     clients.__dict__["JsonRpcClient"] = MagicMock(name="JsonRpcClient")
     models.__dict__["Memo"] = MagicMock(name="Memo")
+    # Wave 10 BRIDGE-A-bis-001 mirror: anchor_batch swapped Payment →
+    # AccountSet (xrpl-py 4.5.0 self-payment validation).
     models.__dict__["Payment"] = MagicMock(name="Payment")
+    models.__dict__["AccountSet"] = MagicMock(name="AccountSet")
     models.__dict__["Tx"] = MagicMock(name="Tx")
     transaction.__dict__["submit_and_wait"] = MagicMock(name="submit_and_wait")
     wallet.__dict__["Wallet"] = MagicMock(name="Wallet")
