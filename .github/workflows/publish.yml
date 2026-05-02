@@ -223,12 +223,16 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # Tauri 2 webview deps (Linux only — same as ci.yml tauri-and-frontend job).
+      # Tauri 2 webview + AppImage bundler deps (Linux only). webkit2gtk-4.1
+      # + libsoup-3.0 are the v2 line; libssl-dev satisfies reqwest. libfuse2
+      # is required by ``linuxdeploy`` (the AppImage bundler Tauri runs at
+      # bundle time) — without it bundle fails with ``failed to run
+      # linuxdeploy`` even though the underlying Rust binary builds clean.
       - name: Install Tauri Linux deps
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev libfuse2
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable @ 2025-01
