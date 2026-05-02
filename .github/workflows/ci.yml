@@ -6,11 +6,13 @@ on:
       - "sov_engine/**"
       - "sov_transport/**"
       - "sov_cli/**"
+      - "sov_daemon/**"
       - "tests/**"
       - "scripts/**"
       - "pyproject.toml"
       - "uv.lock"
       - "BUILD.md"
+      - "app/**"
       - ".github/workflows/**"
   # Run CI on every PR — minutes-cheap and avoids path-filter blind spots
   # where a docs-only PR silently skips lint/type checks (parking F-593530-015).
@@ -69,12 +71,93 @@ jobs:
       # pyproject.toml + engine/transport type fixes, the strict gate stands.
       - name: Type-check with mypy
         if: matrix.python-version == '3.12'
-        run: uv run mypy sov_engine sov_transport sov_cli
+        run: uv run mypy sov_engine sov_transport sov_cli sov_daemon
 
       # Curated -W error filters: catch our own deprecations without failing
       # on third-party noise (parking F-593530-014).
       - name: Run tests
         run: uv run pytest tests/ -v -W error::DeprecationWarning -W error::PendingDeprecationWarning
+
+  # Wave 4 (v2.1) — Tauri shell + frontend gates. Linux-only by org policy
+  # (.claude/rules/github-actions.md: macos ≈ 10× cost; cross-platform
+  # validation is Wave 11's distribution concern). Matches the spec §12
+  # acceptance gate exactly: cargo check + clippy -D warnings + fmt --check
+  # + cargo test, then npm ci + typecheck + lint + test + build.
+  tauri-and-frontend:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Tauri 2 webview deps. webkit2gtk-4.1 + libsoup-3.0 are the v2 line
+      # (v1 was 4.0/2.4). libssl-dev satisfies reqwest in the Rust shell.
+      - name: Install Tauri Linux deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable @ 2025-01
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+
+      # Cache Cargo registry + git index + target dir. Tauri cold builds
+      # add minutes per CI run without this (coordinator-attention #4).
+      - name: Cache Cargo
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            app/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('app/src-tauri/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      # actions/setup-node has built-in npm caching via cache: 'npm' +
+      # cache-dependency-path — simpler than a separate actions/cache step.
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: app/package-lock.json
+
+      # npm ci (NOT install) — reproducible install from lockfile
+      # (coordinator-attention #5).
+      - name: Install frontend deps
+        run: npm --prefix app ci
+
+      # Rust gates — match acceptance-gate command order exactly.
+      - name: Cargo check
+        working-directory: app/src-tauri
+        run: cargo check
+
+      - name: Cargo clippy
+        working-directory: app/src-tauri
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Cargo fmt --check
+        working-directory: app/src-tauri
+        run: cargo fmt --check
+
+      - name: Cargo test
+        working-directory: app/src-tauri
+        run: cargo test
+
+      # Frontend gates — match acceptance-gate command order.
+      - name: Frontend typecheck
+        run: npm --prefix app run typecheck
+
+      - name: Frontend lint
+        run: npm --prefix app run lint
+
+      - name: Frontend test
+        run: npm --prefix app test
+
+      - name: Frontend build
+        run: npm --prefix app run build
 
   # Supply-chain advisory scan. Advisory in Stage B (continue-on-error) so
   # transitive low-severity items don't block PRs; tighten in Stage B-2.

@@ -1,0 +1,11 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default capability set for the Sovereignty Tauri shell. Webview talks to the daemon directly over HTTP/SSE; Rust shell only owns the four daemon-discovery commands invoked from the frontend.",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:window:default"
+  ]
+}

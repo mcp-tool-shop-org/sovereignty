@@ -1,0 +1,21 @@
+# Vite
+node_modules/
+dist/
+
+# TypeScript composite-build artifacts
+*.tsbuildinfo
+
+# Tauri
+src-tauri/target/
+# tauri-build regenerates schemas per-platform on every cargo build.
+# Tracking the Mac dev's macOS-schema.json would conflict with Linux CI's
+# regen. Ignore the whole gen/ tree; first-time IDE completion works after
+# `cargo build` materializes them locally.
+src-tauri/gen/
+
+# OS
+.DS_Store
+
+# Editor
+*.log
+.vscode/settings.json

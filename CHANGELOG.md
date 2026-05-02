@@ -71,6 +71,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - State-change detection is 1s mtime polling when ≥1 SSE client is connected — cross-platform, no fsevents/inotify in v2.1.
 - One daemon per project root. Multi-daemon coordination is v2.2+.
 
+### Added (Wave 4)
+- Tauri 2 desktop shell scaffold at `app/`: Rust shell hosts a webview window with React 19 + Vite 6 + TypeScript 5.7 frontend. Run locally with `npm --prefix app run tauri dev` after `npm install --prefix app && cargo build --manifest-path app/src-tauri/Cargo.toml`.
+- 4 Tauri commands for daemon discovery + lifecycle: `daemon_status`, `daemon_start(readonly, network)`, `daemon_stop`, `get_daemon_config`. Webview talks directly to daemon over HTTP/SSE for everything else (no Rust proxy hop).
+- Frontend hooks `useDaemon` (Context provider) + `useDaemonEvents` (SSE subscription) for v2.1 daemon connection state.
+- Typed daemon client (`app/src/lib/daemonClient.ts`) with bearer-token injection. Manual TypeScript mirror at `app/src/types/daemon.ts` of the daemon IPC contract.
+- 4 placeholder routes: `/`, `/audit`, `/game`, `/settings`. Audit viewer and game shell content land in Wave 5.
+- Mechanical type-sync test at `tests/test_daemon_types_ts_in_sync.py` — every SSE event type and daemon error code from `docs/v2.1-daemon-ipc.md` must appear as a TypeScript string literal in `app/src/types/daemon.ts`. Drift fails CI.
+- New `[daemon]` opt-in extra picks up the Tauri shell at install time: `pip install 'sovereignty-game[daemon]'` for Python users; standalone Tauri binary distribution lands in Wave 11.
+
+### Changed (Wave 4)
+- CI workflow extended with Rust + Node toolchains. Cargo and npm caches added to keep CI minutes reasonable. Single-OS (ubuntu-latest) per workspace policy; cross-platform release matrix lands in Wave 11.
+
+### Notes (Wave 4)
+- Tauri shell is the **window manager + IPC bridge only** in v2.1. It does not contain views or hold wallet seeds — daemon owns the trust boundary, audit viewer + game shell content arrives in Wave 5.
+- `Cargo.lock` is tracked (binary, not library — standard Rust binary practice).
+- Default daemon spawn mode from the shell is `--readonly`. Game shell (Wave 5) decision deferred — if anchor capability is needed, a Wave 5 advisor call adds the toggle.
+- Distribution (cross-platform release matrix, code signing, notarization, GitHub Release artifacts, npm-launcher Tauri-binary wrapper) is **out of scope for Wave 4** — coordinated as part of Wave 11 Treatment alongside the existing PyPI + npm-launcher CLI flow.
+- v2.1 ships React + Vite + TypeScript matching GlyphStudio's stack for skill compounding. Sovereignty is not a monorepo (single `app/`, npm not pnpm).
+
 ## [2.0.2] - 2026-04-30
 
 ### Fixed

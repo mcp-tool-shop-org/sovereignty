@@ -88,6 +88,7 @@ Repeat for 15 rounds. `sov game-end` prints the final scores.
 - **Batched anchoring** (v2.1+): `sov anchor` at game-end batches all pending rounds into a single XRPL transaction — one verifiable chain pointer per game, not one per round. Use `sov anchor --checkpoint` for mid-game flush.
 - **Network selection** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (or `SOV_XRPL_NETWORK` env var; default `testnet`).
 - **Daemon mode** (v2.1+, optional): `sov daemon start` runs a localhost HTTP/JSON server for desktop integration and background chain polling. See [Daemon mode](#daemon-mode-optional) below.
+- **Tauri 2 desktop shell** (v2.1+, optional): `npm --prefix app run tauri dev`. See [Desktop shell](#desktop-shell-optional-v21) below.
 
 > Want a guided in-app walkthrough first? Run `sov tutorial`.
 > Want to play with no software at all? See [Print & Play](docs/print-and-play.md).
@@ -160,6 +161,26 @@ sov daemon stop
 ```
 
 Daemon binds to `127.0.0.1` on a random port; connection details (port + bearer token) live in `.sov/daemon.json`. One daemon per project root. See [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) for the full IPC contract.
+
+## Desktop shell (optional, v2.1+)
+
+The v2.1 Tauri 2 shell runs the audit viewer + game shell on top of the daemon. Local dev:
+
+```bash
+# 1. Install Python + daemon deps
+pip install -e '.[xrpl,daemon]'
+
+# 2. Install frontend + Rust deps (one-time)
+cd app && npm install && cd ..
+cargo build --manifest-path app/src-tauri/Cargo.toml
+
+# 3. Start the dev shell (auto-starts the daemon in readonly mode)
+npm --prefix app run tauri dev
+```
+
+The shell auto-starts a readonly daemon on launch and auto-stops it on exit. Externally-started daemons (`sov daemon start`) stay alive across shell restarts.
+
+Cross-platform release binaries land in v2.1 final (Wave 11). For now, the shell runs from source on the dev machine. See [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) for the full contract.
 
 ## How it works
 
