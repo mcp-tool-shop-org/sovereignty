@@ -69,7 +69,9 @@ describe("DaemonClient", () => {
     expect(fetchMock).toHaveBeenCalledWith(
       "http://127.0.0.1:47823/health",
       expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: "Bearer test-token-abc" }),
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-token-abc",
+        }),
       }),
     );
   });
@@ -105,14 +107,54 @@ describe("DaemonClient", () => {
     await expect(c.games()).rejects.toThrow(/games: 500/);
   });
 
-  it("anchorStatus URL-encodes round id", async () => {
+  it("anchorStatus URL-encodes round id and parses wire shape", async () => {
+    // Stage 7-B WEB-UI-B-003: wire shape is `{round, anchor_status,
+    // envelope_hash, txid?}` per sov_daemon/server.py:486-539.
     fetchMock.mockResolvedValue(
-      jsonResponse({ game_id: "s42", round: "3", status: "anchored", txid: "ABC" }),
+      jsonResponse({
+        round: "3",
+        anchor_status: "anchored",
+        envelope_hash: "a".repeat(64),
+        txid: "ABC",
+      }),
     );
     const c = new DaemonClient(cfg);
-    await c.anchorStatus("s42", "3");
+    const status = await c.anchorStatus("s42", "3");
     const call = fetchMock.mock.calls[0]?.[0] as string;
     expect(call).toBe("http://127.0.0.1:47823/games/s42/anchor-status/3");
+    expect(status.anchor_status).toBe("anchored");
+    expect(status.round).toBe("3");
+    expect(status.envelope_hash).toBe("a".repeat(64));
+    expect(status.txid).toBe("ABC");
+  });
+
+  it("proofs() returns ProofMeta[] (wire shape, not bare round-key strings)", async () => {
+    // Stage 7-B WEB-UI-B-004: wire shape is `[{round, envelope_hash, final,
+    // path}, ...]` per sov_daemon/server.py:439-446. Previously this method
+    // claimed `Promise<string[]>` which masked a 100% audit-viewer breakage
+    // against any real daemon (encodeURIComponent({...}) on object → 400).
+    fetchMock.mockResolvedValue(
+      jsonResponse([
+        {
+          round: 1,
+          envelope_hash: "a".repeat(64),
+          final: false,
+          path: "/tmp/r1.json",
+        },
+        {
+          round: 2,
+          envelope_hash: "b".repeat(64),
+          final: false,
+          path: "/tmp/r2.json",
+        },
+      ]),
+    );
+    const c = new DaemonClient(cfg);
+    const proofs = await c.proofs("s42");
+    expect(proofs).toHaveLength(2);
+    expect(proofs[0].envelope_hash).toBe("a".repeat(64));
+    expect(proofs[0].final).toBe(false);
+    expect(typeof proofs[0].path).toBe("string");
   });
 
   it("pendingAnchors fetches the right path", async () => {

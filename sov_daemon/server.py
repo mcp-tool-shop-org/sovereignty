@@ -111,12 +111,30 @@ def _error_response(
 
 
 def _readonly_response() -> JSONResponse:
-    """HTTP 405 for write endpoints in readonly mode (spec §4)."""
+    """HTTP 405 for write endpoints in readonly mode (spec §4).
+
+    DAEMON-B-005: routes through ``daemon_readonly_error`` factory.
+    """
+    from sov_cli.errors import daemon_readonly_error
+
+    return _sov_error_response(daemon_readonly_error(), status_code=405)
+
+
+def _sov_error_response(sov_err: Any, *, status_code: int) -> JSONResponse:
+    """Lift a ``sov_cli.errors.SovError`` to an HTTP response.
+
+    Single seam between the daemon's HTTP layer and the consolidated CLI
+    error registry. DAEMON-B-005 / B-006: every inline ``_error_response``
+    site that owns a daemon-emitted error code routes through a factory
+    in ``sov_cli.errors`` and lifts here, so a future humanization or
+    translation pass touches one file (the registry), not eight emit
+    sites scattered across this module.
+    """
     return _error_response(
-        status_code=405,
-        code="DAEMON_READONLY",
-        message="daemon started with --readonly; anchor endpoints disabled",
-        hint="restart without --readonly to enable anchoring",
+        status_code=status_code,
+        code=sov_err.code,
+        message=sov_err.message,
+        hint=sov_err.hint,
     )
 
 
@@ -129,15 +147,14 @@ def _validate_game_id(game_id: str) -> JSONResponse | None:
     convention — game IDs are derived from the seed at creation time and
     a daemon URL that escapes that shape (``..``, ``/etc/passwd``, NUL bytes,
     URL-encoded traversal sequences) cannot reach a real save.
+
+    DAEMON-B-005: routes through ``daemon_invalid_game_id_error`` factory.
     """
     if _GAME_ID_PATTERN.match(game_id):
         return None
-    return _error_response(
-        status_code=400,
-        code="INVALID_GAME_ID",
-        message=f"game_id {game_id!r} does not match the allowed format",
-        hint="game_id must match s<digits> (e.g. s42). GET /games to list valid ids.",
-    )
+    from sov_cli.errors import daemon_invalid_game_id_error
+
+    return _sov_error_response(daemon_invalid_game_id_error(game_id), status_code=400)
 
 
 def _validate_round_key(round_key: str) -> JSONResponse | None:
@@ -146,15 +163,14 @@ def _validate_round_key(round_key: str) -> JSONResponse | None:
     Accepts ``"1"``..``"15"`` and the literal ``"FINAL"``. Anything else
     (raw paths, glob fragments, integer overflow attempts) is rejected
     before flowing into ``_proof_path_for_round``.
+
+    DAEMON-B-005: routes through ``daemon_invalid_round_error`` factory.
     """
     if _ROUND_PATTERN.match(round_key):
         return None
-    return _error_response(
-        status_code=400,
-        code="INVALID_ROUND",
-        message=f"round {round_key!r} is not a valid round identifier",
-        hint="rounds are integers 1..15 or the literal FINAL.",
-    )
+    from sov_cli.errors import daemon_invalid_round_error
+
+    return _sov_error_response(daemon_invalid_round_error(round_key), status_code=400)
 
 
 def _read_state(game_id: str) -> dict[str, Any] | None:
@@ -162,19 +178,42 @@ def _read_state(game_id: str) -> dict[str, Any] | None:
 
     Returns None on missing / unreadable / malformed-JSON. Caller is
     responsible for translating None → 404.
+
+    DAEMON-B-004 (Wave 9): the read goes through
+    ``sov_engine.schemas.read_versioned`` so ``schema_version`` is
+    forward-bump validated at the daemon boundary rather than slipping
+    through to webview consumers as a malformed-but-deserialized dict.
+    Unsupported schema_version → log + treat as missing (404 path), the
+    same recovery posture as malformed JSON.
     """
+    from sov_engine.schemas import (
+        SchemaVersionUnsupportedError,
+        read_versioned,
+    )
+
     sf = state_file(game_id)
     if not sf.exists():
         return None
     try:
-        raw = sf.read_text(encoding="utf-8")
-        data = json.loads(raw)
+        data = read_versioned(sf, expected_schema=1, file_class="state")
     except (OSError, json.JSONDecodeError) as exc:
         logger.warning(
-            "daemon.state.read.failed game_id=%s exc=%s detail=%s",
-            game_id,
-            type(exc).__name__,
-            exc,
+            "daemon.state.read.failed",
+            extra={
+                "game_id": game_id,
+                "exception_type": type(exc).__name__,
+                "exception_detail": str(exc),
+            },
+        )
+        return None
+    except SchemaVersionUnsupportedError as exc:
+        logger.warning(
+            "daemon.state.schema_mismatch",
+            extra={
+                "game_id": game_id,
+                "exception_type": type(exc).__name__,
+                "exception_detail": str(exc),
+            },
         )
         return None
     if not isinstance(data, dict):
@@ -284,11 +323,49 @@ async def health_handler(request: Request) -> JSONResponse:
     Spec §4 shape::
 
         {"status":"ok","version":"2.1.0","network":"testnet",
-         "readonly":false,"ipc_version":1,"uptime_seconds":142}
+         "readonly":false,"ipc_version":1,"uptime_seconds":142,
+         "pending_anchors_summary": {"<game_id>": {"pending_count": N,
+            "oldest_added_iso": "..."}}}
+
+    DAEMON-B-012 (Wave 9): the ``pending_anchors_summary`` field is a
+    cheap rollup that ``sov doctor`` and the audit-viewer can consume to
+    surface "N rounds queued, oldest from <iso>" without each consumer
+    walking the games dir themselves. Per-game counts only — no
+    per-round detail; that lives at ``/games/{id}/pending-anchors``.
+    Empty when no game has any pending row.
     """
     state = request.app.state
     started_monotonic: float = state.started_monotonic
     uptime_seconds = max(0, int(time.monotonic() - started_monotonic))
+
+    pending_summary: dict[str, dict[str, Any]] = {}
+    try:
+        from sov_engine.io_utils import games_dir as _games_dir
+
+        root = _games_dir()
+        if root.exists():
+            for entry in sorted(root.iterdir()):
+                if not entry.is_dir():
+                    continue
+                try:
+                    pending = read_pending_anchors(entry.name)
+                except Exception:  # noqa: BLE001
+                    continue
+                if not pending:
+                    continue
+                isos = sorted(
+                    str(e.get("added_iso", ""))
+                    for e in pending.values()
+                    if isinstance(e, dict) and e.get("added_iso")
+                )
+                pending_summary[entry.name] = {
+                    "pending_count": len(pending),
+                    "oldest_added_iso": isos[0] if isos else "",
+                }
+    except Exception:  # noqa: BLE001
+        # /health must not fail on a games-dir hiccup — fall back to empty.
+        pending_summary = {}
+
     payload: dict[str, Any] = {
         "status": "ok",
         "version": _daemon_version(),
@@ -296,6 +373,7 @@ async def health_handler(request: Request) -> JSONResponse:
         "readonly": state.readonly,
         "ipc_version": IPC_VERSION,
         "uptime_seconds": uptime_seconds,
+        "pending_anchors_summary": pending_summary,
     }
     return _json_response(payload)
 
@@ -391,12 +469,9 @@ async def game_detail_handler(request: Request) -> JSONResponse:
         return err
     data = _read_state(game_id)
     if data is None:
-        return _error_response(
-            status_code=404,
-            code="GAME_NOT_FOUND",
-            message=f"no saved game with id '{game_id}'",
-            hint="GET /games to list saved games.",
-        )
+        from sov_cli.errors import daemon_game_not_found_error
+
+        return _sov_error_response(daemon_game_not_found_error(game_id), status_code=404)
     return _json_response(data)
 
 
@@ -420,12 +495,9 @@ async def proofs_list_handler(request: Request) -> JSONResponse:
     if not pdir.exists():
         # Distinguish "no game" from "game with no proofs yet".
         if not game_dir(game_id).exists():
-            return _error_response(
-                status_code=404,
-                code="GAME_NOT_FOUND",
-                message=f"no saved game with id '{game_id}'",
-                hint="GET /games to list saved games.",
-            )
+            from sov_cli.errors import daemon_game_not_found_error
+
+            return _sov_error_response(daemon_game_not_found_error(game_id), status_code=404)
         return _json_response([])
 
     entries: list[dict[str, Any]] = []
@@ -465,20 +537,18 @@ async def proof_detail_handler(request: Request) -> JSONResponse:
         return err
     path = _proof_path_for_round(game_id, round_key)
     if path is None:
-        return _error_response(
-            status_code=404,
-            code="PROOF_NOT_FOUND",
-            message=f"no proof for round '{round_key}' in game '{game_id}'",
-            hint="GET /games/{game_id}/proofs to list available rounds.",
+        from sov_cli.errors import daemon_proof_not_found_error
+
+        return _sov_error_response(
+            daemon_proof_not_found_error(game_id, round_key), status_code=404
         )
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        return _error_response(
-            status_code=500,
-            code="PROOF_UNREADABLE",
-            message=f"proof file exists but could not be read: {type(exc).__name__}",
-            hint="check disk integrity; re-run `sov end-round` from the original save.",
+        from sov_cli.errors import daemon_proof_unreadable_error
+
+        return _sov_error_response(
+            daemon_proof_unreadable_error(type(exc).__name__), status_code=500
         )
     return _json_response(data)
 
@@ -504,11 +574,10 @@ async def anchor_status_handler(request: Request) -> JSONResponse:
 
     proof_path = _proof_path_for_round(game_id, round_key)
     if proof_path is None:
-        return _error_response(
-            status_code=404,
-            code="PROOF_NOT_FOUND",
-            message=f"no proof for round '{round_key}' in game '{game_id}'",
-            hint="GET /games/{game_id}/proofs to list available rounds.",
+        from sov_cli.errors import daemon_proof_not_found_error
+
+        return _sov_error_response(
+            daemon_proof_not_found_error(game_id, round_key), status_code=404
         )
     try:
         proof_data = json.loads(proof_path.read_text(encoding="utf-8"))
@@ -558,12 +627,9 @@ async def pending_anchors_handler(request: Request) -> JSONResponse:
     if err is not None:
         return err
     if not game_dir(game_id).exists():
-        return _error_response(
-            status_code=404,
-            code="GAME_NOT_FOUND",
-            message=f"no saved game with id '{game_id}'",
-            hint="GET /games to list saved games.",
-        )
+        from sov_cli.errors import daemon_game_not_found_error
+
+        return _sov_error_response(daemon_game_not_found_error(game_id), status_code=404)
     pending = read_pending_anchors(game_id)
     payload = {
         "pending": sorted(pending.keys(), key=_round_sort_key),
@@ -729,11 +795,14 @@ async def _check_wallet_balance_or_raise(
     except Exception as exc:  # noqa: BLE001
         # Account-not-found / unfunded / network blip: treat as zero
         # balance and surface the underfunded error so the operator gets
-        # an actionable message.
+        # an actionable message. DAEMON-B-013: structured fields via
+        # ``extra=`` so the JSON log formatter can emit them.
         logger.warning(
-            "anchor.balance_preflight.failed exc=%s detail=%s (treating as zero balance)",
-            type(exc).__name__,
-            exc,
+            "anchor.balance_preflight.failed",
+            extra={
+                "exception_type": type(exc).__name__,
+                "exception_detail": str(exc),
+            },
         )
         balance_drops = 0
 
@@ -774,12 +843,9 @@ async def _do_anchor(
     state = request.app.state
     state_data = _read_state(game_id)
     if state_data is None:
-        return _error_response(
-            status_code=404,
-            code="GAME_NOT_FOUND",
-            message=f"no saved game with id '{game_id}'",
-            hint="GET /games to list saved games.",
-        )
+        from sov_cli.errors import daemon_game_not_found_error
+
+        return _sov_error_response(daemon_game_not_found_error(game_id), status_code=404)
     ruleset = str(state_data.get("config", {}).get("ruleset", "unknown"))
 
     seed = _load_seed(state)
@@ -802,37 +868,41 @@ async def _do_anchor(
         # ``sov_cli.errors.mainnet_underfunded_error`` builds for the CLI.
         from sov_cli.errors import mainnet_underfunded_error
 
-        sov_err = mainnet_underfunded_error(exc.balance_drops, exc.required_drops)
-        return _error_response(
+        return _sov_error_response(
+            mainnet_underfunded_error(exc.balance_drops, exc.required_drops),
             status_code=402,
-            code=sov_err.code,
-            message=sov_err.message,
-            hint=sov_err.hint,
         )
     except ValueError as exc:
-        return _error_response(
-            status_code=500,
-            code="INVALID_NETWORK",
-            message=f"daemon configured with invalid network: {exc}",
-            hint="restart the daemon with --network testnet|mainnet|devnet.",
-        )
+        from sov_cli.errors import daemon_invalid_network_error
+
+        return _sov_error_response(daemon_invalid_network_error(str(exc)), status_code=500)
     except ImportError as exc:
-        return _error_response(
-            status_code=500,
-            code="XRPL_NOT_INSTALLED",
-            message=f"async XRPL transport unavailable: {type(exc).__name__}",
-            hint="install with: pip install 'sovereignty-game[xrpl,daemon]'",
+        from sov_cli.errors import daemon_xrpl_not_installed_error
+
+        return _sov_error_response(
+            daemon_xrpl_not_installed_error(type(exc).__name__), status_code=500
         )
     except Exception as exc:  # noqa: BLE001
-        return _error_response(
+        from sov_cli.errors import daemon_anchor_failed_error
+
+        # DAEMON-B-014: log the unexpected failure with structured fields so
+        # operators have a stderr trail to grep when ANCHOR_FAILED bubbles
+        # up to the CLI / Tauri shell. Without this emit, the catch-all is
+        # opaque (the response carries the type+message but the daemon's
+        # log shows nothing).
+        logger.error(
+            "anchor.batch.failed",
+            extra={
+                "game_id": game_id,
+                "exception_type": type(exc).__name__,
+                "exception_detail": str(exc),
+                "error_code": "ANCHOR_FAILED",
+            },
+            exc_info=True,
+        )
+        return _sov_error_response(
+            daemon_anchor_failed_error(type(exc).__name__, str(exc)),
             status_code=502,
-            code="ANCHOR_FAILED",
-            message=f"anchor_batch failed: {type(exc).__name__}: {exc}",
-            hint=(
-                "your game state is intact and proofs are saved locally. "
-                "Try again in a minute (XRPL can be flaky), or run "
-                "`sov anchor` from the CLI to retry."
-            ),
         )
 
     txid = str(result.get("txid", ""))
@@ -924,7 +994,7 @@ def _load_seed(state: Any) -> str | None:
 # ---------------------------------------------------------------------------
 
 
-async def events_handler(request: Request) -> StreamingResponse:
+async def events_handler(request: Request) -> Any:
     """``GET /events`` — SSE stream. Emits daemon events.
 
     First event on each connection is ``daemon.ready``. Subsequent
@@ -934,8 +1004,28 @@ async def events_handler(request: Request) -> StreamingResponse:
     Headers: ``Cache-Control: no-cache`` keeps proxies from buffering;
     ``Content-Type: text/event-stream`` is the SSE wire type;
     ``Connection: keep-alive`` advertises the long-poll semantics.
+
+    DAEMON-B-014: returns 503 ``SSE_SUBSCRIBERS_EXHAUSTED`` when the
+    broadcaster's subscriber cap is reached. The pre-check is a quick
+    short-circuit so we don't open a streaming connection just to close
+    it; the canonical refusal still happens inside ``subscribe`` for
+    racing-add-then-cap cases.
     """
     state = request.app.state
+    broadcaster = get_broadcaster(request.app)
+    if len(broadcaster._subscribers) >= broadcaster.MAX_SUBSCRIBERS:
+        return _error_response(
+            status_code=503,
+            code="SSE_SUBSCRIBERS_EXHAUSTED",
+            message=(
+                f"SSE subscriber cap reached: "
+                f"{len(broadcaster._subscribers)}/{broadcaster.MAX_SUBSCRIBERS}"
+            ),
+            hint=(
+                "close stale EventSource connections; daemon caps SSE "
+                "clients to 32 to bound memory usage."
+            ),
+        )
     headers = cors_headers()
     headers["Cache-Control"] = "no-cache"
     headers["X-Accel-Buffering"] = "no"
@@ -1163,10 +1253,123 @@ def emit_pending_added(
     )
 
 
+# ---------------------------------------------------------------------------
+# DAEMON-B-009 — request body size cap (ASGI middleware)
+# ---------------------------------------------------------------------------
+
+
+class MaxBodySizeMiddleware:
+    """Reject requests whose body exceeds ``max_bytes``.
+
+    Starlette has no built-in body-size cap; an ASGI middleware that
+    counts incoming bytes from each ``http.request`` message is the
+    standard approach. Wraps the underlying app so non-HTTP scopes
+    (lifespan, websocket) flow through untouched.
+
+    Per DAEMON-B-009 (Wave 9): localhost-bound ≠ unbounded-trust. A
+    buggy webview, stale Tauri tab, or misbehaving CLI subprocess could
+    DoS the daemon by POSTing a 10GB body. Two enforcement paths:
+
+    1. **Content-Length pre-check** — if the client sends a header that
+       declares > ``max_bytes``, reject immediately without reading the
+       body. Catches the common "honest oversized POST" case fast.
+    2. **Streaming counter** — if no Content-Length (chunked transfer)
+       or the client lies about it, count bytes from each
+       ``http.request`` message; trip when the running total crosses the
+       cap and synthesise a 413 reply. Also drains remaining incoming
+       chunks from the receive side so the connection isn't left
+       half-read on the wire.
+
+    Default cap is 1 MiB (1_048_576 bytes); anchor request bodies are
+    typically <1 KiB so the cap leaves operator headroom while making
+    abuse expensive to attempt.
+    """
+
+    def __init__(self, app: Any, max_bytes: int = 1_048_576) -> None:
+        self.app = app
+        self.max_bytes = max_bytes
+
+    async def _send_413(self, send: Any) -> None:
+        payload = json.dumps(
+            {
+                "code": "PAYLOAD_TOO_LARGE",
+                "message": (f"request body exceeds {self.max_bytes}-byte limit"),
+                "hint": "send smaller payloads; daemon endpoints accept JSON < 1MB.",
+            }
+        ).encode("utf-8")
+        await send(
+            {
+                "type": "http.response.start",
+                "status": 413,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"content-length", str(len(payload)).encode("ascii")),
+                ],
+            }
+        )
+        await send(
+            {
+                "type": "http.response.body",
+                "body": payload,
+                "more_body": False,
+            }
+        )
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # Path 1: declared Content-Length over cap → reject before reading
+        # the body. Read header bytes (lowercase) per ASGI scope spec.
+        for name, value in scope.get("headers", []):
+            if name == b"content-length":
+                try:
+                    declared = int(value.decode("ascii"))
+                except (UnicodeDecodeError, ValueError):
+                    declared = 0
+                if declared > self.max_bytes:
+                    await self._send_413(send)
+                    return
+                break
+
+        # Path 2: streaming counter — wrap receive to count actual bytes.
+        body_bytes = 0
+        body_done = False
+
+        async def counted_receive() -> Any:
+            nonlocal body_bytes, body_done
+            if body_done:
+                return {"type": "http.disconnect"}
+            msg = await receive()
+            if msg.get("type") == "http.request":
+                chunk = msg.get("body", b"") or b""
+                body_bytes += len(chunk)
+                if not msg.get("more_body", False):
+                    body_done = True
+                if body_bytes > self.max_bytes:
+                    raise _BodyTooLarge()
+            elif msg.get("type") == "http.disconnect":
+                body_done = True
+            return msg
+
+        try:
+            await self.app(scope, counted_receive, send)
+        except _BodyTooLarge:
+            await self._send_413(send)
+
+
+class _BodyTooLarge(Exception):
+    """Internal sentinel: raised by the counted ``receive`` wrapper to
+    abort the inner app and trigger the 413 emit at the middleware
+    boundary."""
+
+
 # Re-export the engine helper so server-side anchor flows can enqueue
 # without each handler importing from sov_engine directly.
 __all__ = [
     "DaemonConfig",
+    "MaxBodySizeMiddleware",
     "build_app",
     "emit_pending_added",
     "engine_add_pending_anchor",

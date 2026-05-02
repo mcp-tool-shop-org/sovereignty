@@ -114,6 +114,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - E2E test framework (Playwright / Cypress) deferred to v2.2+. v2.1 ships with vitest + msw daemon mocks at the unit level.
 - Replay walkthrough view and cross-game anchor index deferred to v2.2 — neither has a known consumer at v2.1 scope.
 
+### Added (Wave 6 Stage A — proactive hardening)
+
+- `ChainLookupResult` enum (`sov_transport.ChainLookupResult`): 3-state result from `is_anchored_on_chain` (FOUND / NOT_FOUND / LOOKUP_FAILED). Replaces the earlier `bool` to distinguish transient lookup failure from definitive not-found; prior bool-collapse masked transport errors as "tx not on chain." Engine-only: `sov_engine/proof.py` collapses to `AnchorStatus` (anchored / pending / missing) for the frontend, which deliberately does NOT see the 3-state (see Decisions worth knowing in `CLAUDE.md`).
+- `started_by_shell: bool` field on Tauri shell's `DaemonStatus` serde struct (Rust + TS mirror). Frontend network switcher now refuses externally-started daemons as locked at spec level (was silently bypassed pre-Stage-A — `?? true` fallback).
+- `atomic_write_text(..., mode=)` keyword arg on `sov_engine/io_utils.py::atomic_write_text`. Token / pending-anchors / rng_seed file modes set explicitly to `0o600` (was world-readable on default-umask machines).
+- Path-traversal hardening: `_validate_game_id` regex `^s\d{1,19}$` enforced at every filesystem-touching helper, every daemon HTTP `{game_id}` / `{round_key}` endpoint, and `sov resume`.
+- Tauri webview CSP: `default-src 'self'; connect-src 'self' http://127.0.0.1:* http://localhost:*` (was `null` = permissive).
+- `MAINNET_UNDERFUNDED` error code lifted from inline daemon error to `sov_cli/errors.py` factory.
+- Browser-side `canonicalJson` byte-matched to Python `canonical_json` (verify-all-rounds was failing every round pre-fix — feature-breaker).
+
+### Added (Wave 7 Stage B — proactive hardening + supply-chain)
+
+- Centralized schema reader at `sov_engine/schemas.py` (`read_versioned(path, expected_schema, *, file_class)` + `SchemaVersionUnsupportedError`). Forward-bump safety: unknown `schema_version` raises with operator-actionable hint; supported-but-older versions log a `DeprecationWarning`. Migration framework stub locked (empty `_MIGRATIONS` dict — first migrator lands v2.2). Daemon, CLI, and bridge JSON read sites consume the helper.
+- `anchors.json` now wraps in `{"schema_version": 1, "anchors": {...}}` envelope. Backward-compat read accepts bare-dict shape (pre-v2.1) and migrates-on-write to the wrapped shape. Read sites in `sov_engine/proof.py` and `sov_cli/main.py` updated.
+- `season.json` schema_version wrapper added (parallels `anchors.json`).
+- `sov doctor` extended with 5 new checks: daemon presence (no-network — `os.kill(pid, 0)` only; doctor stays <2s wall-time), pending-anchors integrity (parse + schema_version + orphan check), multi-save layout extancy (`.sov/active-game` points at extant game), schema version currency across all versioned JSON files, and `[daemon]` extra parity (warn when Tauri shell is installed but the Python `[daemon]` extra is missing).
+- Structured daemon logging via `sov daemon --log-format=json` flag. Default stays human-readable. Field-name registry at `sov_daemon/log_fields.py` enumerates every structured field; daemon code consults the registry rather than free-styling field names.
+- Daemon resource limits: explicit `uvicorn.Config` settings for `limit_concurrency`, `limit_max_requests`, `timeout_keep_alive`, plus a custom ASGI body-cap middleware (413 on bodies > 1MB). SSE max-clients cap added. Regression tests assert each limit is set.
+- Error code registry consolidation: 8 inline daemon-emitted `SovError(...)` sites in `sov_daemon/server.py` swept into factories in `sov_cli/errors.py`. Daemon imports the factories. Resolves the duplicated `INVALID_NETWORK` (daemon-friendly wording wins).
+- TS mirror coverage extended: `DaemonErrorCode` union enumerates ALL daemon-emitted codes from the registry (was 7; now ~16); `AnchorStatus` and `XRPLNetwork` enum values added to the type-sync test parametrize set; `ShellError` mirrored with sync test; `AnchorStatusResponse` field-name parity pinned; `DaemonClient.proofs()` return type aligned to wire shape.
+- `wallet_seed.txt` write site upgraded to `mode=0o600` (was reliant on default umask).
+- Supply-chain gates: `pip-audit --strict` graduated from advisory to hard gate (CI fails on HIGH; allowlist via `--ignore-vuln`); `cargo-audit --deny warnings` integrated for the Tauri shell (`app/src-tauri/audit.toml` allowlist with per-ID rationale); `npm audit signatures` integrated warn-only at v2.1 (promotion to hard gate is v2.2 work once signature coverage baseline is known).
+- Job-level CI timeouts: 10/20/30/10-minute bounds per workspace job (2× headroom).
+
 ## [2.0.2] - 2026-04-30
 
 ### Fixed

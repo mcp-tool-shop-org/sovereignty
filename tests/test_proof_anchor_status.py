@@ -203,3 +203,120 @@ def test_proof_anchor_status_missing_on_chain_mismatch(
 
     status = proof_anchor_status(proof_path, transport)
     assert status == AnchorStatus.MISSING
+
+
+# ---------------------------------------------------------------------------
+# anchors.json wrapper migration (Stage 7-B BACKEND-B-002)
+# ---------------------------------------------------------------------------
+
+
+def test_anchors_json_bare_dict_migrates_to_wrapped(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A pre-Stage-7-B ``anchors.json`` written as a bare ``{round: txid}``
+    dict is read cleanly AND rewritten in wrapped form on first access.
+
+    Pins the migrate-on-read backward-compat path from BACKEND-B-002 — the
+    wrapper rollout cannot break operators with existing anchors.json files
+    on disk."""
+    monkeypatch.chdir(tmp_path)
+    _ensure_game_dir("s42")
+
+    # Bare-dict shape (pre-Stage-7-B writers).
+    bare_path = anchors_file("s42")
+    bare_path.parent.mkdir(parents=True, exist_ok=True)
+    bare_path.write_text(
+        json.dumps({"1": "TX-LEGACY", "FINAL": "TX-FINAL"}, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    proof_path = _write_proof_file("s42", 1, _HASH_A)
+
+    from sov_transport.xrpl_internals import ChainLookupResult
+
+    transport = MagicMock()
+    transport.is_anchored_on_chain.return_value = ChainLookupResult.FOUND
+
+    from sov_engine.proof import AnchorStatus, proof_anchor_status
+
+    status = proof_anchor_status(proof_path, transport)
+    assert status == AnchorStatus.ANCHORED
+
+    # Disk shape after the read: wrapped, with schema_version + anchors.
+    rewritten = json.loads(bare_path.read_text(encoding="utf-8"))
+    assert rewritten == {
+        "schema_version": 1,
+        "anchors": {"1": "TX-LEGACY", "FINAL": "TX-FINAL"},
+    }
+
+
+def test_anchors_json_wrapped_form_round_trips(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A post-Stage-7-B ``anchors.json`` (wrapped) reads cleanly with no
+    rewrite. Pins that the migrate-on-read path is one-shot."""
+    monkeypatch.chdir(tmp_path)
+    _ensure_game_dir("s42")
+
+    wrapped_path = anchors_file("s42")
+    wrapped_path.parent.mkdir(parents=True, exist_ok=True)
+    wrapped_payload = {
+        "schema_version": 1,
+        "anchors": {"1": "TX-WRAPPED"},
+    }
+    wrapped_path.write_text(
+        json.dumps(wrapped_payload, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+    # Capture mtime so we can assert the wrapped file is NOT rewritten.
+    pre_read_mtime = wrapped_path.stat().st_mtime_ns
+
+    proof_path = _write_proof_file("s42", 1, _HASH_A)
+
+    from sov_transport.xrpl_internals import ChainLookupResult
+
+    transport = MagicMock()
+    transport.is_anchored_on_chain.return_value = ChainLookupResult.FOUND
+
+    from sov_engine.proof import AnchorStatus, proof_anchor_status
+
+    status = proof_anchor_status(proof_path, transport)
+    assert status == AnchorStatus.ANCHORED
+
+    # Wrapped files don't get re-rewritten on read.
+    assert wrapped_path.stat().st_mtime_ns == pre_read_mtime
+    after = json.loads(wrapped_path.read_text(encoding="utf-8"))
+    assert after == wrapped_payload
+
+
+def test_anchors_json_unknown_schema_version_treated_as_empty(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A forward-bumped ``anchors.json`` (schema_version newer than this
+    binary supports) yields MISSING — the read-side fail-closed posture."""
+    monkeypatch.chdir(tmp_path)
+    _ensure_game_dir("s42")
+
+    future_path = anchors_file("s42")
+    future_path.parent.mkdir(parents=True, exist_ok=True)
+    future_path.write_text(
+        json.dumps(
+            {"schema_version": 999, "anchors": {"1": "TX-FUTURE"}},
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    proof_path = _write_proof_file("s42", 1, _HASH_A)
+
+    transport = MagicMock()
+
+    from sov_engine.proof import AnchorStatus, proof_anchor_status
+
+    status = proof_anchor_status(proof_path, transport)
+    assert status == AnchorStatus.MISSING
+    # Transport should never be consulted — there's no recorded txid to verify.
+    transport.is_anchored_on_chain.assert_not_called()

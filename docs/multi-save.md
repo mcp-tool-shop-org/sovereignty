@@ -100,6 +100,20 @@ When any command needs to know which save to operate on, it resolves the active 
 
 Rule 3 keeps single-game workflows frictionless: if there's only one save, you don't need to `sov resume` it explicitly.
 
+## Doctor coverage
+
+`sov doctor` validates the multi-save layout under its "active game" check (`sov_cli/main.py::doctor`) and the Stage 7-B "multi-save layout extancy" check. The active-game pointer rubric:
+
+| State | Result |
+|---|---|
+| Active-game pointer matches a saved game with readable `state.json` | ok |
+| `.sov/active-game` set to id whose `state.json` is missing or unreadable | warn (operator restorable — run `sov games` then `sov resume <id>`) |
+| `.sov/active-game` malformed (not parseable as a `s\d+` game-id) | fail |
+| No saved games | info (suggest `sov new`) |
+| Multiple saved games, no active-game pointer | info (suggest `sov resume <id>`) |
+
+Doctor must stay <2s wall-time on healthy systems; this check is pure-fs-stat, no network. See also `docs/v2.1-daemon-ipc.md` §6.1 (daemon-presence doctor check) — orthogonal: `started_by_shell` + active-game-pointer are separate concepts and easy to confuse.
+
 ## Migrating from v2.0.x
 
 v2.1 auto-migrates v1 layouts on first command invocation. There is nothing to do as an operator — the migration runs once and is transparent.

@@ -1,0 +1,59 @@
+# cargo-audit allowlist for sovereignty Tauri shell.
+#
+# Purpose: each ID below is an `unmaintained` or `unsound` advisory whose
+# advisory comes from a TRANSITIVE dependency we do not directly control.
+# The shell pulls the entire chain by depending on `tauri = "2"`; the bulk
+# are gtk-rs GTK3 bindings that exist only in Linux builds (macOS / Windows
+# builds of the shell do not pull these crates at all).
+#
+# Quarterly review cadence: re-check at every release whether the upstream
+# situation has shifted. The expected lapse path:
+# - GTK3 chain: when Tauri 2 lands a GTK4 / non-GTK Linux backend
+# - unic-* chain: when idna upstream migrates off unic
+# - proc-macro-error: lapses with the GTK3 chain (it's pulled via gtk3-macros)
+# - glib VariantStrIter (RUSTSEC-2024-0429): unsound iter impl on a code
+#   path the shell never exercises (no glib calls in Sovereignty's surface)
+#
+# Last reviewed: 2026-05-02 (Stage 7-B amend, swarm-1777686810-67fd)
+# Source-of-truth advisory list: wave-8/audit/tauri-shell-findings.yaml
+# (TAURI-SHELL-B-005). Bridge agent's wave-9/bridge.output.json may amend
+# the per-ID rationale; coordinator merges if so.
+#
+# Vulnerabilities reported: 0. This file ONLY suppresses the `unmaintained` /
+# `unsound` warning class. Any HIGH advisory landing on these crates would
+# escalate to A-bis immediately and the allowlist must NOT be extended to
+# cover it.
+
+[advisories]
+ignore = [
+    # gtk-rs GTK3 chain — transitive via tauri 2 → wry → webkit2gtk-rs.
+    # Linux-only (macOS / Windows builds of the shell are clean). Tauri 2
+    # has no GTK4 path yet upstream.
+    "RUSTSEC-2024-0411",  # gdkwayland-sys unmaintained
+    "RUSTSEC-2024-0412",  # gdk unmaintained
+    "RUSTSEC-2024-0413",  # atk unmaintained
+    "RUSTSEC-2024-0414",  # gdkx11-sys unmaintained
+    "RUSTSEC-2024-0415",  # gtk unmaintained
+    "RUSTSEC-2024-0416",  # atk-sys unmaintained
+    "RUSTSEC-2024-0417",  # gdkx11 unmaintained
+    "RUSTSEC-2024-0418",  # gdk-sys unmaintained
+    "RUSTSEC-2024-0419",  # gtk3-macros unmaintained
+    "RUSTSEC-2024-0420",  # gtk-sys unmaintained
+
+    # glib VariantStrIter Iterator/DoubleEndedIterator impls unsound.
+    # Transitive via webkit2gtk → wry → tauri-runtime-wry on Linux only.
+    # Sovereignty's tauri-shell command surface makes no glib calls.
+    "RUSTSEC-2024-0429",  # glib unsound
+
+    # proc-macro-error transitive via gtk3-macros. Lapses with the GTK3
+    # chain above.
+    "RUSTSEC-2024-0370",  # proc-macro-error unmaintained
+
+    # unic-* chain — transitive via idna_adapter. Sunset: idna upstream
+    # migrates off unic.
+    "RUSTSEC-2025-0075",  # unic-char-range unmaintained
+    "RUSTSEC-2025-0080",  # unic-common unmaintained
+    "RUSTSEC-2025-0081",  # unic-char-property unmaintained
+    "RUSTSEC-2025-0098",  # unic-ucd-version unmaintained
+    "RUSTSEC-2025-0100",  # unic-ucd-ident unmaintained
+]

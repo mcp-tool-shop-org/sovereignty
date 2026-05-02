@@ -56,8 +56,41 @@ def _maybe_double_fork() -> None:
     os.environ.pop("SOV_DAEMON_DOUBLE_FORK", None)
 
 
+def _parse_log_format_arg() -> None:
+    """DAEMON-B-013: parse ``--log-format=json`` from sys.argv.
+
+    Sets ``SOV_DAEMON_LOG_FORMAT`` for ``run_foreground_from_env`` to
+    consume. Cheap argparse here would force a hard dep on argparse +
+    bind argument parsing precedence to a CLI surface that the parent
+    spawn doesn't actually use (the parent passes log-format via env
+    var, not argv). Manual scan keeps the seam tight.
+    """
+    accepted = {"human", "json"}
+    new_argv: list[str] = [sys.argv[0]] if sys.argv else []
+    skip_next = False
+    for i, arg in enumerate(sys.argv[1:], start=1):
+        if skip_next:
+            skip_next = False
+            continue
+        if arg.startswith("--log-format="):
+            value = arg.split("=", 1)[1].lower()
+            if value in accepted:
+                os.environ["SOV_DAEMON_LOG_FORMAT"] = value
+            continue
+        if arg == "--log-format":
+            if i + 1 < len(sys.argv):
+                value = sys.argv[i + 1].lower()
+                if value in accepted:
+                    os.environ["SOV_DAEMON_LOG_FORMAT"] = value
+                skip_next = True
+            continue
+        new_argv.append(arg)
+    sys.argv = new_argv
+
+
 def main() -> None:
     """Run the daemon in the current process. Blocks until SIGINT/SIGTERM."""
+    _parse_log_format_arg()
     _maybe_double_fork()
     run_foreground_from_env()
 

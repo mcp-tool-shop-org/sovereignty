@@ -200,6 +200,16 @@ SAVE_DIR = Path(".sov")
 # removal in ``game_state_snapshot``; new optional fields don't require bump.
 SUPPORTED_STATE_SCHEMA_VERSION = 1
 
+# anchors.json + season.json schema versions (Stage 7-B amend, CLI-B-002 +
+# CLI-B-003). Both files were unversioned in v2.0/v2.1; the wrapper lands at
+# v2.1 with backward-compat for the bare-dict shape on read so existing
+# operator saves don't trip on the upgrade. The migrate-on-read shim is
+# CLI-side because the engine's centralised ``read_versioned`` raises on
+# unrecognised version — bare-dict has no ``schema_version`` field at all
+# and would raise as v=-1.
+ANCHORS_SCHEMA_VERSION = 1
+SEASON_SCHEMA_VERSION = 1
+
 
 def _validate_game_id_or_fail(game_id: str) -> None:
     """Reject a malformed ``game_id`` at the CLI boundary with a structured error.
@@ -315,38 +325,69 @@ def _resolve_network(cli_flag: str | None) -> Any:
         _fail(invalid_network_error(raw))
 
 
+def _read_anchors_entries(anchor_file: Path) -> dict[str, str]:
+    """Read ``anchors.json`` and return the ``{round_key: txid}`` map.
+
+    Stage 7-B amend (CLI-B-002 + CLI-B-003): the on-disk file may be
+    either the v0 bare-dict shape (pre-v2.1) or the v1 wrapped shape
+    (``{"schema_version": 1, "entries": {...}}``). Both forms surface the
+    same map to the caller. The migration to v1 happens on the next
+    write, not on read — readers stay tolerant so v2.0 → v2.1 in-place
+    upgrades don't trip on existing operator state.
+
+    Returns empty on missing / unreadable / malformed-JSON / wrong shape.
+    Logs at WARNING for any non-empty failure mode so the operator has a
+    grep target if anchors silently disappear from a status panel.
+    """
+    if not anchor_file.exists():
+        return {}
+    try:
+        raw = json.loads(anchor_file.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.warning(
+            "anchors.read.failed path=%s exc=%s detail=%s (treating as empty)",
+            anchor_file,
+            type(exc).__name__,
+            exc,
+        )
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    # Wrapped form: {"schema_version": 1, "entries": {round: txid}}.
+    if "schema_version" in raw and "entries" in raw:
+        entries = raw.get("entries", {})
+        if not isinstance(entries, dict):
+            return {}
+        return {str(k): str(v) for k, v in entries.items() if isinstance(v, str)}
+    # Bare-dict form (v0): treat as the entries map directly. Migration
+    # happens on next ``_record_anchor`` write.
+    return {str(k): str(v) for k, v in raw.items() if isinstance(v, str)}
+
+
 def _record_anchor(round_key: int | str, txid: str, game_id: str) -> None:
     """Persist an XRPL anchor txid keyed by round (or "FINAL") to anchors.json.
 
-    Schema matches what postcard / feedback already read:
-    ``{round_str: txid}``. Called after a successful ``transport.anchor()``
-    so subsequent invocations can surface the explorer link.
+    Stage 7-B amend (CLI-B-003): writes the v1 wrapped shape
+    ``{"schema_version": 1, "entries": {round: txid}}``. Reads both the
+    v0 bare-dict and v1 wrapped forms via ``_read_anchors_entries``, so a
+    v2.0 operator save migrates on the next anchor without manual
+    intervention.
+
+    Called after a successful ``transport.anchor()`` so subsequent
+    invocations can surface the explorer link.
     """
     pdir = proofs_dir(game_id)
     pdir.mkdir(parents=True, exist_ok=True)
     anchor_file = anchors_file(game_id)
-    anchors: dict[str, str] = {}
-    if anchor_file.exists():
-        try:
-            anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
-            if not isinstance(anchors, dict):
-                anchors = {}
-        except (json.JSONDecodeError, OSError) as e:
-            # Don't lose the new txid because the prior file was corrupt;
-            # log and overwrite. Non-fatal — the new anchor still gets
-            # recorded; only prior entries are lost.
-            logger.warning(
-                "anchors.write.recover path=%s exc=%s detail=%s "
-                "(overwriting unreadable anchors.json; previous tx history lost)",
-                anchor_file,
-                type(e).__name__,
-                e,
-            )
-            anchors = {}
+    anchors = _read_anchors_entries(anchor_file)
     anchors[str(round_key)] = txid
+    document = {
+        "schema_version": ANCHORS_SCHEMA_VERSION,
+        "entries": dict(sorted(anchors.items())),
+    }
     atomic_write_text(
         anchor_file,
-        json.dumps(anchors, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+        json.dumps(document, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
     )
 
 
@@ -659,7 +700,14 @@ def doctor(
     # 3. Season file
     if SEASON_FILE.exists():
         try:
-            season = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
+            # Stage 7-B amend: read via the schema-version-tolerant helper
+            # so a wrapped v1 document parses without falling into the
+            # "can't parse" branch that the bare-dict-only reader hit.
+            season = _read_season_document()
+            if not isinstance(season.get("games"), list):
+                # The helper logs at WARNING and returns an empty skeleton on
+                # malformed JSON — surface that to the operator as a warning.
+                raise json.JSONDecodeError("malformed season payload", "", 0)
             game_count = len(season.get("games", []))
             s = "s" if game_count != 1 else ""
             checks.append(
@@ -799,6 +847,27 @@ def doctor(
                     exc,
                 )
 
+    # ------------------------------------------------------------------
+    # Stage 7-B amend doctor extensions (CLI-B-006 .. CLI-B-009)
+    # ------------------------------------------------------------------
+    # Doctor must stay <2s wall-time on a healthy system. Each helper:
+    #   * uses fs reads + os.kill(pid, 0) only — never an HTTP call.
+    #   * never raises; defensive try/except logs and degrades gracefully.
+    #   * appends one (status, message, hint) tuple per check (or zero
+    #     when the check is N/A — e.g. no Tauri shell present).
+
+    # 7. Daemon presence (CLI-B-006)
+    _doctor_check_daemon_presence(checks)
+
+    # 8. [daemon] extra ↔ Tauri shell coherence (CLI-B-009)
+    _doctor_check_daemon_extra_coherence(checks)
+
+    # 9. Multi-save layout — active-game pointer extant (CLI-B-007)
+    _doctor_check_multi_save_layout(checks, saved=saved, active_id=active_id)
+
+    # 10. Schema-version currency across versioned files (CLI-B-008)
+    _doctor_check_schema_version_currency(checks, saved=saved)
+
     if json_out:
         # Doctor uses ("status","message","hint") triples; map to the
         # documented JSON shape with "info" rolling up as "ok".
@@ -824,6 +893,251 @@ def doctor(
             line += f"  [dim]({hint})[/dim]"
         console.print(line)
     console.print()
+
+
+# ---------------------------------------------------------------------------
+# Stage 7-B amend doctor helpers (CLI-B-006 .. CLI-B-009)
+# ---------------------------------------------------------------------------
+#
+# Each helper appends zero-or-one (status, message, hint) tuple to the passed
+# ``checks`` list. The split keeps ``doctor`` itself short and lets each check
+# be exercised by a focused unit test.
+
+
+def _doctor_check_daemon_presence(checks: list[tuple[str, str, str]]) -> None:
+    """CLI-B-006: surface the daemon's pid-based status in `sov doctor`.
+
+    Uses ``_query_daemon_status`` (which does an ``os.kill(pid, 0)``
+    liveness probe and a ``.sov/daemon.json`` read — no HTTP call). Adds
+    nothing when the ``[daemon]`` extra isn't installed (CLI-B-009 owns
+    that surface) or the daemon is plain absent.
+    """
+    try:
+        daemon_st = _query_daemon_status()
+    except Exception as exc:  # noqa: BLE001
+        # A malformed .sov/daemon.json bubbles up here — explicit fail.
+        checks.append(
+            (
+                "fail",
+                "Daemon state file unreadable",
+                f"Inspect .sov/daemon.json — {type(exc).__name__}: {exc}",
+            )
+        )
+        return
+    if daemon_st is None:
+        # [daemon] extra not installed — no diagnostic noise from this
+        # check; CLI-B-009 owns the install-coherence signal.
+        return
+    state = getattr(daemon_st, "state", None)
+    if state == "running":
+        port = getattr(daemon_st, "port", "?")
+        network = getattr(daemon_st, "network", "?")
+        checks.append(
+            (
+                "ok",
+                f"Daemon running (port {port}, network={network})",
+                "",
+            )
+        )
+    elif state == "stale":
+        pid = getattr(daemon_st, "pid", "?")
+        checks.append(
+            (
+                "warn",
+                f"Daemon stale (pid {pid} dead)",
+                "Run: sov daemon start  (auto-cleans the stale entry).",
+            )
+        )
+    # state == "none" → nothing to report; daemon is opt-in.
+
+
+def _doctor_check_daemon_extra_coherence(checks: list[tuple[str, str, str]]) -> None:
+    """CLI-B-009: warn when the Tauri shell is present but the
+    ``[daemon]`` extra is not installed.
+
+    Detection signals:
+      * [daemon] extra installed → ``importlib.import_module("sov_daemon")``.
+      * Tauri shell present → ``app/`` directory exists relative to the
+        repo / install root, OR the ``SOV_TAURI_SHELL`` env var is set
+        (the shell exports it on launch).
+
+    The ``app/`` heuristic is conservative: it triggers when running
+    against a development checkout, but in production the bundled binary
+    sets ``SOV_TAURI_SHELL`` so a stripped install without the source
+    tree still fires the right diagnostic. Both-absent → silent.
+    """
+    import importlib
+
+    try:
+        importlib.import_module("sov_daemon")
+        daemon_extra = True
+    except ImportError:
+        daemon_extra = False
+
+    # Tauri-shell heuristic. Order: env-var override (production binary
+    # signal) > app/ directory presence (dev checkout signal).
+    tauri_shell_present = os.environ.get("SOV_TAURI_SHELL") == "1" or Path("app").is_dir()
+
+    if tauri_shell_present and not daemon_extra:
+        # Use \\[daemon\\] so Rich renders the literal "[daemon]" rather
+        # than parsing it as a markup tag (which would silently elide it
+        # from the rendered output and break the operator-actionable hint).
+        checks.append(
+            (
+                "warn",
+                "Tauri shell present but \\[daemon] extra not installed",
+                "Run: pip install 'sovereignty-game\\[daemon]'",
+            )
+        )
+    elif tauri_shell_present and daemon_extra:
+        checks.append(
+            (
+                "ok",
+                "Tauri shell + \\[daemon] extra both present",
+                "",
+            )
+        )
+    # Both absent → no diagnostic noise (CLI-only install is fine).
+
+
+def _doctor_check_multi_save_layout(
+    checks: list[tuple[str, str, str]],
+    *,
+    saved: list[GameSummary],
+    active_id: str | None,
+) -> None:
+    """CLI-B-007: surface the multi-save layout state.
+
+    Three resolved states:
+      * Pass: ``.sov/active-game`` points at an extant game.
+      * Warn: orphaned pointer (well-formed value, target game missing).
+      * Info: no pointer set (multi-save mode with no active game).
+
+    The "fail (malformed)" path is covered by ``get_active_game_id``'s
+    own poison-rejection (it returns ``None`` and logs at WARNING when
+    the on-disk pointer fails the allowlist), so doctor sees the same
+    "no pointer" surface for both clean-empty and poisoned cases. We
+    deliberately don't re-read the raw bytes here — the engine layer's
+    rejection IS the contract; surfacing the malformed bytes would
+    leak attacker-supplied content into the diagnostic.
+    """
+    if not saved and not active_id:
+        # No saves and no pointer — nothing to report; not a layout
+        # concern. (Doctor's own "active game" check earlier in the
+        # body already says "No active game" / "No game directory".)
+        return
+    if active_id is None:
+        if saved:
+            # Saves exist but no pointer — already reported as "info" by
+            # the existing active-game branch; skip here to avoid duplicate.
+            return
+        return
+    if any(s.game_id == active_id for s in saved):
+        checks.append(
+            (
+                "ok",
+                f"Multi-save layout valid (active: {active_id})",
+                "",
+            )
+        )
+        return
+    # Pointer exists, target game absent — orphan.
+    checks.append(
+        (
+            "warn",
+            f"Active-game pointer {active_id} but target game is missing",
+            "Run: sov games  then  sov resume <game-id>",
+        )
+    )
+
+
+def _doctor_check_schema_version_currency(
+    checks: list[tuple[str, str, str]],
+    *,
+    saved: list[GameSummary],
+) -> None:
+    """CLI-B-008: cross-file schema-version currency across saved games.
+
+    Probes every versioned JSON file under each save (state.json,
+    anchors.json, pending-anchors.json) and surfaces:
+      * Pass (silent): every versioned file at the expected schema.
+      * Warn: a file is at an older-but-supported schema (no entries at
+        v2.1; pattern in place for v2.2's first migrator).
+      * Fail: a file declares a ``schema_version`` this binary doesn't
+        recognise — operator must downgrade or archive.
+
+    Performance: bounded by the number of saves × 3 files. <2s budget
+    holds for the typical ~10-save case (3 fs reads per save).
+    """
+    from sov_engine.io_utils import pending_anchors_path
+    from sov_engine.schemas import SchemaVersionUnsupportedError, read_versioned
+
+    expected_versions = {
+        "state": SUPPORTED_STATE_SCHEMA_VERSION,
+        "pending-anchors": 1,
+    }
+
+    fails: list[str] = []
+    for summary in saved:
+        gid = summary.game_id
+
+        # state.json
+        sf = state_file(gid)
+        if sf.exists():
+            try:
+                read_versioned(sf, expected_schema=expected_versions["state"], file_class="state")
+            except SchemaVersionUnsupportedError as exc:
+                fails.append(f"state ({gid}): v{exc.found}")
+            except (OSError, json.JSONDecodeError):
+                # Corrupt-state diagnostics live elsewhere in doctor; skip
+                # here so we don't double-report.
+                pass
+
+        # pending-anchors.json
+        pa = pending_anchors_path(gid)
+        if pa.exists():
+            try:
+                read_versioned(
+                    pa,
+                    expected_schema=expected_versions["pending-anchors"],
+                    file_class="pending-anchors",
+                )
+            except SchemaVersionUnsupportedError as exc:
+                fails.append(f"pending-anchors ({gid}): v{exc.found}")
+            except (OSError, json.JSONDecodeError):
+                pass
+
+        # anchors.json — the wrapper is migrate-on-read for the v0
+        # bare-dict shape; only fail if a wrapped form declares an
+        # unrecognised schema_version. Probe by hand to preserve the
+        # bare-dict tolerance.
+        af = anchors_file(gid)
+        if af.exists():
+            try:
+                raw = json.loads(af.read_text(encoding="utf-8"))
+                if (
+                    isinstance(raw, dict)
+                    and "schema_version" in raw
+                    and raw.get("schema_version") != ANCHORS_SCHEMA_VERSION
+                ):
+                    fails.append(f"anchors ({gid}): v{raw.get('schema_version')!r}")
+            except (OSError, json.JSONDecodeError):
+                pass
+
+    if fails:
+        checks.append(
+            (
+                "fail",
+                f"Schema version unrecognized: {'; '.join(fails)}",
+                (
+                    "Either install a sovereignty version that supports the named "
+                    "schema, or archive the file and start fresh."
+                ),
+            )
+        )
+    # Silent on the all-current path — keeps the doctor surface lean
+    # when nothing's wrong (matches CLAUDE.md: silence on the green
+    # path is the ergonomics norm).
 
 
 def _collect_checks() -> list[tuple[str, str, str]]:
@@ -1777,10 +2091,15 @@ def wallet(
     try:
         address, seed = fund_dev_wallet(resolved_network)
 
-        # Save seed to .sov/wallet_seed.txt (cross-game, lives at root)
+        # Save seed to .sov/wallet_seed.txt (cross-game, lives at root).
+        # Mode 0o600 (owner-only) per Stage 7-B amend CLI-B-005: the seed
+        # is bearer credential for an XRPL wallet, so the file must not be
+        # world-readable on multi-user POSIX systems. Mirrors
+        # pending-anchors.json + daemon.json + rng_seed.txt — every
+        # token/seed-bearing artifact gates at 0o600.
         wallet_file = SAVE_DIR / "wallet_seed.txt"
         SAVE_DIR.mkdir(parents=True, exist_ok=True)
-        atomic_write_text(wallet_file, seed)
+        atomic_write_text(wallet_file, seed, mode=0o600)
 
         console.print(
             Panel(
@@ -1832,8 +2151,9 @@ def postcard(
 
         anchor_file = anchors_file(game_id)
         if anchor_file.exists():
-            anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
-            tx = anchors.get(str(latest["round"]))
+            # Stage 7-B amend: tolerate v0 (bare-dict) + v1 (wrapped) shapes.
+            anchors_map = _read_anchors_entries(anchor_file)
+            tx = anchors_map.get(str(latest["round"]))
             if tx:
                 from sov_transport.xrpl import XRPLTransport
 
@@ -2277,14 +2597,49 @@ def _calc_story_points(state: GameState) -> dict[str, dict[str, int]]:
     return points
 
 
+def _read_season_document() -> dict[str, Any]:
+    """Read ``season.json`` and return the inner season payload.
+
+    Stage 7-B amend (CLI-B-002 + CLI-B-003): tolerates both the v0
+    bare-dict shape (``{"games": [...], "standings": {...}}``) and the
+    v1 wrapper (``{"schema_version": 1, "season": {...}}``). The
+    bare-dict form migrates on the next ``_update_season`` write.
+
+    Returns an empty season skeleton on missing / unreadable / malformed
+    file so callers can keep tracking even after a corrupt write.
+    """
+    empty: dict[str, Any] = {"games": [], "standings": {}}
+    if not SEASON_FILE.exists():
+        return empty
+    try:
+        raw = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError) as exc:
+        logger.warning(
+            "season.read.failed path=%s exc=%s detail=%s (treating as empty)",
+            SEASON_FILE,
+            type(exc).__name__,
+            exc,
+        )
+        return empty
+    if not isinstance(raw, dict):
+        return empty
+    # Wrapped form: {"schema_version": 1, "season": {games, standings}}.
+    if "schema_version" in raw and "season" in raw:
+        season = raw.get("season", {})
+        if isinstance(season, dict):
+            return season
+        return empty
+    # Bare-dict form (v0): the document IS the season payload.
+    return raw
+
+
 def _update_season(
     state: GameState,
     story_points: dict[str, dict[str, int]],
 ) -> dict[str, Any]:
     """Update season.json with this game's results. Returns season data."""
-    if SEASON_FILE.exists():
-        season = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
-    else:
+    season = _read_season_document()
+    if "games" not in season:
         season = {"games": [], "standings": {}}
 
     # Build per-player totals for this game
@@ -2322,9 +2677,16 @@ def _update_season(
         season["standings"][name] = season["standings"].get(name, 0) + total
 
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
+    # Stage 7-B amend (CLI-B-003): wrap with schema_version on write.
+    # Readers tolerate the bare-dict shape so v2.0 → v2.1 saves migrate
+    # on the next game-end without operator action.
+    document = {
+        "schema_version": SEASON_SCHEMA_VERSION,
+        "season": season,
+    }
     atomic_write_text(
         SEASON_FILE,
-        json.dumps(season, indent=2, ensure_ascii=False) + "\n",
+        json.dumps(document, indent=2, ensure_ascii=False) + "\n",
     )
     # json.loads returns Any; cast to satisfy the typed return.
     assert isinstance(season, dict)
@@ -2568,7 +2930,9 @@ def season_postcard() -> None:
         console.print("  [dim]Finish a game with sov game-end to start tracking.[/dim]")
         raise typer.Exit(0)
 
-    season = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
+    # Stage 7-B amend: read via the schema-version-tolerant helper so this
+    # surface picks up both the v0 bare-dict and v1 wrapped forms.
+    season = _read_season_document()
     games = season.get("games", [])
     standings = season.get("standings", {})
 
@@ -3208,6 +3572,23 @@ def _print_brief_status(state: GameState) -> None:
         marker = ">" if i == state.current_player_index else " "
         parts.append(f"{marker}{p.name}: {p.coins}c {p.reputation}r {p.upgrades}u")
     console.print(f"[dim]R{state.current_round} | {' | '.join(parts)}[/dim]")
+    # Stage 7-B amend (CLI-B-011): pending-anchors count visible in --brief
+    # so operators see queued rounds without invoking full status or --json.
+    # Single-line additive output; deterministic format for README pinning.
+    game_id = f"s{state.config.seed}"
+    try:
+        pending = read_pending_anchors(game_id)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "status.pending_probe.failed exc=%s detail=%s",
+            type(exc).__name__,
+            exc,
+        )
+        pending = {}
+    if pending:
+        n = len(pending)
+        plural = "s" if n != 1 else ""
+        console.print(f"[dim]  {n} pending anchor{plural} — run sov anchor to flush.[/dim]")
     # v2.1: daemon presence line — surfaced in both --brief and full modes
     # so audit-tier consumers know whether a daemon is up without grepping
     # `sov daemon status` separately.
@@ -3240,20 +3621,10 @@ def _status_json_payload(state: GameState) -> dict[str, Any]:
     pending = read_pending_anchors(game_id)
 
     # Read anchors.json defensively — same recovery posture as `_record_anchor`.
-    anchored: dict[str, str] = {}
+    # Stage 7-B amend (CLI-B-002 + CLI-B-003): tolerates both the v0 bare-dict
+    # shape and the v1 ``{"schema_version": 1, "entries": ...}`` wrapper.
     anchor_file = anchors_file(game_id)
-    if anchor_file.exists():
-        try:
-            raw = json.loads(anchor_file.read_text(encoding="utf-8"))
-            if isinstance(raw, dict):
-                anchored = {str(k): str(v) for k, v in raw.items()}
-        except (OSError, json.JSONDecodeError) as exc:
-            logger.warning(
-                "status.anchors.read.failed path=%s exc=%s detail=%s (treating as empty)",
-                anchor_file,
-                type(exc).__name__,
-                exc,
-            )
+    anchored = _read_anchors_entries(anchor_file)
 
     rounds_payload: list[dict[str, Any]] = []
     # Surface every round we have local evidence for — proof file present,
@@ -3931,8 +4302,11 @@ def feedback() -> None:
 
         anchor_file = anchors_file(game_id)
         if anchor_file.exists():
-            anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
-            tx = anchors.get(str(latest["round"]))
+            # Stage 7-B amend: read via the schema-version-tolerant helper
+            # so this surface picks up both the v0 bare-dict and v1 wrapped
+            # forms without diverging from `_record_anchor`'s write shape.
+            anchors_map = _read_anchors_entries(anchor_file)
+            tx = anchors_map.get(str(latest["round"]))
             if tx:
                 from sov_transport.xrpl import XRPLTransport
 

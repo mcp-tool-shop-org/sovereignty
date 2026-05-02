@@ -25,6 +25,11 @@ import styles from "./Audit.module.css";
 interface RoundRow {
   round: string;
   status: AnchorStatusResponse;
+  // Explorer URL is NOT part of AnchorStatusResponse — daemon's
+  // /anchor-status/{round} endpoint never emits it. SSE
+  // `anchor.batch_complete` payload carries `explorer_url`; we store it on
+  // the row when the event arrives. Stage 7-B WEB-UI-B-003.
+  explorerUrl?: string;
 }
 
 interface GameSection {
@@ -82,16 +87,25 @@ export default function Audit() {
         prev?.map((g) => (g.summary.game_id === gameId ? { ...g, loading: true } : g)) ?? null,
     );
     try {
-      const roundKeys = await client.proofs(gameId);
+      // proofs() returns ProofMeta[] — extract `round` for the URL path-param
+      // and the row key. Coerce to string defensively: daemon emits int-or-str
+      // per `data.get("round")` from the proof envelope, where round is an int
+      // for normal rounds and the string "FINAL" for the closing round.
+      const proofs = await client.proofs(gameId);
       const rounds: RoundRow[] = [];
-      for (const round of roundKeys) {
+      for (const meta of proofs) {
+        const round = String(meta.round);
         try {
           const status = await client.anchorStatus(gameId, round);
           rounds.push({ round, status });
         } catch {
           rounds.push({
             round,
-            status: { game_id: gameId, round, status: "missing" },
+            status: {
+              round,
+              anchor_status: "missing",
+              envelope_hash: meta.envelope_hash ?? null,
+            },
           });
         }
       }
@@ -120,7 +134,9 @@ export default function Audit() {
         const txid = data?.txid as string | undefined;
         const explorerUrl = data?.explorer_url as string | undefined;
         const rounds = (data?.rounds as string[] | undefined) ?? [];
-        // Flip pending → anchored from payload alone, no re-fetch.
+        // Flip pending → anchored from payload alone, no re-fetch. Explorer
+        // URL rides on RoundRow.explorerUrl (not on AnchorStatusResponse —
+        // daemon's anchor-status endpoint never emits it; cross-domain C).
         setGames(
           (prev) =>
             prev?.map((g) => {
@@ -132,10 +148,10 @@ export default function Audit() {
                       ...r,
                       status: {
                         ...r.status,
-                        status: "anchored" as const,
+                        anchor_status: "anchored" as const,
                         txid,
-                        explorer_url: explorerUrl,
                       },
+                      explorerUrl,
                     }
                   : r,
               );
@@ -159,7 +175,14 @@ export default function Audit() {
                   ...g,
                   rounds: [
                     ...g.rounds,
-                    { round, status: { game_id: gid, round, status: "pending" } },
+                    {
+                      round,
+                      status: {
+                        round,
+                        anchor_status: "pending",
+                        envelope_hash: null,
+                      },
+                    },
                   ],
                 };
               }) ?? null,
@@ -286,8 +309,8 @@ function GameRow({ game, events, onToggle }: GameRowProps) {
       return `${game.summary.current_round} round${game.summary.current_round === 1 ? "" : "s"}`;
     }
     const total = game.rounds.length;
-    const pending = game.rounds.filter((r) => r.status.status === "pending").length;
-    const missing = game.rounds.filter((r) => r.status.status === "missing").length;
+    const pending = game.rounds.filter((r) => r.status.anchor_status === "pending").length;
+    const missing = game.rounds.filter((r) => r.status.anchor_status === "missing").length;
     if (missing > 0) return `${total} rounds · ${missing} missing`;
     if (pending > 0) return `${total} rounds · ${pending} pending`;
     return `${total} rounds · all anchored`;
@@ -377,9 +400,14 @@ function RoundRowView({ row, verifyState }: { row: RoundRow; verifyState: RoundV
   const status = row.status;
   const txid = status.txid ?? "";
   const txidShort = txid.length > 8 ? `${txid.slice(0, 4)}…${txid.slice(-2)}` : txid || "—";
-  const anchorIcon = status.status === "anchored" ? "✓" : status.status === "pending" ? "⊘" : "✗";
+  const anchorIcon =
+    status.anchor_status === "anchored" ? "✓" : status.anchor_status === "pending" ? "⊘" : "✗";
   const anchorVariant =
-    status.status === "anchored" ? "success" : status.status === "pending" ? "warn" : "error";
+    status.anchor_status === "anchored"
+      ? "success"
+      : status.anchor_status === "pending"
+        ? "warn"
+        : "error";
 
   let verifyCell: React.ReactNode = "—";
   if (verifyState.kind === "verifying") {
@@ -402,15 +430,15 @@ function RoundRowView({ row, verifyState }: { row: RoundRow; verifyState: RoundV
     <tr>
       <td>{row.round}</td>
       <td>
-        <Pill variant={anchorVariant} title={status.status}>
-          <span aria-label={`anchor status: ${status.status}`}>
-            {anchorIcon} {status.status}
+        <Pill variant={anchorVariant} title={status.anchor_status}>
+          <span aria-label={`anchor status: ${status.anchor_status}`}>
+            {anchorIcon} {status.anchor_status}
           </span>
         </Pill>
       </td>
       <td>
-        {txid && isSafeExplorerUrl(status.explorer_url) ? (
-          <a href={status.explorer_url} target="_blank" rel="noreferrer noopener">
+        {txid && isSafeExplorerUrl(row.explorerUrl) ? (
+          <a href={row.explorerUrl} target="_blank" rel="noreferrer noopener">
             {txidShort}
           </a>
         ) : (

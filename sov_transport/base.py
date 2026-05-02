@@ -42,6 +42,12 @@ class ChainLookupResult(StrEnum):
     LOOKUP_FAILED = "lookup_failed"
 
 
+# intentional non-mirror: BatchEntry is bridge-internal, no frontend consumer.
+# A repo-wide grep for ``BatchEntry`` in app/ returns zero hits — the daemon
+# composes batches via its anchor-flush path and never exposes the shape over
+# HTTP. If a future Tauri command exposes batch composition to the shell,
+# mirror to ``app/src/types/daemon.ts`` and pin via
+# ``tests/test_daemon_types_ts_in_sync.py``. Tracked: BRIDGE-B-006.
 class BatchEntry(TypedDict):
     """One round's worth of anchor data for ``LedgerTransport.anchor_batch``.
 

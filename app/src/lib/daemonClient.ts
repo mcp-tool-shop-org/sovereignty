@@ -11,6 +11,7 @@ import type {
   GameSummary,
   HealthResponse,
   PendingEntry,
+  ProofMeta,
 } from "../types/daemon";
 import type { GameState } from "../types/game";
 
@@ -50,13 +51,23 @@ export class DaemonClient {
     return (await r.json()) as GameState;
   }
 
-  /** GET /games/{id}/proofs — list of round keys with proofs on disk. */
-  async proofs(gameId: string): Promise<string[]> {
+  /** GET /games/{id}/proofs — list of proof metadata entries.
+   *
+   * Stage 7-B WEB-UI-B-004: return shape changed from `string[]` to
+   * `ProofMeta[]`. Daemon emits `[{round, envelope_hash, final, path}, ...]`
+   * per `sov_daemon/server.py:439-446`. The previous `string[]` claim was
+   * a Stage A miss — msw mock matched the type, not the wire, so the round
+   * iterator in `Audit.tsx` would `encodeURIComponent({...})` against a real
+   * daemon and 400 every round. Pinned by `proofs-wire-shape.test.ts`.
+   *
+   * `path` is daemon-internal (file-watch correlation) and SHOULD NOT be
+   * rendered. Consumers extract `round` for display + as the URL path-param. */
+  async proofs(gameId: string): Promise<ProofMeta[]> {
     const r = await fetch(this.url(`/games/${encodeURIComponent(gameId)}/proofs`), {
       headers: this.headers(),
     });
     if (!r.ok) throw new Error(`proofs ${gameId}: ${r.status}`);
-    return (await r.json()) as string[];
+    return (await r.json()) as ProofMeta[];
   }
 
   /** GET /games/{id}/proofs/{round} — full proof envelope contents.

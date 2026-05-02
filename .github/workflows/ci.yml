@@ -40,6 +40,9 @@ jobs:
     # repeating the same lint/test work daily.
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    # 2× headroom over observed ~5min healthy run-time; matrix overhead included.
+    # CI failures often hang rather than crash — bound the wall-time (CI-TOOLING-B-004).
+    timeout-minutes: 20
     strategy:
       # Don't cancel sibling matrix legs on a single failure — we want to know
       # whether 3.13 still passes when 3.11 fails (parking F-W4CIDOCS-004).
@@ -86,6 +89,9 @@ jobs:
   tauri-and-frontend:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    # Cold Cargo + npm + Tauri build observed ~12min; 2.5× headroom for cache
+    # misses and transient slow runners (CI-TOOLING-B-004).
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -129,10 +135,44 @@ jobs:
       - name: Install frontend deps
         run: npm --prefix app ci
 
+      # Sigstore signature verification on the resolved lockfile. WARN-ONLY at
+      # v2.1 — many legitimate npm packages don't ship Sigstore signatures yet.
+      # Tighten to fail-on-error at v2.2 once a one-cycle coverage baseline is
+      # known (which packages support it, which don't). CI-TOOLING-B-003.
+      - name: npm audit signatures (advisory)
+        continue-on-error: true
+        working-directory: app
+        run: npm audit signatures
+
       # Rust gates — match acceptance-gate command order exactly.
       - name: Cargo check
         working-directory: app/src-tauri
         run: cargo check
+
+      # cargo-audit RUSTSEC scan. Runs BEFORE clippy/test to fail fast on a
+      # vulnerable dep without burning clippy wall-time. --deny warnings
+      # promotes unmaintained / yanked-crate warnings to hard failures and
+      # requires app/src-tauri/audit.toml to allowlist the gtk-rs / unic-* /
+      # proc-macro-error / glib::VariantStrIter Linux-only baseline (tauri-shell
+      # owns audit.toml; if absent, this step fails noisily — that's correct
+      # behavior). CI-TOOLING-B-002.
+      - name: Install cargo-audit
+        # --locked respects cargo-audit's own Cargo.lock for reproducibility.
+        # Version pin avoids silent major-bump breakage; bump deliberately.
+        run: cargo install cargo-audit --locked --version "^0.21"
+
+      - name: Cache cargo advisory DB
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: ~/.cargo/advisory-db
+          # run_id key forces a refresh per CI run; advisories are
+          # fast-moving and stale-cache risk > network cost.
+          key: cargo-advisory-db-${{ github.run_id }}
+          restore-keys: cargo-advisory-db-
+
+      - name: Cargo audit
+        working-directory: app/src-tauri
+        run: cargo audit --deny warnings
 
       - name: Cargo clippy
         working-directory: app/src-tauri
@@ -159,11 +199,18 @@ jobs:
       - name: Frontend build
         run: npm --prefix app run build
 
-  # Supply-chain advisory scan. Advisory in Stage B (continue-on-error) so
-  # transitive low-severity items don't block PRs; tighten in Stage B-2.
+  # Supply-chain hard-gate scan. pip-audit promoted from advisory to fail-on-HIGH
+  # in Stage B-2 (Wave 7-B) per Stage B target C lock. Allowlist mechanism via
+  # .pip-audit-ignore at repo root (one PYSEC/GHSA/CVE id per line, # comments
+  # ok). gitleaks remains advisory at v2.1; promotion to hard gate deferred to
+  # v2.2 alongside the .gitleaks.toml / cargo-deny / deny.toml allowlist policy
+  # surface design pass.
   security:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
+    # uv sync + pip-audit DB fetch + gitleaks scan; healthy run ~3min
+    # (CI-TOOLING-B-004).
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
@@ -174,11 +221,38 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen --dev
 
-      - name: pip-audit (advisory)
-        continue-on-error: true
+      # Cache PyPA advisory DB to amortize the network fetch. run_id key
+      # forces a refresh per run — advisories are fast-moving and a stale
+      # cache is more dangerous than the per-run fetch cost.
+      - name: Cache pip-audit advisory DB
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: ~/.cache/pip-audit
+          key: pip-audit-db-${{ github.run_id }}
+          restore-keys: pip-audit-db-
+
+      # pip-audit HARD GATE — fails on any unfixed advisory. Allowlist via
+      # .pip-audit-ignore (one PYSEC/GHSA/CVE id per line; # comments ok).
+      # CI-TOOLING-B-001.
+      - name: pip-audit (HIGH gate)
         run: |
           uv pip install pip-audit
-          uv run pip-audit
+          # Build --ignore-vuln args from allowlist file if present.
+          ALLOWLIST_ARGS=""
+          if [ -f .pip-audit-ignore ]; then
+            while IFS= read -r line; do
+              # Strip trailing inline rationale comment + whitespace
+              entry="${line%%#*}"
+              entry="${entry// /}"
+              entry="${entry//$'\t'/}"
+              [ -z "$entry" ] && continue
+              ALLOWLIST_ARGS="$ALLOWLIST_ARGS --ignore-vuln $entry"
+            done < .pip-audit-ignore
+          fi
+          # pip-audit fails on any unfixed advisory by default; --strict is
+          # for signature verification (different concern) and conflicts with
+          # positional --ignore-vuln args. Allowlist is the failure-mode gate.
+          uv run pip-audit $ALLOWLIST_ARGS
 
       - name: Secret scan with gitleaks (advisory)
         continue-on-error: true
@@ -192,6 +266,8 @@ jobs:
   canary:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
+    # uv sync + 3 CLI invocations; healthy run ~2min (CI-TOOLING-B-004).
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 

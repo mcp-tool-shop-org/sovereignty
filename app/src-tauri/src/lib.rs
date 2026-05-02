@@ -29,6 +29,17 @@ pub struct ShellState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Initialize structured logging. Default level is `warn` so the shell is
+    // silent in normal use; operators set `RUST_LOG=sov_tauri_shell=debug` to
+    // see the full close-handler / subprocess trail. `try_init` because tests
+    // (or a future second `run()` invocation in process) must not panic on a
+    // duplicate global subscriber.
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "warn".into()),
+        )
+        .try_init();
+
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(ShellState {
@@ -54,14 +65,27 @@ pub fn run() {
 /// Handle window events. Specifically: on close, if the shell started the
 /// daemon, fire a best-effort `daemon stop` so the user doesn't have to clean
 /// up stray processes.
+///
+/// Structured log events emitted from this surface (TAURI-SHELL-B-006):
+/// - `shell.daemon_stop_on_close_failed` — best-effort stop returned an error;
+///   the user may have a stale daemon process. Operators should run
+///   `sov daemon stop` manually or `sov doctor` to confirm.
 fn handle_window_event(window: &tauri::Window, event: &WindowEvent) {
     if let WindowEvent::CloseRequested { .. } = event {
         let state = window.state::<ShellState>();
         let started = state.started_by_shell.load(Ordering::SeqCst);
         if started {
-            // Best-effort: errors are swallowed deliberately — the user is
-            // closing the window; do not block on a stubborn daemon.
-            let _ = daemon::stop_blocking();
+            // Best-effort: errors are not propagated up — the user is closing
+            // the window; do not block on a stubborn daemon. We DO emit a
+            // structured warn event so operators (and `sov doctor` later) have
+            // a breadcrumb trail when a stale daemon survives a close.
+            if let Err(e) = daemon::stop_blocking() {
+                tracing::warn!(
+                    event = "shell.daemon_stop_on_close_failed",
+                    error = %e,
+                    "best-effort daemon stop on window close failed; user may have a stale daemon"
+                );
+            }
         }
     }
 }

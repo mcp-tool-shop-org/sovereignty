@@ -44,18 +44,42 @@ logger = logging.getLogger("sov_daemon")
 _STATE_POLL_INTERVAL_SECONDS = 1.0
 
 
+class SubscribersExhaustedError(RuntimeError):
+    """Raised by ``EventBroadcaster.subscribe`` when the per-broadcaster
+    subscriber cap (``MAX_SUBSCRIBERS``) is already at the ceiling.
+
+    DAEMON-B-014 (Wave 9): localhost-bound but not unbounded — a misbehaving
+    consumer that doesn't drain its queue or a Tauri hot-reload that leaks
+    EventSource connections would otherwise pin daemon RAM. The handler at
+    ``server.py::events_handler`` translates this to HTTP 503 with code
+    ``SSE_SUBSCRIBERS_EXHAUSTED`` so the client gets a structured envelope
+    instead of a 500.
+    """
+
+
 class EventBroadcaster:
     """In-memory pub/sub for SSE event distribution.
 
     Each connected client gets its own ``asyncio.Queue``; ``broadcast``
     fan-outs events to every queue. Slow consumers are bounded — the
-    queue is unbounded by default (we expect <10 events/sec total) but
-    a backpressure-aware enqueue can be added if a client falls behind.
+    queue is bounded at ``QUEUE_MAXSIZE`` events; a consumer that falls
+    behind drops events (preferable to OOM).
 
     The broadcaster also owns the state-change polling task. The task
     is started lazily on the first SSE connection and cancelled when
     the last connection closes — cost-free when nothing's listening.
+
+    DAEMON-B-014 (Wave 9):
+    * ``MAX_SUBSCRIBERS = 32`` caps subscriber count to prevent a stale
+      Tauri tab + dev-server hot-reload from leaking unbounded
+      EventSource connections that pin RAM.
+    * ``QUEUE_MAXSIZE = 256`` bounds per-subscriber queue depth so a
+      slow consumer can't pin a growing chunk of memory; overflow drops
+      via the existing ``QueueFull`` branch in ``broadcast``.
     """
+
+    MAX_SUBSCRIBERS: int = 32
+    QUEUE_MAXSIZE: int = 256
 
     def __init__(self) -> None:
         self._subscribers: set[asyncio.Queue[tuple[str, dict[str, Any]]]] = set()
@@ -77,9 +101,17 @@ class EventBroadcaster:
 
         Starts the state-change poll task on the first subscription —
         no polling happens while no clients are connected.
+
+        DAEMON-B-014: rejects with ``SubscribersExhaustedError`` when the
+        subscriber count is already at ``MAX_SUBSCRIBERS``. The handler
+        translates this to HTTP 503 ``SSE_SUBSCRIBERS_EXHAUSTED``.
         """
-        queue: asyncio.Queue[tuple[str, dict[str, Any]]] = asyncio.Queue()
+        queue: asyncio.Queue[tuple[str, dict[str, Any]]] = asyncio.Queue(maxsize=self.QUEUE_MAXSIZE)
         with self._lock:
+            if len(self._subscribers) >= self.MAX_SUBSCRIBERS:
+                raise SubscribersExhaustedError(
+                    f"SSE subscriber cap reached: {len(self._subscribers)}/{self.MAX_SUBSCRIBERS}"
+                )
             self._subscribers.add(queue)
             need_poll = self._poll_task is None or self._poll_task.done()
         if need_poll:
@@ -126,11 +158,16 @@ class EventBroadcaster:
             try:
                 queue.put_nowait((event_type, payload))
             except asyncio.QueueFull:
-                # Unbounded queue can't hit this in practice, but the
-                # branch keeps mypy strict happy and pins the policy.
+                # Bounded queue (Wave 9 DAEMON-B-014): a slow consumer
+                # that fell ``QUEUE_MAXSIZE`` events behind drops events
+                # rather than pinning unbounded RAM. DAEMON-B-013:
+                # structured fields via ``extra=`` for the JSON log
+                # formatter.
                 logger.warning(
-                    "events.broadcast.dropped event=%s reason=queue_full",
-                    event_type,
+                    "events.broadcast.dropped",
+                    extra={
+                        "endpoint": event_type,
+                    },
                 )
 
     async def _poll_state_changes(self) -> None:
@@ -149,10 +186,13 @@ class EventBroadcaster:
                 except Exception as exc:  # noqa: BLE001
                     # Keep polling alive even if a single iteration
                     # blew up (e.g. a game dir was deleted mid-scan).
+                    # DAEMON-B-013: structured fields via ``extra=``.
                     logger.warning(
-                        "events.poll.failed exc=%s detail=%s (continuing)",
-                        type(exc).__name__,
-                        exc,
+                        "events.poll.failed",
+                        extra={
+                            "exception_type": type(exc).__name__,
+                            "exception_detail": str(exc),
+                        },
                     )
                 await asyncio.sleep(_STATE_POLL_INTERVAL_SECONDS)
         except asyncio.CancelledError:

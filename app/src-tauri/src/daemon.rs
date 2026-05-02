@@ -4,8 +4,17 @@
 //! shells out for {start, stop, status}. `get_daemon_config` uses
 //! [`crate::config::read_daemon_config`] instead — the file is the source of
 //! truth, no subprocess needed.
+//!
+//! All subprocess calls are bounded by a wall-clock timeout (TAURI-SHELL-B-007).
+//! A misbehaving CLI that hangs on disk/network I/O or a stuck SIGTERM-resistant
+//! daemon must NOT freeze the webview's polling spinner. On timeout the helper
+//! returns `ShellError::SubprocessFailed { exit_code: -1, stderr: "timeout" }`.
 
-use std::process::{Command, Output};
+use std::process::Output;
+use std::time::Duration;
+
+use tokio::process::Command;
+use tokio::time::timeout;
 
 use crate::commands::{DaemonConfig, DaemonState, DaemonStatus, ShellError};
 use crate::config;
@@ -14,20 +23,46 @@ use crate::config;
 /// and a future rename or path-override stays narrow.
 pub const SOV_BIN: &str = "sov";
 
-/// Run `sov daemon status --json` and parse the result into a [`DaemonStatus`].
-pub fn daemon_status_subprocess() -> Result<DaemonStatus, ShellError> {
-    match Command::new(SOV_BIN)
-        .args(["daemon", "status", "--json"])
-        .output()
-    {
-        Ok(output) => parse_status_output(&output),
-        Err(err) => Err(map_spawn_error(err)),
+/// Hard wall-clock cap for any single `sov daemon ...` subprocess invocation.
+/// Status is supposed to be near-instant (local-only), start binds a port +
+/// writes a handshake (a few seconds), stop must shut down SSE + close the
+/// port (a few seconds). 10s is generous for all three on a healthy system
+/// and short enough that a hung CLI doesn't strand the webview indefinitely.
+pub const SUBPROCESS_TIMEOUT: Duration = Duration::from_secs(10);
+
+/// Wrap a `tokio::process::Command::output()` future with a timeout. On
+/// elapsed timeout, returns `ShellError::SubprocessFailed { exit_code: -1,
+/// stderr: "timeout" }` — the canonical contract for "the CLI did not respond
+/// within `SUBPROCESS_TIMEOUT`."
+async fn run_with_timeout(cmd: &mut Command) -> Result<Output, ShellError> {
+    run_with_timeout_inner(cmd, SUBPROCESS_TIMEOUT).await
+}
+
+/// Inner seam — accepts an explicit duration so tests can drive timeouts on a
+/// budget shorter than `SUBPROCESS_TIMEOUT`. Production callers go through
+/// [`run_with_timeout`].
+async fn run_with_timeout_inner(cmd: &mut Command, bound: Duration) -> Result<Output, ShellError> {
+    let fut = cmd.output();
+    match timeout(bound, fut).await {
+        Ok(result) => result.map_err(map_spawn_error),
+        Err(_elapsed) => Err(ShellError::SubprocessFailed {
+            exit_code: -1,
+            stderr: "timeout".into(),
+        }),
     }
+}
+
+/// Run `sov daemon status --json` and parse the result into a [`DaemonStatus`].
+pub async fn daemon_status_subprocess() -> Result<DaemonStatus, ShellError> {
+    let mut cmd = Command::new(SOV_BIN);
+    cmd.args(["daemon", "status", "--json"]);
+    let output = run_with_timeout(&mut cmd).await?;
+    parse_status_output(&output)
 }
 
 /// Run `sov daemon start [--readonly] [--network X]` and return the resulting
 /// [`DaemonConfig`] read from `.sov/daemon.json`.
-pub fn daemon_start_subprocess(
+pub async fn daemon_start_subprocess(
     readonly: bool,
     network: Option<&str>,
 ) -> Result<DaemonConfig, ShellError> {
@@ -40,7 +75,7 @@ pub fn daemon_start_subprocess(
         cmd.args(["--network", net]);
     }
 
-    let output = cmd.output().map_err(map_spawn_error)?;
+    let output = run_with_timeout(&mut cmd).await?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
@@ -57,11 +92,10 @@ pub fn daemon_start_subprocess(
 }
 
 /// Run `sov daemon stop`. Idempotent — succeeds even if already stopped.
-pub fn daemon_stop_subprocess() -> Result<(), ShellError> {
-    let output = Command::new(SOV_BIN)
-        .args(["daemon", "stop"])
-        .output()
-        .map_err(map_spawn_error)?;
+pub async fn daemon_stop_subprocess() -> Result<(), ShellError> {
+    let mut cmd = Command::new(SOV_BIN);
+    cmd.args(["daemon", "stop"]);
+    let output = run_with_timeout(&mut cmd).await?;
 
     if output.status.success() {
         return Ok(());
@@ -84,11 +118,23 @@ pub fn daemon_stop_subprocess() -> Result<(), ShellError> {
     })
 }
 
-/// Best-effort blocking stop, used from the window-close handler. Errors are
-/// swallowed deliberately — the user is closing the window; we do not block
-/// shutdown on a daemon that refuses to die.
+/// Best-effort blocking stop, used from the synchronous window-close handler.
+/// Errors are not propagated up — the caller emits a structured `tracing::warn!`
+/// (TAURI-SHELL-B-006) — but they are still typed for the tracing event.
+///
+/// The window-event callback is sync, but the subprocess driver is async, so
+/// we drive a fresh single-thread current-thread runtime here. This is the
+/// narrowest seam that keeps the rest of the file uniformly async without
+/// requiring Tauri to surface a `tokio::Handle` to the close handler.
 pub fn stop_blocking() -> Result<(), ShellError> {
-    daemon_stop_subprocess()
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| ShellError::SubprocessFailed {
+            exit_code: -1,
+            stderr: format!("failed to build tokio runtime for stop: {e}"),
+        })?;
+    runtime.block_on(daemon_stop_subprocess())
 }
 
 /// Map a `std::io::Error` from spawning `sov` into a typed [`ShellError`].
@@ -316,5 +362,57 @@ mod tests {
         let err = std::io::Error::from(std::io::ErrorKind::PermissionDenied);
         let mapped = map_spawn_error(err);
         assert!(matches!(mapped, ShellError::SubprocessFailed { .. }));
+    }
+
+    #[test]
+    fn subprocess_timeout_fires_before_child_exits() {
+        // TAURI-SHELL-B-007: spawn `sleep 30` with a 250ms wall-clock cap and
+        // assert the timeout returns `SubprocessFailed { exit_code: -1,
+        // stderr: "timeout" }` well before the sleep would naturally finish.
+        // The whole test must complete in under ~2s; production callers use a
+        // 10s cap, but the inner seam takes an explicit Duration so we don't
+        // burn 10s of CI wall-clock to prove the timeout path.
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let start = std::time::Instant::now();
+        let result = runtime.block_on(async {
+            let mut cmd = Command::new("sleep");
+            cmd.arg("30");
+            run_with_timeout_inner(&mut cmd, Duration::from_millis(250)).await
+        });
+        let elapsed = start.elapsed();
+        match result {
+            Err(ShellError::SubprocessFailed { exit_code, stderr }) => {
+                assert_eq!(exit_code, -1);
+                assert_eq!(stderr, "timeout");
+            }
+            other => panic!("expected SubprocessFailed timeout, got {other:?}"),
+        }
+        // Wide upper bound: 7s gives CI headroom but is far below the 30s
+        // sleep, proving the wrapper actually timed out rather than waiting
+        // for the child.
+        assert!(
+            elapsed < Duration::from_secs(7),
+            "timeout took too long: {elapsed:?}"
+        );
+    }
+
+    #[test]
+    fn subprocess_returns_output_when_under_budget() {
+        // Sanity check: a fast command (`true`, exits 0 immediately) returns
+        // its `Output` cleanly through the wrapper. Pins that the timeout
+        // seam doesn't accidentally truncate fast happy-path completions.
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let result = runtime.block_on(async {
+            let mut cmd = Command::new("true");
+            run_with_timeout_inner(&mut cmd, Duration::from_secs(5)).await
+        });
+        let output = result.expect("`true` should succeed under 5s budget");
+        assert!(output.status.success());
     }
 }

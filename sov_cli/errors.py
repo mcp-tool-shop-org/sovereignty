@@ -637,3 +637,151 @@ def invalid_game_id_error(value: str) -> SovError:
             "`sov resume <game-id>` to pick one."
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# v2.1 daemon HTTP error registry (Stage 7-B amend, CLI-B-001 + CLI-B-012)
+# ---------------------------------------------------------------------------
+#
+# Eight error codes were emitted as inline string literals in
+# ``sov_daemon/server.py`` (4xx/5xx error paths reachable from every
+# endpoint). The Stage 7-B amend lifts them into factories here so:
+#
+#   1. There is one canonical message + hint per code (was: drift between
+#      ``INVALID_NETWORK`` in ``invalid_network_error`` vs the inline at
+#      ``server.py:815`` — different messages, same code).
+#   2. The TS ``DaemonErrorCode`` mirror has a single source of truth to
+#      enumerate against.
+#   3. Future humanization passes touch one file, not two.
+#
+# Naming convention: ``daemon_<concept>_error`` to mirror the existing
+# ``daemon_readonly_error`` / ``daemon_auth_missing_error`` block above.
+
+
+def daemon_invalid_game_id_error(value: str) -> SovError:
+    """HTTP 400 — the path-param ``game_id`` does not match ``s<digits>``.
+
+    Daemon-side counterpart to ``invalid_game_id_error`` (CLI-side
+    Typer-Exit). Same code, daemon-flavored message + hint so
+    ``GET /games/<bad>/state`` produces a clean 400 response with an
+    operator-actionable next step.
+    """
+    return SovError(
+        code="INVALID_GAME_ID",
+        message=f"game_id {value!r} does not match the allowed format",
+        hint="game_id must match s<digits> (e.g. s42). GET /games to list valid ids.",
+    )
+
+
+def daemon_invalid_round_error(value: str) -> SovError:
+    """HTTP 400 — the path-param ``round`` is neither ``1..15`` nor ``FINAL``.
+
+    Surfaced when the daemon's anchor-status / proof-detail endpoints
+    receive a round identifier that fails the allowlist. The hint names
+    the canonical shapes the daemon accepts.
+    """
+    return SovError(
+        code="INVALID_ROUND",
+        message=f"round {value!r} is not a valid round identifier",
+        hint="rounds are integers 1..15 or the literal FINAL.",
+    )
+
+
+def daemon_game_not_found_error(game_id: str) -> SovError:
+    """HTTP 404 — no saved game with the requested id on disk.
+
+    Surfaced by the daemon's ``GET /games/<id>/state``,
+    ``GET /games/<id>/proofs``, ``GET /games/<id>/pending-anchors``, and
+    ``POST /games/<id>/anchor`` paths when the per-game directory is
+    absent. Hint points at the listing endpoint.
+    """
+    return SovError(
+        code="GAME_NOT_FOUND",
+        message=f"no saved game with id '{game_id}'",
+        hint="GET /games to list saved games.",
+    )
+
+
+def daemon_proof_not_found_error(game_id: str, round_key: str) -> SovError:
+    """HTTP 404 — the requested round has no proof file on disk.
+
+    Surfaced by the daemon's ``GET /games/<id>/proofs/<round>`` and
+    ``GET /games/<id>/anchor-status/<round>`` paths. Hint directs the
+    consumer at the proofs-listing endpoint so they can pick a real
+    round key.
+    """
+    return SovError(
+        code="PROOF_NOT_FOUND",
+        message=f"no proof for round '{round_key}' in game '{game_id}'",
+        hint="GET /games/{game_id}/proofs to list available rounds.",
+    )
+
+
+def daemon_proof_unreadable_error(exc_type: str) -> SovError:
+    """HTTP 500 — the proof file exists but cannot be parsed.
+
+    ``exc_type`` is the underlying exception class name
+    (``OSError`` / ``JSONDecodeError`` / etc.) — preserves the operator-
+    diagnostic shape the inline emit at ``server.py:479`` carried.
+    """
+    return SovError(
+        code="PROOF_UNREADABLE",
+        message=f"proof file exists but could not be read: {exc_type}",
+        hint="check disk integrity; re-run `sov end-round` from the original save.",
+    )
+
+
+def daemon_invalid_network_error(detail: str) -> SovError:
+    """HTTP 500 — the daemon was started with a network value that
+    ``XRPLNetwork(...)`` cannot parse at flush time.
+
+    Daemon-flavored variant of ``invalid_network_error``. The CLI-side
+    factory raises BEFORE ``sov anchor`` reaches the network ("'<value>'
+    is not a valid XRPL network."); the daemon-side hits this AFTER the
+    request lands ("daemon configured with invalid network: ...").
+
+    The Wave 8 audit found drift here: same code, different messages.
+    Stage 7-B picks the daemon-side message because it tells the
+    operator WHERE the bad config came from (their daemon launch flags),
+    not just THAT a bad network was named.
+    """
+    return SovError(
+        code="INVALID_NETWORK",
+        message=f"daemon configured with invalid network: {detail}",
+        hint="restart the daemon with --network testnet|mainnet|devnet.",
+    )
+
+
+def daemon_xrpl_not_installed_error(exc_type: str) -> SovError:
+    """HTTP 500 — the async XRPL transport could not be imported at flush time.
+
+    Surfaced when the ``[daemon]`` extra is installed but the ``[xrpl]``
+    extra was not; the daemon's anchor handler has to ``import
+    sov_transport.xrpl_async`` at request time, and the failure mode is a
+    deferred ``ImportError`` rather than a startup-time crash.
+    """
+    return SovError(
+        code="XRPL_NOT_INSTALLED",
+        message=f"async XRPL transport unavailable: {exc_type}",
+        hint="install with: pip install 'sovereignty-game[xrpl,daemon]'",
+    )
+
+
+def daemon_anchor_failed_error(exc_type: str, detail: str) -> SovError:
+    """HTTP 502 — ``anchor_batch`` threw an unexpected exception.
+
+    Catch-all for the daemon's anchor handler when a more specific code
+    (``MAINNET_UNDERFUNDED``, ``INVALID_NETWORK``, ``XRPL_NOT_INSTALLED``)
+    didn't fire. ``exc_type`` is the underlying exception class name,
+    ``detail`` is its stringification. The hint preserves the operator-
+    actionable recovery step the inline emit at ``server.py:829`` carried.
+    """
+    return SovError(
+        code="ANCHOR_FAILED",
+        message=f"anchor_batch failed: {exc_type}: {detail}",
+        hint=(
+            "your game state is intact and proofs are saved locally. "
+            "Try again in a minute (XRPL can be flaky), or run "
+            "`sov anchor` from the CLI to retry."
+        ),
+    )

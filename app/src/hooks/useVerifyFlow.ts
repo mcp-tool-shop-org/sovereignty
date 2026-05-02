@@ -203,7 +203,10 @@ export function useVerifyFlow(): UseVerifyFlow {
           if (cancelledRef.current) break;
 
           if (recomputed !== declaredHash) {
-            setRoundState(round, { kind: "failed", reason: "envelope_mismatch" });
+            setRoundState(round, {
+              kind: "failed",
+              reason: "envelope_mismatch",
+            });
             continue;
           }
 
@@ -212,7 +215,9 @@ export function useVerifyFlow(): UseVerifyFlow {
           try {
             const status = await client.anchorStatus(gameId, round, controller.signal);
             if (cancelledRef.current) break;
-            if (status.status === "anchored") {
+            // Stage 7-B WEB-UI-B-003: AnchorStatusResponse field renamed to
+            // `anchor_status` (was `status`) to match daemon wire shape.
+            if (status.anchor_status === "anchored") {
               setRoundState(round, { kind: "verified" });
             } else {
               setRoundState(round, { kind: "failed", reason: "not_on_chain" });

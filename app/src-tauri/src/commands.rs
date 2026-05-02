@@ -77,6 +77,9 @@ pub enum ShellError {
     #[error("config file malformed: {detail}")]
     ConfigFileMalformed { detail: String },
 
+    #[error("config schema unsupported: found {found}, expected {expected}")]
+    ConfigSchemaUnsupported { found: u32, expected: u32 },
+
     #[error("subprocess failed: exit_code={exit_code}")]
     SubprocessFailed { exit_code: i32, stderr: String },
 }
@@ -89,7 +92,7 @@ pub enum ShellError {
 pub async fn daemon_status(
     state: tauri::State<'_, ShellState>,
 ) -> Result<DaemonStatus, ShellError> {
-    let mut status = daemon::daemon_status_subprocess()?;
+    let mut status = daemon::daemon_status_subprocess().await?;
     // Inject the in-process flag — the daemon CLI cannot know whether THIS
     // shell instance started it. The frontend reads this directly without
     // any `?? true` fallback (cross-domain B with web-ui).
@@ -103,14 +106,14 @@ pub async fn daemon_start(
     readonly: bool,
     network: Option<String>,
 ) -> Result<DaemonConfig, ShellError> {
-    let config = daemon::daemon_start_subprocess(readonly, network.as_deref())?;
+    let config = daemon::daemon_start_subprocess(readonly, network.as_deref()).await?;
     state.started_by_shell.store(true, Ordering::SeqCst);
     Ok(config)
 }
 
 #[tauri::command]
 pub async fn daemon_stop(state: tauri::State<'_, ShellState>) -> Result<(), ShellError> {
-    let result = daemon::daemon_stop_subprocess();
+    let result = daemon::daemon_stop_subprocess().await;
     // Clear the flag regardless of the outcome — stop is idempotent and we
     // don't want a stuck `started_by_shell=true` if the daemon is already dead.
     state.started_by_shell.store(false, Ordering::SeqCst);
@@ -248,6 +251,24 @@ mod tests {
         let json = serde_json::to_string(&err).unwrap();
         assert!(json.contains("\"DaemonStartFailed\""), "got {json}");
         assert!(json.contains("boom"), "got {json}");
+    }
+
+    #[test]
+    fn shell_error_config_schema_unsupported_serializes() {
+        // TAURI-SHELL-B-001: schema_version drift surface — the variant must
+        // serialize with the discriminator `code` plus `found` + `expected`
+        // numeric fields so the frontend can render a clear migration message.
+        let err = ShellError::ConfigSchemaUnsupported {
+            found: 999,
+            expected: 1,
+        };
+        let json = serde_json::to_string(&err).unwrap();
+        assert!(
+            json.contains("\"code\":\"ConfigSchemaUnsupported\""),
+            "got {json}"
+        );
+        assert!(json.contains("\"found\":999"), "got {json}");
+        assert!(json.contains("\"expected\":1"), "got {json}");
     }
 
     #[test]

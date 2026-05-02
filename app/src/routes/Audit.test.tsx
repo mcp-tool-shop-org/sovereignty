@@ -46,13 +46,13 @@ function fetchMockFor(games: unknown[], extras: Record<string, unknown> = {}) {
       if (url.endsWith(path)) return jsonResponse(body);
     }
     if (url.includes("/anchor-status/")) {
+      // Wire shape per sov_daemon/server.py:486-539 — Stage 7-B WEB-UI-B-003.
       const m = url.match(/\/anchor-status\/(.+)$/);
       return jsonResponse({
-        game_id: "s42",
         round: m?.[1] ?? "?",
-        status: "anchored",
+        anchor_status: "anchored",
+        envelope_hash: "a".repeat(64),
         txid: "ABC123DEF",
-        explorer_url: "https://testnet.xrpl.org/x/ABC123DEF",
       });
     }
     return new Response("not found", { status: 404 });
@@ -167,7 +167,12 @@ describe("Audit /audit route", () => {
           },
         ],
         {
-          "/games/s42/proofs": ["1", "2", "3"],
+          // Wire shape per sov_daemon/server.py:439-446 — Stage 7-B WEB-UI-B-004.
+          "/games/s42/proofs": [
+            { round: 1, envelope_hash: "a".repeat(64), final: false, path: "/tmp/r1.json" },
+            { round: 2, envelope_hash: "b".repeat(64), final: false, path: "/tmp/r2.json" },
+            { round: 3, envelope_hash: "c".repeat(64), final: false, path: "/tmp/r3.json" },
+          ],
         },
       ),
     );

@@ -202,11 +202,17 @@ def test_anchor_midgame_with_checkpoint_flushes(
     keys = {entry["round_key"] for entry in rounds_arg}
     assert keys == {"1", "2"}
 
-    # anchors.json now has both rounds → same txid.
+    # anchors.json now has both rounds → same txid. Stage 7-B amend
+    # (CLI-B-003) wraps anchors.json with schema_version; assert through
+    # the canonical reader so we test the operator-visible map shape,
+    # not the wire format.
+    from sov_cli.main import _read_anchors_entries
     from sov_engine.io_utils import anchors_file, read_pending_anchors
 
-    anchors = json.loads(anchors_file(game_id).read_text(encoding="utf-8"))
-    assert anchors == {"1": "BATCHTX-MID", "2": "BATCHTX-MID"}
+    assert _read_anchors_entries(anchors_file(game_id)) == {
+        "1": "BATCHTX-MID",
+        "2": "BATCHTX-MID",
+    }
 
     # Pending cleared.
     assert read_pending_anchors(game_id) == {}

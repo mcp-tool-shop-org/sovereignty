@@ -656,13 +656,27 @@ def _read_pending_anchors_tagged(
     Returns ``("ok", entries)``, ``("missing", {})``, or
     ``("malformed", {})``. The ``"malformed"`` tag tells the caller to
     quarantine the existing file before issuing the fresh write.
+
+    Schema-version validation is delegated to
+    ``sov_engine.schemas.read_versioned`` (Stage 7-B amend, BACKEND-B-001 +
+    BACKEND-B-003). A forward-bumped or absent ``schema_version`` is treated
+    as ``malformed`` so the existing quarantine-and-fresh-write recovery
+    posture preserves the original bytes for inspection.
     """
+    from sov_engine.schemas import (
+        SchemaVersionUnsupportedError,
+        read_versioned,
+    )
+
     path = pending_anchors_path(game_id)
     if not path.exists():
         return "missing", {}
     try:
-        raw = path.read_text(encoding="utf-8")
-        data = json.loads(raw)
+        data = read_versioned(
+            path,
+            expected_schema=_PENDING_ANCHORS_SCHEMA_VERSION,
+            file_class="pending-anchors",
+        )
     except (OSError, json.JSONDecodeError) as exc:
         logger.warning(
             "pending_anchors.read.failed path=%s exc=%s detail=%s "
@@ -672,11 +686,13 @@ def _read_pending_anchors_tagged(
             exc,
         )
         return "malformed", {}
-    if not isinstance(data, dict):
+    except SchemaVersionUnsupportedError as exc:
         logger.warning(
-            "pending_anchors.read.malformed path=%s reason=not-an-object "
+            "pending_anchors.read.schema_mismatch path=%s expected=%d found=%d "
             "(treating as malformed; will quarantine on next write)",
             path,
+            exc.expected,
+            exc.found,
         )
         return "malformed", {}
     entries = data.get("entries", {})

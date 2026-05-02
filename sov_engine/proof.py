@@ -21,16 +21,25 @@ Reference: ``docs/v2.1-bridge-changes.md`` §3.
 from __future__ import annotations
 
 import json
+import logging
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
 from sov_cli.errors import ProofFormatError
-from sov_engine.io_utils import anchors_file, read_pending_anchors
+from sov_engine.io_utils import anchors_file, atomic_write_text, read_pending_anchors
 from sov_engine.serialize import canonical_json
 from sov_transport.base import LedgerTransport
 
+logger = logging.getLogger("sov_engine")
+
 PROOF_VERSION = 2
+
+#: Current ``anchors.json`` schema version. Stage 7-B amend (BACKEND-B-002)
+#: introduces the ``{"schema_version": 1, "anchors": {...}}`` wrapper.
+#: Bare-dict files written by pre-Stage-7-B binaries are migrated on first
+#: read by ``_read_anchors``.
+_ANCHORS_SCHEMA_VERSION = 1
 
 
 class AnchorStatus(StrEnum):
@@ -147,10 +156,17 @@ def _round_key_from_proof(proof: dict[str, Any]) -> str:
 def _read_anchors(game_id: str) -> dict[str, str]:
     """Read ``anchors.json`` as ``{round_key: txid}``.
 
-    Returns an empty dict when the file is absent or unreadable.
-    Mirrors the defensive read pattern used by the CLI's ``_record_anchor``
-    so a corrupted anchors file degrades to MISSING rather than crashing
-    the status / verify path.
+    Stage 7-B amend (BACKEND-B-002) introduces the
+    ``{"schema_version": 1, "anchors": {...}}`` wrapper. Backward-compat:
+    bare-dict files written by pre-amend binaries are detected and migrated
+    on read — the wrapped form is written back atomically so subsequent
+    reads find the canonical shape.
+
+    Returns an empty dict when the file is absent, unreadable, or has an
+    unrecognised schema version. Malformed reads are logged at WARNING
+    (BACKEND-B-005) so operators have a signal beyond a silent
+    ``AnchorStatus.MISSING`` degradation. Mirrors the defensive read pattern
+    used by the CLI's ``_record_anchor``.
     """
     path = anchors_file(game_id)
     if not path.exists():
@@ -158,15 +174,96 @@ def _read_anchors(game_id: str) -> dict[str, str]:
     try:
         raw = path.read_text(encoding="utf-8")
         data = json.loads(raw)
-    except (OSError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning(
+            "anchors.read.malformed path=%s exc=%s detail=%s "
+            "(treating as empty; proof_anchor_status will degrade to MISSING)",
+            path,
+            type(exc).__name__,
+            exc,
+        )
         return {}
     if not isinstance(data, dict):
+        logger.warning(
+            "anchors.read.malformed path=%s reason=not-an-object "
+            "(treating as empty; proof_anchor_status will degrade to MISSING)",
+            path,
+        )
         return {}
+
+    schema_version = data.get("schema_version")
+    if schema_version is None:
+        # Bare-dict shape from pre-Stage-7-B binaries. Treat the whole document
+        # as the entries map and rewrite in wrapped form on the way out.
+        cleaned = _coerce_anchor_entries(data)
+        _migrate_anchors_to_wrapped(path, cleaned)
+        return cleaned
+    if schema_version != _ANCHORS_SCHEMA_VERSION:
+        logger.warning(
+            "anchors.read.schema_mismatch path=%s expected=%d found=%r "
+            "(treating as empty; proof_anchor_status will degrade to MISSING)",
+            path,
+            _ANCHORS_SCHEMA_VERSION,
+            schema_version,
+        )
+        return {}
+
+    inner = data.get("anchors", {})
+    if not isinstance(inner, dict):
+        logger.warning(
+            "anchors.read.malformed path=%s reason=anchors-not-an-object "
+            "(treating as empty; proof_anchor_status will degrade to MISSING)",
+            path,
+        )
+        return {}
+    return _coerce_anchor_entries(inner)
+
+
+def _coerce_anchor_entries(raw: dict[Any, Any]) -> dict[str, str]:
+    """Filter a raw anchors mapping down to ``{str: str}`` entries.
+
+    Rejects non-string keys/values silently — the same defensive posture as
+    the previous bare-dict reader (proof.py pre-Stage-7-B).
+    """
     cleaned: dict[str, str] = {}
-    for key, value in data.items():
+    for key, value in raw.items():
         if isinstance(key, str) and isinstance(value, str):
             cleaned[key] = value
     return cleaned
+
+
+def _migrate_anchors_to_wrapped(path: Path, entries: dict[str, str]) -> None:
+    """Rewrite a bare-dict ``anchors.json`` in wrapped form.
+
+    Best-effort: a write failure (read-only filesystem, permission error)
+    must not poison the read — the entries we already coerced still flow
+    back to the caller. Logs at INFO so operators following an upgrade can
+    see the migration once.
+    """
+    document: dict[str, Any] = {
+        "schema_version": _ANCHORS_SCHEMA_VERSION,
+        "anchors": dict(sorted(entries.items())),
+    }
+    try:
+        atomic_write_text(
+            path,
+            json.dumps(document, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+        )
+    except OSError as exc:
+        logger.warning(
+            "anchors.migrate.failed path=%s exc=%s detail=%s "
+            "(read returned coerced entries; on-disk bytes still bare-dict)",
+            path,
+            type(exc).__name__,
+            exc,
+        )
+        return
+    logger.info(
+        "anchors.migrated path=%s shape=wrapped schema_version=%d entries=%d",
+        path,
+        _ANCHORS_SCHEMA_VERSION,
+        len(entries),
+    )
 
 
 def proof_anchor_status(
@@ -204,6 +301,11 @@ def proof_anchor_status(
     anchors = _read_anchors(game_id)
     txid = anchors.get(round_key)
     if txid is None:
+        logger.info(
+            "proof_anchor.missing reason=no_txid_recorded game_id=%s round=%s",
+            game_id,
+            round_key,
+        )
         return AnchorStatus.MISSING
 
     # Wave 6 BRIDGE-004: is_anchored_on_chain returns ChainLookupResult
@@ -215,4 +317,10 @@ def proof_anchor_status(
 
     if transport.is_anchored_on_chain(txid, envelope_hash) is ChainLookupResult.FOUND:
         return AnchorStatus.ANCHORED
+    logger.info(
+        "proof_anchor.missing reason=chain_drift game_id=%s round=%s txid=%s",
+        game_id,
+        round_key,
+        txid,
+    )
     return AnchorStatus.MISSING

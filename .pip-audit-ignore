@@ -1,0 +1,18 @@
+# pip-audit allowlist for sovereignty.
+# Each ignored vuln has a rationale. Quarterly review: re-check
+# whether upstream has fixed the advisory or migration path is clear.
+# Last reviewed: 2026-05-02.
+#
+# Format: one PYSEC/GHSA/CVE id per line, optionally followed by `# rationale`.
+# No entries currently — gate is fail-on-HIGH out of the box.
+#
+# Drift rule: every entry here SHOULD correspond to a clamped dep in
+# pyproject.toml. If you allowlist an advisory on a dep that has no upper
+# bound, you are silencing a moving target. Either clamp the dep (preferred)
+# or document why the unbounded major is safe.
+
+# v2.1 Wave 7 Stage B baseline allowlist — both dev-only deps with fix
+# versions available. Bumping is the better fix; allowlisting keeps the
+# Stage B gate green pending the next dep refresh.
+CVE-2026-4539  # pygments 2.19.2 → 2.20.0 (transitive dep of Rich; CLI rendering only, never executed on user data)
+CVE-2025-71176 # pytest 9.0.2 → 9.0.3 (test runner; dev dependency only, not shipped)

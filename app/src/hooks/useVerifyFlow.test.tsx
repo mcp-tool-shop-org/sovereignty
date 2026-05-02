@@ -140,10 +140,18 @@ describe("useVerifyFlow", () => {
       }
       if (url.includes("/anchor-status/1")) {
         return Promise.resolve(
-          new Response(JSON.stringify({ game_id: "s42", round: "1", status: "anchored" }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }),
+          new Response(
+            JSON.stringify({
+              round: "1",
+              anchor_status: "anchored",
+              envelope_hash: "a".repeat(64),
+              txid: "ABC",
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          ),
         );
       }
       return Promise.reject(new Error("unexpected URL"));
@@ -210,10 +218,17 @@ describe("useVerifyFlow", () => {
       }
       if (url.includes("/anchor-status/1")) {
         return Promise.resolve(
-          new Response(JSON.stringify({ game_id: "s42", round: "1", status: "missing" }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }),
+          new Response(
+            JSON.stringify({
+              round: "1",
+              anchor_status: "missing",
+              envelope_hash: "a".repeat(64),
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          ),
         );
       }
       return Promise.reject(new Error("unexpected"));
@@ -266,10 +281,18 @@ describe("useVerifyFlow", () => {
       }
       if (url.includes("/anchor-status/1")) {
         return Promise.resolve(
-          new Response(JSON.stringify({ game_id: "s42", round: "1", status: "anchored" }), {
-            status: 200,
-            headers: { "content-type": "application/json" },
-          }),
+          new Response(
+            JSON.stringify({
+              round: "1",
+              anchor_status: "anchored",
+              envelope_hash: "a".repeat(64),
+              txid: "ABC",
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          ),
         );
       }
       return Promise.reject(new Error("unexpected"));

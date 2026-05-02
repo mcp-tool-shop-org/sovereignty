@@ -192,28 +192,25 @@ def _read_handshake() -> dict[str, Any] | None:
 def _write_handshake(info: dict[str, Any]) -> None:
     """Atomically persist the daemon handshake document.
 
-    Uses ``sov_engine.io_utils.atomic_write_text`` so a crash mid-write
-    leaves a ``.tmp`` sibling, never a half-written ``daemon.json``.
-    Same atomic-write convention as state, season, anchors, pending-anchors.
+    Uses ``sov_engine.io_utils.atomic_write_text`` with ``mode=0o600`` so
+    a crash mid-write leaves a ``.tmp`` sibling, never a half-written
+    ``daemon.json``. Same atomic-write convention as state, season,
+    anchors, pending-anchors.
 
     DAEMON-002: ``daemon.json`` carries the bearer token that gates every
-    daemon endpoint. Force ``0o600`` after the atomic replace so the file
-    is not readable by other local users (default umask leaves it world-
-    readable on POSIX; backup processes / co-located users could exfiltrate
-    the token otherwise). Windows file modes don't map to POSIX bits — the
-    chmod is skipped there. TODO: switch to
-    ``atomic_write_text(path, content, mode=0o600)`` once the backend
-    agent's BACKEND-005 fix lands the kwarg.
+    daemon endpoint. The ``mode=0o600`` kwarg lands the chmod via the
+    helper's own internal post-rename chmod so the bearer token is never
+    briefly world-readable (no race window between os.replace and
+    os.chmod). Windows file modes don't map to POSIX bits — the helper
+    skips the chmod there silently.
     """
     path = daemon_file_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(
         path,
         json.dumps(info, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+        mode=0o600,
     )
-    if sys.platform != "win32":
-        with contextlib.suppress(OSError):
-            os.chmod(path, 0o600)
 
 
 def _remove_handshake() -> None:
@@ -307,6 +304,7 @@ _SUBPROCESS_ENV_ALLOWLIST = frozenset(
         "VIRTUAL_ENV",
         "SOV_LOG_LEVEL",
         "SOV_XRPL_NETWORK",
+        "SOV_DAEMON_LOG_FORMAT",
         # Windows essentials so the spawned interpreter can resolve runtime libs.
         "SYSTEMROOT",
         "SYSTEMDRIVE",
@@ -637,6 +635,7 @@ def run_foreground(
     signer_file: Path | None = None,
     port: int | None = None,
     token: str | None = None,
+    log_format: str = "human",
 ) -> None:
     """Run uvicorn in the current process. Blocks until SIGINT / SIGTERM.
 
@@ -647,7 +646,14 @@ def run_foreground(
     them via env vars and re-uses the parent-claimed port); when None,
     a free port is claimed and a fresh token is generated. This is the
     sole entry point reachable from ``python -m sov_daemon``.
+
+    ``log_format`` selects the daemon's stderr log format:
+    - ``"human"`` (default) keeps the legacy human-readable form.
+    - ``"json"`` swaps in ``JsonLineFormatter`` so each emit is one
+      structured JSON line (DAEMON-B-013 / Target D).
     """
+    import logging
+
     import uvicorn
 
     from sov_daemon.server import build_app
@@ -697,14 +703,40 @@ def run_foreground(
         started_monotonic=started_monotonic,
     )
 
+    # DAEMON-B-013: optionally swap the stderr handler's formatter for the
+    # JSON-lines variant. Default stays human-readable so a developer
+    # tailing the log doesn't get JSON soup. Applied to both ``sov_daemon``
+    # and ``sov_engine`` loggers — the daemon process emits through both.
+    if log_format == "json":
+        from sov_daemon.log_fields import JsonLineFormatter
+
+        json_formatter = JsonLineFormatter()
+        # ``logging.basicConfig`` may not have been called yet (uvicorn
+        # installs its own handlers later); we ensure both target loggers
+        # have at least one stderr handler, then swap formatters.
+        for logger_name in ("sov_daemon", "sov_engine"):
+            target_logger = logging.getLogger(logger_name)
+            if not target_logger.handlers:
+                handler = logging.StreamHandler()
+                target_logger.addHandler(handler)
+            for h in target_logger.handlers:
+                h.setFormatter(json_formatter)
+
     # We do NOT install our own SIGTERM/SIGINT handlers — uvicorn installs
     # its own that flip ``server.should_exit`` and run the lifespan
     # shutdown hook in ``server.py::build_app``. That hook calls
     # ``broadcast_shutdown(app)`` which fires the ``daemon.shutdown`` SSE
     # event. The handshake-removal happens in the ``finally`` block below
     # — guaranteed to run on clean exit, signal-driven exit, or crash.
+    #
+    # DAEMON-B-009: explicit resource limits replace uvicorn's unbounded
+    # defaults. localhost-bound ≠ unbounded-trust — a buggy webview or
+    # stale Tauri tab can still DoS the daemon. Body-cap is applied via
+    # ``MaxBodySizeMiddleware`` wrapped onto the app below.
+    from sov_daemon.server import MaxBodySizeMiddleware
+
     config = uvicorn.Config(
-        app,
+        MaxBodySizeMiddleware(app, max_bytes=1_048_576),  # 1 MiB body cap
         host="127.0.0.1",
         port=port,
         log_level=os.environ.get("SOV_LOG_LEVEL", "warning").lower(),
@@ -712,6 +744,10 @@ def run_foreground(
         # uvicorn >= 0.27 understands lifespan; we use it to schedule the
         # state-change polling task in events.py.
         lifespan="on",
+        limit_concurrency=64,
+        limit_max_requests=10_000,
+        timeout_keep_alive=5,
+        h11_max_incomplete_event_size=16384,
     )
     server = uvicorn.Server(config)
     try:
@@ -726,6 +762,9 @@ def run_foreground_from_env() -> None:
     Reads ``SOV_DAEMON_*`` env vars set by the parent ``start_daemon``
     call and dispatches into ``run_foreground``. Falls back to defaults
     for direct ``python -m sov_daemon`` invocations (test/dev use).
+
+    ``SOV_DAEMON_LOG_FORMAT`` opts the daemon into structured JSON-lines
+    logging when set to ``"json"`` (DAEMON-B-013).
     """
     port_env = os.environ.get("SOV_DAEMON_PORT")
     token_env = os.environ.get("SOV_DAEMON_TOKEN")
@@ -733,6 +772,7 @@ def run_foreground_from_env() -> None:
     readonly = os.environ.get("SOV_DAEMON_READONLY", "0") == "1"
     seed_env = os.environ.get("SOV_DAEMON_SEED_ENV", "XRPL_SEED")
     signer_file_env = os.environ.get("SOV_DAEMON_SIGNER_FILE")
+    log_format = os.environ.get("SOV_DAEMON_LOG_FORMAT", "human").lower()
 
     port = int(port_env) if port_env else None
     token = token_env if token_env else None
@@ -745,6 +785,7 @@ def run_foreground_from_env() -> None:
         signer_file=signer_file,
         port=port,
         token=token,
+        log_format=log_format,
     )
 
 

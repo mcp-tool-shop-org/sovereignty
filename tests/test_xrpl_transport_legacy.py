@@ -214,3 +214,95 @@ def test_xrpl_transport_verify_alias_delegates_to_is_anchored(
     t = XRPLTransport(XRPLNetwork.TESTNET)
     with pytest.warns(DeprecationWarning):
         assert t.verify("TXID", expected_hash) is True
+
+
+# ---------------------------------------------------------------------------
+# 5. BRIDGE-B-002 — PEP-562 ``__getattr__`` deprecation on private helpers
+# ---------------------------------------------------------------------------
+#
+# The xrpl_testnet shim used to bind ``_to_hex`` / ``_from_hex`` /
+# ``_extract_memos`` / ``_classify_submit_error`` / ``TESTNET_URL`` as
+# module-level names imported from ``sov_transport.xrpl``. That meant the
+# class + faucet helper warned loudly on access while the five sibling
+# helpers re-exported silently. Wave-9 closed the gap with a PEP-562
+# ``__getattr__`` that emits ``DeprecationWarning`` on access and returns
+# the underlying value from ``sov_transport.xrpl_internals``.
+#
+# These tests pin:
+#   - each of the 5 deprecated re-exports warns on access,
+#   - the warning message points callers at ``sov_transport.xrpl_internals``,
+#   - the returned value is the real underlying object (functions resolve
+#     to the same callable; the constant returns the canonical RPC URL),
+#   - unknown attributes still raise ``AttributeError`` (PEP-562 contract).
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["_to_hex", "_from_hex", "_extract_memos", "_classify_submit_error"],
+)
+def test_xrpl_testnet_shim_private_helper_access_warns(name: str) -> None:
+    """Accessing a deprecated private-helper re-export emits ``DeprecationWarning``.
+
+    Each access goes through the PEP-562 ``__getattr__`` and is redirected to
+    ``sov_transport.xrpl_internals`` (BRIDGE-B-002). The returned object is
+    the same callable as the canonical home — a downstream caller still on
+    the legacy path keeps working unchanged through the v2.2 removal window.
+    """
+    import sov_transport.xrpl_internals as internals
+    import sov_transport.xrpl_testnet as shim
+
+    with pytest.warns(DeprecationWarning, match="sov_transport.xrpl_internals"):
+        legacy_value = getattr(shim, name)
+
+    assert legacy_value is getattr(internals, name)
+
+
+def test_xrpl_testnet_shim_testnet_url_access_warns() -> None:
+    """``TESTNET_URL`` is reachable but warns on access.
+
+    The canonical home is ``sov_transport.xrpl_internals._NETWORK_TABLE``;
+    the legacy constant resolves to that table's testnet RPC URL so
+    pre-existing call sites keep dereferencing the same string.
+    """
+    import sov_transport.xrpl_testnet as shim
+    from sov_transport.xrpl import XRPLNetwork
+    from sov_transport.xrpl_internals import _NETWORK_TABLE
+
+    with pytest.warns(DeprecationWarning, match="sov_transport.xrpl_internals"):
+        url = shim.TESTNET_URL
+
+    assert url == _NETWORK_TABLE[XRPLNetwork.TESTNET][0]
+    assert url == "https://s.altnet.rippletest.net:51234/"
+
+
+def test_xrpl_testnet_shim_unknown_attribute_raises() -> None:
+    """Unknown attribute access raises ``AttributeError`` (PEP-562 contract).
+
+    The ``__getattr__`` only intercepts the documented re-export set; any
+    other name falls through to the standard module-attribute lookup and
+    must surface as ``AttributeError`` so importers see real errors instead
+    of silent ``None``.
+    """
+    import sov_transport.xrpl_testnet as shim
+
+    with pytest.raises(AttributeError, match="no attribute 'definitely_not_a_real_helper'"):
+        _ = shim.definitely_not_a_real_helper  # type: ignore[attr-defined]
+
+
+def test_xrpl_testnet_shim_class_and_faucet_remain_silent_at_import() -> None:
+    """Importing the shim itself does NOT warn — only ACCESS to deprecated
+    names warns.
+
+    PEP-562 ``__getattr__`` fires only when a name is not already bound at
+    module scope. ``XRPLTestnetTransport``, ``fund_testnet_wallet``,
+    ``XRPLNetwork``, and ``__all__`` stay bound directly so a bare ``import
+    sov_transport.xrpl_testnet`` does not log spam at module-load time. The
+    class + faucet helper still warn at instantiation / call (covered by
+    tests 2 and 3 above).
+    """
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DeprecationWarning)
+        # If this raised the import-time would have triggered a warning.
+        import sov_transport.xrpl_testnet  # noqa: F401
