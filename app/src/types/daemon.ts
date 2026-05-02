@@ -115,6 +115,13 @@ export interface DaemonError {
 // mirror discipline). The Rust enum uses #[serde(tag = "code")] so the wire
 // payload is `{ code: "<variant>", ...variant_fields }` — these strings are
 // the Rust variant names verbatim.
+//
+// Stage 9-D WEB-UI-D-012: Panic added as part of the Stage 8-C carryover
+// `ShellError::Panic` event-channel completion. The variant lives in the
+// command-error union for completeness; the actual Panic surface is the
+// `shell-panic` Tauri event consumed by PanicModal.tsx (event-channel, not
+// command-return). Mike's lock: variant stays in types/daemon.ts for v2.1;
+// carve-out to types/shell.ts is v2.2 if the shell-error set grows.
 export type ShellErrorCode =
   | "DaemonNotRunning"
   | "DaemonStartFailed"
@@ -122,7 +129,8 @@ export type ShellErrorCode =
   | "ConfigFileMissing"
   | "ConfigFileMalformed"
   | "ConfigSchemaUnsupported"
-  | "SubprocessFailed";
+  | "SubprocessFailed"
+  | "Panic";
 
 // Tagged-union shape of the Tauri shell's serialized ShellError. Variant
 // fields follow each Rust struct definition; `code` is always present.
@@ -133,7 +141,24 @@ export type ShellError =
   | { code: "ConfigFileMissing" }
   | { code: "ConfigFileMalformed"; detail: string }
   | { code: "ConfigSchemaUnsupported"; found: number; expected: number }
-  | { code: "SubprocessFailed"; exit_code: number; stderr: string };
+  | { code: "SubprocessFailed"; exit_code: number; stderr: string }
+  | { code: "Panic"; message: string; location: string; timestamp_iso: string };
+
+// Mirrors Rust `PanicPayload` emitted on the `shell-panic` Tauri event from
+// the shell's panic hook. Stage 9-D Theme 1 (PanicModal consumer). Field
+// names are the Rust struct names verbatim (#[derive(Serialize)] uses the
+// declared snake_case identifiers). Stays in lockstep with the Rust struct
+// in app/src-tauri/src/lib.rs.
+export interface PanicPayload {
+  message: string;
+  location: string;
+  timestamp_iso: string;
+}
+
+// Tauri event names — the wire identifiers passed to listen()/emit(). Pinning
+// these as a string union keeps consumers (PanicModal) and Rust emit sites
+// in lockstep at the type level.
+export type ShellEventName = "shell-panic";
 
 // Mirrors `sov games --json` output shape.
 export interface GameSummary {

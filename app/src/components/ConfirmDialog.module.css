@@ -9,7 +9,11 @@
 }
 
 .dialog::backdrop {
-  background: rgba(0, 0, 0, 0.6);
+  /* WEB-UI-D-001 (Pin D pre-emptive): bare rgba() literal would fail Pin D's
+     theme-token grep. var(--sov-overlay) is defined in theme.css as the
+     single-source backdrop tone — keeps modal-backdrop in step with bg
+     palette refreshes. */
+  background: var(--sov-overlay);
 }
 
 .title {

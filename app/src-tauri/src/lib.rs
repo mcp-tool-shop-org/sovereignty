@@ -11,8 +11,25 @@ pub mod config;
 pub mod daemon;
 
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use tauri::{Manager, RunEvent, WindowEvent};
+use serde::Serialize;
+use tauri::{AppHandle, Emitter, Manager, RunEvent, WindowEvent};
+
+/// Payload emitted on the `shell-panic` Tauri event when the Rust shell
+/// panics. The frontend `PanicModal` (web-ui scope) listens via
+/// `@tauri-apps/api/event::listen<PanicPayload>("shell-panic", ...)` and
+/// renders the structured fields. Field names are part of the cross-domain
+/// contract — the TS mirror in `app/src/types/daemon.ts` mirrors them as
+/// `{ message: string; location: string; timestamp_iso: string }`.
+///
+/// Stable across releases — Stage 8-C carryover, completed in Wave 9.
+#[derive(Clone, Debug, Serialize)]
+pub struct PanicPayload {
+    pub message: String,
+    pub location: String,
+    pub timestamp_iso: String,
+}
 
 /// Process-lifetime state for the shell. `started_by_shell` is `true` iff the
 /// daemon was started by the shell itself via `daemon_start`. On window close
@@ -40,13 +57,6 @@ pub fn run() {
         )
         .try_init();
 
-    // TAURI-SHELL-C-008: install a panic hook so the shell emits a structured
-    // event instead of hitting the user with a raw Rust traceback. The hook
-    // logs a `shell.panic` event with the same `event` / structured-fields
-    // shape used by the close-handler (TAURI-SHELL-B-006), so `sov doctor`
-    // and operators see panics in the same trail as other lifecycle events.
-    install_panic_hook();
-
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(ShellState {
@@ -61,6 +71,17 @@ pub fn run() {
         .on_window_event(handle_window_event)
         .build(tauri::generate_context!())
         .expect("error while building Sovereignty Tauri shell");
+
+    // TAURI-SHELL-C-008 + Stage 8-C carryover (Wave 9): install a panic hook
+    // so the shell emits a structured event instead of hitting the user with a
+    // raw Rust traceback. The hook (a) logs a `shell.panic` tracing event for
+    // `sov doctor` and the structured-log trail, AND (b) emits a Tauri
+    // `shell-panic` event so the frontend's `PanicModal` can render a
+    // user-facing crash banner. Installed AFTER `build()` so we can capture
+    // an `AppHandle` for the emit; the previous panic hook is preserved so
+    // test harnesses (which install their own hooks for `should_panic`) keep
+    // working.
+    install_panic_hook(app.handle().clone());
 
     app.run(|_app_handle, _event| {
         // Reserved for future RunEvent hooks; currently a no-op so we keep the
@@ -95,29 +116,91 @@ pub(crate) fn format_panic_payload(info: &std::panic::PanicHookInfo<'_>) -> Stri
     }
 }
 
-/// Install a panic hook that emits a structured `shell.panic` log event.
+/// Format a `SystemTime` as RFC 3339 / ISO 8601 in UTC (`YYYY-MM-DDTHH:MM:SSZ`).
 ///
-/// TAURI-SHELL-C-008: a raw Rust traceback is a developer-grade error surface;
-/// the user-facing path is the structured event captured by the same tracing
-/// subscriber the rest of the shell uses. The hook calls back into the
-/// previous panic hook so test harnesses (which install their own hooks for
-/// `should_panic` machinery) keep working.
+/// Implemented inline against `std::time` to avoid pulling `chrono` or `time`
+/// as a direct dependency just for one timestamp string. Uses the civil-calendar
+/// algorithm from Howard Hinnant (`days_from_civil` inverse), valid for all
+/// proleptic Gregorian dates. Matches the `timestamp_iso` shape the structured
+/// daemon-logging contract uses elsewhere (`sov_daemon/log_fields.py`).
+pub(crate) fn format_iso_utc(now: SystemTime) -> String {
+    let secs_since_epoch = now
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+
+    // Split into days-since-epoch and seconds-of-day. Floor division for
+    // negative epoch values (pre-1970), though we never expect them here.
+    let days = secs_since_epoch.div_euclid(86_400);
+    let secs_of_day = secs_since_epoch.rem_euclid(86_400);
+    let h = secs_of_day / 3600;
+    let m = (secs_of_day % 3600) / 60;
+    let s = secs_of_day % 60;
+
+    // Hinnant civil_from_days: convert days-since-1970-01-01 to (y, m, d).
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = (z - era * 146_097) as u64;
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = y + if month <= 2 { 1 } else { 0 };
+
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}Z",
+        year, month, d, h, m, s
+    )
+}
+
+/// Install a panic hook that (a) logs a structured `shell.panic` tracing event
+/// and (b) emits a Tauri `shell-panic` event the frontend can listen to.
+///
+/// TAURI-SHELL-C-008 + Stage 8-C carryover (Wave 9): a raw Rust traceback is a
+/// developer-grade error surface; the user-facing path is twofold —
+///
+/// 1. The same tracing subscriber the rest of the shell uses (for `sov doctor`
+///    + support bundles).
+/// 2. A Tauri `shell-panic` event with a stable [`PanicPayload`] (for the
+///    frontend `PanicModal`, web-ui scope).
+///
+/// The hook calls back into the previous panic hook so test harnesses (which
+/// install their own hooks for `should_panic` machinery) keep working.
 ///
 /// The hook does NOT crash the process — Rust's default behavior of aborting
-/// on an unhandled panic still applies after the hook returns. The structured
-/// log line gives `sov doctor` and the close-handler trail a breadcrumb to
-/// surface in support bundles.
-fn install_panic_hook() {
+/// on an unhandled panic still applies after the hook returns. The emit is
+/// best-effort: a panic during shutdown (when the AppHandle has nothing to
+/// dispatch to) silently swallows the event rather than re-panic in the hook.
+fn install_panic_hook(app_handle: AppHandle) {
     let prev = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         let location = format_panic_location(info);
-        let payload = format_panic_payload(info);
+        let message = format_panic_payload(info);
+        let timestamp_iso = format_iso_utc(SystemTime::now());
+
         tracing::error!(
             event = "shell.panic",
             location = %location,
-            payload = %payload,
+            payload = %message,
+            timestamp_iso = %timestamp_iso,
             "shell panicked; see structured log for context"
         );
+
+        // Best-effort emit to the frontend so `PanicModal` can render a
+        // structured crash banner. Errors are swallowed: if the AppHandle
+        // can't dispatch (e.g. teardown in progress) we still want the
+        // tracing log + the previous hook to run.
+        let _ = app_handle.emit(
+            "shell-panic",
+            PanicPayload {
+                message,
+                location,
+                timestamp_iso,
+            },
+        );
+
         prev(info);
     }));
 }
@@ -286,4 +369,79 @@ mod tests {
             assert!(!s.started_by_shell.load(Ordering::SeqCst));
         }
     }
+}
+
+/// Stage 8-C carryover (Wave 9, Mike's reinforcement): the panic-event channel
+/// completion ships with regression tests that pin the cross-domain payload
+/// shape. The TS mirror at `app/src/types/daemon.ts` consumes the same three
+/// stable field names — drift here is drift in the user-facing crash modal.
+#[cfg(test)]
+mod panic_emit_tests {
+    use super::*;
+
+    #[test]
+    fn panic_payload_serializes_with_stable_field_names() {
+        // Cross-domain contract: `message`, `location`, `timestamp_iso` are
+        // the three field names the frontend `PanicModal` reads off the
+        // `shell-panic` event payload. A field rename here is a TS-mirror
+        // break — pin it mechanically.
+        let payload = PanicPayload {
+            message: "boom".to_string(),
+            location: "src/lib.rs:42:7".to_string(),
+            timestamp_iso: "2026-05-02T12:00:00Z".to_string(),
+        };
+        let json = serde_json::to_string(&payload).expect("PanicPayload serializes");
+        assert!(
+            json.contains("\"message\":\"boom\""),
+            "payload missing `message` field: {json}"
+        );
+        assert!(
+            json.contains("\"location\":\"src/lib.rs:42:7\""),
+            "payload missing `location` field: {json}"
+        );
+        assert!(
+            json.contains("\"timestamp_iso\":\"2026-05-02T12:00:00Z\""),
+            "payload missing `timestamp_iso` field: {json}"
+        );
+        // No surprise extra fields — the TS mirror's `PanicEvent` shape is
+        // exhaustive on these three. If a fourth field gets added here, the
+        // TS mirror must update in lockstep.
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        let obj = v.as_object().expect("payload is a JSON object");
+        assert_eq!(
+            obj.len(),
+            3,
+            "PanicPayload must have exactly 3 fields (message/location/timestamp_iso); got {}: {json}",
+            obj.len()
+        );
+    }
+
+    #[test]
+    fn format_iso_utc_produces_rfc3339_z_suffix() {
+        // Stable shape `YYYY-MM-DDTHH:MM:SSZ`. The frontend doesn't parse
+        // this — it's display + support-bundle text — but the format is part
+        // of the contract so a future change to e.g. fractional seconds
+        // doesn't surprise the modal layout.
+        let t = SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1_777_740_634);
+        // 1_777_740_634 = 2026-05-02T16:50:34Z (matches the brand-fetch
+        // header `date` line from this same Wave 13 amend session).
+        let s = format_iso_utc(t);
+        assert_eq!(s, "2026-05-02T16:50:34Z");
+    }
+
+    #[test]
+    fn format_iso_utc_handles_unix_epoch() {
+        let s = format_iso_utc(SystemTime::UNIX_EPOCH);
+        assert_eq!(s, "1970-01-01T00:00:00Z");
+    }
+
+    // Note on Tauri-harness coverage: simulating a `tauri::AppHandle` in a
+    // `cargo test` unit context requires `tauri::test::mock_app()` (or
+    // equivalent), which in turn pulls the bundled-context macros and an
+    // OS-level event loop. That's a much bigger surface than this Stage 8-C
+    // carryover wants to take on — the payload-shape pin above is the
+    // load-bearing test (it's the cross-domain TS-mirror contract). The
+    // emit-on-panic call itself is exercised end-to-end by `npm run tauri
+    // dev` + a deliberate panic during smoke; if that integration moves to
+    // automated CI later (Wave 11 distribution work), the harness lands then.
 }

@@ -1,0 +1,71 @@
+.dialog {
+  background: var(--sov-bg-elevated);
+  color: var(--sov-fg);
+  /* Theme 1 lock: --sov-error border + tinted bg signal the unrecoverable
+     surface; pill-text token swap (Theme 2) means we use --sov-fg for body
+     text on the tint, not --sov-error. */
+  border: 1px solid var(--sov-error);
+  border-radius: var(--sov-radius);
+  padding: 1.5rem;
+  max-width: 540px;
+  width: 90vw;
+}
+
+.dialog::backdrop {
+  /* WEB-UI-D-001: token-driven overlay, no rgba() literal. */
+  background: var(--sov-overlay);
+}
+
+.title {
+  font-size: 1.15rem;
+  margin: 0 0 0.75rem 0;
+  color: var(--sov-fg);
+}
+
+.body {
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+  color: var(--sov-fg);
+}
+
+.payload {
+  background: var(--sov-bg);
+  border: 1px solid var(--sov-border);
+  border-radius: var(--sov-radius);
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-family: var(--sov-font-mono);
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--sov-fg);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.payload dt {
+  color: var(--sov-fg-muted);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  margin-bottom: 0.15rem;
+}
+
+.payload dd {
+  margin: 0 0 0.6rem 0;
+}
+
+.payload dd:last-child {
+  margin-bottom: 0;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.dismiss {
+  border-color: var(--sov-error);
+  color: var(--sov-fg);
+  background: color-mix(in srgb, var(--sov-error) 12%, var(--sov-bg-elevated));
+}

@@ -45,7 +45,9 @@ button:hover:not(:disabled) {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  /* WEB-UI-D-030: explicit muted token preserves AA on disabled controls
+     (Mike has reduced vision; opacity 0.5 compresses contrast on tinted bg). */
+  color: var(--sov-fg-muted);
 }
 
 main {
@@ -61,4 +63,28 @@ h1 {
 
 nav a {
   margin-right: 1rem;
+}
+
+/* WEB-UI-D-015: keyboard-only focus ring. `:focus-visible` excludes mouse
+   clicks so sighted users don't see a ring on every click; keyboard users
+   get a clear theme-aligned indicator everywhere. Mike has reduced vision —
+   this is real, not theoretical. Per-component overrides only where shape
+   demands. */
+:focus-visible {
+  outline: 2px solid var(--sov-accent);
+  outline-offset: 2px;
+  border-radius: var(--sov-radius);
+}
+
+/* WEB-UI-D-017 + D-018: responsive collapse below the Tauri 960 minWidth.
+   Only relevant in the vite-dev browser preview, but documents the breakpoint
+   and prevents collisions when route headers (h1 + pills) wrap. */
+@media (max-width: 960px) {
+  main {
+    padding: 1rem;
+  }
+  nav a {
+    display: inline-block;
+    margin-bottom: 0.4rem;
+  }
 }

@@ -95,8 +95,8 @@ Repeat for 15 rounds. `sov game-end` prints the final scores.
 > Want a deeper rules tour? See [Start here](docs/start_here.md) or
 > the [full handbook](https://mcp-tool-shop-org.github.io/sovereignty/handbook/).
 
-> _A short demo GIF or screenshot belongs here — tracked as a Stage D
-> follow-up so the README can show what a turn actually looks like._
+The inline `sov turn` example above shows what a round looks like in the
+console; for the v2.1 desktop visualization, see [Desktop app](#desktop-app-optional-v21) below.
 
 ## Play without the console
 
@@ -191,6 +191,24 @@ npm --prefix app run tauri dev
 The Tauri shell auto-starts a readonly daemon on launch and auto-stops it on exit. Externally-started daemons (`sov daemon start`) stay alive across shell restarts.
 
 Currently runs from source for developers (`npm --prefix app run tauri dev`); signed binaries ship in v2.1 final via Wave 11. See [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) for the full contract.
+
+<p align="center">
+  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
+  <br>
+  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
+</p>
+
+<p align="center">
+  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
+  <br>
+  <em>Game Shell — passive real-time display of the active game.</em>
+</p>
+
+<p align="center">
+  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
+  <br>
+  <em>Settings — daemon network selection and configuration.</em>
+</p>
 
 The Audit Viewer ships with three views:
 

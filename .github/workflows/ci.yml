@@ -217,6 +217,16 @@ jobs:
       - name: Frontend lint
         run: npm --prefix app run lint
 
+      # Stage D theme-token discipline gate. Sub-second grep over
+      # app/src/**/*.{tsx,module.css} for bare hex / rgba outside
+      # theme.css. Runs before vitest so a token-style regression
+      # fails fast. Single-leg policy mirrors check-voice.sh: token
+      # discipline is a source-tree property, not a Node version
+      # property. CI-TOOLING-D-002.
+      - name: Theme-token discipline gate
+        timeout-minutes: 1
+        run: bash scripts/check-theme-tokens.sh
+
       - name: Frontend test
         run: npm --prefix app test
 

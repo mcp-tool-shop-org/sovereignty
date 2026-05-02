@@ -71,8 +71,11 @@
   min-width: 160px;
 }
 
+/* WEB-UI-D-003 (Theme 2 sweep): guardrail text on error-tint bg failed
+   WCAG AA 4.5:1. Keep tinted bg + 3px error left-border for semantic
+   signal; switch text to var(--sov-fg) for AA-clean reads. */
 .guardrail {
-  color: var(--sov-error);
+  color: var(--sov-fg);
   font-size: 0.9rem;
   margin: 0.5rem 0;
   padding: 0.5rem;
@@ -89,4 +92,13 @@
 .error {
   color: var(--sov-error);
   margin: 1rem 0;
+}
+
+/* WEB-UI-D-017: route-header collisions at narrow widths. Wrap pills under
+   h1 below the Tauri 960 minWidth instead of overlapping. */
+@media (max-width: 960px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
 }

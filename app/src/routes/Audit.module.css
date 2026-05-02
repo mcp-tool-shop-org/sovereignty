@@ -94,3 +94,12 @@
   color: var(--sov-error);
   margin: 1rem 0;
 }
+
+/* WEB-UI-D-017: header h1 + pills can collide at narrow widths. Wrap pills
+   under h1 below the Tauri 960 minWidth instead of overlapping. */
+@media (max-width: 960px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}

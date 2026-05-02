@@ -11,6 +11,11 @@
   --sov-error: #bf616a;
   --sov-border: #2a323d;
   --sov-radius: 4px;
+  --sov-radius-sm: 4px;
+  /* Modal / dialog backdrop. Single source of truth — consumers reference
+     var(--sov-overlay) instead of literal rgba(0,0,0,0.6). Tied to bg via
+     color-mix so a future palette refresh keeps the backdrop in step. */
+  --sov-overlay: color-mix(in srgb, var(--sov-bg) 60%, transparent);
   --sov-font-mono: "SF Mono", "Menlo", "Consolas", monospace;
 }
 

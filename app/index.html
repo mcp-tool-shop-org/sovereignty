@@ -3,6 +3,19 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Sovereignty — desktop client for the XRPL-anchored governance game."
+    />
+    <!--
+      WEB-UI-D-019: theme-color is locked to the literal value of --sov-bg
+      (defined in app/src/styles/theme.css). The HTML <meta> element does not
+      consume CSS custom properties, so this is the one legitimate hex
+      literal outside theme.css. Pin D's theme-token grep does not scan
+      index.html (out of scope per dispatch); keep this in lockstep with the
+      --sov-bg token by hand if it ever changes.
+    -->
+    <meta name="theme-color" content="#0a0e14" />
     <title>Sovereignty</title>
   </head>
   <body>

@@ -25,7 +25,7 @@ export const config: SiteConfig = {
   footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
-    badge: 'v2.0.0rc1 — proof v2 anchoring',
+    badge: 'v2.0.2 — multi-save · daemon · audit viewer (dev preview)',
     headline: 'Sovereignty',
     headlineAccent: 'a board game about keeping your word.',
     description: 'Roll, trade, promise, betray. 2-4 players, 30 minutes, no screens required. The console keeps score — you keep your word. Optionally anchor results on the XRPL Testnet.',
@@ -76,6 +76,10 @@ export const config: SiteConfig = {
       cards: [
         { title: 'Install', code: 'pipx install sovereignty-game\n# or: uv tool install sovereignty-game' },
         { title: 'Quick start', code: 'sov tutorial           # learn in 60 seconds\nsov new -p Alice -p Bob # start a game\nsov turn               # roll, land, resolve\nsov end-round          # generate proof' },
+        // DOCS-D-003 (Wave 13 Stage 9-D): desktop-app entry point alongside
+        // the CLI cards. Audit Viewer + Game Shell run from source for v2.1
+        // dev preview; signed binaries ship via Wave 11.
+        { title: 'Desktop app (v2.1, dev preview)', code: 'npm --prefix app run tauri dev\n# Audit Viewer + Game Shell — runs from source.\n# Signed binaries ship via Wave 11.' },
       ],
     },
     {

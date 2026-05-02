@@ -10,7 +10,15 @@
   border: 2px solid var(--sov-border);
   border-top-color: var(--sov-accent);
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+}
+
+/* WEB-UI-D-029: honor prefers-reduced-motion. Spinner stays visible (the
+   border+accent contrast carries the "in-progress" semantic) but doesn't
+   spin for users who request reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .spinner {
+    animation: spin 0.8s linear infinite;
+  }
 }
 
 .sm {

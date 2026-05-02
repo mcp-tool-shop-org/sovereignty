@@ -11,6 +11,7 @@ import type {
   DaemonError,
   DaemonErrorCode,
   DaemonStatus,
+  PanicPayload,
   ProofMeta,
   SSEEvent,
   SSEEventType,
@@ -74,9 +75,10 @@ describe("daemon types — pinned literals", () => {
     expect(new Set(codes).size).toBe(18);
   });
 
-  it("ShellErrorCode covers all seven Rust ShellError variants", () => {
+  it("ShellErrorCode covers all eight Rust ShellError variants", () => {
     // Stage 7-B TAURI-SHELL-B-002 cross-domain B mirror. Variant names
-    // mirror app/src-tauri/src/commands.rs::ShellError exactly.
+    // mirror app/src-tauri/src/commands.rs::ShellError exactly. Stage 9-D
+    // WEB-UI-D-012: Panic added (Stage 8-C carryover, event-channel completion).
     const codes: ShellErrorCode[] = [
       "DaemonNotRunning",
       "DaemonStartFailed",
@@ -85,9 +87,10 @@ describe("daemon types — pinned literals", () => {
       "ConfigFileMalformed",
       "ConfigSchemaUnsupported",
       "SubprocessFailed",
+      "Panic",
     ];
-    expect(codes).toHaveLength(7);
-    expect(new Set(codes).size).toBe(7);
+    expect(codes).toHaveLength(8);
+    expect(new Set(codes).size).toBe(8);
   });
 
   it("ShellError tagged-union narrows on `code`", () => {
@@ -99,13 +102,37 @@ describe("daemon types — pinned literals", () => {
       { code: "ConfigFileMalformed", detail: "bad json" },
       { code: "ConfigSchemaUnsupported", found: 0, expected: 1 },
       { code: "SubprocessFailed", exit_code: 1, stderr: "boom" },
+      {
+        code: "Panic",
+        message: "boom",
+        location: "src/lib.rs:42:7",
+        timestamp_iso: "2026-05-02T12:00:00Z",
+      },
     ];
-    expect(cases).toHaveLength(7);
+    expect(cases).toHaveLength(8);
     // Field-bearing variants carry their fields after the discriminator.
     const malformed = cases[4];
     if (malformed.code === "ConfigFileMalformed") {
       expect(malformed.detail).toBe("bad json");
     }
+    const panic = cases[7];
+    if (panic.code === "Panic") {
+      expect(panic.location).toContain("lib.rs");
+      expect(panic.timestamp_iso).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    }
+  });
+
+  it("PanicPayload mirrors the Rust shell-panic event payload shape", () => {
+    // Stage 9-D Theme 1: payload from `shell-panic` Tauri event consumed by
+    // PanicModal. Field names match Rust struct in app/src-tauri/src/lib.rs.
+    const p: PanicPayload = {
+      message: "index out of bounds",
+      location: "src/commands.rs:128:9",
+      timestamp_iso: "2026-05-02T12:34:56Z",
+    };
+    expect(p.message).toBe("index out of bounds");
+    expect(p.location).toMatch(/\.rs:/);
+    expect(p.timestamp_iso).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
   it("ProofMeta and AnchorStatusResponse match daemon wire shape", () => {

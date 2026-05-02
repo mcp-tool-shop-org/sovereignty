@@ -23,7 +23,16 @@
   display: inline-block;
   font-size: 0.7em;
   color: var(--sov-fg-muted);
-  transition: transform 0.15s ease;
+}
+
+/* WEB-UI-D-029: honor prefers-reduced-motion. Chevron rotation transition
+   only fires for users who haven't requested reduced motion; the rotated
+   state still applies in both branches so the disclosure-state semantic
+   is preserved. */
+@media (prefers-reduced-motion: no-preference) {
+  .summary::before {
+    transition: transform 0.15s ease;
+  }
 }
 
 .details[open] > .summary::before {

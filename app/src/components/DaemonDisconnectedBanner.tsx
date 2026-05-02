@@ -9,13 +9,19 @@
 // internal token that consumers re-key against; the existing useDaemon
 // `refresh()` re-establishes status, and useDaemonEvents re-mounts the SSE
 // loop on its own when status flips back to "running".
+//
+// Stage 9-D Theme 3 (WEB-UI-D-008/D-009/D-010):
+//   - sticky-top + z-index 100 (CSS) so the banner doesn't scroll out
+//   - auto-dismiss when daemon status flips back to "running"
+//   - explicit close (×) button preserved as redundant escape
+//   - slide-in + fade animation via CSS, prefers-reduced-motion honored
 
 import { useCallback, useEffect, useState } from "react";
 import { useDaemon } from "../hooks/useDaemon";
 import styles from "./DaemonDisconnectedBanner.module.css";
 
 export function DaemonDisconnectedBanner() {
-  const { refresh } = useDaemon();
+  const { refresh, status } = useDaemon();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -26,10 +32,22 @@ export function DaemonDisconnectedBanner() {
     };
   }, []);
 
+  // WEB-UI-D-009: auto-dismiss on reconnect. When the daemon SSE re-establishes
+  // the provider's status flips back to "running" — the banner is no longer
+  // useful, so unmount it. Manual dismiss (Reconnect / ×) preserved as
+  // redundant escape.
+  useEffect(() => {
+    if (status === "running" && visible) setVisible(false);
+  }, [status, visible]);
+
   const onReconnect = useCallback(() => {
     setVisible(false);
     void refresh();
   }, [refresh]);
+
+  const onDismiss = useCallback(() => {
+    setVisible(false);
+  }, []);
 
   if (!visible) return null;
 
@@ -40,6 +58,14 @@ export function DaemonDisconnectedBanner() {
       </p>
       <button type="button" className={styles.button} onClick={onReconnect}>
         Reconnect
+      </button>
+      <button
+        type="button"
+        className={styles.dismiss}
+        onClick={onDismiss}
+        aria-label="Dismiss banner"
+      >
+        ×
       </button>
     </div>
   );

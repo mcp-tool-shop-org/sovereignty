@@ -4,13 +4,20 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { EmptyState } from "../components/EmptyState";
+import pkg from "../../package.json" with { type: "json" };
+import { EmptyBoxGlyph, EmptyState } from "../components/EmptyState";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { Pill } from "../components/Pill";
 import { useDaemon } from "../hooks/useDaemon";
 import { DaemonClient } from "../lib/daemonClient";
 import type { GameSummary } from "../types/daemon";
 import styles from "./Index.module.css";
+
+// WEB-UI-D-020: resolve version from package.json at compile time so a future
+// version bump can't silently desync. Vite supports JSON imports with type
+// attribute natively. Mirrors the SOV_VERSION-was-stale lesson from the
+// Stage 8-C v2.1 Wave 8 fix on the Python side.
+const APP_VERSION = pkg.version;
 
 export default function Index() {
   const { status, config, error } = useDaemon();
@@ -60,6 +67,7 @@ export default function Index() {
 
       {games !== null && games.length === 0 ? (
         <EmptyState
+          glyph={<EmptyBoxGlyph />}
           title="Welcome"
           body={
             <>
@@ -67,6 +75,7 @@ export default function Index() {
               come back here to watch it live.
             </>
           }
+          cta={<Link to="/audit">Open Audit Viewer →</Link>}
         />
       ) : null}
 
@@ -98,7 +107,7 @@ export default function Index() {
       </nav>
 
       <footer className={styles.footer}>
-        <span>v2.1.0</span>
+        <span>v{APP_VERSION}</span>
         <span>·</span>
         <span>{config?.network ?? "—"}</span>
       </footer>

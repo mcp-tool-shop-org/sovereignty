@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Sovereignty",
         "width": 1280,
         "height": 800,
@@ -28,6 +29,8 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "mcp-tool-shop",
+    "copyright": "© 2026 mcp-tool-shop",
     "icon": [
       "icons/icon.png"
     ]

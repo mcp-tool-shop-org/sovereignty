@@ -9,7 +9,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { EmptyState } from "../components/EmptyState";
+import { DisconnectedPlugGlyph, EmptyBoxGlyph, EmptyState } from "../components/EmptyState";
 import { EventFeed, type FeedEntry } from "../components/EventFeed";
 import { ExpandableRow } from "../components/ExpandableRow";
 import { LoadingSpinner } from "../components/LoadingSpinner";
@@ -228,6 +228,7 @@ export default function Audit() {
       <main className={styles.main}>
         <Nav />
         <EmptyState
+          glyph={<DisconnectedPlugGlyph />}
           title="Daemon not running"
           body={
             <>
@@ -271,6 +272,7 @@ export default function Audit() {
 
       {games.length === 0 ? (
         <EmptyState
+          glyph={<EmptyBoxGlyph />}
           title="No games yet"
           body={
             <>
@@ -354,7 +356,7 @@ function GameRow({ game, events, onToggle }: GameRowProps) {
       {game.loading ? (
         <LoadingSpinner label="Loading rounds" />
       ) : !game.rounds || game.rounds.length === 0 ? (
-        <p className={styles.muted}>No rounds yet.</p>
+        <EmptyState glyph={<EmptyBoxGlyph />} title="No rounds yet" />
       ) : (
         <>
           <table className={styles.roundsTable}>
@@ -419,7 +421,9 @@ function GameRow({ game, events, onToggle }: GameRowProps) {
 function RoundRowView({ row, verifyState }: { row: RoundRow; verifyState: RoundVerifyState }) {
   const status = row.status;
   const txid = status.txid ?? "";
-  const txidShort = txid.length > 8 ? `${txid.slice(0, 4)}…${txid.slice(-2)}` : txid || "—";
+  // WEB-UI-D-022: txid truncation symmetric (6/4) for higher copy/paste
+  // recognition. XRPL hashes are 64-char hex; 4/2 dropped too much suffix.
+  const txidShort = txid.length > 10 ? `${txid.slice(0, 6)}…${txid.slice(-4)}` : txid || "—";
   const anchorIcon =
     status.anchor_status === "anchored" ? "✓" : status.anchor_status === "pending" ? "⊘" : "✗";
   const anchorVariant =

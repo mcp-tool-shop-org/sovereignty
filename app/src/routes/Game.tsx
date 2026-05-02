@@ -10,7 +10,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { EmptyState } from "../components/EmptyState";
+import { DisconnectedPlugGlyph, EmptyState, PausedGameGlyph } from "../components/EmptyState";
 import { EventFeed, type FeedEntry } from "../components/EventFeed";
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { Pill } from "../components/Pill";
@@ -60,6 +60,7 @@ export default function Game() {
       <main className={styles.main}>
         <Nav />
         <EmptyState
+          glyph={<DisconnectedPlugGlyph />}
           title="Daemon not running"
           body={
             <>
@@ -82,6 +83,7 @@ export default function Game() {
       <main className={styles.main}>
         <Nav />
         <EmptyState
+          glyph={<PausedGameGlyph />}
           title="No active game"
           body={
             <>

@@ -531,11 +531,40 @@ def _load_game_inner(sf: Path, rf: Path) -> tuple[GameState, GameRng] | None:
 
 
 def _fail(err: SovError) -> Never:
-    """Print structured error and exit."""
-    console.print(f"[red]{err.message}[/red]")
+    """Print structured error and exit.
+
+    CLI-D-005: 2-space indent matches the dominant CLI rhythm (most
+    ``console.print`` sites use ``f"  ..."``). Flush-left previously made
+    errors look like the only surface that didn't follow the convention.
+
+    CLI-D-004: hint text passes through ``_render_backticks`` so backticked
+    commands appear as ``[cyan]cmd[/cyan]`` rather than literal backticks.
+    Pin B's AST contract still sees raw backticks at factory level — the
+    transform is render-layer only.
+    """
+    console.print(f"  [red]{err.message}[/red]")
     if err.hint:
-        console.print(f"  [dim]{err.hint}[/dim]")
+        console.print(f"  [dim]{_render_backticks(err.hint)}[/dim]")
     raise typer.Exit(1)
+
+
+def _render_backticks(text: str) -> str:
+    """Replace ``\\`cmd\\``` with ``[cyan]cmd[/cyan]`` for Rich rendering.
+
+    CLI-D-004: Pin B's mechanical contract requires backticked commands
+    inside hint strings (``tests/test_error_hints_have_commands.py``
+    AST-walks every factory). Rich's plain ``Console`` doesn't auto-style
+    markdown backticks, so they previously showed up as literal punctuation.
+    This presentation-layer transform keeps both invariants: factories still
+    emit raw backticks (Pin B passes), and the rendered surface gets a
+    styled command token.
+
+    The regex matches a non-empty span between two backticks, non-greedy.
+    Nested backticks are not supported; callers should not embed them.
+    """
+    import re
+
+    return re.sub(r"`([^`]+)`", r"[cyan]\1[/cyan]", text)
 
 
 # ---------------------------------------------------------------------------
@@ -1241,20 +1270,42 @@ def _print_checks(checks: list[tuple[str, str, str]]) -> None:
     When any check is FAIL, append a one-line nudge toward `sov support-bundle`
     so the user has a clear next step (file a bug with the bundle attached).
     """
-    icons = {"ok": "[green]OK[/green]", "fail": "[red]FAIL[/red]", "info": "[dim]--[/dim]"}
+    # CLI-D-001: warn key parity with `sov doctor` (Stage 8-C word-glyph). Today
+    # `_collect_checks` only emits ok/fail/info, so the warn entry is latent —
+    # but adding any future warn-emitting check would silently downgrade it to
+    # the dim "--" default without this key. The icons dict on `sov doctor`
+    # (line ~904) is the parity reference.
+    icons = {
+        "ok": "[green]OK[/green]",
+        "warn": "[yellow]WARN[/yellow]",
+        "fail": "[red]FAIL[/red]",
+        "info": "[dim]--[/dim]",
+    }
     console.print()
     fail_count = 0
+    warn_count = 0
     for status, label, detail in checks:
         icon = icons.get(status, "[dim]--[/dim]")
         console.print(f"  {icon}  [bold]{label}[/bold]  {detail}")
         if status == "fail":
             fail_count += 1
+        elif status == "warn":
+            warn_count += 1
+    # CLI-D-002: tally color matches row-level severity. >=1 fail → red (matches
+    # the [red]FAIL[/red] rows above); warn-only → yellow; else dim. Same surface,
+    # consistent severity mapping.
     if fail_count:
         plural = "s" if fail_count != 1 else ""
         console.print(
-            f"\n  [yellow]{fail_count} check{plural} failed.[/yellow]"
+            f"\n  [red]{fail_count} check{plural} failed.[/red]"
             " [dim]Run `sov support-bundle` to capture diagnostics, then "
             "open an issue at https://github.com/mcp-tool-shop-org/sovereignty/issues.[/dim]"
+        )
+    elif warn_count:
+        plural = "s" if warn_count != 1 else ""
+        console.print(
+            f"\n  [yellow]{warn_count} check{plural} warned.[/yellow]"
+            " [dim]Run `sov support-bundle` to capture diagnostics if needed.[/dim]"
         )
     console.print()
 
@@ -1262,7 +1313,10 @@ def _print_checks(checks: list[tuple[str, str, str]]) -> None:
 def _checks_to_text(checks: list[tuple[str, str, str]]) -> str:
     """Render checks as plain text for support bundles."""
     lines = []
-    icons = {"ok": "OK", "fail": "FAIL", "info": "--"}
+    # CLI-D-001: warn key parity with `_print_checks` and `sov doctor`. Plain-
+    # text mirror of the same dict so support bundles render warns as "WARN"
+    # rather than the "--" default.
+    icons = {"ok": "OK", "warn": "WARN", "fail": "FAIL", "info": "--"}
     for status, label, detail in checks:
         icon = icons.get(status, "--")
         lines.append(f"  {icon}  {label}  {detail}")
@@ -1926,9 +1980,11 @@ def anchor(
             # the structured no_active_game_error rather than swallowing.
             raise
         if not read_pending_anchors(active_id_for_noop_check):
+            # CLI-D-003: canonical empty-state shape (split headline + hint).
+            console.print("  [dim]◯ No pending anchors.[/dim]")
             console.print(
-                "  [dim]No pending anchors. Run `sov end-round` to queue a "
-                "round, or `sov game-end` to wrap up.[/dim]"
+                "  [yellow]Run `sov end-round` to queue a round, "
+                "or `sov game-end` to wrap up.[/yellow]"
             )
             raise typer.Exit(0)
 
@@ -2047,7 +2103,13 @@ def anchor(
 
     if not pending:
         # Idempotent no-op: nothing to flush, no tx submitted, exit 0.
-        console.print("  [dim]No pending anchors to flush.[/dim]")
+        # CLI-D-003: canonical empty-state shape — same recovery hint as the
+        # earlier no-pending path so the two are interchangeable from the
+        # operator's view.
+        console.print("  [dim]◯ No pending anchors to flush.[/dim]")
+        console.print(
+            "  [yellow]Run `sov end-round` to queue a round, or `sov game-end` to wrap up.[/yellow]"
+        )
         raise typer.Exit(0)
 
     # Game-id from the active game (or fall back to whatever proofs already
@@ -2542,10 +2604,11 @@ def treaty(
         case "list":
             treaties = treaty_list(source)
             if not treaties:
+                # CLI-D-003: canonical empty-state shape.
+                console.print(f"  [dim]◯ {source.name} has no treaties.[/dim]")
                 console.print(
-                    f"  {source.name} has no treaties. Try "
-                    "`sov treaty make 'mutual aid' --with <player> "
-                    "--stake '2 coins' --their-stake '1 wood'`."
+                    "  [yellow]Try `sov treaty make 'mutual aid' --with <player> "
+                    "--stake '2 coins' --their-stake '1 wood'`.[/yellow]"
                 )
                 return
             table = Table(title=f"{source.name}'s Treaties")
@@ -3052,8 +3115,10 @@ def game_end(
 def season_postcard() -> None:
     """Share your season in one screenshot."""
     if not SEASON_FILE.exists():
-        console.print("  [yellow]No season yet.[/yellow]")
-        console.print("  [dim]Finish a game with `sov game-end` to start tracking.[/dim]")
+        # CLI-D-003: canonical empty-state shape — dim glyph + headline,
+        # yellow recovery hint. Reserves [yellow] alone for actual warnings.
+        console.print("  [dim]◯ No season yet.[/dim]")
+        console.print("  [yellow]Finish a game with `sov game-end` to start tracking.[/yellow]")
         raise typer.Exit(0)
 
     # Stage 7-B amend: read via the schema-version-tolerant helper so this
@@ -3063,7 +3128,11 @@ def season_postcard() -> None:
     standings = season.get("standings", {})
 
     if not games:
-        console.print("  [yellow]No games recorded yet.[/yellow]")
+        # CLI-D-003: canonical empty-state shape with recovery hint.
+        console.print("  [dim]◯ No games recorded yet.[/dim]")
+        console.print(
+            "  [yellow]Finish a game with `sov game-end` to populate the season.[/yellow]"
+        )
         raise typer.Exit(0)
 
     # Standings table
@@ -3157,7 +3226,9 @@ def recap() -> None:
     state, _ = result
 
     if not state.log:
-        console.print("  Nothing has happened yet. Run `sov turn` to take your first action.")
+        # CLI-D-003: canonical empty-state shape.
+        console.print("  [dim]◯ Nothing has happened yet.[/dim]")
+        console.print("  [yellow]Run `sov turn` to take your first action.[/yellow]")
         return
 
     # Show log entries from the current round (and previous if we just started)
@@ -3188,7 +3259,9 @@ def recap() -> None:
         console.print(f"  [green]Kind:[/green] {text}")
     for a in apologized:
         _, _, text = a.partition(": ")
-        console.print(f"  [yellow]Brave:[/yellow] {text}")
+        # CLI-D-006: apologies render in blue (reflective) so they're
+        # visually distinct from toasts (yellow, celebratory) elsewhere.
+        console.print(f"  [blue]Brave:[/blue] {text}")
 
     # Market Moments (Town Hall only)
     if state.market_board:
@@ -3463,10 +3536,15 @@ def _postcard_highlights(
 ) -> list[str]:
     """Build postcard highlights filtered by story style."""
     # Define which log patterns each style cares about
+    # CLI-D-006: differentiate apologies (Brave: reflective, blue) from toasts
+    # (Toast: celebratory, yellow). Both previously mapped to [yellow], giving
+    # operators no visual cue when a recap listed several social moments in
+    # sequence. Yellow stays on toasts (matches `sov toast`'s [bold yellow]
+    # confirmation at line ~2647); apologies move to blue.
     matchers: dict[str, list[tuple[str, str]]] = {
         "cozy": [
             ("helps", "[green]Kind:[/green]"),
-            ("apologizes", "[yellow]Brave:[/yellow]"),
+            ("apologizes", "[blue]Brave:[/blue]"),
             ("toasts", "[yellow]Toast:[/yellow]"),
             ("kept their promise", "[green]Kept:[/green]"),
         ],
@@ -3484,9 +3562,10 @@ def _postcard_highlights(
     }
     # "all" uses every matcher
     if style == "all":
+        # CLI-D-006: same blue/yellow split as the cozy style above.
         active = [
             ("broke their promise", "[red]Ouch:[/red]"),
-            ("apologizes", "[yellow]Brave:[/yellow]"),
+            ("apologizes", "[blue]Brave:[/blue]"),
             ("helps", "[green]Kind:[/green]"),
             ("offers", "[cyan]Trade:[/cyan]"),
             ("toasts", "[yellow]Toast:[/yellow]"),
@@ -4320,10 +4399,13 @@ def games_cmd(
         return
 
     if not saved:
+        # CLI-D-003: canonical empty-state shape — `[dim]◯ <message>[/dim]`
+        # with optional `[yellow]<recovery hint>[/yellow]` on next line.
+        console.print("  [dim]◯ No saved games.[/dim]")
         console.print(
-            "  No saved games. Try `sov tutorial` for a 60-second walkthrough, "
+            "  [yellow]Try `sov tutorial` for a 60-second walkthrough, "
             "`sov play campfire_v1` for solo-vs-AI, or `sov new -p Alice -p Bob` "
-            "to start a real game."
+            "to start a real game.[/yellow]"
         )
         return
 
@@ -4772,8 +4854,10 @@ def daemon_status_cmd(
             "(auto-cleans the stale entry).[/dim]"
         )
     else:
-        console.print("  [dim]daemon: none[/dim]")
-        console.print("  [dim]Start one with `sov daemon start`.[/dim]")
+        # CLI-D-003: canonical empty-state shape — dim glyph + headline,
+        # yellow recovery hint.
+        console.print("  [dim]◯ daemon: none[/dim]")
+        console.print("  [yellow]Start one with `sov daemon start`.[/yellow]")
 
 
 def _daemon_field(obj: Any, name: str, *, default: Any = "?") -> Any:

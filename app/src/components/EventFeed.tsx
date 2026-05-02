@@ -32,7 +32,8 @@ export function formatEventSummary(event: SSEEvent): string {
       const first = rounds[0] ?? "?";
       const last = rounds[rounds.length - 1] ?? first;
       const txid = (data.txid as string | undefined) ?? "?";
-      const txidShort = txid.length > 8 ? `${txid.slice(0, 4)}…${txid.slice(-2)}` : txid;
+      // WEB-UI-D-022: symmetric 6/4 truncation matches Audit.tsx::txidShort.
+      const txidShort = txid.length > 10 ? `${txid.slice(0, 6)}…${txid.slice(-4)}` : txid;
       return `rounds ${first}–${last} → ${txidShort}`;
     }
     case "game.state_changed":

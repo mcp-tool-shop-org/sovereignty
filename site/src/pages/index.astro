@@ -132,6 +132,14 @@ for (const s of config.sections) {
       </p>
     </Section>
 
+    {/*
+      DOCS-D-003 (Wave 13 Stage 9-D): the existing `usage` code-cards section
+      below now carries a v2.1 desktop-app entry alongside the CLI
+      install/quick-start cards. The new card runs `npm --prefix app run tauri dev`
+      — see site/src/site-config.ts. Lock from triage: DO NOT add a "what's
+      new in v2.1" landing-page section here — Wave 11 ships that with the
+      v2.1 release announcement.
+    */}
     {config.sections.map((s) => (
       <Section id={s.id} title={s.title} subtitle={s.subtitle}>
         {/*

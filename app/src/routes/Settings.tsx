@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ConfirmDialog } from "../components/ConfirmDialog";
-import { EmptyState } from "../components/EmptyState";
+import { DisconnectedPlugGlyph, EmptyState } from "../components/EmptyState";
 import { Pill } from "../components/Pill";
 import { useDaemon } from "../hooks/useDaemon";
 import type { DaemonUiStatus } from "../hooks/useDaemon";
@@ -44,13 +44,14 @@ function statusLabel(status: DaemonUiStatus): string {
 
 const NETWORKS: XRPLNetwork[] = ["testnet", "mainnet", "devnet"];
 
-/** Cross-platform daemon log location hint. Mac/Linux follow XDG conventions;
- *  Windows uses %LOCALAPPDATA%. Source: docs/v2.1-views.md §4 layout. */
+/** Cross-platform daemon log location hint. Both paths are surfaced verbatim
+ *  so the user picks the one that matches their host — `navigator.platform`
+ *  is deprecated and the webview heuristic is the wrong layer to guess at
+ *  anyway (the Tauri Rust side knows the host OS for sure; that path is
+ *  the right choice when v2.2 surfaces a tauri command for it).
+ *  WEB-UI-D-023. */
 function daemonLogPathHint(): string {
-  if (typeof navigator !== "undefined" && /Win/i.test(navigator.platform)) {
-    return "%LOCALAPPDATA%\\sov\\daemon.log";
-  }
-  return "~/.local/state/sov/daemon.log";
+  return "Mac/Linux: ~/.local/state/sov/daemon.log · Windows: %LOCALAPPDATA%\\sov\\daemon.log";
 }
 
 export default function Settings() {
@@ -210,6 +211,7 @@ export default function Settings() {
       <main className={styles.main}>
         <Nav />
         <EmptyState
+          glyph={<DisconnectedPlugGlyph />}
           title="Daemon not running"
           body={
             <>

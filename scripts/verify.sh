@@ -19,6 +19,14 @@ echo "=== Voice anti-pattern gate ==="
 bash scripts/check-voice.sh
 
 echo ""
+echo "=== Theme-token discipline gate ==="
+# CI-TOOLING-D-003: mirrors the CI tauri-and-frontend step (Pin D).
+# Peer-level with the voice gate (two grep scripts, two failures
+# readable on their own) — bare hex / rgba? outside theme.css fails
+# fast before pytest spins up.
+bash scripts/check-theme-tokens.sh
+
+echo ""
 echo "=== Tests ==="
 # Mirrors the CI ``Run tests`` step: strict deprecation filter + curated
 # third-party ignores. See .github/workflows/ci.yml for the rationale on

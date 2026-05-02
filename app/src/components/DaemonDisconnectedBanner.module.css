@@ -1,4 +1,10 @@
 .banner {
+  /* WEB-UI-D-008: sticky-top + z-index. Above route content (default 0)
+     and below native <dialog> top-layer. Banner is the user's primary
+     daemon-health signal; on long Audit pages it must not scroll out. */
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -7,6 +13,25 @@
   border-bottom: 1px solid var(--sov-warn);
   color: var(--sov-fg);
   font-size: 0.95rem;
+}
+
+/* WEB-UI-D-010: slide-in + fade animation. Honor prefers-reduced-motion —
+   reduced-motion path keeps the banner functional but skips the slide. */
+@media (prefers-reduced-motion: no-preference) {
+  .banner {
+    animation: bannerEnter 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@keyframes bannerEnter {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .message {
@@ -18,14 +43,16 @@
   font-family: var(--sov-font-mono);
   background: var(--sov-bg-elevated);
   padding: 0.1rem 0.35rem;
-  border-radius: 4px;
+  /* WEB-UI-D-011 / D-025: literal `4px` swapped for token. */
+  border-radius: var(--sov-radius);
 }
 
 .button {
   background: var(--sov-bg);
   color: var(--sov-fg);
   border: 1px solid var(--sov-border);
-  border-radius: 4px;
+  /* WEB-UI-D-011 / D-025: literal `4px` swapped for token. */
+  border-radius: var(--sov-radius);
   padding: 0.35rem 0.85rem;
   cursor: pointer;
   font-family: inherit;
@@ -34,4 +61,20 @@
 
 .button:hover {
   background: var(--sov-bg-elevated);
+}
+
+.dismiss {
+  background: transparent;
+  color: var(--sov-fg-muted);
+  border: 1px solid transparent;
+  border-radius: var(--sov-radius);
+  padding: 0.2rem 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.dismiss:hover {
+  color: var(--sov-fg);
+  border-color: var(--sov-border);
 }

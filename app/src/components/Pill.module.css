@@ -9,30 +9,60 @@
   font-family: var(--sov-font-mono);
 }
 
+/* Theme-2 sweep (WEB-UI-D-002 / D-003 / D-004 / D-005 / D-011 / D-025):
+   colored pill text on tinted bg fails WCAG AA 4.5:1 for small text. Keep
+   the tinted bg + colored border (semantic carrier); switch text to
+   var(--sov-fg) for AA-clean reads. Mike has reduced vision — this is
+   the most painful contrast path. Snapshot tests pin the new token. */
 .success {
   background: color-mix(in srgb, var(--sov-success) 18%, var(--sov-bg-elevated));
   border-color: var(--sov-success);
-  color: var(--sov-success);
+  color: var(--sov-fg);
 }
 
 .warn {
   background: color-mix(in srgb, var(--sov-warn) 18%, var(--sov-bg-elevated));
   border-color: var(--sov-warn);
-  color: var(--sov-warn);
+  color: var(--sov-fg);
 }
 
 .error {
   background: color-mix(in srgb, var(--sov-error) 18%, var(--sov-bg-elevated));
   border-color: var(--sov-error);
-  color: var(--sov-error);
+  color: var(--sov-fg);
 }
 
 .accent {
   background: color-mix(in srgb, var(--sov-accent) 18%, var(--sov-bg-elevated));
   border-color: var(--sov-accent);
-  color: var(--sov-accent);
+  color: var(--sov-fg);
 }
 
 .neutral {
   /* uses base .pill — no override */
+}
+
+/* WEB-UI-D-024: live-pill pulsing dot. Sighted users get the live-vs-static
+   distinction; SR users keep role="status" semantic. Honors reduced-motion. */
+.live::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 0.4rem;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .live::before {
+    animation: pulse 1.4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
 }

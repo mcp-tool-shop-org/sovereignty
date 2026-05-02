@@ -7,14 +7,28 @@
   color: var(--sov-fg-muted);
 }
 
+/* WEB-UI-D-013: optional glyph slot. Theme-aligned via currentColor; the
+   muted root color carries through. */
+.glyph {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  color: var(--sov-fg-muted);
+}
+
 .title {
   font-size: 1.1rem;
   margin: 0 0 0.5rem 0;
   color: var(--sov-fg);
 }
 
+/* WEB-UI-D-026: title stays centered (root inherits text-align: center);
+   body left-aligned in a centered container so inline <code> recovery
+   commands keep the same baseline as the surrounding text. */
 .body {
-  margin-bottom: 1rem;
+  margin: 0 auto 1rem;
+  max-width: 32rem;
+  text-align: left;
   font-size: 0.95rem;
 }
 

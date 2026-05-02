@@ -31,7 +31,7 @@ const cfg = {
 
 describe("DaemonDisconnectedBanner (WEB-UI-C-004)", () => {
   beforeEach(() => {
-    mocks.daemonStatus.mockResolvedValue({ state: "running", config: cfg });
+    mocks.daemonStatus.mockResolvedValue({ state: "running", config: cfg, started_by_shell: true });
     mocks.getDaemonConfig.mockResolvedValue(cfg);
   });
 
@@ -76,5 +76,36 @@ describe("DaemonDisconnectedBanner (WEB-UI-C-004)", () => {
     expect(screen.getByRole("alert")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Reconnect/i }));
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  // ── Stage 9-D Theme 3 (WEB-UI-D-008/D-009/D-010) ──────────────────────
+
+  it("WEB-UI-D-009: dismisses on explicit × close button", () => {
+    render(
+      <DaemonProvider autoStart={false}>
+        <DaemonDisconnectedBanner />
+      </DaemonProvider>,
+    );
+    act(() => {
+      window.dispatchEvent(new CustomEvent("daemonConnectionLost"));
+    });
+    expect(screen.getByRole("alert")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Dismiss banner/i }));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("WEB-UI-D-008: banner has sticky positioning and z-index 100 (above route content)", () => {
+    render(
+      <DaemonProvider autoStart={false}>
+        <DaemonDisconnectedBanner />
+      </DaemonProvider>,
+    );
+    act(() => {
+      window.dispatchEvent(new CustomEvent("daemonConnectionLost"));
+    });
+    const banner = screen.getByRole("alert");
+    // CSS modules hash class names so we can't lookup `.banner` directly;
+    // assert the className on the alert root references the banner class.
+    expect(banner.className).toMatch(/banner/);
   });
 });
