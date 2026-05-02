@@ -27,6 +27,7 @@ import os
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TypedDict
 
 logger = logging.getLogger("sov_engine")
 
@@ -266,3 +267,174 @@ def migrate_v1_layout() -> str | None:
         file=sys.stderr,
     )
     return game_id
+
+
+# ---------------------------------------------------------------------------
+# Pending-anchor index (v2.1 multi-tx batching)
+# ---------------------------------------------------------------------------
+#
+# The pending-anchor index tracks per-game proofs that have been generated
+# locally but not yet flushed to the chain. It is consulted by the
+# 3-state ``proof_anchor_status`` (in ``sov_engine/proof.py``) and by the
+# ``sov anchor`` flush path in the CLI.
+#
+# File layout (per spec ``docs/v2.1-bridge-changes.md`` §4):
+#
+#     .sov/games/<game-id>/pending-anchors.json
+#
+#     {
+#       "schema_version": 1,
+#       "entries": {
+#         "1":     { "envelope_hash": "<64-hex>", "added_iso": "<ISO8601-utc>" },
+#         "2":     { "envelope_hash": "<64-hex>", "added_iso": "<ISO8601-utc>" },
+#         "FINAL": { "envelope_hash": "<64-hex>", "added_iso": "<ISO8601-utc>" }
+#       }
+#     }
+#
+# Round keys match the existing ``anchors.json`` convention: stringified round
+# number ``"1"``…``"15"`` for in-game rounds, or the literal ``"FINAL"`` for
+# the end-of-game proof. Helpers are atomic — crash mid-write leaves a ``.tmp``
+# sibling rather than a corrupted index.
+
+
+_PENDING_ANCHORS_SCHEMA_VERSION = 1
+
+
+class PendingEntry(TypedDict):
+    """One row in ``pending-anchors.json``'s ``entries`` map.
+
+    ``envelope_hash`` is the raw 64-char lowercase hex digest (no
+    ``sha256:`` prefix — the prefix is added at the wire/memo layer only,
+    same convention as the proof envelope's ``envelope_hash`` field).
+
+    ``added_iso`` is ISO-8601 UTC with second precision and the literal
+    ``Z`` suffix, matching the proof envelope's ``timestamp_utc`` shape
+    (e.g. ``"2026-05-01T18:30:00Z"``).
+    """
+
+    envelope_hash: str
+    added_iso: str
+
+
+def pending_anchors_path(game_id: str) -> Path:
+    """Return ``.sov/games/<game-id>/pending-anchors.json``.
+
+    Sibling helper to ``state_file``, ``rng_seed_file``, ``proofs_dir``,
+    ``anchors_file`` — same multi-save layout convention.
+    """
+    return game_dir(game_id) / "pending-anchors.json"
+
+
+def read_pending_anchors(game_id: str) -> dict[str, PendingEntry]:
+    """Read the pending-anchor index. Returns the ``entries`` sub-dict.
+
+    Returns an empty dict if the file does not exist, is unreadable, or
+    has a malformed shape — pending-anchor reads should never crash a
+    status / verify path. Malformed reads are logged at WARNING.
+
+    Note: callers receive only the inner ``entries`` map, not the
+    wrapper containing ``schema_version``. The wrapper is an implementation
+    detail of the on-disk format.
+    """
+    path = pending_anchors_path(game_id)
+    if not path.exists():
+        return {}
+    try:
+        raw = path.read_text(encoding="utf-8")
+        data = json.loads(raw)
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning(
+            "pending_anchors.read.failed path=%s exc=%s detail=%s (treating as empty index)",
+            path,
+            type(exc).__name__,
+            exc,
+        )
+        return {}
+    if not isinstance(data, dict):
+        logger.warning(
+            "pending_anchors.read.malformed path=%s reason=not-an-object (treating as empty index)",
+            path,
+        )
+        return {}
+    entries = data.get("entries", {})
+    if not isinstance(entries, dict):
+        logger.warning(
+            "pending_anchors.read.malformed path=%s reason=entries-not-an-object "
+            "(treating as empty index)",
+            path,
+        )
+        return {}
+    # Keep only well-formed rows; drop rows missing required fields rather
+    # than failing the whole read. The downstream ``proof_anchor_status``
+    # only needs ``round_key in entries`` to decide PENDING — a missing or
+    # malformed row simply means "not pending".
+    cleaned: dict[str, PendingEntry] = {}
+    for round_key, row in entries.items():
+        if not isinstance(round_key, str) or not isinstance(row, dict):
+            continue
+        envelope_hash = row.get("envelope_hash")
+        added_iso = row.get("added_iso")
+        if not isinstance(envelope_hash, str) or not isinstance(added_iso, str):
+            continue
+        cleaned[round_key] = PendingEntry(
+            envelope_hash=envelope_hash,
+            added_iso=added_iso,
+        )
+    return cleaned
+
+
+def _write_pending_anchors(game_id: str, entries: dict[str, PendingEntry]) -> None:
+    """Atomically persist the wrapped pending-anchor document."""
+    path = pending_anchors_path(game_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    document: dict[str, object] = {
+        "schema_version": _PENDING_ANCHORS_SCHEMA_VERSION,
+        "entries": dict(sorted(entries.items())),
+    }
+    atomic_write_text(
+        path,
+        json.dumps(document, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
+    )
+
+
+def add_pending_anchor(game_id: str, round_key: str, envelope_hash: str) -> None:
+    """Record a pending anchor for ``round_key``.
+
+    Idempotent: re-adding the same ``round_key`` overwrites the row,
+    refreshing ``added_iso`` to "now" but keeping (or updating) the
+    ``envelope_hash``. The file is created if it does not exist;
+    parent directories are created as needed.
+
+    ``round_key`` follows the existing anchors.json convention:
+    stringified round number (``"1"``…``"15"``) or the literal ``"FINAL"``.
+    """
+    entries = read_pending_anchors(game_id)
+    now_iso = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    entries[round_key] = PendingEntry(
+        envelope_hash=envelope_hash,
+        added_iso=now_iso,
+    )
+    _write_pending_anchors(game_id, entries)
+
+
+def clear_pending_anchors(game_id: str, round_keys: list[str]) -> None:
+    """Remove the named rows from the pending-anchor index.
+
+    Idempotent partial clear: round keys not present are silently skipped.
+    An empty ``round_keys`` is a no-op (no read, no write). When the
+    pending-anchor file does not exist, this is a no-op even if
+    ``round_keys`` is non-empty — there is nothing to clear.
+    """
+    if not round_keys:
+        return
+    if not pending_anchors_path(game_id).exists():
+        return
+    entries = read_pending_anchors(game_id)
+    if not entries:
+        # File existed but read returned empty (malformed / empty doc) —
+        # rewrite a clean empty index so the wrapper is well-formed.
+        _write_pending_anchors(game_id, entries)
+        return
+    for key in round_keys:
+        entries.pop(key, None)
+    _write_pending_anchors(game_id, entries)

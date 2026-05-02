@@ -13,15 +13,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `.sov/active-game` pointer file tracks which game is current.
 - Auto-migration from v1 layout (`.sov/game_state.json`) on first invocation under v2.1 — one-shot, transparent, with a stderr notice.
 
+### Added (Wave 2)
+
+- XRPL network parameterization: `XRPLTransport(network=XRPLNetwork.TESTNET|MAINNET|DEVNET)` replaces `XRPLTestnetTransport`. Single class, single module (`sov_transport.xrpl`). Endpoint table built-in; `url=` kwarg overrides.
+- Multi-tx anchor consolidation: rounds queue in `.sov/games/<game-id>/pending-anchors.json` and flush as a single Payment with N memos at game-end (or via `sov anchor --checkpoint` mid-game). One verifiable chain pointer per game — Sovereignty's audit thesis intact.
+- New `sov anchor --network <network>` flag. Network selection precedence: CLI flag → `SOV_XRPL_NETWORK` env var → `testnet` default.
+- New `sov anchor --checkpoint` flag for mid-game flush.
+- Verify contract split: `verify_proof_local(proof_path)` (pure local recompute) and `proof_anchor_status(proof_path, transport) -> AnchorStatus` (3-state: ANCHORED / PENDING / MISSING) live in new `sov_engine.proof` module.
+- `sov status --brief` extended with 3-state per round + `pending_count` field (additive — schema_version unchanged).
+- `sov doctor` adds a `pending_anchors` check.
+- `transport.explorer_tx_url(txid)` returns the network-correct explorer URL — fixes the v2.0.2 testnet-URL leak in CLI surfaces.
+- 4 new structured error codes: `MAINNET_FAUCET_REJECTED`, `ANCHOR_PENDING`, `INVALID_NETWORK`, `MAINNET_UNDERFUNDED`.
+
 ### Changed
 
 - `sov new` now writes to `.sov/games/<game-id>/` and sets the active-game pointer.
+
+### Changed (Wave 2)
+
+- `sov anchor` (no args) post-game-end now batches all pending rounds into a single XRPL transaction. Operators don't need to anchor each round individually.
+- `LedgerTransport.verify()` deprecated in favor of `is_anchored_on_chain()`. Same behavior; new name reflects what it actually does (chain lookup, not local recompute). Removed in v2.2.
+
+### Deprecated (Wave 2 — removed in v2.2)
+
+- `XRPLTestnetTransport` → use `XRPLTransport(network=XRPLNetwork.TESTNET)`.
+- `fund_testnet_wallet()` → use `fund_dev_wallet(network=XRPLNetwork.TESTNET)`.
+- `sov anchor <proof_file>` (single-round legacy form) → pending entries auto-batch at game-end; use `--checkpoint` for mid-game flush.
+- `LedgerTransport.verify()` → `is_anchored_on_chain()`.
 
 ### Notes
 
 - `.sov/wallet_seed.txt` and `.sov/season.json` remain at `.sov/` root (cross-game state).
 - State `schema_version` stays `1` — multi-save is a layout reorg, not a content change.
 - See [docs/multi-save.md](docs/multi-save.md) for the operator-facing reference.
+- Mainnet wallet seed management beyond plain-file `.sov/wallet_seed.txt` is explicit out-of-scope for v2.1 — deferred to v2.2 (keychain integration / hardware wallet support).
+- Existing v2.0.2 testnet anchors continue to verify cleanly under v2.1; the multi-memo verify path is forward-compatible with single-memo legacy.
 
 ## [2.0.2] - 2026-04-30
 

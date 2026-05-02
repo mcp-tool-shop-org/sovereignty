@@ -85,6 +85,8 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 Repeat for 15 rounds. `sov game-end` prints the final scores.
 
 - **Multiple saved games** (v2.1+): `sov games` lists saves, `sov resume <game-id>` switches between them.
+- **Batched anchoring** (v2.1+): `sov anchor` at game-end batches all pending rounds into a single XRPL transaction — one verifiable chain pointer per game, not one per round. Use `sov anchor --checkpoint` for mid-game flush.
+- **Network selection** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (or `SOV_XRPL_NETWORK` env var; default `testnet`).
 
 > Want a guided in-app walkthrough first? Run `sov tutorial`.
 > Want to play with no software at all? See [Print & Play](docs/print-and-play.md).

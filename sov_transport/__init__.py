@@ -16,3 +16,25 @@ class TransportError(Exception):
     transient or permanent, and what action to take next (retry, check
     network status, or file an issue with the response shape).
     """
+
+
+# Re-exports below intentionally come after ``TransportError`` is defined to
+# avoid a circular-import hazard: ``sov_transport.xrpl`` imports
+# ``TransportError`` from this module.
+from sov_transport.base import BatchEntry, LedgerTransport  # noqa: E402
+from sov_transport.xrpl import (  # noqa: E402
+    MainnetFaucetError,
+    XRPLNetwork,
+    XRPLTransport,
+    fund_dev_wallet,
+)
+
+__all__ = [
+    "BatchEntry",
+    "LedgerTransport",
+    "MainnetFaucetError",
+    "TransportError",
+    "XRPLNetwork",
+    "XRPLTransport",
+    "fund_dev_wallet",
+]

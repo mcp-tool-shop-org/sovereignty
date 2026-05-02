@@ -425,3 +425,81 @@ def no_active_game_error() -> SovError:
             "to pick one. Or `sov new` to start fresh."
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# v2.1 bridge errors (per docs/v2.1-bridge-changes.md §8)
+# ---------------------------------------------------------------------------
+
+
+def mainnet_faucet_rejected_error() -> SovError:
+    """Mainnet has no faucet — operator must provide a funded mainnet seed.
+
+    Surfaced when ``fund_dev_wallet(MAINNET)`` raises ``MainnetFaucetError``;
+    the CLI translates that to this structured shape so the user gets a
+    plain-English next step instead of a raw exception.
+    """
+    return SovError(
+        code="MAINNET_FAUCET_REJECTED",
+        message="mainnet has no faucet.",
+        hint=(
+            "Set XRPL_SEED to a funded mainnet wallet, "
+            "or run `sov wallet --network testnet` to generate a play-money "
+            "Testnet wallet instead."
+        ),
+    )
+
+
+def anchor_pending_error(round_keys: list[str]) -> SovError:
+    """One or more rounds are queued in pending-anchors.json, not yet on chain.
+
+    ``round_keys`` follows the existing anchors.json convention (stringified
+    round number ``"1"``…``"15"`` or ``"FINAL"``). Empty list still produces
+    a sensible message — the rounds field renders as "(none)".
+    """
+    rounds_str = ", ".join(round_keys) if round_keys else "(none)"
+    return SovError(
+        code="ANCHOR_PENDING",
+        message=(f"Round(s) {rounds_str} are queued in pending-anchors.json, not yet on chain."),
+        hint="Run `sov anchor` to flush pending anchors in a single batched tx.",
+    )
+
+
+def invalid_network_error(value: str) -> SovError:
+    """User supplied a network value that isn't one of {testnet, mainnet, devnet}.
+
+    Surfaced by ``sov anchor --network <bad>`` and any other CLI / config
+    surface that resolves a network string.
+    """
+    return SovError(
+        code="INVALID_NETWORK",
+        message=f"'{value}' is not a valid XRPL network.",
+        hint="Valid networks: testnet, mainnet, devnet.",
+    )
+
+
+def mainnet_underfunded_error(balance_drops: int, required_drops: int) -> SovError:
+    """Mainnet wallet balance is below the reserve+fee floor for an anchor batch.
+
+    Drops are XRPL's smallest unit (1 XRP = 1_000_000 drops). The message
+    surfaces both the raw drop count and an XRP rendering so the operator
+    can match against an explorer balance directly.
+    """
+
+    def _drops_to_xrp(drops: int) -> str:
+        return f"{drops / 1_000_000:.6f}".rstrip("0").rstrip(".") or "0"
+
+    have_xrp = _drops_to_xrp(balance_drops)
+    need_xrp = _drops_to_xrp(required_drops)
+    return SovError(
+        code="MAINNET_UNDERFUNDED",
+        message=(
+            f"Mainnet wallet underfunded: have {have_xrp} XRP "
+            f"({balance_drops} drops), need {need_xrp} XRP "
+            f"({required_drops} drops) to cover reserve + fee."
+        ),
+        hint=(
+            "Top up the mainnet wallet, or switch to testnet with "
+            "`sov anchor --network testnet` (testnet XRP is play money)."
+        ),
+    )

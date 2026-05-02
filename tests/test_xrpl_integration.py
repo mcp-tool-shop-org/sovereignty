@@ -65,3 +65,54 @@ def test_real_testnet_verify_returns_false_for_unknown_txid():
         from sov_transport import TransportError
 
         assert isinstance(e, TransportError), f"unexpected exception type: {type(e).__name__}"
+
+
+def test_real_testnet_anchor_batch_three_rounds_one_tx():
+    """v2.1 batch path: anchor 3 rounds in one Payment, verify all three.
+
+    Catches drift between the multi-memo wire shape (one Payment with N
+    Memos) and what real XRPL Testnet actually accepts and returns. The
+    mocked tests in ``test_anchor_batch.py`` only see the model-level
+    submission; this test pins that the batch path round-trips against the
+    live testnet.
+    """
+    pytest.importorskip("xrpl")
+    from sov_transport.xrpl import XRPLNetwork, XRPLTransport, fund_dev_wallet
+
+    transport = XRPLTransport(XRPLNetwork.TESTNET)
+    address, seed = fund_dev_wallet(XRPLNetwork.TESTNET)
+    assert address  # faucet returned a real address
+
+    h1 = "abc123def456" * 5 + "abcd"  # 64 chars
+    h2 = "deadbeefcafe" * 5 + "1234"
+    h3 = "feedfacefeed" * 5 + "5678"
+    rounds = [
+        {
+            "round_key": "1",
+            "ruleset": "test_v1",
+            "game_id": "s42",
+            "envelope_hash": h1,
+        },
+        {
+            "round_key": "2",
+            "ruleset": "test_v1",
+            "game_id": "s42",
+            "envelope_hash": h2,
+        },
+        {
+            "round_key": "FINAL",
+            "ruleset": "test_v1",
+            "game_id": "s42",
+            "envelope_hash": h3,
+        },
+    ]
+
+    txid = transport.anchor_batch(rounds, signer=seed)
+    assert isinstance(txid, str)
+    assert len(txid) == 64  # XRPL tx hashes are 64-char uppercase hex
+
+    # All three round hashes resolve via is_anchored_on_chain on the same txid.
+    for h in (h1, h2, h3):
+        assert transport.is_anchored_on_chain(txid=txid, expected_hash=h), (
+            f"is_anchored_on_chain failed for hash={h} on batch txid={txid}"
+        )

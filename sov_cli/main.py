@@ -22,10 +22,11 @@ from sov_cli.errors import (
     anchor_mismatch_error,
     insufficient_resources_error,
     invalid_action_error,
+    invalid_network_error,
+    mainnet_faucet_rejected_error,
     market_error,
     no_active_game_error,
     no_game_error,
-    no_proof_error,
     no_wallet_error,
     player_count_error,
     player_not_found_error,
@@ -43,13 +44,16 @@ from sov_cli.errors import (
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
 from sov_engine.io_utils import (
     GameSummary,
+    add_pending_anchor,
     anchors_file,
     atomic_write_text,
+    clear_pending_anchors,
     game_dir,
     get_active_game_id,
     list_saved_games,
     migrate_v1_layout,
     proofs_dir,
+    read_pending_anchors,
     rng_seed_file,
     set_active_game_id,
     state_file,
@@ -236,6 +240,36 @@ def _save_state(state: GameState) -> None:
     snapshot = game_state_snapshot(state)
     atomic_write_text(target, canonical_json(snapshot))
     logger.info("save_state path=%s round=%d", target, state.current_round)
+
+
+def _resolve_network(cli_flag: str | None) -> Any:
+    """Resolve the active XRPL network for a transport invocation.
+
+    Precedence (highest wins) per docs/v2.1-bridge-changes.md §1:
+      1. ``--network`` CLI flag (per-invocation override).
+      2. ``SOV_XRPL_NETWORK`` env var.
+      3. Default ``XRPLNetwork.TESTNET``.
+
+    Imports are local so the CLI module loads cleanly when the bridge
+    package is unavailable in a stripped environment (e.g. some PyInstaller
+    bundles); the failure is surfaced at first transport use.
+
+    Returns:
+        An ``XRPLNetwork`` enum member. The function never returns ``None``.
+
+    Raises:
+        typer.Exit: via ``_fail`` with ``invalid_network_error`` if the
+            resolved string is not one of ``{testnet, mainnet, devnet}``.
+    """
+    from sov_transport.xrpl import XRPLNetwork
+
+    raw = cli_flag if cli_flag is not None else os.environ.get("SOV_XRPL_NETWORK")
+    if not raw:
+        return XRPLNetwork.TESTNET
+    try:
+        return XRPLNetwork(raw)
+    except ValueError:
+        _fail(invalid_network_error(raw))
 
 
 def _record_anchor(round_key: int | str, txid: str, game_id: str) -> None:
@@ -652,6 +686,75 @@ def doctor(
     if proof_total:
         s = "s" if proof_total != 1 else ""
         checks.append(("ok", f"{proof_total} proof file{s} saved", ""))
+
+    # 6. Pending anchors (v2.1) — flag stale unflushed batches.
+    # We check the active game only; per-active-game scope keeps this cheap
+    # and matches how the rest of doctor reports state. "Fresh" = oldest
+    # entry's added_iso within the last hour (operator presumably mid-game);
+    # older than that is a `warn` because it suggests they forgot to flush.
+    if active_id:
+        pending = read_pending_anchors(active_id)
+        if pending:
+            n = len(pending)
+            plural = "s" if n != 1 else ""
+            try:
+                import datetime as _dt
+
+                now_utc = _dt.datetime.now(_dt.UTC)
+                oldest_dt: _dt.datetime | None = None
+                for entry in pending.values():
+                    added_iso = entry["added_iso"]
+                    # Tolerate the trailing "Z" form we write ourselves and
+                    # any forward-compat "+00:00" form a future writer might
+                    # emit. Skip rows whose timestamp is unparseable rather
+                    # than crashing the diagnostic.
+                    parsed: _dt.datetime | None
+                    try:
+                        parsed = _dt.datetime.fromisoformat(added_iso.replace("Z", "+00:00"))
+                    except ValueError:
+                        parsed = None
+                    if parsed is None:
+                        continue
+                    if parsed.tzinfo is None:
+                        parsed = parsed.replace(tzinfo=_dt.UTC)
+                    if oldest_dt is None or parsed < oldest_dt:
+                        oldest_dt = parsed
+                if oldest_dt is None:
+                    # All rows had unparseable timestamps — treat as ok-fresh
+                    # so we don't false-alarm on a malformed write.
+                    checks.append(
+                        (
+                            "ok",
+                            f"{n} pending anchor{plural} (timestamps unparseable)",
+                            "Run: sov anchor   to flush.",
+                        )
+                    )
+                else:
+                    age = now_utc - oldest_dt
+                    age_seconds = age.total_seconds()
+                    one_hour = 3600.0
+                    if age_seconds <= one_hour:
+                        checks.append(("ok", f"{n} pending anchor{plural} (fresh)", ""))
+                    else:
+                        # Render age human-friendly: hours when ≥ 1h.
+                        hours = age_seconds / 3600.0
+                        age_str = f"{hours:.1f} hour" if hours < 2 else f"{hours:.0f} hours"
+                        if hours >= 2:
+                            age_str += "s" if hours >= 2 else ""
+                        checks.append(
+                            (
+                                "warn",
+                                (f"{n} pending anchor{plural}, oldest {age_str} old"),
+                                "Run: sov anchor   to flush.",
+                            )
+                        )
+            except Exception as exc:
+                # Defensive — pending-anchor diagnostics must never crash doctor.
+                logger.warning(
+                    "doctor.pending_anchors.failed exc=%s detail=%s",
+                    type(exc).__name__,
+                    exc,
+                )
 
     if json_out:
         # Doctor uses ("status","message","hint") triples; map to the
@@ -1081,6 +1184,17 @@ def status(
             ),
         ),
     ] = False,
+    json_out: Annotated[
+        bool,
+        typer.Option(
+            "--json",
+            help=(
+                "Emit machine-readable JSON. Includes 3-state anchor status "
+                "per round (anchored / pending / missing) and a top-level "
+                "pending_count field — additive over the v2.0 schema."
+            ),
+        ),
+    ] = False,
 ) -> None:
     """Show current game state.
 
@@ -1093,6 +1207,9 @@ def status(
     if result is None:
         _fail(no_game_error())
     state, _ = result
+    if json_out:
+        typer.echo(json.dumps(_status_json_payload(state), indent=2))
+        return
     if brief:
         _print_brief_status(state)
     else:
@@ -1201,6 +1318,14 @@ def end_round(
     out_dir = output or proofs_dir(game_id)
     path = save_proof(proof, out_dir)
 
+    # Queue the round for the next anchor batch (v2.1). Auto-batched at
+    # `sov game-end` (default) or `sov anchor --checkpoint` (operator
+    # opt-in mid-game flush). Only queue when writing into the canonical
+    # per-game proofs dir — passing --output to a custom path is a "save
+    # this somewhere else" operator action and shouldn't enqueue.
+    if output is None:
+        add_pending_anchor(game_id, str(proof["round"]), proof["envelope_hash"])
+
     console.print(
         Panel(
             f"Round: {proof['round']}\nHash: [bold]{proof['envelope_hash']}[/bold]\nFile: {path}",
@@ -1213,6 +1338,16 @@ def end_round(
 def verify(
     proof_file: Annotated[Path, typer.Argument(help="Path to proof JSON file")],
     tx: Annotated[str, typer.Option("--tx", help="XRPL tx hash to verify against")] = "",
+    network: Annotated[
+        str | None,
+        typer.Option(
+            "--network",
+            help=(
+                "XRPL network to look up the tx on: testnet, mainnet, or devnet. "
+                "Overrides SOV_XRPL_NETWORK; default testnet."
+            ),
+        ),
+    ] = None,
 ) -> None:
     """Verify a round proof file, optionally against an anchored tx."""
     try:
@@ -1230,15 +1365,16 @@ def verify(
         proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
         expected_hash = proof_data["envelope_hash"]
         try:
-            from sov_transport.xrpl_testnet import XRPLTestnetTransport
+            from sov_transport.xrpl import XRPLTransport
 
-            transport = XRPLTestnetTransport()
-            if transport.verify(tx, expected_hash):
+            resolved_network = _resolve_network(network)
+            transport = XRPLTransport(network=resolved_network)
+            if transport.is_anchored_on_chain(tx, expected_hash):
                 memo = transport.get_memo_text(tx)
                 console.print("  [green]Anchor verified.[/green] TX memo matches proof hash.")
                 if memo:
                     console.print(f"  [dim]{memo}[/dim]")
-                explorer = f"https://testnet.xrpl.org/transactions/{tx}"
+                explorer = transport.explorer_tx_url(tx)
                 console.print(f"  [dim]{explorer}[/dim]")
             else:
                 _fail(anchor_mismatch_error())
@@ -1250,7 +1386,13 @@ def verify(
 def anchor(
     proof_file: Annotated[
         Path | None,
-        typer.Argument(help="Proof file to anchor (default: latest)"),
+        typer.Argument(
+            help=(
+                "[Deprecated v2.1, removed v2.2] Single-round proof file to anchor. "
+                "Without this argument, batches all pending anchors for the active "
+                "game in one tx — the new audit-ergonomics default."
+            ),
+        ),
     ] = None,
     seed_env: Annotated[
         str,
@@ -1260,84 +1402,262 @@ def anchor(
         Path | None,
         typer.Option("--signer-file", help="File containing wallet seed"),
     ] = None,
+    checkpoint: Annotated[
+        bool,
+        typer.Option(
+            "--checkpoint",
+            help=(
+                "Flush pending anchors mid-game (no warning). Without this, "
+                "`sov anchor` on an in-progress game refuses with a hint."
+            ),
+        ),
+    ] = False,
+    network: Annotated[
+        str | None,
+        typer.Option(
+            "--network",
+            help=(
+                "XRPL network: testnet, mainnet, or devnet. Overrides the "
+                "SOV_XRPL_NETWORK env var. Default: testnet."
+            ),
+        ),
+    ] = None,
 ) -> None:
-    """Anchor a round proof hash on XRPL Testnet. The ledger remembers."""
-    import os
+    """Anchor round-proof hashes on XRPL. The ledger remembers.
 
-    # Find the proof file
-    if proof_file is None:
-        # Find the latest proof file in the active game's proofs/ dir.
-        active_id = _resolve_active_game_id()
-        pdir = proofs_dir(active_id)
-        pdir.mkdir(parents=True, exist_ok=True)
-        proofs = sorted(pdir.glob("round_*.proof.json"))
-        if not proofs:
-            _fail(no_proof_error())
-        proof_file = proofs[-1]
+    With no proof_file argument, batches all pending anchors for the active
+    game into a single multi-memo Payment — one verifiable chain pointer per
+    game, not a scattered N-tx trail. Pass ``--checkpoint`` to flush mid-game
+    rather than waiting for game-end.
 
-    if not proof_file.exists():
-        _fail(proof_file_error(str(proof_file)))
+    The deprecated single-round form ``sov anchor <proof_file>`` still
+    works for v2.0.x scripts but emits a ``DeprecationWarning``; it is
+    removed in v2.2.
+    """
+    resolved_network = _resolve_network(network)
 
-    # Load proof
-    proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
-    envelope_hash = proof_data["envelope_hash"]
-    rnd = proof_data["round"]
-    seed_val = proof_data.get("rng_seed", "?")
-    ruleset = proof_data.get("ruleset", "campfire_v1")
-
-    # Get wallet seed
+    # Resolve wallet seed once — both paths need it. (Move-up from the
+    # legacy path so the batch path doesn't duplicate the seed-resolution
+    # logic.)
     seed: str | None = None
     if signer_file and signer_file.exists():
         seed = signer_file.read_text(encoding="utf-8").strip()
     else:
         seed = os.environ.get(seed_env)
-
     if not seed:
         _fail(no_wallet_error(seed_env))
 
-    # Build the memo. game_id mirrors the proof envelope so a third-party
-    # verifier can join memo↔proof; sha256: is the wire-layer algorithm tag.
-    game_id = proof_data.get("game_id", f"s{seed_val}")
-    memo = f"SOV|{ruleset}|{game_id}|r{rnd}|sha256:{envelope_hash}"
+    # ------------------------------------------------------------------
+    # Deprecated single-round path: `sov anchor <proof_file>`
+    # ------------------------------------------------------------------
+    if proof_file is not None:
+        import warnings
 
-    console.print(f"\n  Anchoring Round {rnd}...")
-    console.print(f"  [dim]{memo}[/dim]\n")
+        warnings.warn(
+            "`sov anchor <proof_file>` is deprecated; pending entries auto-batch "
+            "at game-end. Use `--checkpoint` for mid-game flush. Removed in v2.2.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+        if not proof_file.exists():
+            _fail(proof_file_error(str(proof_file)))
+
+        proof_data = json.loads(proof_file.read_text(encoding="utf-8"))
+        envelope_hash = proof_data["envelope_hash"]
+        rnd = proof_data["round"]
+        seed_val = proof_data.get("rng_seed", "?")
+        ruleset = proof_data.get("ruleset", "campfire_v1")
+
+        # Build the memo. game_id mirrors the proof envelope so a third-party
+        # verifier can join memo↔proof; sha256: is the wire-layer algorithm tag.
+        game_id = proof_data.get("game_id", f"s{seed_val}")
+        memo = f"SOV|{ruleset}|{game_id}|r{rnd}|sha256:{envelope_hash}"
+
+        console.print(f"\n  Anchoring Round {rnd}...")
+        console.print(f"  [dim]{memo}[/dim]\n")
+
+        try:
+            from sov_transport.xrpl import XRPLTransport
+
+            transport = XRPLTransport(network=resolved_network)
+            txid = transport.anchor(envelope_hash, memo, seed)
+
+            # Persist txid so postcard / feedback can surface the explorer link
+            # in future invocations (the anchor receipt was previously read-only).
+            _record_anchor(rnd, txid, game_id)
+            logger.info("anchor.success round=%s txid=%s", rnd, txid)
+
+            explorer = transport.explorer_tx_url(txid)
+            console.print(
+                Panel(
+                    f"  Round {rnd} anchored on XRPL {resolved_network.value}.\n\n"
+                    f"  TX: [bold]{txid}[/bold]\n"
+                    f"  Hash: [dim]{envelope_hash}[/dim]\n"
+                    f"  Explorer: [dim]{explorer}[/dim]\n\n"
+                    f"  [dim]Verify later: sov verify {proof_file} --tx {txid}[/dim]",
+                    title="Anchored",
+                )
+            )
+        except RuntimeError as e:
+            # Transport-level failure (network/server). Game state is unaffected.
+            logger.error(
+                "anchor.failed round=%s exc=RuntimeError detail=%s "
+                "(non-fatal: re-run `sov anchor` to retry)",
+                rnd,
+                e,
+            )
+            _fail(anchor_error(str(e)))
+        except Exception as e:
+            logger.error(
+                "anchor.failed round=%s exc=%s detail=%s (non-fatal: re-run `sov anchor` to retry)",
+                rnd,
+                type(e).__name__,
+                e,
+            )
+            _fail(anchor_error(str(e)))
+        return
+
+    # ------------------------------------------------------------------
+    # Batch path: flush pending-anchors.json as a single multi-memo tx.
+    # ------------------------------------------------------------------
+    active_id = _resolve_active_game_id()
+    pending = read_pending_anchors(active_id)
+
+    # Refuse mid-game flush without --checkpoint. The active game-state
+    # tells us "in progress" vs "complete"; use the same source the rest
+    # of the CLI relies on.
+    result = _load_game()
+    if result is not None:
+        state, _ = result
+        if not state.game_over and not checkpoint:
+            console.print(
+                "  [yellow]Game in progress — refusing to flush pending anchors "
+                "without --checkpoint.[/yellow]"
+            )
+            console.print(
+                "  [dim]Use `sov anchor --checkpoint` to flush mid-game evidence, "
+                "or wait until game-end.[/dim]"
+            )
+            raise typer.Exit(1)
+
+    if not pending:
+        # Idempotent no-op: nothing to flush, no tx submitted, exit 0.
+        console.print("  [dim]No pending anchors to flush.[/dim]")
+        raise typer.Exit(0)
+
+    # Game-id from the active game (or fall back to whatever proofs already
+    # carry for partially-migrated saves). Active-game id is the canonical
+    # source when present.
+    game_id = active_id
+
+    # Build the BatchEntry list. Sort the round-keys so the on-wire order is
+    # deterministic: numeric rounds in numeric order, FINAL last. anchors.json
+    # uses the same convention so this matches the verifier's natural read order.
+    def _sort_key(round_key: str) -> tuple[int, int]:
+        if round_key == "FINAL":
+            return (1, 0)
+        try:
+            return (0, int(round_key))
+        except ValueError:
+            # Unknown / non-numeric / non-FINAL key — bucket after FINAL so
+            # forward-compat content surfaces at the tail rather than mixing
+            # into the numeric range.
+            return (2, 0)
+
+    sorted_keys = sorted(pending.keys(), key=_sort_key)
+
+    # Ruleset for the memo. Pull from the active game state when available;
+    # fall back to the ruleset recorded in any proof file we can find for
+    # this game (the proof envelope is the canonical historical record).
+    ruleset = "campfire_v1"
+    if result is not None:
+        state, _ = result
+        ruleset = state.config.ruleset
+
+    from sov_transport.base import BatchEntry
+
+    rounds: list[BatchEntry] = [
+        BatchEntry(
+            round_key=key,
+            ruleset=ruleset,
+            game_id=game_id,
+            envelope_hash=pending[key]["envelope_hash"],
+        )
+        for key in sorted_keys
+    ]
+
+    n = len(rounds)
+    plural = "s" if n != 1 else ""
+    console.print(f"\n  Anchoring {n} pending round{plural} as one batched tx...")
+    for entry in rounds:
+        rk = entry["round_key"]
+        round_field = "FINAL" if rk == "FINAL" else f"r{rk}"
+        console.print(
+            f"  [dim]SOV|{entry['ruleset']}|{entry['game_id']}|"
+            f"{round_field}|sha256:{entry['envelope_hash']}[/dim]"
+        )
+    console.print()
 
     try:
-        from sov_transport.xrpl_testnet import XRPLTestnetTransport
+        from sov_transport.xrpl import XRPLTransport
 
-        transport = XRPLTestnetTransport()
-        txid = transport.anchor(envelope_hash, memo, seed)
+        transport = XRPLTransport(network=resolved_network)
+        txid = transport.anchor_batch(rounds, seed)
 
-        # Persist txid so postcard / feedback can surface the explorer link
-        # in future invocations (the anchor receipt was previously read-only).
-        _record_anchor(rnd, txid, game_id)
-        logger.info("anchor.success round=%s txid=%s", rnd, txid)
+        # All rounds in the batch land on the same txid — anchors.json keeps
+        # round_key → txid so the existing readers (postcard / feedback /
+        # status) keep working without any schema bump.
+        for entry in rounds:
+            rk = entry["round_key"]
+            round_key_for_record: int | str
+            if rk == "FINAL":
+                round_key_for_record = "FINAL"
+            else:
+                try:
+                    round_key_for_record = int(rk)
+                except ValueError:
+                    round_key_for_record = rk
+            _record_anchor(round_key_for_record, txid, game_id)
 
-        explorer = f"https://testnet.xrpl.org/transactions/{txid}"
+        # Clear the flushed entries from pending. On a partial-failure mid-batch
+        # we wouldn't get here — anchor_batch is all-or-nothing per XRPL Payment
+        # semantics — so a no-error path means every entry in `rounds` landed.
+        clear_pending_anchors(game_id, list(sorted_keys))
+        logger.info(
+            "anchor_batch.success rounds=%d txid=%s game_id=%s",
+            n,
+            txid,
+            game_id,
+        )
+
+        explorer = transport.explorer_tx_url(txid)
+        rounds_summary = ", ".join(sorted_keys)
         console.print(
             Panel(
-                f"  Round {rnd} anchored on XRPL Testnet.\n\n"
+                f"  {n} round{plural} anchored on XRPL "
+                f"{resolved_network.value} in one tx.\n\n"
                 f"  TX: [bold]{txid}[/bold]\n"
-                f"  Hash: [dim]{envelope_hash}[/dim]\n"
-                f"  Explorer: [dim]{explorer}[/dim]\n\n"
-                f"  [dim]Verify later: sov verify {proof_file} --tx {txid}[/dim]",
-                title="Anchored",
+                f"  Rounds: [dim]{rounds_summary}[/dim]\n"
+                f"  Explorer: [dim]{explorer}[/dim]\n",
+                title="Anchored (batch)",
             )
         )
     except RuntimeError as e:
-        # Transport-level failure (network/server). Game state is unaffected.
+        # Transport-level failure. Pending stays untouched so the operator
+        # can retry — `sov anchor` is idempotent on the same pending set.
         logger.error(
-            "anchor.failed round=%s exc=RuntimeError detail=%s "
-            "(non-fatal: re-run `sov anchor` to retry)",
-            rnd,
+            "anchor_batch.failed rounds=%d exc=RuntimeError detail=%s "
+            "(non-fatal: pending kept; re-run `sov anchor` to retry)",
+            n,
             e,
         )
         _fail(anchor_error(str(e)))
     except Exception as e:
         logger.error(
-            "anchor.failed round=%s exc=%s detail=%s (non-fatal: re-run `sov anchor` to retry)",
-            rnd,
+            "anchor_batch.failed rounds=%d exc=%s detail=%s "
+            "(non-fatal: pending kept; re-run `sov anchor` to retry)",
+            n,
             type(e).__name__,
             e,
         )
@@ -1345,15 +1665,39 @@ def anchor(
 
 
 @app.command()
-def wallet() -> None:
-    """Create a funded XRPL Testnet wallet for anchoring."""
-    console.print("\n  Creating a Testnet wallet...")
-    console.print("  [dim]This is play money. Testnet XRP has no value.[/dim]\n")
+def wallet(
+    network: Annotated[
+        str | None,
+        typer.Option(
+            "--network",
+            help=(
+                "XRPL network for the wallet: testnet (default) or devnet. "
+                "Mainnet has no faucet — set XRPL_SEED to a funded mainnet seed "
+                "instead of running this."
+            ),
+        ),
+    ] = None,
+) -> None:
+    """Create a funded XRPL dev wallet (Testnet or Devnet) for anchoring."""
+    resolved_network = _resolve_network(network)
+
+    from sov_transport.xrpl import (
+        MainnetFaucetError,
+        XRPLNetwork,
+        fund_dev_wallet,
+    )
+
+    if resolved_network == XRPLNetwork.MAINNET:
+        # Mainnet has no faucet; surface the structured error directly so the
+        # operator gets a clean code/message/hint instead of a raw exception.
+        _fail(mainnet_faucet_rejected_error())
+
+    network_label = resolved_network.value.capitalize()
+    console.print(f"\n  Creating a {network_label} wallet...")
+    console.print(f"  [dim]This is play money. {network_label} XRP has no value.[/dim]\n")
 
     try:
-        from sov_transport.xrpl_testnet import fund_testnet_wallet
-
-        address, seed = fund_testnet_wallet()
+        address, seed = fund_dev_wallet(resolved_network)
 
         # Save seed to .sov/wallet_seed.txt (cross-game, lives at root)
         wallet_file = SAVE_DIR / "wallet_seed.txt"
@@ -1363,12 +1707,17 @@ def wallet() -> None:
         console.print(
             Panel(
                 f"  Address: [bold]{address}[/bold]\n"
+                f"  Network: {network_label}\n"
                 f"  Seed saved to: {wallet_file}\n\n"
                 f"  [dim]Use it: sov anchor --signer-file {wallet_file}[/dim]\n"
                 f"  [dim]Or set: export XRPL_SEED=<your-seed>[/dim]",
-                title="Testnet Wallet",
+                title=f"{network_label} Wallet",
             )
         )
+    except MainnetFaucetError:
+        # Defensive — _resolve_network already gates this, but the bridge
+        # surface owns the canonical raise so we mirror its envelope here.
+        _fail(mainnet_faucet_rejected_error())
     except RuntimeError as e:
         _fail(wallet_error(str(e)))
     except Exception as e:
@@ -1408,7 +1757,9 @@ def postcard(
             anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
             tx = anchors.get(str(latest["round"]))
             if tx:
-                url = f"https://testnet.xrpl.org/transactions/{tx}"
+                from sov_transport.xrpl import XRPLTransport
+
+                url = XRPLTransport(network=_resolve_network(None)).explorer_tx_url(tx)
                 anchor_line = f"\n  Anchored: [dim]{url}[/dim]"
 
     # Build highlights filtered by style
@@ -2019,15 +2370,17 @@ def game_end(
     console.print(f"\n  Final proof: [dim]{h}[/dim]")
     console.print(f"  Saved to: [dim]{proof_path}[/dim]")
 
+    # Queue the FINAL hash for the next anchor batch (v2.1).
+    add_pending_anchor(active_id, "FINAL", proof["envelope_hash"])
+
     _save_state(state)
 
-    # Optional anchor
+    # Optional anchor — flush all pending entries (per-round + FINAL) as one
+    # multi-memo Payment. v2.1 audit-ergonomics path replaces the v2.0.x
+    # single-memo FINAL anchor.
     if do_anchor:
-        import os
-
         seed_val = state.config.seed
         game_id = proof.get("game_id", f"s{seed_val}")
-        memo = f"SOV|{state.config.ruleset}|{game_id}|FINAL|sha256:{proof['envelope_hash']}"
 
         wallet_file = SAVE_DIR / "wallet_seed.txt"
         wallet_seed: str | None = None
@@ -2046,30 +2399,77 @@ def game_end(
                 "\n  [dim]The final proof is already saved locally — anchoring is optional.[/dim]"
             )
         else:
-            console.print("\n  Anchoring FINAL proof...")
-            console.print(f"  [dim]{memo}[/dim]")
-            try:
-                from sov_transport.xrpl_testnet import XRPLTestnetTransport
+            pending = read_pending_anchors(active_id)
+            if not pending:
+                console.print("\n  [dim]No pending anchors to flush.[/dim]")
+            else:
+                resolved_network = _resolve_network(None)
 
-                transport = XRPLTestnetTransport()
-                txid = transport.anchor(proof["envelope_hash"], memo, wallet_seed)
-                _record_anchor("FINAL", txid, game_id)
-                logger.info("anchor.success round=FINAL txid=%s", txid)
-                explorer = f"https://testnet.xrpl.org/transactions/{txid}"
-                console.print(f"  [green]Anchored.[/green] TX: [dim]{txid}[/dim]")
-                console.print(f"  [dim]{explorer}[/dim]")
-            except Exception as e:
-                # Final-proof anchor failed; the proof file is still saved
-                # locally and the season was already recorded. Operator can
-                # retry with `sov anchor .sov/proofs/final.proof.json`.
-                logger.error(
-                    "anchor.failed round=FINAL exc=%s detail=%s "
-                    "(non-fatal: final proof saved locally; retry with "
-                    "`sov anchor .sov/proofs/final.proof.json`)",
-                    type(e).__name__,
-                    e,
-                )
-                _fail(anchor_error(str(e)))
+                def _sort_key(round_key: str) -> tuple[int, int]:
+                    if round_key == "FINAL":
+                        return (1, 0)
+                    try:
+                        return (0, int(round_key))
+                    except ValueError:
+                        return (2, 0)
+
+                sorted_keys = sorted(pending.keys(), key=_sort_key)
+
+                from sov_transport.base import BatchEntry
+
+                rounds: list[BatchEntry] = [
+                    BatchEntry(
+                        round_key=key,
+                        ruleset=state.config.ruleset,
+                        game_id=game_id,
+                        envelope_hash=pending[key]["envelope_hash"],
+                    )
+                    for key in sorted_keys
+                ]
+
+                n = len(rounds)
+                plural = "s" if n != 1 else ""
+                console.print(f"\n  Anchoring {n} pending round{plural} as one batched tx...")
+                try:
+                    from sov_transport.xrpl import XRPLTransport
+
+                    transport = XRPLTransport(network=resolved_network)
+                    txid = transport.anchor_batch(rounds, wallet_seed)
+
+                    for batch_entry in rounds:
+                        rk = batch_entry["round_key"]
+                        round_key_for_record: int | str
+                        if rk == "FINAL":
+                            round_key_for_record = "FINAL"
+                        else:
+                            try:
+                                round_key_for_record = int(rk)
+                            except ValueError:
+                                round_key_for_record = rk
+                        _record_anchor(round_key_for_record, txid, game_id)
+
+                    clear_pending_anchors(active_id, list(sorted_keys))
+                    logger.info(
+                        "anchor_batch.success rounds=%d txid=%s game_id=%s",
+                        n,
+                        txid,
+                        game_id,
+                    )
+                    explorer = transport.explorer_tx_url(txid)
+                    console.print(f"  [green]Anchored.[/green] TX: [dim]{txid}[/dim]")
+                    console.print(f"  [dim]{explorer}[/dim]")
+                except Exception as e:
+                    # Batch anchor failed; the proof files are still saved
+                    # locally and pending-anchors.json is intact. Operator
+                    # retries with `sov anchor` (idempotent on the same set).
+                    logger.error(
+                        "anchor_batch.failed rounds=%d exc=%s detail=%s "
+                        "(non-fatal: pending kept; retry with `sov anchor`)",
+                        len(rounds),
+                        type(e).__name__,
+                        e,
+                    )
+                    _fail(anchor_error(str(e)))
 
     console.print(
         Panel(
@@ -2661,6 +3061,101 @@ def _print_brief_status(state: GameState) -> None:
     console.print(f"[dim]R{state.current_round} | {' | '.join(parts)}[/dim]")
 
 
+def _status_json_payload(state: GameState) -> dict[str, Any]:
+    """Build the ``sov status --json`` payload.
+
+    v2.1 surfaces the 3-state anchor status per round (``anchored``,
+    ``pending``, ``missing``) by composing the local ``anchors.json`` history
+    with ``pending-anchors.json``. Pure-local (no chain hit) — the chain
+    lookup variant lives behind ``sov verify --tx``. Adding the
+    ``rounds`` and ``pending_count`` fields is additive over v2.0; the
+    top-level shape is unchanged so we don't bump ``schema_version``.
+    """
+    game_id = f"s{state.config.seed}"
+
+    pending = read_pending_anchors(game_id)
+
+    # Read anchors.json defensively — same recovery posture as `_record_anchor`.
+    anchored: dict[str, str] = {}
+    anchor_file = anchors_file(game_id)
+    if anchor_file.exists():
+        try:
+            raw = json.loads(anchor_file.read_text(encoding="utf-8"))
+            if isinstance(raw, dict):
+                anchored = {str(k): str(v) for k, v in raw.items()}
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning(
+                "status.anchors.read.failed path=%s exc=%s detail=%s (treating as empty)",
+                anchor_file,
+                type(exc).__name__,
+                exc,
+            )
+
+    rounds_payload: list[dict[str, Any]] = []
+    # Surface every round we have local evidence for — proof file present,
+    # anchor recorded, or pending entry queued. Union of the three sources
+    # so a round in any one of them shows up in the JSON.
+    pdir = proofs_dir(game_id)
+    seen: set[str] = set()
+    if pdir.exists():
+        for proof_path in sorted(pdir.glob("*.proof.json")):
+            try:
+                proof_data = json.loads(proof_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            rnd_value = proof_data.get("round")
+            if rnd_value is None:
+                continue
+            seen.add(str(rnd_value))
+    seen.update(anchored.keys())
+    seen.update(pending.keys())
+
+    def _sort_key(round_key: str) -> tuple[int, int]:
+        if round_key == "FINAL":
+            return (1, 0)
+        try:
+            return (0, int(round_key))
+        except ValueError:
+            return (2, 0)
+
+    for round_key in sorted(seen, key=_sort_key):
+        if round_key in anchored:
+            anchor_state = "anchored"
+        elif round_key in pending:
+            anchor_state = "pending"
+        else:
+            anchor_state = "missing"
+        entry: dict[str, Any] = {
+            "round": round_key,
+            "anchor_status": anchor_state,
+        }
+        if round_key in anchored:
+            entry["txid"] = anchored[round_key]
+        rounds_payload.append(entry)
+
+    return {
+        "timestamp": _json_status(),
+        "command": "status",
+        "status": _JSON_OUTPUT_OK,
+        "game_id": game_id,
+        "current_round": state.current_round,
+        "game_over": state.game_over,
+        "winner": state.winner,
+        "players": [
+            {
+                "name": p.name,
+                "coins": p.coins,
+                "reputation": p.reputation,
+                "upgrades": p.upgrades,
+                "is_current": i == state.current_player_index,
+            }
+            for i, p in enumerate(state.players)
+        ],
+        "rounds": rounds_payload,
+        "pending_count": len(pending),
+    }
+
+
 # ---------------------------------------------------------------------------
 # Scenario metadata (pure content — no engine logic)
 # ---------------------------------------------------------------------------
@@ -3230,7 +3725,9 @@ def feedback() -> None:
             anchors = json.loads(anchor_file.read_text(encoding="utf-8"))
             tx = anchors.get(str(latest["round"]))
             if tx:
-                url = f"https://testnet.xrpl.org/transactions/{tx}"
+                from sov_transport.xrpl import XRPLTransport
+
+                url = XRPLTransport(network=_resolve_network(None)).explorer_tx_url(tx)
                 anchor_line = f" | [XRPL TX]({url})"
 
     # Build markdown output (plain text, no Rich)
