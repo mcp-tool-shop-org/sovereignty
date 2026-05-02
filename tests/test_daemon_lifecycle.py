@@ -331,3 +331,74 @@ def test_daemon_sigterm_removes_daemon_json_on_clean_exit(
     while _pid_alive(pid) and time.monotonic() < deadline:
         time.sleep(0.1)
     assert not _pid_alive(pid)
+
+
+# Wave 10 CLI-D-bis-002: ``sov daemon status`` CLI command surface
+# regression. Pre-fix the command read ``.state`` off the
+# ``DaemonStatus`` StrEnum (which doesn't have such an attribute), so it
+# always reported "none" even when the daemon was alive. Now reads the
+# enum's ``.value`` for state and pulls port/pid/network from
+# ``daemon_info()``.
+
+
+def test_cli_daemon_status_reports_running_when_daemon_alive(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``sov daemon status`` (text mode) prints state, port, pid when alive."""
+    from typer.testing import CliRunner
+
+    from sov_cli.main import app
+    from sov_daemon.lifecycle import start_daemon, stop_daemon
+    from sov_transport.xrpl_internals import XRPLNetwork
+
+    monkeypatch.chdir(tmp_path)
+    runner = CliRunner()
+    start_daemon(network=XRPLNetwork.TESTNET, readonly=True)
+    try:
+        result = runner.invoke(app, ["daemon", "status"])
+        assert result.exit_code == 0, f"exit={result.exit_code} output={result.output!r}"
+        # State must surface as "running" (not "none"). Port/pid/network must
+        # appear from daemon_info() rather than being defaulted to "?".
+        assert "running" in result.output.lower(), (
+            f"sov daemon status text output must contain 'running'; got: {result.output!r}"
+        )
+        assert "none" not in result.output.lower(), (
+            f"sov daemon status text output must NOT report 'none' when daemon is alive; "
+            f"got: {result.output!r}"
+        )
+    finally:
+        stop_daemon()
+
+
+def test_cli_daemon_status_json_reports_running_with_fields(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """``sov daemon status --json`` envelope carries state + port/pid/network."""
+    import json as json_mod
+
+    from typer.testing import CliRunner
+
+    from sov_cli.main import app
+    from sov_daemon.lifecycle import start_daemon, stop_daemon
+    from sov_transport.xrpl_internals import XRPLNetwork
+
+    monkeypatch.chdir(tmp_path)
+    runner = CliRunner()
+    start_daemon(network=XRPLNetwork.TESTNET, readonly=True)
+    try:
+        result = runner.invoke(app, ["daemon", "status", "--json"])
+        assert result.exit_code == 0, f"exit={result.exit_code} output={result.output!r}"
+        payload = json_mod.loads(result.output)
+        assert payload["status"] == "ok"
+        fields = {f["name"]: f for f in payload["fields"]}
+        # State field present + value is "running".
+        assert fields["state"]["value"] == "running", (
+            f"state field value must be 'running'; got: {fields.get('state')!r}"
+        )
+        # Port + pid + network surface from daemon_info() now.
+        assert "port" in fields, f"port field missing from --json envelope: {payload!r}"
+        assert "pid" in fields, f"pid field missing from --json envelope: {payload!r}"
+        assert "network" in fields, f"network field missing from --json envelope: {payload!r}"
+        assert fields["network"]["value"] == "testnet"
+    finally:
+        stop_daemon()

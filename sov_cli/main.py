@@ -4841,8 +4841,17 @@ def daemon_status_cmd(
 ) -> None:
     """Report whether a daemon is running, stale, or absent."""
     daemon_mod = _import_daemon_api()
+    # Wave 10 CLI-D-bis-002: ``daemon_status()`` returns a ``DaemonStatus``
+    # StrEnum (the lifecycle state); ``daemon_info()`` returns the parsed
+    # ``.sov/daemon.json`` handshake dict (port/pid/network/readonly/
+    # started_iso/token). The two are companion APIs. The previous code
+    # tried to read port/pid/etc. off the StrEnum and consistently fell
+    # through to defaults — the CLI surface reported "daemon: none" even
+    # when the daemon was alive. Read state from the enum's ``.value``;
+    # read the rest of the fields from ``daemon_info()``.
     status = daemon_mod.daemon_status()
-    state_val = _daemon_field(status, "state", default="none")
+    info = daemon_mod.daemon_info() or {}
+    state_val = status.value if hasattr(status, "value") else str(status)
 
     if json_out:
         # Mirror the `sov doctor --json` envelope shape from
@@ -4871,7 +4880,7 @@ def daemon_status_cmd(
             },
         ]
         for attr in ("port", "pid", "network", "readonly", "started_iso"):
-            val = _daemon_field(status, attr, default=None)
+            val = _daemon_field(info, attr, default=None)
             if val is None:
                 continue
             fields.append(
@@ -4891,11 +4900,11 @@ def daemon_status_cmd(
         return
 
     if state_val == "running":
-        port = _daemon_field(status, "port", default="?")
-        pid = _daemon_field(status, "pid", default="?")
-        network = _daemon_field(status, "network", default="?")
-        readonly = _daemon_field(status, "readonly", default=False)
-        started = _daemon_field(status, "started_iso", default="?")
+        port = _daemon_field(info, "port", default="?")
+        pid = _daemon_field(info, "pid", default="?")
+        network = _daemon_field(info, "network", default="?")
+        readonly = _daemon_field(info, "readonly", default=False)
+        started = _daemon_field(info, "started_iso", default="?")
         rows = [
             ("state", "running"),
             ("port", str(port)),
@@ -4911,7 +4920,7 @@ def daemon_status_cmd(
             table.add_row(k, v)
         console.print(table)
     elif state_val == "stale":
-        pid = _daemon_field(status, "pid", default="?")
+        pid = _daemon_field(info, "pid", default="?")
         console.print(
             f"  [yellow]daemon: stale[/yellow] (last pid {pid} — recorded process is dead)"
         )
