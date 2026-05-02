@@ -4,7 +4,42 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
+from enum import StrEnum
 from typing import TypedDict
+
+
+class ChainLookupResult(StrEnum):
+    """3-state result from ``is_anchored_on_chain`` (BRIDGE-004).
+
+    Lives on the abstract base so every concrete transport (XRPL sync,
+    XRPL async, NullTransport, future EVM/Solana) returns the same shape.
+    Re-exported by ``sov_transport.xrpl_internals`` and the package root
+    (``sov_transport.ChainLookupResult``) for ergonomic call sites.
+
+    ``FOUND`` — the lookup succeeded AND a memo carrying
+        ``sha256:<expected>`` was present on the transaction. Engine maps
+        this to ``AnchorStatus.ANCHORED``.
+
+    ``NOT_FOUND`` — the lookup succeeded AND no matching memo was present.
+        Includes "tx exists but encodes a different envelope_hash" (chain
+        drift) and "tx does not exist on chain" (txnNotFound). Engine
+        maps this to ``AnchorStatus.MISSING`` — a definitive verdict.
+
+    ``LOOKUP_FAILED`` — the lookup itself failed (RPC unreachable, 5xx,
+        malformed response). The chain has not given a verdict on whether
+        the proof is anchored. Engine maps this to ``AnchorStatus.MISSING``
+        with a different reason ("could not reach chain") so callers can
+        choose to retry instead of caching the result.
+
+    ``StrEnum`` so values round-trip through JSON / SSE events without
+    bespoke (de)serialization. Stable string values (``"found"`` /
+    ``"not_found"`` / ``"lookup_failed"``) are part of the audit surface
+    — operators may grep for them in logs and dashboards.
+    """
+
+    FOUND = "found"
+    NOT_FOUND = "not_found"
+    LOOKUP_FAILED = "lookup_failed"
 
 
 class BatchEntry(TypedDict):
@@ -34,16 +69,19 @@ class LedgerTransport(ABC):
       form; new callers should prefer ``anchor_batch``.
     * ``anchor_batch`` — submit N rounds in one tx (multi-memo on XRPL).
       One verifiable chain pointer per game, not a scattered N-tx trail.
-    * ``is_anchored_on_chain`` — pure on-chain lookup. Returns ``bool``; the
-      3-state ``AnchorStatus`` composition lives in the engine layer
-      (``sov_engine.proof.proof_anchor_status``) so the transport does not
-      couple to local pending-state.
+    * ``is_anchored_on_chain`` — pure on-chain lookup. Returns a
+      ``ChainLookupResult`` (FOUND / NOT_FOUND / LOOKUP_FAILED) so the
+      engine layer can distinguish "definitively not on chain" from
+      "could not reach the chain to ask" when composing the 3-state
+      ``AnchorStatus`` (``sov_engine.proof.proof_anchor_status``).
     * ``explorer_tx_url`` — explorer URL for the configured network. Lets
       CLI surfaces stop hardcoding network-specific URLs.
     * ``get_memo_text`` — retrieve the first decodable memo on a tx.
 
     ``verify`` is kept as a deprecated alias for ``is_anchored_on_chain``
-    until v2.2; it emits ``DeprecationWarning`` on call.
+    until v2.2; it emits ``DeprecationWarning`` on call and converts the
+    ``ChainLookupResult`` back to a plain ``bool`` (FOUND → True, all
+    other states → False) for ABI parity with v2.0.x callers.
 
     Txid prefix reservation: the ``offline:`` txid prefix is RESERVED for
     NullTransport. Real ledger transports MUST return their own native txid
@@ -72,13 +110,24 @@ class LedgerTransport(ABC):
         ...
 
     @abstractmethod
-    def is_anchored_on_chain(self, txid: str, expected_hash: str) -> bool:
-        """Pure on-chain lookup: does ``txid`` carry ``expected_hash``?
+    def is_anchored_on_chain(self, txid: str, expected_hash: str) -> ChainLookupResult:
+        """Pure on-chain lookup with 3-state result.
 
-        Returns ``True`` if any memo on the transaction encodes the expected
-        hash via the SOV grammar; ``False`` otherwise. The 3-state
-        ``AnchorStatus`` composition is the engine's responsibility — this
-        method intentionally returns a plain ``bool``.
+        Returns:
+            ``ChainLookupResult.FOUND`` — lookup succeeded AND a memo on
+                ``txid`` encodes ``sha256:<expected_hash>``.
+            ``ChainLookupResult.NOT_FOUND`` — lookup succeeded AND no
+                matching memo was present (tx absent, or tx present but
+                encodes a different envelope_hash).
+            ``ChainLookupResult.LOOKUP_FAILED`` — the lookup itself failed
+                (RPC unreachable, 5xx, malformed response). The chain has
+                not given a verdict; callers should retry rather than
+                cache the result as a definitive answer.
+
+        The 3-state ``AnchorStatus`` composition is the engine's
+        responsibility (``sov_engine.proof.proof_anchor_status``) — this
+        method's contract is the chain-pure 3-state lookup, not the
+        engine's pending-vs-anchored composition.
         """
         ...
 
@@ -96,13 +145,21 @@ class LedgerTransport(ABC):
 
         Removed in v2.2. New callers should use ``is_anchored_on_chain``
         directly; the engine's ``proof_anchor_status`` already does.
+
+        Returns ``True`` only when the chain lookup confirms a matching
+        memo (``ChainLookupResult.FOUND``). Both ``NOT_FOUND`` and
+        ``LOOKUP_FAILED`` collapse to ``False`` for ABI parity with the
+        v2.0.x ``bool``-returning surface; new callers wanting to
+        distinguish "definitively not anchored" from "could not reach
+        chain" should call ``is_anchored_on_chain`` directly.
         """
         warnings.warn(
-            "LedgerTransport.verify() is deprecated; use is_anchored_on_chain()",
+            "LedgerTransport.verify() is deprecated; use is_anchored_on_chain(). "
+            "This method will be removed in v2.2.",
             DeprecationWarning,
             stacklevel=2,
         )
-        return self.is_anchored_on_chain(txid, expected_hash)
+        return self.is_anchored_on_chain(txid, expected_hash) is ChainLookupResult.FOUND
 
     def get_memo_text(self, txid: str) -> str | None:
         """Retrieve the first decodable memo text from a transaction.

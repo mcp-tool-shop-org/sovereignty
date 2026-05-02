@@ -138,7 +138,16 @@ pub fn parse_status_output(output: &Output) -> Result<DaemonStatus, ShellError> 
         _ => extract_config(&value).ok(),
     };
 
-    Ok(DaemonStatus { state, config })
+    // `started_by_shell` is not derivable from subprocess output (the daemon
+    // CLI has no view into THIS shell's in-memory flag). The wrapping
+    // `daemon_status` command overlays the live value from `ShellState` after
+    // this function returns; default to `false` here so any caller that
+    // bypasses the command surface still gets a defined boolean.
+    Ok(DaemonStatus {
+        state,
+        config,
+        started_by_shell: false,
+    })
 }
 
 fn extract_state(value: &serde_json::Value) -> Result<DaemonState, ShellError> {

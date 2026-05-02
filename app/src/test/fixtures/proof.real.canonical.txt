@@ -1,0 +1,58 @@
+{
+  "game_id": "s42",
+  "players": [
+    "Alice",
+    "Bob",
+    "Carol"
+  ],
+  "proof_version": 2,
+  "rng_seed": 42,
+  "round": 3,
+  "ruleset": "campfire_v1",
+  "state": {
+    "config": {
+      "board_size": 16,
+      "max_players": 4,
+      "max_rounds": 15,
+      "ruleset": "campfire_v1",
+      "seed": 42
+    },
+    "current_player_index": 0,
+    "current_round": 3,
+    "game_over": false,
+    "log": [
+      "round 1: Alice helped Bob",
+      "round 2: Bob promised Carol — éclat"
+    ],
+    "market": {
+      "food": 1,
+      "tools": 3,
+      "wood": 2
+    },
+    "next_deal_id": 1,
+    "next_voucher_id": 1,
+    "players": [
+      {
+        "active_deals": [],
+        "active_treaties": [],
+        "apology_used": false,
+        "coins": 4,
+        "helped_last_round": true,
+        "name": "Alice",
+        "position": 6,
+        "promises": [],
+        "reputation": 3,
+        "skip_next_move": false,
+        "toasted": false,
+        "upgrades": 0,
+        "vouchers_held": [],
+        "vouchers_issued": [],
+        "win_condition": "prosperity"
+      }
+    ],
+    "schema_version": 1,
+    "turn_in_round": 0,
+    "winner": null
+  },
+  "timestamp_utc": "2026-05-02T12:00:00Z"
+}

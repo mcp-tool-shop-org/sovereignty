@@ -92,8 +92,13 @@ def test_proof_anchor_status_anchored_when_chain_confirms(
     proof_path = _write_proof_file("s42", 1, _HASH_A)
     _write_anchors_json("s42", {"1": "TX-RECORDED"})
 
+    from sov_transport.xrpl_internals import ChainLookupResult
+
     transport = MagicMock()
-    transport.is_anchored_on_chain.return_value = True
+    # Wave 6 BRIDGE-004: is_anchored_on_chain returns ChainLookupResult enum,
+    # not bool. Mock with the FOUND variant so engine's strict-identity check
+    # against ChainLookupResult.FOUND succeeds.
+    transport.is_anchored_on_chain.return_value = ChainLookupResult.FOUND
 
     from sov_engine.proof import AnchorStatus, proof_anchor_status
 
@@ -186,8 +191,13 @@ def test_proof_anchor_status_missing_on_chain_mismatch(
     proof_path = _write_proof_file("s42", 1, _HASH_A)
     _write_anchors_json("s42", {"1": "TX-DRIFTED"})
 
+    from sov_transport.xrpl_internals import ChainLookupResult
+
     transport = MagicMock()
-    transport.is_anchored_on_chain.return_value = False
+    # NOT_FOUND specifically — the recorded txid exists but doesn't carry
+    # the expected hash. LOOKUP_FAILED would model a transient network
+    # error, which a separate test should pin if needed.
+    transport.is_anchored_on_chain.return_value = ChainLookupResult.NOT_FOUND
 
     from sov_engine.proof import AnchorStatus, proof_anchor_status
 

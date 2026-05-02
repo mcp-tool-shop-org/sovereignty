@@ -74,9 +74,14 @@ async def test_async_anchor_batch_three_rounds_returns_single_txid() -> None:
     txid = await transport.anchor_batch(rounds, seed)
     assert isinstance(txid, str) and len(txid) > 0
 
-    # Verify each round's hash resolves on-chain via the same async transport.
+    # Verify each round's hash resolves on-chain via the same async
+    # transport. Post-BRIDGE-004 the return is ``ChainLookupResult.FOUND``.
+    from sov_transport import ChainLookupResult
+
     for entry in rounds:
-        assert (await transport.is_anchored_on_chain(txid, entry["envelope_hash"])) is True
+        assert (
+            await transport.is_anchored_on_chain(txid, entry["envelope_hash"])
+        ) is ChainLookupResult.FOUND
 
 
 @pytest.mark.skipif(

@@ -20,6 +20,7 @@ from __future__ import annotations
 import contextlib
 import json
 import logging
+import re
 import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
@@ -45,6 +46,15 @@ from sov_engine.io_utils import (
     read_pending_anchors,
     state_file,
 )
+
+# DAEMON-001: path-traversal allowlist at the HTTP boundary. Bearer token is
+# the daemon's auth gate, but URL params arriving past auth are still untrusted
+# input — every endpoint that accepts ``{game_id}`` or ``{round}`` must
+# validate the value against these regexes before using it to construct a
+# filesystem path. TODO: switch to ``sov_engine.io_utils._validate_game_id``
+# once the backend agent's BACKEND-001 fix lands the shared helper.
+_GAME_ID_PATTERN = re.compile(r"^s\d{1,19}$")
+_ROUND_PATTERN = re.compile(r"^([1-9]|1[0-5]|FINAL)$")
 
 # IPC version — the daemon's wire-level contract version. Bumped only
 # when the on-the-wire shape of any endpoint or SSE event changes in a
@@ -107,6 +117,43 @@ def _readonly_response() -> JSONResponse:
         code="DAEMON_READONLY",
         message="daemon started with --readonly; anchor endpoints disabled",
         hint="restart without --readonly to enable anchoring",
+    )
+
+
+def _validate_game_id(game_id: str) -> JSONResponse | None:
+    """Reject malformed ``game_id`` values at the HTTP boundary.
+
+    Returns a 400 ``INVALID_GAME_ID`` response when the value doesn't match
+    the ``s<digits>`` allowlist; returns ``None`` (and lets the caller
+    proceed) on success. The pattern bound matches the engine's persistence
+    convention — game IDs are derived from the seed at creation time and
+    a daemon URL that escapes that shape (``..``, ``/etc/passwd``, NUL bytes,
+    URL-encoded traversal sequences) cannot reach a real save.
+    """
+    if _GAME_ID_PATTERN.match(game_id):
+        return None
+    return _error_response(
+        status_code=400,
+        code="INVALID_GAME_ID",
+        message=f"game_id {game_id!r} does not match the allowed format",
+        hint="game_id must match s<digits> (e.g. s42). GET /games to list valid ids.",
+    )
+
+
+def _validate_round_key(round_key: str) -> JSONResponse | None:
+    """Reject malformed round keys after ``_resolve_round_key`` normalizes case.
+
+    Accepts ``"1"``..``"15"`` and the literal ``"FINAL"``. Anything else
+    (raw paths, glob fragments, integer overflow attempts) is rejected
+    before flowing into ``_proof_path_for_round``.
+    """
+    if _ROUND_PATTERN.match(round_key):
+        return None
+    return _error_response(
+        status_code=400,
+        code="INVALID_ROUND",
+        message=f"round {round_key!r} is not a valid round identifier",
+        hint="rounds are integers 1..15 or the literal FINAL.",
     )
 
 
@@ -339,6 +386,9 @@ async def game_detail_handler(request: Request) -> JSONResponse:
     consumers can detect format drift.
     """
     game_id = request.path_params["game_id"]
+    err = _validate_game_id(game_id)
+    if err is not None:
+        return err
     data = _read_state(game_id)
     if data is None:
         return _error_response(
@@ -363,6 +413,9 @@ async def proofs_list_handler(request: Request) -> JSONResponse:
     ``round-N.json`` / ``FINAL.json`` form surface as well.
     """
     game_id = request.path_params["game_id"]
+    err = _validate_game_id(game_id)
+    if err is not None:
+        return err
     pdir = proofs_dir(game_id)
     if not pdir.exists():
         # Distinguish "no game" from "game with no proofs yet".
@@ -403,7 +456,13 @@ async def proof_detail_handler(request: Request) -> JSONResponse:
     on disk yet.
     """
     game_id = request.path_params["game_id"]
+    err = _validate_game_id(game_id)
+    if err is not None:
+        return err
     round_key = _resolve_round_key(request.path_params["round"])
+    err = _validate_round_key(round_key)
+    if err is not None:
+        return err
     path = _proof_path_for_round(game_id, round_key)
     if path is None:
         return _error_response(
@@ -435,7 +494,13 @@ async def anchor_status_handler(request: Request) -> JSONResponse:
     should call ``sov verify --tx`` or hit the chain explorer directly.
     """
     game_id = request.path_params["game_id"]
+    err = _validate_game_id(game_id)
+    if err is not None:
+        return err
     round_key = _resolve_round_key(request.path_params["round"])
+    err = _validate_round_key(round_key)
+    if err is not None:
+        return err
 
     proof_path = _proof_path_for_round(game_id, round_key)
     if proof_path is None:
@@ -489,6 +554,9 @@ async def pending_anchors_handler(request: Request) -> JSONResponse:
     on the wrapper.
     """
     game_id = request.path_params["game_id"]
+    err = _validate_game_id(game_id)
+    if err is not None:
+        return err
     if not game_dir(game_id).exists():
         return _error_response(
             status_code=404,
@@ -527,6 +595,9 @@ async def anchor_handler(request: Request) -> JSONResponse:
         return _readonly_response()
 
     game_id = request.path_params["game_id"]
+    err = _validate_game_id(game_id)
+    if err is not None:
+        return err
     return await _do_anchor(request, game_id, checkpoint=False)
 
 
@@ -543,6 +614,9 @@ async def anchor_checkpoint_handler(request: Request) -> JSONResponse:
         return _readonly_response()
 
     game_id = request.path_params["game_id"]
+    err = _validate_game_id(game_id)
+    if err is not None:
+        return err
     return await _do_anchor(request, game_id, checkpoint=True)
 
 
@@ -595,6 +669,22 @@ async def flush_pending_anchors(
         round_keys.append(round_key)
 
     transport = AsyncXRPLTransport(network=network_enum)
+
+    # DAEMON-005: defensive mainnet balance preflight. Operator-actionable
+    # ``MAINNET_UNDERFUNDED`` instead of a generic ``ANCHOR_FAILED`` after a
+    # failed submit. Testnet/devnet skip — faucets keep them topped, and a
+    # zero-balance failure there is a recoverable test path.
+    if network_enum is XRPLNetwork.MAINNET and seed:
+        # Reserve floor: base reserve (10 XRP = 10_000_000 drops) is the
+        # XRPL minimum; per-tx fee is 12 drops × number of memos. Match
+        # this against ``mainnet_underfunded_error``'s reporting shape.
+        required_drops = 10_000_000 + 12 * max(1, len(rounds))
+        await _check_wallet_balance_or_raise(
+            transport,
+            seed=seed,
+            required_drops=required_drops,
+        )
+
     txid = await transport.anchor_batch(rounds, seed)
     _record_anchors(game_id, round_keys, txid)
     clear_pending_anchors(game_id, round_keys)
@@ -604,6 +694,70 @@ async def flush_pending_anchors(
         "rounds": round_keys,
         "explorer_url": explorer_url,
     }
+
+
+async def _check_wallet_balance_or_raise(
+    transport: Any,
+    *,
+    seed: str,
+    required_drops: int,
+) -> None:
+    """DAEMON-005: refuse mainnet anchor when wallet balance is below reserve+fee.
+
+    Queries the wallet's ``account_info`` via xrpl-py and compares the
+    available drops (balance minus the base reserve) against ``required_drops``.
+    Raises ``MainnetUnderfundedError`` carrying the structured-error code
+    ``MAINNET_UNDERFUNDED`` so ``_do_anchor`` can translate it to the
+    ``sov_cli.errors.mainnet_underfunded_error`` factory shape on the wire.
+
+    Network errors (xrpl-py timeouts, account-not-found for an unfunded
+    new wallet) propagate as ``MainnetUnderfundedError`` with a balance of
+    zero — operator's next step is the same in both cases (top up the
+    wallet or switch to testnet).
+    """
+    from xrpl.asyncio.account import get_balance
+    from xrpl.wallet import Wallet
+
+    try:
+        wallet = Wallet.from_seed(seed)
+        client = transport._client() if hasattr(transport, "_client") else None
+        if client is None:
+            from xrpl.asyncio.clients import AsyncJsonRpcClient
+
+            client = AsyncJsonRpcClient(transport.json_rpc_url)
+        balance_drops = int(await get_balance(wallet.address, client))
+    except Exception as exc:  # noqa: BLE001
+        # Account-not-found / unfunded / network blip: treat as zero
+        # balance and surface the underfunded error so the operator gets
+        # an actionable message.
+        logger.warning(
+            "anchor.balance_preflight.failed exc=%s detail=%s (treating as zero balance)",
+            type(exc).__name__,
+            exc,
+        )
+        balance_drops = 0
+
+    if balance_drops < required_drops:
+        raise MainnetUnderfundedError(
+            balance_drops=balance_drops,
+            required_drops=required_drops,
+        )
+
+
+class MainnetUnderfundedError(Exception):
+    """Mainnet wallet balance is below reserve+fee for the pending batch.
+
+    Carries the operator-actionable drop counts so ``_do_anchor`` can
+    surface the ``MAINNET_UNDERFUNDED`` structured error per
+    ``sov_cli.errors.mainnet_underfunded_error``.
+    """
+
+    def __init__(self, *, balance_drops: int, required_drops: int) -> None:
+        self.balance_drops = balance_drops
+        self.required_drops = required_drops
+        super().__init__(
+            f"mainnet wallet underfunded: have {balance_drops} drops, need {required_drops} drops"
+        )
 
 
 async def _do_anchor(
@@ -641,6 +795,19 @@ async def _do_anchor(
             network=state.network,
             seed=seed,
             ruleset=ruleset,
+        )
+    except MainnetUnderfundedError as exc:
+        # DAEMON-005: surface as MAINNET_UNDERFUNDED so the CLI / Tauri
+        # shell can render the same operator-actionable hint that
+        # ``sov_cli.errors.mainnet_underfunded_error`` builds for the CLI.
+        from sov_cli.errors import mainnet_underfunded_error
+
+        sov_err = mainnet_underfunded_error(exc.balance_drops, exc.required_drops)
+        return _error_response(
+            status_code=402,
+            code=sov_err.code,
+            message=sov_err.message,
+            hint=sov_err.hint,
         )
     except ValueError as exc:
         return _error_response(

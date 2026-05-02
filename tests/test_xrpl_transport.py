@@ -18,8 +18,12 @@ Pinned behaviors:
 * ``anchor`` (legacy single-round) — secret scrub on exception, oversized memo
   ValueError, happy-path returns submit_and_wait response hash.
 * ``is_anchored_on_chain`` (replaces the v2.0 substring-match ``verify``):
-  structured SOV grammar parse, empty expected_hash rejected, malformed memos
-  do not DoS, response-shape fallback (top-level vs ``result['tx']``).
+  3-state ``ChainLookupResult`` (FOUND / NOT_FOUND / LOOKUP_FAILED) per
+  BRIDGE-004, structured SOV grammar parse, empty expected_hash and txid
+  rejected, malformed memos do not DoS, response-shape fallback (top-level
+  vs ``result['tx']``).
+* ``anchor_batch`` — empty rounds rejected, per-memo cap enforced, total
+  batch size capped (BRIDGE-002), caller-frame seed scrub (BRIDGE-001).
 * Hex helpers ``_to_hex`` / ``_from_hex`` are crash-free on adversarial input.
 """
 
@@ -289,12 +293,13 @@ def test_is_anchored_on_chain_true_when_memo_matches(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
     """``is_anchored_on_chain`` decodes MemoData from hex and confirms hash."""
-    from sov_transport.xrpl import XRPLTransport, _to_hex
+    from sov_transport.xrpl import ChainLookupResult, XRPLTransport, _to_hex
 
     expected_hash = "abc123"
     memo_text = f"SOV|campfire_v1|s42|r1|sha256:{expected_hash}"
 
     fake_response = MagicMock()
+    fake_response.is_successful.return_value = True
     fake_response.result = {
         "Memos": [{"Memo": {"MemoData": _to_hex(memo_text)}}],
     }
@@ -304,18 +309,19 @@ def test_is_anchored_on_chain_true_when_memo_matches(
     clients_mod.JsonRpcClient.return_value = fake_client
 
     t = XRPLTransport()
-    assert t.is_anchored_on_chain("TXID", expected_hash) is True
+    assert t.is_anchored_on_chain("TXID", expected_hash) is ChainLookupResult.FOUND
 
 
 def test_is_anchored_on_chain_false_when_memo_missing(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
-    """Returns False when no memo encodes the expected hash."""
-    from sov_transport.xrpl import XRPLTransport, _to_hex
+    """Returns NOT_FOUND when no memo encodes the expected hash."""
+    from sov_transport.xrpl import ChainLookupResult, XRPLTransport, _to_hex
 
     memo_text = "SOV|campfire_v1|s42|r1|sha256:differenthash"
 
     fake_response = MagicMock()
+    fake_response.is_successful.return_value = True
     fake_response.result = {
         "Memos": [{"Memo": {"MemoData": _to_hex(memo_text)}}],
     }
@@ -325,19 +331,20 @@ def test_is_anchored_on_chain_false_when_memo_missing(
     clients_mod.JsonRpcClient.return_value = fake_client
 
     t = XRPLTransport()
-    assert t.is_anchored_on_chain("TXID", "abc123") is False
+    assert t.is_anchored_on_chain("TXID", "abc123") is ChainLookupResult.NOT_FOUND
 
 
 def test_is_anchored_on_chain_does_not_crash_on_malformed_hex_memo(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
     """Regression for transport F-002: malformed memos must not propagate."""
-    from sov_transport.xrpl import XRPLTransport, _to_hex
+    from sov_transport.xrpl import ChainLookupResult, XRPLTransport, _to_hex
 
     expected_hash = "abc123"
     good_memo = f"SOV|campfire_v1|s42|r1|sha256:{expected_hash}"
 
     fake_response = MagicMock()
+    fake_response.is_successful.return_value = True
     fake_response.result = {
         "Memos": [
             {"Memo": {"MemoData": "abc"}},  # odd-length hex
@@ -351,7 +358,7 @@ def test_is_anchored_on_chain_does_not_crash_on_malformed_hex_memo(
     clients_mod.JsonRpcClient.return_value = fake_client
 
     t = XRPLTransport()
-    assert t.is_anchored_on_chain("TXID", expected_hash) is True
+    assert t.is_anchored_on_chain("TXID", expected_hash) is ChainLookupResult.FOUND
 
 
 def test_is_anchored_on_chain_rejects_empty_expected_hash(
@@ -363,6 +370,17 @@ def test_is_anchored_on_chain_rejects_empty_expected_hash(
     t = XRPLTransport()
     with pytest.raises(ValueError):
         t.is_anchored_on_chain("TXID", "")
+
+
+def test_is_anchored_on_chain_rejects_empty_txid(
+    fake_xrpl: dict[str, types.ModuleType],
+) -> None:
+    """BRIDGE-004: empty txid is operator-actionable error before any I/O."""
+    from sov_transport.xrpl import XRPLTransport
+
+    t = XRPLTransport()
+    with pytest.raises(ValueError, match="txid"):
+        t.is_anchored_on_chain("", "abc123")
 
 
 def test_anchor_rejects_oversized_memo(
@@ -453,12 +471,13 @@ def test_extract_memos_falls_back_to_nested_tx_memos_path(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
     """``is_anchored_on_chain`` succeeds when memos live under ``result['tx']``."""
-    from sov_transport.xrpl import XRPLTransport, _to_hex
+    from sov_transport.xrpl import ChainLookupResult, XRPLTransport, _to_hex
 
     expected_hash = "abc123"
     memo_text = f"SOV|campfire_v1|s42|r1|sha256:{expected_hash}"
 
     fake_response = MagicMock()
+    fake_response.is_successful.return_value = True
     fake_response.result = {
         "tx": {"Memos": [{"Memo": {"MemoData": _to_hex(memo_text)}}]},
     }
@@ -468,16 +487,17 @@ def test_extract_memos_falls_back_to_nested_tx_memos_path(
     clients_mod.JsonRpcClient.return_value = fake_client
 
     t = XRPLTransport()
-    assert t.is_anchored_on_chain("TXID", expected_hash) is True
+    assert t.is_anchored_on_chain("TXID", expected_hash) is ChainLookupResult.FOUND
 
 
 def test_extract_memos_returns_false_on_unexpected_shape(
     fake_xrpl: dict[str, types.ModuleType],
 ) -> None:
-    """Unexpected response shape degrades to False, not a crash."""
-    from sov_transport.xrpl import XRPLTransport
+    """Unexpected response shape degrades to NOT_FOUND, not a crash."""
+    from sov_transport.xrpl import ChainLookupResult, XRPLTransport
 
     fake_response = MagicMock()
+    fake_response.is_successful.return_value = True
     fake_response.result = {"tx": "not a dict"}
     fake_client = MagicMock()
     fake_client.request.return_value = fake_response
@@ -485,7 +505,7 @@ def test_extract_memos_returns_false_on_unexpected_shape(
     clients_mod.JsonRpcClient.return_value = fake_client
 
     t = XRPLTransport()
-    assert t.is_anchored_on_chain("TXID", "abc123") is False
+    assert t.is_anchored_on_chain("TXID", "abc123") is ChainLookupResult.NOT_FOUND
 
 
 # ---------------------------------------------------------------------------
@@ -500,7 +520,10 @@ def test_verify_alias_emits_deprecation_warning(
 
     Per spec §3, ``verify`` stays as a compat alias that emits
     ``DeprecationWarning`` and delegates to ``is_anchored_on_chain``. Removed
-    in v2.2 with the rest of the legacy single-round surface.
+    in v2.2 with the rest of the legacy single-round surface. Post-BRIDGE-004
+    the alias collapses the 3-state ``ChainLookupResult`` back to a plain
+    ``bool`` (FOUND → True, NOT_FOUND / LOOKUP_FAILED → False) for ABI
+    parity with v2.0.x.
     """
     from sov_transport.xrpl import XRPLTransport, _to_hex
 
@@ -508,6 +531,7 @@ def test_verify_alias_emits_deprecation_warning(
     memo_text = f"SOV|campfire_v1|s42|r1|sha256:{expected_hash}"
 
     fake_response = MagicMock()
+    fake_response.is_successful.return_value = True
     fake_response.result = {
         "Memos": [{"Memo": {"MemoData": _to_hex(memo_text)}}],
     }

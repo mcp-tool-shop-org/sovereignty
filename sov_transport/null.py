@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from sov_transport.base import BatchEntry, LedgerTransport
+from sov_transport.xrpl_internals import ChainLookupResult
 
 
 class NullTransport(LedgerTransport):
@@ -13,12 +14,13 @@ class NullTransport(LedgerTransport):
     ``offline:batch:<envelope_hash[:16]>`` keyed off the first entry's hash —
     distinct prefix so downstream code can recognize batched offline txids
     if the routing distinction ever matters. ``is_anchored_on_chain`` returns
-    True for any txid that begins with ``offline:`` — by design, since
-    offline-mode trust comes from local proof files, not on-ledger inspection.
+    ``ChainLookupResult.FOUND`` for any txid that begins with ``offline:`` —
+    by design, since offline-mode trust comes from local proof files, not
+    on-ledger inspection.
 
     Strict-verify mode: pass ``strict_verify=True`` to the constructor and
     ``is_anchored_on_chain`` will raise ``NotImplementedError`` instead of
-    returning True. Use this in test or audit contexts where a silent
+    returning ``FOUND``. Use this in test or audit contexts where a silent
     always-pass would mask a missing real transport — it forces the caller
     to wire up ``XRPLTransport`` (or another real ledger) for actual
     verification.
@@ -29,7 +31,7 @@ class NullTransport(LedgerTransport):
 
         Args:
             strict_verify: If True, ``is_anchored_on_chain`` raises
-                NotImplementedError instead of returning True for
+                NotImplementedError instead of returning ``FOUND`` for
                 ``offline:``-prefixed txids. Defaults to False to preserve
                 existing offline-mode behavior.
         """
@@ -50,17 +52,19 @@ class NullTransport(LedgerTransport):
             raise ValueError("anchor_batch requires at least one round entry")
         return f"offline:batch:{rounds[0]['envelope_hash'][:16]}"
 
-    def is_anchored_on_chain(self, txid: str, expected_hash: str) -> bool:
+    def is_anchored_on_chain(self, txid: str, expected_hash: str) -> ChainLookupResult:
         # In offline mode, verification is done via local proof files; this
-        # returns True for any offline:-prefixed txid as a passthrough.
+        # returns FOUND for any offline:-prefixed txid as a passthrough.
         if self.strict_verify:
             raise NotImplementedError(
                 "NullTransport.is_anchored_on_chain cannot validate "
                 "cryptographic anchors. Construct with strict_verify=False "
-                "to allow always-True passthrough, or use XRPLTransport for "
+                "to allow always-FOUND passthrough, or use XRPLTransport for "
                 "real verification."
             )
-        return txid.startswith("offline:")
+        if txid.startswith("offline:"):
+            return ChainLookupResult.FOUND
+        return ChainLookupResult.NOT_FOUND
 
     def explorer_tx_url(self, txid: str) -> str:
         """No real chain — return a synthetic offline:// URL placeholder."""

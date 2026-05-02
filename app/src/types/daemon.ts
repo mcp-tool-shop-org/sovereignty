@@ -23,10 +23,15 @@ export interface DaemonConfig {
   started_iso: string;
 }
 
-// Mirrors Rust shell's DaemonStatus.
+// Mirrors Rust shell's DaemonStatus. `started_by_shell` is reported by the
+// Tauri shell so Guardrail #1 (refuse network/mode switch when externally-
+// started) can fire. The Rust side serializes it from its AtomicBool tracker;
+// undefined here means an old shell binary, in which case the UI fails closed
+// (treats the daemon as externally-started).
 export interface DaemonStatus {
   state: DaemonState;
   config?: DaemonConfig;
+  started_by_shell: boolean;
 }
 
 // GET /health response — daemon liveness endpoint.

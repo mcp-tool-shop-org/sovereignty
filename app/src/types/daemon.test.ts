@@ -71,7 +71,12 @@ describe("daemon types — pinned literals", () => {
   });
 
   it("DaemonStatus 'none' state has no config", () => {
-    const s: DaemonStatus = { state: "none" };
+    const s: DaemonStatus = { state: "none", started_by_shell: false };
     expect(s.config).toBeUndefined();
+  });
+
+  it("DaemonStatus carries started_by_shell for Guardrail #1 (no `?? true` fallback)", () => {
+    const s: DaemonStatus = { state: "none", started_by_shell: false };
+    expect(typeof s.started_by_shell).toBe("boolean");
   });
 });

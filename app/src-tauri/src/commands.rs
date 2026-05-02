@@ -6,6 +6,8 @@
 //! - `daemon_stop()`          — runs `sov daemon stop`
 //! - `get_daemon_config()`    — reads `.sov/daemon.json` directly (no subprocess)
 
+use std::sync::atomic::Ordering;
+
 use serde::{Deserialize, Serialize};
 
 use crate::config;
@@ -40,6 +42,12 @@ pub struct DaemonStatus {
     pub state: DaemonState,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub config: Option<DaemonConfig>,
+    /// `true` iff the daemon was started by THIS shell instance (via
+    /// `daemon_start`). The frontend uses this to scope auto-stop behavior on
+    /// window close — no `?? true` fallback. Externally-started daemons
+    /// (via the CLI in another terminal) read as `false` here even when the
+    /// daemon is healthy and responsive.
+    pub started_by_shell: bool,
 }
 
 /// Errors surfaced from the shell to the webview. Serialized as a tagged
@@ -78,8 +86,15 @@ pub enum ShellError {
 // ──────────────────────────────────────────────────────────────────────
 
 #[tauri::command]
-pub async fn daemon_status() -> Result<DaemonStatus, ShellError> {
-    daemon::daemon_status_subprocess()
+pub async fn daemon_status(
+    state: tauri::State<'_, ShellState>,
+) -> Result<DaemonStatus, ShellError> {
+    let mut status = daemon::daemon_status_subprocess()?;
+    // Inject the in-process flag — the daemon CLI cannot know whether THIS
+    // shell instance started it. The frontend reads this directly without
+    // any `?? true` fallback (cross-domain B with web-ui).
+    status.started_by_shell = state.started_by_shell.load(Ordering::SeqCst);
+    Ok(status)
 }
 
 #[tauri::command]
@@ -89,9 +104,7 @@ pub async fn daemon_start(
     network: Option<String>,
 ) -> Result<DaemonConfig, ShellError> {
     let config = daemon::daemon_start_subprocess(readonly, network.as_deref())?;
-    if let Ok(mut flag) = state.started_by_shell.lock() {
-        *flag = true;
-    }
+    state.started_by_shell.store(true, Ordering::SeqCst);
     Ok(config)
 }
 
@@ -100,9 +113,7 @@ pub async fn daemon_stop(state: tauri::State<'_, ShellState>) -> Result<(), Shel
     let result = daemon::daemon_stop_subprocess();
     // Clear the flag regardless of the outcome — stop is idempotent and we
     // don't want a stuck `started_by_shell=true` if the daemon is already dead.
-    if let Ok(mut flag) = state.started_by_shell.lock() {
-        *flag = false;
-    }
+    state.started_by_shell.store(false, Ordering::SeqCst);
     result
 }
 
@@ -156,9 +167,69 @@ mod tests {
         let status = DaemonStatus {
             state: DaemonState::None,
             config: None,
+            started_by_shell: false,
         };
         let json = serde_json::to_string(&status).unwrap();
-        assert!(!json.contains("config"), "got {json}");
+        assert!(!json.contains("\"config\""), "got {json}");
+    }
+
+    #[test]
+    fn daemon_status_includes_started_by_shell_field() {
+        // Cross-domain B contract: the field MUST be present and named
+        // exactly `started_by_shell` so the TS shape matches without a
+        // `?? true` fallback.
+        let status = DaemonStatus {
+            state: DaemonState::Running,
+            config: None,
+            started_by_shell: true,
+        };
+        let v: serde_json::Value = serde_json::to_value(&status).unwrap();
+        assert_eq!(
+            v.get("started_by_shell").and_then(|b| b.as_bool()),
+            Some(true),
+            "got {v}"
+        );
+    }
+
+    #[test]
+    fn daemon_status_started_by_shell_round_trips_false() {
+        let status = DaemonStatus {
+            state: DaemonState::None,
+            config: None,
+            started_by_shell: false,
+        };
+        let json = serde_json::to_string(&status).unwrap();
+        let back: DaemonStatus = serde_json::from_str(&json).unwrap();
+        assert!(!back.started_by_shell);
+    }
+
+    #[test]
+    fn daemon_status_started_by_shell_mirrors_atomic_bool() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+        // Prove the round-trip pattern used by the `daemon_status` command:
+        // load from AtomicBool → write into DaemonStatus → serialize → field
+        // value matches the AtomicBool's last store.
+        let flag = AtomicBool::new(false);
+        flag.store(true, Ordering::SeqCst);
+        let mut status = DaemonStatus {
+            state: DaemonState::Running,
+            config: None,
+            started_by_shell: false,
+        };
+        status.started_by_shell = flag.load(Ordering::SeqCst);
+        let v: serde_json::Value = serde_json::to_value(&status).unwrap();
+        assert_eq!(
+            v.get("started_by_shell").and_then(|b| b.as_bool()),
+            Some(true)
+        );
+
+        flag.store(false, Ordering::SeqCst);
+        status.started_by_shell = flag.load(Ordering::SeqCst);
+        let v: serde_json::Value = serde_json::to_value(&status).unwrap();
+        assert_eq!(
+            v.get("started_by_shell").and_then(|b| b.as_bool()),
+            Some(false)
+        );
     }
 
     #[test]

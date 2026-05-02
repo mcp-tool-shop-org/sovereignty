@@ -216,12 +216,13 @@ async def test_async_is_anchored_on_chain_true_when_memo_matches(
 ) -> None:
     """``is_anchored_on_chain`` decodes MemoData from hex and confirms hash."""
     from sov_transport.xrpl_async import AsyncXRPLTransport
-    from sov_transport.xrpl_internals import _to_hex
+    from sov_transport.xrpl_internals import ChainLookupResult, _to_hex
 
     expected_hash = "abc123"
     memo_text = f"SOV|campfire_v1|s42|r1|sha256:{expected_hash}"
 
     fake_response = MagicMock()
+    fake_response.is_successful.return_value = True
     fake_response.result = {
         "Memos": [{"Memo": {"MemoData": _to_hex(memo_text)}}],
     }
@@ -231,18 +232,19 @@ async def test_async_is_anchored_on_chain_true_when_memo_matches(
     asyncio_clients.AsyncJsonRpcClient.return_value = fake_client
 
     t = AsyncXRPLTransport()
-    assert await t.is_anchored_on_chain("TXID", expected_hash) is True
+    assert await t.is_anchored_on_chain("TXID", expected_hash) is ChainLookupResult.FOUND
 
 
 async def test_async_is_anchored_on_chain_false_when_memo_missing(
     fake_xrpl_async: dict[str, types.ModuleType],
 ) -> None:
     from sov_transport.xrpl_async import AsyncXRPLTransport
-    from sov_transport.xrpl_internals import _to_hex
+    from sov_transport.xrpl_internals import ChainLookupResult, _to_hex
 
     memo_text = "SOV|campfire_v1|s42|r1|sha256:differenthash"
 
     fake_response = MagicMock()
+    fake_response.is_successful.return_value = True
     fake_response.result = {
         "Memos": [{"Memo": {"MemoData": _to_hex(memo_text)}}],
     }
@@ -252,7 +254,7 @@ async def test_async_is_anchored_on_chain_false_when_memo_missing(
     asyncio_clients.AsyncJsonRpcClient.return_value = fake_client
 
     t = AsyncXRPLTransport()
-    assert await t.is_anchored_on_chain("TXID", "abc123") is False
+    assert await t.is_anchored_on_chain("TXID", "abc123") is ChainLookupResult.NOT_FOUND
 
 
 async def test_async_is_anchored_on_chain_rejects_empty_expected_hash() -> None:
@@ -261,6 +263,15 @@ async def test_async_is_anchored_on_chain_rejects_empty_expected_hash() -> None:
     t = AsyncXRPLTransport()
     with pytest.raises(ValueError):
         await t.is_anchored_on_chain("TXID", "")
+
+
+async def test_async_is_anchored_on_chain_rejects_empty_txid() -> None:
+    """BRIDGE-004 (async): empty txid is operator-actionable error."""
+    from sov_transport.xrpl_async import AsyncXRPLTransport
+
+    t = AsyncXRPLTransport()
+    with pytest.raises(ValueError, match="txid"):
+        await t.is_anchored_on_chain("", "abc123")
 
 
 # ---------------------------------------------------------------------------

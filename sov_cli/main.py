@@ -20,8 +20,13 @@ from sov_cli.errors import (
     SovError,
     anchor_error,
     anchor_mismatch_error,
+    anchor_pending_error,
+    daemon_not_installed_error,
+    daemon_not_running_error,
+    daemon_stop_failed_error,
     insufficient_resources_error,
     invalid_action_error,
+    invalid_game_id_error,
     invalid_network_error,
     mainnet_faucet_rejected_error,
     market_error,
@@ -57,6 +62,9 @@ from sov_engine.io_utils import (
     rng_seed_file,
     set_active_game_id,
     state_file,
+)
+from sov_engine.io_utils import (
+    _validate_game_id as _engine_validate_game_id,
 )
 from sov_engine.models import (
     RESOURCE_NAMES,
@@ -193,6 +201,25 @@ SAVE_DIR = Path(".sov")
 SUPPORTED_STATE_SCHEMA_VERSION = 1
 
 
+def _validate_game_id_or_fail(game_id: str) -> None:
+    """Reject a malformed ``game_id`` at the CLI boundary with a structured error.
+
+    Wraps the engine-layer ``_validate_game_id`` (allowlist regex
+    ``^s\\d{1,19}$``, also rejects ``..`` / ``/`` / ``\\`` / NUL / control
+    chars) and re-raises any ``ValueError`` as ``invalid_game_id_error``
+    via ``_fail`` so the operator sees a clean code/message/hint instead
+    of a raw ``ValueError`` traceback.
+
+    Defense in depth — the engine helpers validate as well, but surfacing
+    early at the CLI keeps the structured error shape consistent with the
+    rest of the command surface (ANCHOR_*, INPUT_*, STATE_*).
+    """
+    try:
+        _engine_validate_game_id(game_id)
+    except ValueError:
+        _fail(invalid_game_id_error(game_id))
+
+
 def _resolve_active_game_id() -> str:
     """Resolve the current active game-id, applying migration + fallback.
 
@@ -203,6 +230,10 @@ def _resolve_active_game_id() -> str:
       3. If exactly one saved game exists, set it active and return its id.
       4. Otherwise, raise ``SovError(no-active-game)`` via ``_fail`` so the
          operator can pick one with ``sov resume`` or start fresh.
+
+    Defensive validation: ``get_active_game_id`` already drops poisoned
+    pointers (returns ``None`` + WARNING log), but we re-validate here as
+    a second gate against any future regression in the pointer reader.
     """
     migrated = migrate_v1_layout()
     if migrated is not None:
@@ -210,6 +241,18 @@ def _resolve_active_game_id() -> str:
 
     active = get_active_game_id()
     if active:
+        # Defensive re-check: a poisoned pointer should already have been
+        # filtered by ``get_active_game_id`` (returns ``None`` on invalid
+        # contents). If it didn't, treat as "no active game" rather than
+        # propagating a malformed id into per-game path constructors.
+        try:
+            _engine_validate_game_id(active)
+        except ValueError:
+            logger.warning(
+                "resolve_active_game_id.poisoned value=%r (treating as no active game)",
+                active,
+            )
+            _fail(no_active_game_error())
         return active
 
     saved = list_saved_games()
@@ -1369,7 +1412,14 @@ def verify(
 
             resolved_network = _resolve_network(network)
             transport = XRPLTransport(network=resolved_network)
-            if transport.is_anchored_on_chain(tx, expected_hash):
+            # Wave 6 BRIDGE-004: is_anchored_on_chain returns ChainLookupResult
+            # enum, not bool. Explicit FOUND identity check — NOT_FOUND and
+            # LOOKUP_FAILED are both truthy StrEnum values that would mask as
+            # anchored under bare-truthy comparison.
+            from sov_transport.xrpl_internals import ChainLookupResult
+
+            result = transport.is_anchored_on_chain(tx, expected_hash)
+            if result is ChainLookupResult.FOUND:
                 memo = transport.get_memo_text(tx)
                 console.print("  [green]Anchor verified.[/green] TX memo matches proof hash.")
                 if memo:
@@ -1436,6 +1486,26 @@ def anchor(
     """
     resolved_network = _resolve_network(network)
 
+    # CLI-003: idempotent no-op fast-path.
+    # When the operator runs `sov anchor` (batch path, no proof_file) and
+    # there is nothing pending for the active game, the spec promises an
+    # exit-0 "no pending anchors to flush" message — even when no wallet
+    # seed is configured. Without this fast-path, the seed resolution
+    # below would surface CONFIG_NO_WALLET, telling the operator they
+    # need a wallet to do nothing. Read pending FIRST; only if there is
+    # work to do do we resolve the wallet.
+    if proof_file is None:
+        try:
+            active_id_for_noop_check = _resolve_active_game_id()
+        except SystemExit:
+            # ``_resolve_active_game_id`` calls ``_fail`` (typer.Exit) when
+            # no active game can be resolved. Re-raise so the user sees
+            # the structured no_active_game_error rather than swallowing.
+            raise
+        if not read_pending_anchors(active_id_for_noop_check):
+            console.print("  [dim]No pending anchors to flush.[/dim]")
+            raise typer.Exit(0)
+
     # Resolve wallet seed once — both paths need it. (Move-up from the
     # legacy path so the batch path doesn't duplicate the seed-resolution
     # logic.)
@@ -1486,6 +1556,14 @@ def anchor(
             # Persist txid so postcard / feedback can surface the explorer link
             # in future invocations (the anchor receipt was previously read-only).
             _record_anchor(rnd, txid, game_id)
+            # CLI-002: clear any pending entry for this round on the legacy
+            # path. Without this, ``end-round`` queues round N into
+            # ``pending-anchors.json``, the legacy single-round anchor
+            # writes the txid into ``anchors.json`` AND leaves the entry
+            # pending, and the next batch flush re-anchors round N as a
+            # duplicate on chain. ``clear_pending_anchors`` is idempotent
+            # on rounds that weren't pending so the write is cheap.
+            clear_pending_anchors(game_id, [str(rnd)])
             logger.info("anchor.success round=%s txid=%s", rnd, txid)
 
             explorer = transport.explorer_tx_url(txid)
@@ -3234,7 +3312,7 @@ def _status_json_payload(state: GameState) -> dict[str, Any]:
     else:
         daemon_field = _daemon_status_json_field(daemon_st)
 
-    return {
+    payload: dict[str, Any] = {
         "timestamp": _json_status(),
         "command": "status",
         "status": _JSON_OUTPUT_OK,
@@ -3256,6 +3334,27 @@ def _status_json_payload(state: GameState) -> dict[str, Any]:
         "pending_count": len(pending),
         "daemon": daemon_field,
     }
+
+    # CLI-004: surface the structured ``ANCHOR_PENDING`` shape when at least
+    # one round is queued in pending-anchors.json. The diagnostic JSON
+    # consumer (`sov status --json`) is a discovery surface, not a failure
+    # gate — but the v2.1 spec promises the structured code so external
+    # tooling can reason about it. Embed the error envelope alongside the
+    # existing ``rounds`` / ``pending_count`` fields rather than replacing
+    # them; humans still see the per-round breakdown.
+    if pending:
+        # Sort by the same numeric / FINAL key the rounds list uses so the
+        # message is deterministic across runs.
+        pending_round_keys = sorted(pending.keys(), key=_sort_key)
+        anchor_pending = anchor_pending_error(pending_round_keys)
+        payload["anchor_pending"] = {
+            "code": anchor_pending.code,
+            "message": anchor_pending.message,
+            "hint": anchor_pending.hint,
+            "rounds": pending_round_keys,
+        }
+
+    return payload
 
 
 # ---------------------------------------------------------------------------
@@ -3735,6 +3834,14 @@ def resume_cmd(
     ],
 ) -> None:
     """Switch the active game. Game must already exist on disk."""
+    # Reject path-traversal payloads (``..``, ``/``, ``\\``, control chars,
+    # newlines) before touching the filesystem. Without this gate, a value
+    # like ``s17/../s42`` would resolve to a sibling save's state.json AND
+    # poison ``.sov/active-game`` on subsequent set, breaking every helper
+    # that consumes the pointer downstream (state_file, rng_seed_file,
+    # proofs_dir, anchors_file, game_dir, pending_anchors_path).
+    _validate_game_id_or_fail(game_id)
+
     migrate_v1_layout()
     sf = state_file(game_id)
     if not sf.exists():
@@ -3910,13 +4017,7 @@ def _import_daemon_api() -> Any:
     try:
         return importlib.import_module("sov_daemon")
     except ImportError as exc:
-        _fail(
-            SovError(
-                code="DAEMON_NOT_INSTALLED",
-                message=f"Daemon support is not installed: {exc}",
-                hint=("Install the daemon extra: pip install 'sovereignty-game[daemon]'"),
-            )
-        )
+        _fail(daemon_not_installed_error(str(exc)))
 
 
 @daemon_app.callback()
@@ -4037,27 +4138,9 @@ def daemon_stop() -> None:
     try:
         result = daemon_mod.stop_daemon()
     except FileNotFoundError:
-        _fail(
-            SovError(
-                code="DAEMON_NOT_RUNNING",
-                message="No daemon is recorded for this project root.",
-                hint=(
-                    "Start one with `sov daemon start`, or check "
-                    "`sov daemon status` to inspect the recorded state."
-                ),
-            )
-        )
+        _fail(daemon_not_running_error())
     except Exception as exc:  # noqa: BLE001
-        _fail(
-            SovError(
-                code="DAEMON_STOP_FAILED",
-                message=f"Daemon stop failed: {exc}",
-                hint=(
-                    "Inspect `.sov/daemon.json` for the recorded pid, then "
-                    "kill it manually if needed."
-                ),
-            )
-        )
+        _fail(daemon_stop_failed_error(str(exc)))
     # Most daemon impls return None on success. Tolerate either shape.
     pid = _daemon_field(result, "pid", default=None) if result is not None else None
     if pid is not None:

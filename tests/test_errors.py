@@ -137,3 +137,103 @@ def test_reset_error_has_actionable_hint():
     assert ".sov" in err.hint
     # Hint surfaces in user_message when present
     assert "Hint" in err.user_message() or err.hint in err.user_message()
+
+
+# ---------------------------------------------------------------------------
+# Wave-7 CLI-001 / CLI-005: new factories
+# ---------------------------------------------------------------------------
+
+
+def test_invalid_game_id_error_shape() -> None:
+    """``invalid_game_id_error`` surfaces the operator-passed value verbatim.
+
+    The repr-rendering preserves control chars and surrounding whitespace
+    so the operator sees exactly what they typed (or what an attacker
+    tried to inject) without breaking the message layout.
+    """
+    from sov_cli.errors import invalid_game_id_error
+
+    err = invalid_game_id_error("s17/../s42")
+    assert err.code == "INPUT_GAME_ID"
+    assert "s17/../s42" in err.message
+    assert "sov games" in err.hint
+    assert "sov resume" in err.hint
+    assert err.retryable is False
+
+
+def test_invalid_game_id_error_repr_renders_control_chars() -> None:
+    """Control chars must be visible in the message via repr()."""
+    from sov_cli.errors import invalid_game_id_error
+
+    err = invalid_game_id_error("s42\n")
+    # repr() escapes the newline as \n so the message stays one line.
+    assert "\\n" in err.message
+
+
+def test_daemon_not_installed_error_shape() -> None:
+    """``daemon_not_installed_error`` carries the underlying ImportError detail."""
+    from sov_cli.errors import daemon_not_installed_error
+
+    err = daemon_not_installed_error("No module named 'sov_daemon'")
+    assert err.code == "DAEMON_NOT_INSTALLED"
+    assert "No module named 'sov_daemon'" in err.message
+    assert "sovereignty-game[daemon]" in err.hint
+    assert err.retryable is False
+
+
+def test_daemon_not_running_error_shape() -> None:
+    """``daemon_not_running_error`` is parameterless and points at lifecycle commands."""
+    from sov_cli.errors import daemon_not_running_error
+
+    err = daemon_not_running_error()
+    assert err.code == "DAEMON_NOT_RUNNING"
+    assert "No daemon" in err.message
+    assert "sov daemon start" in err.hint
+    assert "sov daemon status" in err.hint
+    assert err.retryable is False
+
+
+def test_daemon_stop_failed_error_carries_detail() -> None:
+    """``daemon_stop_failed_error`` carries the underlying exception detail."""
+    from sov_cli.errors import daemon_stop_failed_error
+
+    err = daemon_stop_failed_error("Permission denied")
+    assert err.code == "DAEMON_STOP_FAILED"
+    assert "Permission denied" in err.message
+    assert ".sov/daemon.json" in err.hint
+    assert err.retryable is False
+
+
+def test_anchor_pending_error_renders_round_keys() -> None:
+    """``anchor_pending_error`` formats round_keys list and points at `sov anchor`."""
+    from sov_cli.errors import anchor_pending_error
+
+    err = anchor_pending_error(["1", "FINAL"])
+    assert err.code == "ANCHOR_PENDING"
+    assert "1, FINAL" in err.message
+    assert "sov anchor" in err.hint
+
+
+def test_anchor_pending_error_handles_empty_list() -> None:
+    """Empty round_keys still produces a sensible "(none)" message."""
+    from sov_cli.errors import anchor_pending_error
+
+    err = anchor_pending_error([])
+    assert err.code == "ANCHOR_PENDING"
+    assert "(none)" in err.message
+
+
+def test_mainnet_underfunded_error_renders_xrp() -> None:
+    """``mainnet_underfunded_error`` shows both drops and XRP (consumed by daemon)."""
+    from sov_cli.errors import mainnet_underfunded_error
+
+    err = mainnet_underfunded_error(balance_drops=500_000, required_drops=10_000_000)
+    assert err.code == "MAINNET_UNDERFUNDED"
+    # 500000 drops = 0.5 XRP
+    assert "0.5 XRP" in err.message
+    # 10000000 drops = 10 XRP
+    assert "10 XRP" in err.message
+    # Both raw drop counts also surface for explorer-balance matching.
+    assert "500000 drops" in err.message
+    assert "10000000 drops" in err.message
+    assert "testnet" in err.hint

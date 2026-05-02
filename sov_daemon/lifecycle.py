@@ -195,6 +195,15 @@ def _write_handshake(info: dict[str, Any]) -> None:
     Uses ``sov_engine.io_utils.atomic_write_text`` so a crash mid-write
     leaves a ``.tmp`` sibling, never a half-written ``daemon.json``.
     Same atomic-write convention as state, season, anchors, pending-anchors.
+
+    DAEMON-002: ``daemon.json`` carries the bearer token that gates every
+    daemon endpoint. Force ``0o600`` after the atomic replace so the file
+    is not readable by other local users (default umask leaves it world-
+    readable on POSIX; backup processes / co-located users could exfiltrate
+    the token otherwise). Windows file modes don't map to POSIX bits — the
+    chmod is skipped there. TODO: switch to
+    ``atomic_write_text(path, content, mode=0o600)`` once the backend
+    agent's BACKEND-005 fix lands the kwarg.
     """
     path = daemon_file_path()
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -202,6 +211,9 @@ def _write_handshake(info: dict[str, Any]) -> None:
         path,
         json.dumps(info, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
     )
+    if sys.platform != "win32":
+        with contextlib.suppress(OSError):
+            os.chmod(path, 0o600)
 
 
 def _remove_handshake() -> None:
@@ -274,6 +286,43 @@ def _generate_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+# DAEMON-010: minimal env allowlist for the spawned daemon. Anything outside
+# this set is dropped before ``Popen`` so unrelated secrets (``GITHUB_TOKEN``,
+# ``AWS_*``, ``OPENAI_API_KEY``) in the operator's shell never reach the
+# daemon's ``/proc/<pid>/environ`` view. ``XRPL_SEED`` (or the named
+# ``--seed-env`` var) is forwarded explicitly when seed loading is on.
+_SUBPROCESS_ENV_ALLOWLIST = frozenset(
+    {
+        "PATH",
+        "HOME",
+        "USER",
+        "LOGNAME",
+        "TMPDIR",
+        "TEMP",
+        "TMP",
+        "LANG",
+        "LC_ALL",
+        "PYTHONPATH",
+        "PYTHONHOME",
+        "VIRTUAL_ENV",
+        "SOV_LOG_LEVEL",
+        "SOV_XRPL_NETWORK",
+        # Windows essentials so the spawned interpreter can resolve runtime libs.
+        "SYSTEMROOT",
+        "SYSTEMDRIVE",
+        "WINDIR",
+        "USERPROFILE",
+        "APPDATA",
+        "LOCALAPPDATA",
+        "PROGRAMDATA",
+        "PROGRAMFILES",
+        "PROGRAMFILES(X86)",
+        "COMSPEC",
+        "PATHEXT",
+    }
+)
+
+
 def _build_subprocess_env(
     *,
     port: int,
@@ -287,20 +336,25 @@ def _build_subprocess_env(
 
     Token + port + readonly are passed via ``SOV_DAEMON_*`` env vars; this
     keeps the token out of ``ps`` output. The seed source is forwarded if
-    given: ``SOV_XRPL_SEED_ENV`` names the env var to read at startup
+    given: ``SOV_DAEMON_SEED_ENV`` names the env var to read at startup
     (e.g. ``XRPL_SEED``), or ``SOV_DAEMON_SIGNER_FILE`` names a file path.
 
-    The current process env is inherited so the child can resolve the
-    actual seed value if ``seed_env`` is set; the child reads
-    ``os.environ[seed_env]`` (default ``XRPL_SEED``) at startup.
+    DAEMON-010: rather than ``os.environ.copy()`` (which leaks every secret
+    in the operator's shell into the daemon's environ), we build the child
+    env from a minimal allowlist plus the explicit ``SOV_DAEMON_*`` keys.
+    The named seed var is forwarded only when ``seed_env`` is set — a
+    ``--signer-file`` daemon never carries the env seed at all.
     """
-    env = os.environ.copy()
+    env = {k: v for k, v in os.environ.items() if k in _SUBPROCESS_ENV_ALLOWLIST}
     env["SOV_DAEMON_PORT"] = str(port)
     env["SOV_DAEMON_TOKEN"] = token
     env["SOV_DAEMON_NETWORK"] = network
     env["SOV_DAEMON_READONLY"] = "1" if readonly else "0"
     if seed_env:
         env["SOV_DAEMON_SEED_ENV"] = seed_env
+        # Forward only the named seed var, nothing else from the parent shell.
+        if seed_env in os.environ:
+            env[seed_env] = os.environ[seed_env]
     if signer_file is not None:
         env["SOV_DAEMON_SIGNER_FILE"] = str(signer_file)
     return env
@@ -470,6 +524,16 @@ def stop_daemon() -> bool:
         _remove_handshake()
         return True
 
+    # DAEMON-004: soft pid-recycle check. If the pid is alive but no longer
+    # names a sov daemon process (recycled mid-CLI), refuse to signal it
+    # and clear the handshake so the next status call returns NONE.
+    if not _is_sov_daemon_pid(pid):
+        _remove_handshake()
+        raise RuntimeError(
+            f"pid {pid} from .sov/daemon.json no longer points at a sov_daemon "
+            "process (likely recycled). Removed stale handshake."
+        )
+
     try:
         if sys.platform == "win32":
             # SIGTERM is not delivered cleanly on Windows console
@@ -498,6 +562,51 @@ def stop_daemon() -> bool:
         f"{_STOP_POLL_TIMEOUT_SECONDS:.0f}s after SIGTERM. "
         "Investigate or kill by hand: kill -9 " + str(pid)
     )
+
+
+def _is_sov_daemon_pid(pid: int) -> bool:
+    """DAEMON-004: soft check the pid still names a sov_daemon process.
+
+    Pid recycling is a real (if narrow) race: between ``_pid_alive(pid)``
+    returning True and the SIGTERM landing, the original daemon could
+    exit and the kernel could recycle its pid to an unrelated process —
+    a shell, a build, anything the operator is currently running. The
+    SIGTERM would then land on the wrong target.
+
+    We don't try to be perfectly safe — that would require holding a
+    handle to the daemon process across the whole CLI lifetime, which is
+    out of scope. Instead we read the process's command line via
+    ``/proc/<pid>/cmdline`` (Linux) or ``ps -p <pid> -o command=`` (Mac)
+    and verify it contains ``sov`` before signalling. ``False`` means
+    "definitely not the daemon — refuse to signal." Errors / unknown
+    platforms fail-OPEN (return True) so a missing /proc or ps doesn't
+    block legitimate stops on niche platforms.
+
+    Windows is skipped — pid recycling is rarer in practice (the kernel
+    keeps recycled pids out of immediate reuse) and we'd need a different
+    probe (``QueryFullProcessImageName``). TODO: Windows soft-check via
+    ctypes.
+    """
+    if sys.platform == "linux":
+        try:
+            cmdline = Path(f"/proc/{pid}/cmdline").read_bytes()
+        except OSError:
+            return False
+        return b"sov" in cmdline.lower()
+    if sys.platform == "win32":
+        # TODO: Windows soft-check via QueryFullProcessImageName.
+        return True
+    # Mac / BSD / other POSIX: ps is the cross-platform fallback.
+    try:
+        out = subprocess.check_output(
+            ["ps", "-o", "command=", "-p", str(pid)],
+            timeout=1,
+        ).decode("utf-8", errors="replace")
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        # Fail-OPEN: ps unavailable or returned nonzero. Don't block a
+        # legitimate stop on a missing utility.
+        return True
+    return "sov" in out.lower()
 
 
 def _terminate_windows(pid: int) -> None:
@@ -542,6 +651,22 @@ def run_foreground(
     import uvicorn
 
     from sov_daemon.server import build_app
+
+    # DAEMON-003: validate ``network`` at the daemon-startup boundary so
+    # operators see a fail-fast SystemExit instead of a generic 500
+    # ``INVALID_NETWORK`` on the first anchor write. ``XRPLNetwork(value)``
+    # raises ``ValueError`` for typos (``testnetz``) and unknown values;
+    # we coerce back to the canonical lowercase form so the rest of the
+    # daemon sees one normalized string.
+    from sov_transport.xrpl_internals import XRPLNetwork
+
+    try:
+        network = str(XRPLNetwork(network).value)
+    except ValueError as exc:
+        valid = ", ".join(n.value for n in XRPLNetwork)
+        raise SystemExit(
+            f"invalid SOV_DAEMON_NETWORK / --network: {network!r}; valid: {valid}"
+        ) from exc
 
     if port is None:
         port = _claim_free_port()

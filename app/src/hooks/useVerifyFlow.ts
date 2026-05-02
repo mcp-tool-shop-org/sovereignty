@@ -35,14 +35,53 @@ export interface UseVerifyFlow {
   reset: () => void;
 }
 
-/** Canonical JSON serialization matching sov_engine/serialize.py::canonical_json:
- *  json.dumps(obj, sort_keys=True, separators=(",", ":")).
+/** Canonical JSON serialization byte-for-byte equivalent to
+ *  sov_engine/serialize.py::canonical_json — Python is the source of truth for
+ *  envelope_hash. Python emits:
+ *    json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False,
+ *               separators=(",", ": ")).replace("\r\n", "\n") + "\n"
+ *  i.e. multi-line pretty-printed (2-space indent), space after `:`, sorted
+ *  keys at every nesting level, no Unicode escaping for non-ASCII characters,
+ *  LF newlines, trailing LF.
+ *
+ *  Python's `indent` uses `\n` (LF) regardless of platform; empty containers
+ *  ({} and []) stay on one line; non-empty containers get one element per
+ *  line at the current indent. Numbers must follow Python's repr (integers
+ *  bare; finite floats via JSON.stringify, which already matches for safe
+ *  integers and standard floats).
+ *
  *  Exported for testing. */
 export function canonicalJson(value: unknown): string {
-  return canonicalize(value);
+  return `${canonicalize(value, 0)}\n`;
 }
 
-function canonicalize(value: unknown): string {
+const INDENT_UNIT = "  ";
+
+function indent(level: number): string {
+  return INDENT_UNIT.repeat(level);
+}
+
+/** Encode a string with Python's ensure_ascii=False semantics: only the
+ *  characters JSON requires (`"`, `\`, control chars 0x00-0x1F) are escaped;
+ *  non-ASCII Unicode passes through as raw UTF-8 (the JSON spec allows it). */
+function encodeString(s: string): string {
+  let out = '"';
+  for (let i = 0; i < s.length; i++) {
+    const ch = s.charCodeAt(i);
+    if (ch === 0x22) out += '\\"';
+    else if (ch === 0x5c) out += "\\\\";
+    else if (ch === 0x08) out += "\\b";
+    else if (ch === 0x09) out += "\\t";
+    else if (ch === 0x0a) out += "\\n";
+    else if (ch === 0x0c) out += "\\f";
+    else if (ch === 0x0d) out += "\\r";
+    else if (ch < 0x20) out += `\\u${ch.toString(16).padStart(4, "0")}`;
+    else out += s[i];
+  }
+  return `${out}"`;
+}
+
+function canonicalize(value: unknown, level: number): string {
   if (value === null) return "null";
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number") {
@@ -51,15 +90,22 @@ function canonicalize(value: unknown): string {
     }
     return JSON.stringify(value);
   }
-  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "string") return encodeString(value);
   if (Array.isArray(value)) {
-    return `[${value.map(canonicalize).join(",")}]`;
+    if (value.length === 0) return "[]";
+    const inner = indent(level + 1);
+    const closing = indent(level);
+    const items = value.map((v) => `${inner}${canonicalize(v, level + 1)}`);
+    return `[\n${items.join(",\n")}\n${closing}]`;
   }
   if (typeof value === "object") {
     const obj = value as Record<string, unknown>;
     const keys = Object.keys(obj).sort();
-    const pairs = keys.map((k) => `${JSON.stringify(k)}:${canonicalize(obj[k])}`);
-    return `{${pairs.join(",")}}`;
+    if (keys.length === 0) return "{}";
+    const inner = indent(level + 1);
+    const closing = indent(level);
+    const pairs = keys.map((k) => `${inner}${encodeString(k)}: ${canonicalize(obj[k], level + 1)}`);
+    return `{\n${pairs.join(",\n")}\n${closing}}`;
   }
   throw new Error(`Cannot canonicalize value of type ${typeof value}`);
 }
@@ -79,6 +125,7 @@ export function useVerifyFlow(): UseVerifyFlow {
   const [isRunning, setIsRunning] = useState(false);
   const [currentRound, setCurrentRound] = useState<string | null>(null);
   const cancelledRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const setRoundState = useCallback((round: string, st: RoundVerifyState) => {
     setPerRound((prev) => {
@@ -90,10 +137,12 @@ export function useVerifyFlow(): UseVerifyFlow {
 
   const cancel = useCallback(() => {
     cancelledRef.current = true;
+    abortRef.current?.abort();
   }, []);
 
   const reset = useCallback(() => {
     cancelledRef.current = false;
+    abortRef.current = null;
     setPerRound(new Map());
     setIsRunning(false);
     setCurrentRound(null);
@@ -103,6 +152,8 @@ export function useVerifyFlow(): UseVerifyFlow {
     async (gameId: string, rounds: string[]) => {
       if (!config) return;
       cancelledRef.current = false;
+      const controller = new AbortController();
+      abortRef.current = controller;
       setIsRunning(true);
       const client = new DaemonClient(config);
 
@@ -115,8 +166,12 @@ export function useVerifyFlow(): UseVerifyFlow {
           // 1. Fetch proof contents.
           let proof: Record<string, unknown>;
           try {
-            proof = (await client.proof(gameId, round)) as Record<string, unknown>;
+            proof = (await client.proof(gameId, round, controller.signal)) as Record<
+              string,
+              unknown
+            >;
           } catch (e) {
+            if (cancelledRef.current) break;
             setRoundState(round, {
               kind: "failed",
               reason: "unreachable",
@@ -125,10 +180,11 @@ export function useVerifyFlow(): UseVerifyFlow {
             continue;
           }
 
+          if (cancelledRef.current) break;
+
           // 2. Local envelope-hash recompute. Strip the envelope_hash field
           // itself before canonicalizing — it's the output, not part of the input.
           const declaredHash = String(proof.envelope_hash ?? "").toLowerCase();
-          // Strip the envelope_hash field — it's the output, not part of the input.
           const { envelope_hash: _omit, ...envelope } = proof;
           // proof_version field is part of the envelope; signature/extras stay.
           let recomputed: string;
@@ -144,6 +200,8 @@ export function useVerifyFlow(): UseVerifyFlow {
             continue;
           }
 
+          if (cancelledRef.current) break;
+
           if (recomputed !== declaredHash) {
             setRoundState(round, { kind: "failed", reason: "envelope_mismatch" });
             continue;
@@ -152,13 +210,15 @@ export function useVerifyFlow(): UseVerifyFlow {
           // 3. Chain lookup via daemon.
           if (cancelledRef.current) break;
           try {
-            const status = await client.anchorStatus(gameId, round);
+            const status = await client.anchorStatus(gameId, round, controller.signal);
+            if (cancelledRef.current) break;
             if (status.status === "anchored") {
               setRoundState(round, { kind: "verified" });
             } else {
               setRoundState(round, { kind: "failed", reason: "not_on_chain" });
             }
           } catch (e) {
+            if (cancelledRef.current) break;
             setRoundState(round, {
               kind: "failed",
               reason: "unreachable",
@@ -167,6 +227,7 @@ export function useVerifyFlow(): UseVerifyFlow {
           }
         }
       } finally {
+        if (abortRef.current === controller) abortRef.current = null;
         setIsRunning(false);
         setCurrentRound(null);
       }

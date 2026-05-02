@@ -12,7 +12,7 @@ Use the `speakline` skill (`~/.claude/skills/speakline/speak`, Kokoro neural TTS
 
 ```bash
 uv sync --all-extras            # set up venv (UV_LINK_MODE=copy on T9-Shared)
-uv run pytest                   # 263 tests as of v2.0.2 (was 147 baseline pre-swarm)
+uv run pytest                   # 490 Python tests post-Wave-5 (also: 23 cargo, 101 vitest)
 uv run ruff check .             # lint (clean is mandatory before commit)
 uv run ruff format --check .    # format (clean is mandatory)
 uv run mypy sov_engine sov_transport sov_cli   # strict, BLOCKING in CI
@@ -118,6 +118,7 @@ Stage B-2 audit-lens improvement note for next swarm: cross-check workflow filen
 - **Game vocabulary**: rulesets are Campfire / Town Hall / Treaty Table / Market Day. Mechanics: vouchers (promises with deadlines), deals (trades), treaties (multi-round agreements), anchors (XRPL memos), postcards (season recap output).
 - **Persistence**: Multi-save layout under `.sov/games/<game-id>/{state.json, rng_seed.txt, proofs/, pending-anchors.json}` (game-id is `s{seed}`). `.sov/active-game` pointer tracks the current game. Cross-game state (`wallet_seed.txt`, `season.json`) stays at `.sov/` root. State `schema_version=1` (unchanged — multi-save and pending-anchors are layout, not content). All persistence atomic-written via `sov_engine/io_utils.py::atomic_write_text`. v1 layout (`.sov/game_state.json`) auto-migrates on first v2.1 invocation. Multi-save reference: `docs/multi-save.md`. Bridge/anchor changes: `docs/v2.1-bridge-changes.md`.
 - **Daemon**: `sov_daemon/` package (Starlette + uvicorn behind `[daemon]` opt-in extra). One daemon per project root, bound to `127.0.0.1:<random>`. State at `.sov/daemon.json` (pid + port + token + network + readonly + started_iso; seed never written here). Endpoints: `docs/v2.1-daemon-ipc.md` §4. SSE event stream at `/events`. Started via `sov daemon start [--readonly]`; stopped via `sov daemon stop`.
+- **Transport internals**: `sov_transport/xrpl_internals.py` (Wave 3 extraction) lifts pure helpers + types — `XRPLNetwork`, `_NETWORK_TABLE`, `MainnetFaucetError`, `_format_memo`, `_classify_submit_error`, retry constants — so sync `XRPLTransport` (`xrpl.py`) and `AsyncXRPLTransport` (`xrpl_async.py`) share one source of truth. No I/O. Reference: `docs/v2.1-daemon-ipc.md` §2.
 - **Desktop shell (v2.1)**: `app/` (Rust at `app/src-tauri/`, frontend at `app/src/`). React 19 + Vite 6 + TypeScript 5.7 + Tauri 2. 4 Tauri commands; webview talks directly to daemon for HTTP/SSE. Reference: `docs/v2.1-tauri-shell.md`. Local dev: `npm --prefix app run tauri dev`. Cross-platform release matrix is Wave 11 (Treatment).
 - **Views (v2.1 Wave 5)**: `app/src/routes/{Audit,Game,Settings,Index}.tsx` consuming the daemon over HTTP/SSE. Shared components in `app/src/components/`. Theme tokens in `app/src/styles/theme.css`. Game state TS types in `app/src/types/game.ts` (UI-consumed subset of `sov_engine/models.py`, pinned by `tests/test_game_types_ts_in_sync.py`). Reference: `docs/v2.1-views.md`.
 - **Landing page + handbook**: `site/` (Astro + Starlight via @mcptoolshop/site-theme), live at https://mcp-tool-shop-org.github.io/sovereignty/. Two `HACK:` comments link to upstream issues #4 (`packageUrl`) and #5 (`<slot name="head"/>`).

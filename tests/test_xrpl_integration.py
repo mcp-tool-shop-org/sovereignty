@@ -111,8 +111,13 @@ def test_real_testnet_anchor_batch_three_rounds_one_tx():
     assert isinstance(txid, str)
     assert len(txid) == 64  # XRPL tx hashes are 64-char uppercase hex
 
-    # All three round hashes resolve via is_anchored_on_chain on the same txid.
+    # All three round hashes resolve via is_anchored_on_chain on the same
+    # txid. Post-BRIDGE-004 the return is ``ChainLookupResult.FOUND`` (not
+    # the legacy ``True``) — the truthy check on the enum still works as a
+    # smoke gate, and the explicit comparison pins the new contract.
+    from sov_transport import ChainLookupResult
+
     for h in (h1, h2, h3):
-        assert transport.is_anchored_on_chain(txid=txid, expected_hash=h), (
-            f"is_anchored_on_chain failed for hash={h} on batch txid={txid}"
-        )
+        assert transport.is_anchored_on_chain(txid=txid, expected_hash=h) is (
+            ChainLookupResult.FOUND
+        ), f"is_anchored_on_chain failed for hash={h} on batch txid={txid}"

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { canonicalJson, sha256Hex, useVerifyFlow } from "./useVerifyFlow";
@@ -25,24 +27,72 @@ vi.mock("./useDaemon", () => ({
 }));
 
 describe("canonicalJson", () => {
-  it("matches Python's json.dumps(sort_keys=True, separators=(',', ':')) for simple objects", () => {
+  // Source of truth: sov_engine/serialize.py::canonical_json
+  //   json.dumps(data, sort_keys=True, indent=2, ensure_ascii=False,
+  //              separators=(",", ": ")).replace("\r\n", "\n") + "\n"
+  // Multi-line pretty-printed, 2-space indent, space after `:`, trailing LF.
+
+  it("emits indent=2 + sorted keys + trailing LF for simple objects", () => {
     const out = canonicalJson({ b: 2, a: 1 });
-    expect(out).toBe('{"a":1,"b":2}');
+    expect(out).toBe('{\n  "a": 1,\n  "b": 2\n}\n');
   });
 
   it("recursively sorts nested keys", () => {
     const out = canonicalJson({ z: { y: 1, x: 2 } });
-    expect(out).toBe('{"z":{"x":2,"y":1}}');
+    expect(out).toBe('{\n  "z": {\n    "x": 2,\n    "y": 1\n  }\n}\n');
   });
 
   it("preserves array order", () => {
     const out = canonicalJson({ list: [3, 1, 2] });
-    expect(out).toBe('{"list":[3,1,2]}');
+    expect(out).toBe('{\n  "list": [\n    3,\n    1,\n    2\n  ]\n}\n');
   });
 
   it("handles strings, booleans, null", () => {
     const out = canonicalJson({ s: "x", b: true, n: null });
-    expect(out).toBe('{"b":true,"n":null,"s":"x"}');
+    expect(out).toBe('{\n  "b": true,\n  "n": null,\n  "s": "x"\n}\n');
+  });
+
+  it("keeps empty containers on one line (matches Python's indent= behavior)", () => {
+    expect(canonicalJson({ a: [], b: {} })).toBe('{\n  "a": [],\n  "b": {}\n}\n');
+  });
+
+  it("ensure_ascii=False — non-ASCII passes through as raw UTF-8", () => {
+    const out = canonicalJson({ note: "éclat" });
+    // Must NOT escape to "éclat" — Python uses ensure_ascii=False.
+    expect(out).toBe('{\n  "note": "éclat"\n}\n');
+  });
+
+  it("regression: matches Python-generated proof bytes byte-for-byte", () => {
+    // MANDATORY regression per Wave 7 amend brief: real Python proof fixture
+    // round-tripped through browser canonicalJson must produce identical bytes
+    // and identical SHA-256 hash. Without this, verify-all-rounds fails every
+    // round (the v2.1 differentiator feature).
+    const proofText = readFileSync(
+      join(__dirname, "..", "test", "fixtures", "proof.real.json"),
+      "utf-8",
+    );
+    const expectedCanonical = readFileSync(
+      join(__dirname, "..", "test", "fixtures", "proof.real.canonical.txt"),
+      "utf-8",
+    );
+    const proof = JSON.parse(proofText) as Record<string, unknown>;
+    // Strip envelope_hash before canonicalizing — same shape useVerifyFlow uses.
+    const { envelope_hash: _omit, ...envelope } = proof;
+    expect(canonicalJson(envelope)).toBe(expectedCanonical);
+  });
+});
+
+describe("verify-all-rounds regression — real proof", () => {
+  it("browser-recomputed envelope_hash matches the Python-recorded hash", async () => {
+    const proofText = readFileSync(
+      join(__dirname, "..", "test", "fixtures", "proof.real.json"),
+      "utf-8",
+    );
+    const proof = JSON.parse(proofText) as Record<string, unknown>;
+    const declaredHash = String(proof.envelope_hash ?? "").toLowerCase();
+    const { envelope_hash: _omit, ...envelope } = proof;
+    const recomputed = await sha256Hex(canonicalJson(envelope));
+    expect(recomputed).toBe(declaredHash);
   });
 });
 
@@ -249,5 +299,32 @@ describe("useVerifyFlow", () => {
     });
     expect(result.current.perRound.size).toBe(0);
     expect(result.current.isRunning).toBe(false);
+  });
+
+  it("cancel() aborts in-flight fetch via AbortController signal", async () => {
+    let abortFired = false;
+    fetchMock.mockImplementation((_url: string, init?: RequestInit) => {
+      return new Promise((_resolve, reject) => {
+        const sig = init?.signal;
+        if (sig) {
+          sig.addEventListener("abort", () => {
+            abortFired = true;
+            reject(new DOMException("aborted", "AbortError"));
+          });
+        }
+      });
+    });
+
+    const { result } = renderHook(() => useVerifyFlow());
+
+    await act(async () => {
+      const startPromise = result.current.start("s42", ["1"]);
+      // Allow microtasks so start() actually issues the fetch + signal subscription.
+      await Promise.resolve();
+      result.current.cancel();
+      await startPromise;
+    });
+
+    expect(abortFired).toBe(true);
   });
 });

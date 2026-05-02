@@ -556,3 +556,84 @@ def daemon_port_busy_error(port: int) -> SovError:
             "(which selects a fresh random port)"
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# v2.1 daemon lifecycle errors (CLI-emitted, factory-style — Wave 7 CLI-005)
+# ---------------------------------------------------------------------------
+#
+# Three daemon errors were originally emitted as inline ``SovError(...)`` in
+# ``sov_cli/main.py`` (the ``daemon`` Typer subapp). Wave 6 audit CLI-005
+# flagged the inline pattern as drift from the rest of the module's
+# factory-per-failure-category convention; Wave 7 amend lifts them here so
+# downstream humanization passes (and any future translators) see them
+# alongside the rest of the registry.
+
+
+def daemon_not_installed_error(detail: str) -> SovError:
+    """The optional ``[daemon]`` extra is not installed.
+
+    ``detail`` is the underlying ``ImportError`` message captured at the
+    boundary; it gives the operator something concrete to grep when
+    diagnosing a stripped install.
+    """
+    return SovError(
+        code="DAEMON_NOT_INSTALLED",
+        message=f"Daemon support is not installed: {detail}",
+        hint="Install the daemon extra: pip install 'sovereignty-game[daemon]'",
+    )
+
+
+def daemon_not_running_error() -> SovError:
+    """No daemon is recorded for this project root."""
+    return SovError(
+        code="DAEMON_NOT_RUNNING",
+        message="No daemon is recorded for this project root.",
+        hint=(
+            "Start one with `sov daemon start`, or check "
+            "`sov daemon status` to inspect the recorded state."
+        ),
+    )
+
+
+def daemon_stop_failed_error(detail: str) -> SovError:
+    """``stop_daemon`` raised an unexpected exception.
+
+    ``detail`` is the underlying exception's stringification; it preserves
+    the operator-actionable context the inline call site previously
+    surfaced.
+    """
+    return SovError(
+        code="DAEMON_STOP_FAILED",
+        message=f"Daemon stop failed: {detail}",
+        hint=("Inspect `.sov/daemon.json` for the recorded pid, then kill it manually if needed."),
+    )
+
+
+# ---------------------------------------------------------------------------
+# v2.1 game-id validation (CLI + engine path-traversal guard — Wave 7 CLI-001)
+# ---------------------------------------------------------------------------
+
+
+def invalid_game_id_error(value: str) -> SovError:
+    """Operator passed a game-id that fails the persistence-layer allowlist.
+
+    The allowlist matches the existing ``f"s{seed}"`` convention used
+    throughout the codebase (proof envelopes, season records, anchor memos)
+    and explicitly rejects ``..``, path separators, NUL, newlines, and any
+    other character that could escape ``.sov/games/<id>/`` when used to
+    construct a per-game path.
+
+    The ``value`` is echoed back via ``repr()`` so control characters and
+    leading/trailing whitespace are visible to the operator without
+    breaking the message layout.
+    """
+    return SovError(
+        code="INPUT_GAME_ID",
+        message=f"Invalid game-id: {value!r}.",
+        hint=(
+            "Game-ids match the ``s<seed>`` convention (e.g. ``s42``). "
+            "Run `sov games` to list saved games, then "
+            "`sov resume <game-id>` to pick one."
+        ),
+    )

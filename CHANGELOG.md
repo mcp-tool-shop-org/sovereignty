@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added (Wave 3)
 
-- `sov daemon` HTTP/JSON daemon: long-running localhost server (Starlette + uvicorn) for IPC-driven consumers (Tauri shell, audit viewer). 10 read endpoints + 2 write endpoints + SSE event stream.
+- `sov daemon` HTTP/JSON daemon: long-running localhost server (Starlette + uvicorn) for IPC-driven consumers (Tauri shell, audit viewer). 8 read endpoints + 2 write endpoints + SSE event stream.
 - `AsyncXRPLTransport`: real-async sibling to `XRPLTransport` using `xrpl-py.AsyncJsonRpcClient`. Same retry policy, secret scrub, and BatchEntry contract; used by daemon's anchor flow.
 - Shared internals module `sov_transport.xrpl_internals` lifted from `xrpl.py` — pure helpers + types consumed by sync + async impls. No behavior change in sync `XRPLTransport`.
 - `sov daemon start [--readonly] [--network <n>] [--seed-env VAR | --signer-file PATH]` — detached background daemon. Token + port written to `.sov/daemon.json`.

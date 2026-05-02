@@ -36,16 +36,19 @@ Architectural notes
 
 from __future__ import annotations
 
+import contextlib
 import time
 
 from sov_transport import TransportError
 from sov_transport.base import BatchEntry, LedgerTransport
 from sov_transport.xrpl_internals import (
+    _MAX_BATCH_MEMO_BYTES,
     _MAX_MEMO_BYTES,
     _NETWORK_TABLE,
     _SUBMIT_BACKOFF_SECONDS,
     _SUBMIT_DEADLINE_SECONDS,
     _SUBMIT_MAX_ATTEMPTS,
+    ChainLookupResult,
     MainnetFaucetError,
     XRPLNetwork,
     _classify_submit_error,
@@ -63,9 +66,11 @@ from sov_transport.xrpl_internals import (
 # ``--strict`` ``attr-defined`` check sees them as explicitly re-exported and
 # the legacy compat layer keeps working without churn at every test site.
 __all__ = [
+    "ChainLookupResult",
     "MainnetFaucetError",
     "XRPLNetwork",
     "XRPLTransport",
+    "_MAX_BATCH_MEMO_BYTES",
     "_MAX_MEMO_BYTES",
     "_NETWORK_TABLE",
     "_SUBMIT_BACKOFF_SECONDS",
@@ -176,9 +181,20 @@ class XRPLTransport(LedgerTransport):
                 shape is missing the expected ``hash`` field.
         """
         del round_hash  # unused — preserved for legacy API surface
-        if len(memo.encode("utf-8")) > _MAX_MEMO_BYTES:
-            raise ValueError(f"memo exceeds {_MAX_MEMO_BYTES} bytes")
-        return self._submit([memo], signer)
+        try:
+            if len(memo.encode("utf-8")) > _MAX_MEMO_BYTES:
+                raise ValueError(f"memo exceeds {_MAX_MEMO_BYTES} bytes")
+            return self._submit([memo], signer)
+        finally:
+            # Caller-frame seed scrub (BRIDGE-001). The inner ``_submit``
+            # already rebinds its own ``signer`` local, but a sanitized
+            # exception unwinding through this frame still carries the
+            # caller-supplied ``signer`` in this frame's locals dict —
+            # observability layers (Sentry with-locals, ipdb post-mortem)
+            # can walk ``tb.tb_frame.f_locals`` and read it. Rebinding
+            # makes the underlying string GC-eligible (assuming no other
+            # refs) before the frame's locals are captured by tooling.
+            signer = ""  # noqa: F841 — intentional caller-frame scrub
 
     def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> str:
         """Anchor N rounds in one Payment via N memos. Returns single txid.
@@ -207,20 +223,45 @@ class XRPLTransport(LedgerTransport):
             TransportError: If submission fails after the bounded retry /
                 deadline.
         """
-        if not rounds:
-            raise ValueError("anchor_batch requires at least one round entry")
+        try:
+            if not rounds:
+                raise ValueError("anchor_batch requires at least one round entry")
 
-        memos: list[str] = []
-        for entry in rounds:
-            rendered = _format_memo(entry)
-            if len(rendered.encode("utf-8")) > _MAX_MEMO_BYTES:
+            memos: list[str] = []
+            total_bytes = 0
+            for entry in rounds:
+                rendered = _format_memo(entry)
+                memo_bytes = len(rendered.encode("utf-8"))
+                if memo_bytes > _MAX_MEMO_BYTES:
+                    raise ValueError(
+                        f"memo for round_key={entry['round_key']!r} exceeds "
+                        f"{_MAX_MEMO_BYTES} bytes ({memo_bytes})"
+                    )
+                total_bytes += memo_bytes
+                memos.append(rendered)
+
+            # BRIDGE-002: pre-submit total-tx-size validation. The XRPL
+            # Payment wire limit is ~10KB practical; we cap the memo total
+            # at 8KB to leave headroom for the rest of the envelope. Without
+            # this guard a 16-round batch with a long ruleset / game-id
+            # would push past the wire ceiling, the bounded retry loop
+            # would classify the rejection as ``unknown`` and burn 3
+            # attempts on a deterministic failure before surfacing an
+            # opaque TransportError.
+            if total_bytes > _MAX_BATCH_MEMO_BYTES:
                 raise ValueError(
-                    f"memo for round_key={entry['round_key']!r} exceeds "
-                    f"{_MAX_MEMO_BYTES} bytes ({len(rendered.encode('utf-8'))})"
+                    f"Batch payload {total_bytes} bytes exceeds XRPL Payment "
+                    f"ceiling {_MAX_BATCH_MEMO_BYTES} bytes; reduce round "
+                    "count or shorten ruleset / game-id to fit. "
+                    "(Per-memo cap is unchanged at "
+                    f"{_MAX_MEMO_BYTES} bytes; this is the per-tx total.)"
                 )
-            memos.append(rendered)
 
-        return self._submit(memos, signer)
+            return self._submit(memos, signer)
+        finally:
+            # Caller-frame seed scrub (BRIDGE-001). See anchor() finally
+            # block for rationale; same gap, same fix.
+            signer = ""  # noqa: F841 — intentional caller-frame scrub
 
     def _submit(self, memos: list[str], signer: str) -> str:
         """Submit a Payment carrying one or more memos. Internal helper.
@@ -408,31 +449,47 @@ class XRPLTransport(LedgerTransport):
             wallet = None
             signer = ""  # noqa: F841 — intentional scrub of caller's seed
 
-    def is_anchored_on_chain(self, txid: str, expected_hash: str) -> bool:
-        """Pure on-chain lookup: does ``txid`` carry a memo with ``expected_hash``?
+    def is_anchored_on_chain(self, txid: str, expected_hash: str) -> ChainLookupResult:
+        """3-state on-chain lookup: did ``txid`` carry ``expected_hash``?
 
-        Returns ``True`` if any memo on the transaction encodes
-        ``sha256:<expected_hash>`` via the SOV grammar (split on ``|``,
-        equality-check the suffix). Returns ``False`` if the tx exists but no
-        matching memo is found. The 3-state ``AnchorStatus`` (anchored /
-        pending / missing) is composed in ``sov_engine.proof.proof_anchor_status``
-        — this method intentionally returns a plain ``bool`` so the transport
-        does not couple to engine state.
+        Returns one of three states (BRIDGE-004) so engine-side state
+        composition can distinguish "definitively not anchored" from "could
+        not reach chain to ask":
+
+        * ``ChainLookupResult.FOUND`` — the lookup succeeded AND a memo on
+          ``txid`` encodes ``sha256:<expected_hash>`` via the SOV grammar
+          (split on ``|``, equality-check the suffix).
+        * ``ChainLookupResult.NOT_FOUND`` — the lookup succeeded AND no
+          matching memo was present. This includes "tx exists but encodes
+          a different envelope_hash" (chain drift) and "tx does not exist
+          on chain" (xrpl-py reports ``txnNotFound``).
+        * ``ChainLookupResult.LOOKUP_FAILED`` — the lookup itself failed
+          (RPC unreachable, 5xx response, malformed result envelope). The
+          chain has not given a verdict; engine maps this to ``MISSING``
+          with a different reason so callers can choose to retry rather
+          than cache the result as a definitive answer.
+
+        The 3-state ``AnchorStatus`` (anchored / pending / missing) is
+        composed in ``sov_engine.proof.proof_anchor_status`` — this
+        method's contract is the chain-pure 3-state lookup, not the
+        engine's pending-vs-anchored composition.
 
         Args:
             txid: The XRPL transaction hash (as returned by ``anchor`` or
-                ``anchor_batch``).
+                ``anchor_batch``). Must be non-empty.
             expected_hash: The SHA-256 hash we expect to find inside one of
                 the tx's memos. Must be non-empty.
 
         Returns:
-            ``True`` if any memo on the transaction encodes the expected
-            hash; ``False`` otherwise.
+            One of ``ChainLookupResult.FOUND`` / ``NOT_FOUND`` /
+            ``LOOKUP_FAILED``.
 
         Raises:
-            ValueError: If ``expected_hash`` is empty.
+            ValueError: If ``txid`` or ``expected_hash`` is empty.
             RuntimeError: If xrpl-py is not installed.
         """
+        if not txid:
+            raise ValueError("txid must be non-empty")
         if not expected_hash:
             raise ValueError("expected_hash must be non-empty")
 
@@ -445,22 +502,68 @@ class XRPLTransport(LedgerTransport):
             ) from e
 
         client = JsonRpcClient(self.url)
-        response = client.request(Tx(transaction=txid))
+        try:
+            try:
+                response = client.request(Tx(transaction=txid))
+            except Exception as e:
+                # Network failure / RPC unreachable / 5xx propagated as a
+                # raised exception by xrpl-py. The chain has not given us
+                # a verdict; surface LOOKUP_FAILED so engine-side composition
+                # can render this differently from a real "not on chain".
+                logger.warning(
+                    "is_anchored_on_chain.lookup_failed txid=%s exc=%s",
+                    txid,
+                    type(e).__name__,
+                )
+                return ChainLookupResult.LOOKUP_FAILED
 
-        memos = _extract_memos(response.result)
-        for m in memos:
-            if not isinstance(m, dict):
-                continue
-            memo_obj = m.get("Memo", {})
-            if not isinstance(memo_obj, dict):
-                continue
-            data = _from_hex(memo_obj.get("MemoData", ""))
-            if not data:
-                continue
-            for field in data.split("|"):
-                if field.startswith("sha256:") and field[len("sha256:") :] == expected_hash:
-                    return True
-        return False
+            # Some xrpl-py paths return a Response with is_successful() == False
+            # rather than raising. ``txnNotFound`` is a "definitively not on
+            # chain" verdict (NOT_FOUND); other unsuccessful responses signal
+            # a lookup failure (LOOKUP_FAILED).
+            check = getattr(response, "is_successful", None)
+            if callable(check):
+                try:
+                    ok = bool(check())
+                except Exception:
+                    ok = True
+                if not ok:
+                    result_for_err = getattr(response, "result", None)
+                    err_token = None
+                    if isinstance(result_for_err, dict):
+                        err_token = result_for_err.get("error")
+                    if err_token == "txnNotFound":
+                        return ChainLookupResult.NOT_FOUND
+                    logger.warning(
+                        "is_anchored_on_chain.lookup_failed txid=%s error=%s",
+                        txid,
+                        err_token,
+                    )
+                    return ChainLookupResult.LOOKUP_FAILED
+
+            memos = _extract_memos(response.result)
+            for m in memos:
+                if not isinstance(m, dict):
+                    continue
+                memo_obj = m.get("Memo", {})
+                if not isinstance(memo_obj, dict):
+                    continue
+                data = _from_hex(memo_obj.get("MemoData", ""))
+                if not data:
+                    continue
+                for field in data.split("|"):
+                    if field.startswith("sha256:") and field[len("sha256:") :] == expected_hash:
+                        return ChainLookupResult.FOUND
+            return ChainLookupResult.NOT_FOUND
+        finally:
+            # Defensive client lifecycle — sync httpx requests close on
+            # exit by default, but if a future xrpl-py release adds an
+            # explicit ``close()`` we want to invoke it. Also mirrors the
+            # async sibling's BRIDGE-005 lifecycle pattern.
+            close = getattr(client, "close", None)
+            if callable(close):
+                with contextlib.suppress(Exception):  # pragma: no cover
+                    close()
 
     def get_memo_text(self, txid: str) -> str | None:
         """Retrieve the first decodable memo text from a transaction.
@@ -469,6 +572,8 @@ class XRPLTransport(LedgerTransport):
         that fail to decode are skipped rather than raising, so an
         adversarial memo cannot DoS this call.
         """
+        if not txid:
+            raise ValueError("txid must be non-empty")
         try:
             from xrpl.clients import JsonRpcClient
             from xrpl.models import Tx
@@ -478,19 +583,25 @@ class XRPLTransport(LedgerTransport):
             ) from e
 
         client = JsonRpcClient(self.url)
-        response = client.request(Tx(transaction=txid))
+        try:
+            response = client.request(Tx(transaction=txid))
 
-        memos = _extract_memos(response.result)
-        for m in memos:
-            if not isinstance(m, dict):
-                continue
-            memo_obj = m.get("Memo", {})
-            if not isinstance(memo_obj, dict):
-                continue
-            data = _from_hex(memo_obj.get("MemoData", ""))
-            if data:
-                return data
-        return None
+            memos = _extract_memos(response.result)
+            for m in memos:
+                if not isinstance(m, dict):
+                    continue
+                memo_obj = m.get("Memo", {})
+                if not isinstance(memo_obj, dict):
+                    continue
+                data = _from_hex(memo_obj.get("MemoData", ""))
+                if data:
+                    return data
+            return None
+        finally:
+            close = getattr(client, "close", None)
+            if callable(close):
+                with contextlib.suppress(Exception):  # pragma: no cover
+                    close()
 
 
 def fund_dev_wallet(network: XRPLNetwork = XRPLNetwork.TESTNET) -> tuple[str, str]:

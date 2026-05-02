@@ -192,9 +192,11 @@ async def test_games_detail_returns_state_json(readonly_app: Any, tmp_path: Path
 
 
 async def test_games_detail_returns_404_for_missing_game(readonly_app: Any, tmp_path: Path) -> None:
+    # ``s99999999`` matches the game_id allowlist (see DAEMON-001) but no
+    # such save exists on disk — the right code is GAME_NOT_FOUND / 404.
     transport = httpx.ASGITransport(app=readonly_app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as c:
-        r = await c.get("/games/sNOPE", headers=_AUTH)
+        r = await c.get("/games/s99999999", headers=_AUTH)
     assert r.status_code == 404
 
 

@@ -160,3 +160,82 @@ def test_sov_resume_can_switch_back_and_forth(
     _skip_if_command_unwired(result_a)
     assert result_a.exit_code == 0
     assert active_game_pointer_path().read_text(encoding="utf-8").strip() == "s42"
+
+
+# ---------------------------------------------------------------------------
+# Wave-7 CLI-001: path-traversal validation
+# ---------------------------------------------------------------------------
+#
+# ``sov resume`` must reject any value that doesn't match the engine-layer
+# allowlist (``^s\d{1,19}$``) BEFORE touching the filesystem. Without the
+# guard, ``sov resume "s17/../s42"`` resolves to a sibling save's
+# ``state.json`` AND poisons ``.sov/active-game`` with the literal
+# traversal payload — every subsequent CLI invocation that consults the
+# pointer then constructs malformed paths via ``state_file`` /
+# ``proofs_dir`` / ``anchors_file`` / etc.
+
+
+@pytest.mark.parametrize(
+    "bad_id",
+    [
+        "s17/../s42",
+        "../etc/passwd",
+        "..",
+        "s42\n",  # newline injection
+        "s42\x00",  # NUL byte
+        "",  # empty
+        "/absolute/path",
+        "s42/extra",
+        "garbage",  # not s-prefixed
+        "s",  # missing digits
+        "s-1",  # negative
+    ],
+)
+def test_sov_resume_rejects_invalid_game_id(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, bad_id: str
+) -> None:
+    """`sov resume <bad-id>` exits non-zero with a structured error.
+
+    Each parametrized value covers a distinct attack / typo class:
+    path traversal, control character injection, empty input,
+    missing-prefix / missing-digits / negative.
+    """
+    monkeypatch.chdir(tmp_path)
+    # Plant a real save so a successful traversal would resolve to a
+    # valid state.json — proves the validator fires BEFORE filesystem.
+    _seed_v2_game(42)
+
+    result = runner.invoke(app, ["resume", bad_id])
+    _skip_if_command_unwired(result)
+
+    assert result.exit_code != 0, (
+        f"sov resume must reject invalid game-id {bad_id!r}; output={result.output!r}"
+    )
+    # Surface the structured error code so audit-tier tooling can grep.
+    assert "INPUT_GAME_ID" in result.output or "Invalid game-id" in result.output, (
+        f"expected structured INPUT_GAME_ID error; got: {result.output!r}"
+    )
+
+
+def test_sov_resume_invalid_game_id_does_not_poison_pointer(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A rejected resume must not write the malformed value to the pointer.
+
+    Pointer-poisoning is the load-bearing harm — every subsequent helper
+    that consults ``.sov/active-game`` would construct paths that resolve
+    outside the per-game directory. The validator MUST run before
+    ``set_active_game_id`` to keep the pointer clean.
+    """
+    monkeypatch.chdir(tmp_path)
+    _seed_v2_game(42)
+    set_active_game_id("s42")
+    before = active_game_pointer_path().read_text(encoding="utf-8")
+
+    result = runner.invoke(app, ["resume", "s17/../s42"])
+    _skip_if_command_unwired(result)
+
+    assert result.exit_code != 0
+    assert active_game_pointer_path().read_text(encoding="utf-8") == before, (
+        "rejected sov resume must not mutate the active-game pointer"
+    )

@@ -59,11 +59,13 @@ export class DaemonClient {
     return (await r.json()) as string[];
   }
 
-  /** GET /games/{id}/proofs/{round} — full proof envelope contents. */
-  async proof(gameId: string, round: string): Promise<unknown> {
+  /** GET /games/{id}/proofs/{round} — full proof envelope contents.
+   * Accepts an optional AbortSignal so callers (e.g. useVerifyFlow) can cancel
+   * in-flight verification. */
+  async proof(gameId: string, round: string, signal?: AbortSignal): Promise<unknown> {
     const r = await fetch(
       this.url(`/games/${encodeURIComponent(gameId)}/proofs/${encodeURIComponent(round)}`),
-      { headers: this.headers() },
+      { headers: this.headers(), signal },
     );
     if (!r.ok) throw new Error(`proof ${gameId}/${round}: ${r.status}`);
     return r.json();
@@ -77,10 +79,14 @@ export class DaemonClient {
     return (await r.json()) as Record<string, PendingEntry>;
   }
 
-  async anchorStatus(gameId: string, round: string): Promise<AnchorStatusResponse> {
+  async anchorStatus(
+    gameId: string,
+    round: string,
+    signal?: AbortSignal,
+  ): Promise<AnchorStatusResponse> {
     const r = await fetch(
       this.url(`/games/${encodeURIComponent(gameId)}/anchor-status/${encodeURIComponent(round)}`),
-      { headers: this.headers() },
+      { headers: this.headers(), signal },
     );
     if (!r.ok) throw new Error(`anchor-status ${gameId}/${round}: ${r.status}`);
     return (await r.json()) as AnchorStatusResponse;

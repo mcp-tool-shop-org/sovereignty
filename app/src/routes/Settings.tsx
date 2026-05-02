@@ -1,4 +1,4 @@
-// /settings — daemon config display + network switcher with 3 guardrails.
+// /settings — daemon config display + network/mode switcher with 3 guardrails.
 //
 // Per spec §4 guardrails (each must trip BEFORE daemon-restart flow runs):
 //   1. started_by_shell == false → refuse + inline message + disable Apply
@@ -6,6 +6,11 @@
 //   3. Switching to/from mainnet (either direction) → <dialog> confirm
 //
 // Restart flow (when guardrails clear): stop → poll status → start with new args.
+//
+// `started_by_shell` is read directly from the daemon-status payload (no `??`
+// fallback). When the field is missing — old Rust shell binary, or a status
+// fetch failure — the UI fails CLOSED: treat the daemon as externally-started
+// so the user can't accidentally switch networks against the guardrail.
 
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
@@ -19,10 +24,13 @@ import styles from "./Settings.module.css";
 
 const NETWORKS: XRPLNetwork[] = ["testnet", "mainnet", "devnet"];
 
-interface ExtendedDaemonStatus {
-  state: string;
-  /** Whether the Tauri shell started this daemon (vs externally via CLI). */
-  started_by_shell?: boolean;
+/** Cross-platform daemon log location hint. Mac/Linux follow XDG conventions;
+ *  Windows uses %LOCALAPPDATA%. Source: docs/v2.1-views.md §4 layout. */
+function daemonLogPathHint(): string {
+  if (typeof navigator !== "undefined" && /Win/i.test(navigator.platform)) {
+    return "%LOCALAPPDATA%\\sov\\daemon.log";
+  }
+  return "~/.local/state/sov/daemon.log";
 }
 
 export default function Settings() {
@@ -30,11 +38,16 @@ export default function Settings() {
   const [busy, setBusy] = useState(false);
   const [targetNetwork, setTargetNetwork] = useState<XRPLNetwork | null>(null);
   const [pendingByGame, setPendingByGame] = useState<Map<string, number>>(new Map());
+  // null = not yet probed; once probed we have a definite boolean. Field-
+  // missing on the wire is normalized to `false` (fail-closed) below.
   const [startedByShell, setStartedByShell] = useState<boolean | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingMode, setPendingMode] = useState<"network" | "mode" | null>(null);
   const [restartError, setRestartError] = useState<string | null>(null);
 
-  // Derive started_by_shell from extended status (Tauri shell tracks this).
+  // Read started_by_shell directly off the daemon-status response. Spec §4
+  // pins this as the source of truth for Guardrail #1; no `?? true` fallback
+  // — that was the audit finding (WEB-UI-002, dead-code guardrail).
   useEffect(() => {
     if (status !== "running") {
       setStartedByShell(null);
@@ -43,13 +56,14 @@ export default function Settings() {
     let cancelled = false;
     (async () => {
       try {
-        const s = (await daemonStatus()) as ExtendedDaemonStatus;
+        const s = await daemonStatus();
         if (!cancelled) {
-          // Default to true if shell doesn't report (backward-compat path).
-          setStartedByShell(s.started_by_shell ?? true);
+          // Fail closed: an old shell binary that doesn't ship the field
+          // (undefined) is treated as externally-started. Stricter, safer.
+          setStartedByShell(s.started_by_shell === true);
         }
       } catch {
-        if (!cancelled) setStartedByShell(null);
+        if (!cancelled) setStartedByShell(false);
       }
     })();
     return () => {
@@ -90,14 +104,14 @@ export default function Settings() {
   const totalPending = Array.from(pendingByGame.values()).reduce((a, b) => a + b, 0);
   const externallyStarted = startedByShell === false;
 
-  // Guardrails 1 + 2 — disable Apply.
+  // Guardrails 1 + 2 — disable Apply on either switcher.
   const guardrailMessage = externallyStarted
     ? "Daemon was started externally — stop it via `sov daemon stop` and restart from the shell to manage networks here."
     : totalPending > 0
       ? "Pending anchors target the current network. Run `sov anchor` to flush them first, then switch networks."
       : null;
 
-  const canApply =
+  const canApplyNetwork =
     !!targetNetwork &&
     !!config &&
     targetNetwork !== config.network &&
@@ -105,12 +119,17 @@ export default function Settings() {
     totalPending === 0 &&
     !busy;
 
+  // Mode switcher — same guardrails 1 + 2 (mainnet confirm doesn't apply since
+  // mode toggle doesn't change network).
+  const targetReadonly = config ? !config.readonly : false;
+  const canApplyMode = !!config && !externallyStarted && totalPending === 0 && !busy;
+
   // Guardrail 3 — mainnet boundary needs confirm.
   const requiresMainnetConfirm =
     !!config && !!targetNetwork && (config.network === "mainnet" || targetNetwork === "mainnet");
 
   const performRestart = useCallback(
-    async (network: XRPLNetwork) => {
+    async (network: XRPLNetwork, readonly: boolean) => {
       if (!config) return;
       setBusy(true);
       setRestartError(null);
@@ -127,7 +146,7 @@ export default function Settings() {
           }
           await new Promise((r) => setTimeout(r, 250));
         }
-        await startDaemon(config.readonly, network);
+        await startDaemon(readonly, network);
       } catch (e) {
         setRestartError(String(e));
       } finally {
@@ -137,19 +156,28 @@ export default function Settings() {
     [config, stopDaemon, startDaemon],
   );
 
-  const onApplyClick = useCallback(() => {
-    if (!targetNetwork || !canApply) return;
+  const onApplyNetworkClick = useCallback(() => {
+    if (!targetNetwork || !canApplyNetwork || !config) return;
     if (requiresMainnetConfirm) {
+      setPendingMode("network");
       setConfirmOpen(true);
     } else {
-      void performRestart(targetNetwork);
+      void performRestart(targetNetwork, config.readonly);
     }
-  }, [targetNetwork, canApply, requiresMainnetConfirm, performRestart]);
+  }, [targetNetwork, canApplyNetwork, requiresMainnetConfirm, performRestart, config]);
+
+  const onApplyModeClick = useCallback(() => {
+    if (!canApplyMode || !config) return;
+    void performRestart(config.network, targetReadonly);
+  }, [canApplyMode, performRestart, config, targetReadonly]);
 
   const onConfirmMainnet = useCallback(() => {
     setConfirmOpen(false);
-    if (targetNetwork) void performRestart(targetNetwork);
-  }, [targetNetwork, performRestart]);
+    if (pendingMode === "network" && targetNetwork && config) {
+      void performRestart(targetNetwork, config.readonly);
+    }
+    setPendingMode(null);
+  }, [targetNetwork, performRestart, pendingMode, config]);
 
   return (
     <main className={styles.main}>
@@ -199,6 +227,10 @@ export default function Settings() {
             </dd>
             <dt>IPC version</dt>
             <dd>{config.ipc_version}</dd>
+            <dt>Logs</dt>
+            <dd>
+              <code>{daemonLogPathHint()}</code>
+            </dd>
           </dl>
         ) : (
           <p className={styles.muted}>(no daemon config available)</p>
@@ -224,7 +256,12 @@ export default function Settings() {
               </option>
             ))}
           </select>
-          <button type="button" onClick={onApplyClick} disabled={!canApply} aria-busy={busy}>
+          <button
+            type="button"
+            onClick={onApplyNetworkClick}
+            disabled={!canApplyNetwork}
+            aria-busy={busy}
+          >
             {busy ? "Restarting…" : "Apply (restarts daemon)"}
           </button>
           {guardrailMessage ? (
@@ -240,6 +277,25 @@ export default function Settings() {
                 .join(", ")}
             </p>
           ) : null}
+        </fieldset>
+      </section>
+
+      <section className={styles.section} aria-label="mode switcher">
+        <h2 className={styles.h2}>Mode switcher</h2>
+        <fieldset className={styles.fieldset} disabled={busy || status !== "running"}>
+          <legend>Daemon mode</legend>
+          <p className={styles.muted}>
+            Current mode: <strong>{config?.readonly ? "readonly" : "full"}</strong>. Readonly mode
+            disables anchor writes; full mode requires a wallet seed in <code>XRPL_SEED</code>.
+          </p>
+          <button
+            type="button"
+            onClick={onApplyModeClick}
+            disabled={!canApplyMode}
+            aria-busy={busy}
+          >
+            {busy ? "Restarting…" : config?.readonly ? "Switch to full mode" : "Switch to readonly"}
+          </button>
         </fieldset>
       </section>
 
@@ -262,7 +318,10 @@ export default function Settings() {
         cancelLabel="Cancel"
         variant="warn"
         onConfirm={onConfirmMainnet}
-        onCancel={() => setConfirmOpen(false)}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setPendingMode(null);
+        }}
       />
     </main>
   );

@@ -10,10 +10,18 @@ What lives here
 ---------------
 
 * ``XRPLNetwork`` — the ``StrEnum`` of selectable networks.
+* ``ChainLookupResult`` — 3-state result from ``is_anchored_on_chain``
+  distinguishing FOUND / NOT_FOUND / LOOKUP_FAILED so engine-side state
+  composition can tell "definitively not on chain" from "could not reach
+  the chain to ask".
 * ``MainnetFaucetError`` — the typed exception raised by ``fund_dev_wallet``
   when invoked against ``MAINNET``.
 * ``_NETWORK_TABLE`` — JSON-RPC URL + explorer-prefix per network.
 * ``_MAX_MEMO_BYTES`` — the per-memo size cap (``1024``).
+* ``_MAX_BATCH_MEMO_BYTES`` — the conservative per-tx ceiling for the sum of
+  memo bytes in ``anchor_batch``. Leaves headroom for the rest of the
+  Payment envelope (account, fee, sequence, signature, etc.) below the
+  XRPL practical wire limit.
 * ``_SUBMIT_MAX_ATTEMPTS`` / ``_SUBMIT_BACKOFF_SECONDS`` /
   ``_SUBMIT_DEADLINE_SECONDS`` — bounded-retry policy constants. Both sync and
   async impls run their own retry loop (``time.sleep`` vs ``await
@@ -44,7 +52,7 @@ import logging
 from enum import StrEnum
 from typing import Any
 
-from sov_transport.base import BatchEntry
+from sov_transport.base import BatchEntry, ChainLookupResult
 
 # Maximum memo length in bytes. XRPL allows ~1KB per memo field; we cap at
 # 1024 to give the user a clear, actionable error before submission rather
@@ -52,6 +60,14 @@ from sov_transport.base import BatchEntry
 # per-memo, not per-tx — multi-memo batching can carry N memos × 1024 B in
 # the same Payment, which is the design driver for ``anchor_batch``.
 _MAX_MEMO_BYTES = 1024
+
+# Per-tx ceiling for the sum of memo bytes in a single ``anchor_batch`` call.
+# XRPL's practical Payment-tx wire limit is ~10KB; we cap the memo total at
+# 8KB to leave headroom for the rest of the Payment envelope (account,
+# destination, fee, sequence, signature, flags). Pre-submit validation against
+# this ceiling raises an early, operator-actionable ``ValueError`` instead of
+# burning the bounded retry loop on a deterministic xrpl-py rejection.
+_MAX_BATCH_MEMO_BYTES = 8 * 1024
 
 # submit_and_wait retry policy. Bounded retry with exponential backoff
 # guards against transient testnet glitches (LedgerNotFound, brief network
@@ -211,8 +227,10 @@ def _format_memo(entry: BatchEntry) -> str:
 
 
 __all__ = [
+    "ChainLookupResult",
     "MainnetFaucetError",
     "XRPLNetwork",
+    "_MAX_BATCH_MEMO_BYTES",
     "_MAX_MEMO_BYTES",
     "_NETWORK_TABLE",
     "_SUBMIT_BACKOFF_SECONDS",

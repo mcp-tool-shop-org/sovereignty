@@ -206,6 +206,13 @@ def proof_anchor_status(
     if txid is None:
         return AnchorStatus.MISSING
 
-    if transport.is_anchored_on_chain(txid, envelope_hash):
+    # Wave 6 BRIDGE-004: is_anchored_on_chain returns ChainLookupResult
+    # (FOUND / NOT_FOUND / LOOKUP_FAILED), not bool. Explicit identity check
+    # against FOUND — every other result (NOT_FOUND, LOOKUP_FAILED) maps to
+    # MISSING. Truthy comparison would silently treat NOT_FOUND as ANCHORED
+    # because the StrEnum value "not_found" is non-empty.
+    from sov_transport.xrpl_internals import ChainLookupResult
+
+    if transport.is_anchored_on_chain(txid, envelope_hash) is ChainLookupResult.FOUND:
         return AnchorStatus.ANCHORED
     return AnchorStatus.MISSING

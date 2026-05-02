@@ -151,9 +151,12 @@ def test_list_saved_games_skips_malformed_state(
     monkeypatch.chdir(tmp_path)
     _seed_game("s42", players=["Alice", "Bob"], seed=42)
 
-    # Plant a malformed game next to the valid one.
+    # Plant a malformed game next to the valid one. Using a valid-shaped
+    # game-id (``s99``) — the malformed bytes live in state.json itself.
+    # ``game_dir`` validates the id at construction time as of v2.1
+    # BACKEND-001 hardening; an invalid-name skip is exercised separately.
     games_dir().mkdir(parents=True, exist_ok=True)
-    bad_dir = game_dir("sBAD")
+    bad_dir = game_dir("s99")
     bad_dir.mkdir(parents=True, exist_ok=True)
     (bad_dir / "state.json").write_text("{ not json garbage", encoding="utf-8")
 
@@ -190,7 +193,8 @@ def test_list_saved_games_skips_directories_without_state_file(
     _seed_game("s42", players=["Alice", "Bob"], seed=42)
 
     # Directory present but no state.json (could happen mid-creation).
-    game_dir("sEMPTY").mkdir(parents=True, exist_ok=True)
+    # Use ``s7`` — a valid-shaped game-id under v2.1 BACKEND-001 hardening.
+    game_dir("s7").mkdir(parents=True, exist_ok=True)
 
     summaries = list_saved_games()
     assert {s.game_id for s in summaries} == {"s42"}

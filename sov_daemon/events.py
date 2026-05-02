@@ -26,7 +26,9 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
-from collections.abc import AsyncIterator
+import threading
+import time as _time
+from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
 
 from starlette.applications import Starlette
@@ -57,7 +59,13 @@ class EventBroadcaster:
 
     def __init__(self) -> None:
         self._subscribers: set[asyncio.Queue[tuple[str, dict[str, Any]]]] = set()
-        self._lock = asyncio.Lock()
+        # DAEMON-008: ``threading.Lock`` instead of ``asyncio.Lock`` so the
+        # sync ``broadcast`` API can acquire the same lock that the async
+        # subscribe / unsubscribe paths hold. The single-event-loop pattern
+        # makes contention vanishingly rare (the lock is only held for a
+        # set add / discard / iteration), and ``threading.Lock`` works
+        # under free-threaded CPython too.
+        self._lock = threading.Lock()
         self._poll_task: asyncio.Task[None] | None = None
         # Track per-game state.json mtimes so we can detect changes.
         # Empty dict means "never polled yet" — the first poll seeds
@@ -71,23 +79,33 @@ class EventBroadcaster:
         no polling happens while no clients are connected.
         """
         queue: asyncio.Queue[tuple[str, dict[str, Any]]] = asyncio.Queue()
-        async with self._lock:
+        with self._lock:
             self._subscribers.add(queue)
-            if self._poll_task is None or self._poll_task.done():
-                self._poll_task = asyncio.create_task(self._poll_state_changes())
+            need_poll = self._poll_task is None or self._poll_task.done()
+        if need_poll:
+            # Spawn the polling task outside the lock so a failing
+            # ``create_task`` doesn't strand the lock; ``asyncio.Lock``
+            # would have made this irrelevant, but ``threading.Lock``
+            # makes the discipline visible.
+            with self._lock:
+                if self._poll_task is None or self._poll_task.done():
+                    self._poll_task = asyncio.create_task(self._poll_state_changes())
         return queue
 
     async def unsubscribe(self, queue: asyncio.Queue[tuple[str, dict[str, Any]]]) -> None:
         """Drop a listener. Stops the poll task when the last one leaves."""
-        async with self._lock:
+        task_to_cancel: asyncio.Task[None] | None = None
+        with self._lock:
             self._subscribers.discard(queue)
             if not self._subscribers and self._poll_task is not None:
-                self._poll_task.cancel()
+                task_to_cancel = self._poll_task
                 self._poll_task = None
                 # Re-seed mtimes on next subscribe — a long idle gap
                 # would otherwise dump every changed state.json as a
                 # single burst when polling resumes.
                 self._last_mtimes = {}
+        if task_to_cancel is not None:
+            task_to_cancel.cancel()
 
     def broadcast(self, event_type: str, payload: dict[str, Any]) -> None:
         """Enqueue an event for every connected listener.
@@ -96,8 +114,15 @@ class EventBroadcaster:
         without awaiting. The queue's ``put_nowait`` is non-blocking;
         if a queue is full (won't happen with the unbounded default),
         we'd log + drop here.
+
+        DAEMON-008: snapshot the subscriber set under the lock before
+        iterating so a concurrent ``unsubscribe`` can't drop the queue
+        we're about to enqueue onto. The snapshot is small (typically
+        one or two clients) and the lock window is correspondingly tiny.
         """
-        for queue in list(self._subscribers):
+        with self._lock:
+            queues = list(self._subscribers)
+        for queue in queues:
             try:
                 queue.put_nowait((event_type, payload))
             except asyncio.QueueFull:
@@ -166,6 +191,87 @@ class EventBroadcaster:
         self._last_mtimes = seen_now
 
 
+class ChainLookupCache:
+    """DAEMON-006: single-flight + 5s TTL cache for ``is_anchored_on_chain``.
+
+    Two SSE clients concurrently hitting the same txid would otherwise
+    each spawn an upstream xrpl-py request. xrpl-py's testnet rate limit
+    (~120 req/min/IP) starts to bite under multi-client audit-viewer
+    fan-out. The cache:
+
+    * coalesces concurrent ``get(txid, fetch)`` calls into a single
+      upstream invocation (single-flight); waiters share the future.
+    * caches the result for ``_TTL_SECONDS`` so SSE refresh storms don't
+      re-query the chain for an already-known txid.
+
+    Build the infrastructure now even though the v2.1 endpoints don't
+    call ``is_anchored_on_chain`` from the request path — the next
+    endpoint that adds chain re-verification (audit viewer "anchor
+    confirmed" badges, etc.) inherits the protection rather than
+    retrofitting it after a rate-limit incident.
+    """
+
+    _TTL_SECONDS: float = 5.0
+
+    def __init__(self) -> None:
+        self._cache: dict[str, tuple[float, bool]] = {}
+        self._inflight: dict[str, asyncio.Future[bool]] = {}
+        self._lock = asyncio.Lock()
+
+    async def get(
+        self,
+        txid: str,
+        fetch: Callable[[], Awaitable[bool]],
+    ) -> bool:
+        """Return ``fetch()``'s result, coalesced + cached.
+
+        ``fetch`` is the upstream lookup (e.g. ``transport.is_anchored_on_chain``
+        bound to a particular envelope hash). Two concurrent ``get`` calls
+        for the same ``txid`` invoke ``fetch`` exactly once; the second
+        awaits the first's future. Errors propagate to every waiter.
+        """
+        async with self._lock:
+            cached = self._cache.get(txid)
+            if cached is not None and (_time.monotonic() - cached[0]) < self._TTL_SECONDS:
+                return cached[1]
+            pending = self._inflight.get(txid)
+            if pending is not None:
+                future = pending
+                in_flight_owner = False
+            else:
+                future = asyncio.get_event_loop().create_future()
+                self._inflight[txid] = future
+                in_flight_owner = True
+
+        if not in_flight_owner:
+            return await future
+
+        try:
+            result = await fetch()
+        except BaseException as exc:
+            async with self._lock:
+                self._inflight.pop(txid, None)
+            if not future.done():
+                future.set_exception(exc)
+            raise
+
+        async with self._lock:
+            self._cache[txid] = (_time.monotonic(), result)
+            self._inflight.pop(txid, None)
+        if not future.done():
+            future.set_result(result)
+        return result
+
+
+def get_chain_cache(app: Starlette) -> ChainLookupCache:
+    """Return the per-app ``ChainLookupCache``, creating it on first use."""
+    cache = getattr(app.state, "chain_cache", None)
+    if cache is None:
+        cache = ChainLookupCache()
+        app.state.chain_cache = cache
+    return cache
+
+
 # Module-level broadcaster registry. Most callers reach for the
 # per-app broadcaster via ``get_broadcaster(app)``; the test surface
 # also wants module-level emit helpers (``emit_anchor_pending_added``,
@@ -206,6 +312,26 @@ def _default() -> EventBroadcaster | None:
     leak per-test state across the suite).
     """
     return _default_broadcaster
+
+
+def reset_default_broadcaster() -> None:
+    """DAEMON-009: drop the module-level singleton.
+
+    Test fixtures call this so the broadcaster from one test's app doesn't
+    leak into the next test's ``emit_anchor_*`` callsites. Production
+    callers don't need this — there's exactly one daemon per process.
+
+    Use as an autouse pytest fixture::
+
+        @pytest.fixture(autouse=True)
+        def _reset_broadcaster():
+            from sov_daemon.events import reset_default_broadcaster
+            reset_default_broadcaster()
+            yield
+            reset_default_broadcaster()
+    """
+    global _default_broadcaster
+    _default_broadcaster = None
 
 
 def emit_anchor_pending_added(
@@ -317,10 +443,13 @@ def broadcast_shutdown(app: Starlette) -> None:
 
 
 __all__ = [
+    "ChainLookupCache",
     "EventBroadcaster",
     "broadcast_shutdown",
     "emit_anchor_batch_complete",
     "emit_anchor_pending_added",
     "get_broadcaster",
+    "get_chain_cache",
+    "reset_default_broadcaster",
     "sse_stream",
 ]

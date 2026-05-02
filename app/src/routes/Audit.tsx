@@ -18,6 +18,7 @@ import { useDaemon } from "../hooks/useDaemon";
 import { useDaemonEvents } from "../hooks/useDaemonEvents";
 import { type RoundVerifyState, useVerifyFlow } from "../hooks/useVerifyFlow";
 import { DaemonClient } from "../lib/daemonClient";
+import { isSafeExplorerUrl } from "../lib/url";
 import type { AnchorStatusResponse, GameSummary, SSEEvent } from "../types/daemon";
 import styles from "./Audit.module.css";
 
@@ -408,8 +409,8 @@ function RoundRowView({ row, verifyState }: { row: RoundRow; verifyState: RoundV
         </Pill>
       </td>
       <td>
-        {status.explorer_url && txid ? (
-          <a href={status.explorer_url} target="_blank" rel="noreferrer">
+        {txid && isSafeExplorerUrl(status.explorer_url) ? (
+          <a href={status.explorer_url} target="_blank" rel="noreferrer noopener">
             {txidShort}
           </a>
         ) : (

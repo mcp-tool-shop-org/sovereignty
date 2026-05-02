@@ -418,3 +418,130 @@ def test_anchor_failed_batch_keeps_pending_intact(
     assert set(pending.keys()) == {"1", "2"}
     # The pending file is the same path; was not deleted on failure.
     assert pending_anchors_path(game_id).exists()
+
+
+# ---------------------------------------------------------------------------
+# Wave-7 regressions
+# ---------------------------------------------------------------------------
+# Each test below pins one of the Wave-6 audit findings (CLI-002 / CLI-003 /
+# CLI-004) so the next refactor doesn't quietly regress the contract.
+
+
+# CLI-002: legacy single-round anchor must clear the pending entry on success
+# so the next batch flush doesn't re-anchor the same round as a duplicate.
+def test_anchor_legacy_clears_pending_after_success(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Legacy ``sov anchor <proof_file>`` clears the pending row on success.
+
+    Without the fix, ``end-round`` queues round N pending, the legacy
+    single-round anchor records the txid in ``anchors.json`` AND leaves
+    the pending row, and a subsequent batch flush re-anchors round N as
+    a duplicate on chain.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("XRPL_SEED", _TEST_SEED)
+    game_id = _seed_game(tmp_path, game_over=False)
+    proof_path = _seed_proof_file(game_id, 1, _HASH_A)
+    # Simulate the queued pending row that ``end-round`` leaves behind.
+    add_pending_anchor(game_id, "1", _HASH_A)
+    add_pending_anchor(game_id, "2", _HASH_B)
+
+    from sov_engine.io_utils import read_pending_anchors
+
+    # Sanity: pending starts populated.
+    assert set(read_pending_anchors(game_id).keys()) == {"1", "2"}
+
+    factory = _make_mock_transport_factory(txid="LEGACYTX")
+    with patch("sov_transport.xrpl.XRPLTransport", factory):
+        result = runner.invoke(app, ["anchor", str(proof_path)])
+
+    assert result.exit_code == 0, f"output: {result.output!r}"
+    factory.return_value.anchor.assert_called_once()
+
+    # CLI-002 invariant: round "1" is no longer pending; round "2" is
+    # untouched (the legacy path only clears the round it just anchored).
+    remaining = read_pending_anchors(game_id)
+    assert "1" not in remaining
+    assert "2" in remaining
+
+
+# CLI-003: empty pending must exit 0 even with no wallet seed configured.
+def test_anchor_empty_pending_succeeds_without_wallet(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """`sov anchor` with no pending exits 0 even when XRPL_SEED is unset.
+
+    Spec §5: "`sov anchor` with empty pending → idempotent no-op, info exit,
+    no tx submitted." Before the fix, the seed gate fired first and the
+    user saw CONFIG_NO_WALLET when they should have seen "no pending".
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("XRPL_SEED", raising=False)
+    monkeypatch.delenv("SOV_XRPL_NETWORK", raising=False)
+    _seed_game(tmp_path, game_over=True)  # no pending, no wallet
+
+    factory = _make_mock_transport_factory()
+    with patch("sov_transport.xrpl.XRPLTransport", factory):
+        result = runner.invoke(app, ["anchor"])
+
+    assert result.exit_code == 0, f"output: {result.output!r}"
+    assert "No pending anchors" in result.output or "no pending" in result.output.lower()
+    # Crucially: no CONFIG_NO_WALLET surfaced — the wallet gate did NOT fire
+    # because the empty-pending fast-path returned first.
+    assert "CONFIG_NO_WALLET" not in result.output
+    assert "No wallet seed" not in result.output
+    factory.return_value.anchor_batch.assert_not_called()
+    factory.return_value.anchor.assert_not_called()
+
+
+# CLI-004: structured ANCHOR_PENDING surfaces in `sov status --json` when
+# at least one round is queued in pending-anchors.json.
+def test_status_json_emits_anchor_pending_when_pending_nonempty(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """`sov status --json` embeds ``anchor_pending`` envelope when pending is non-empty.
+
+    The structured shape (``code``, ``message``, ``hint``, ``rounds``)
+    matches ``anchor_pending_error`` from ``sov_cli/errors.py``. External
+    audit-tier consumers can reason about the failure code without
+    parsing prose.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("XRPL_SEED", _TEST_SEED)
+    game_id = _seed_game(tmp_path, game_over=False)
+    add_pending_anchor(game_id, "1", _HASH_A)
+    add_pending_anchor(game_id, "FINAL", _HASH_FINAL)
+
+    result = runner.invoke(app, ["status", "--json"])
+    assert result.exit_code == 0, f"output: {result.output!r}"
+
+    payload = json.loads(result.output)
+    assert "anchor_pending" in payload
+    ap = payload["anchor_pending"]
+    assert ap["code"] == "ANCHOR_PENDING"
+    # FINAL must sort after numeric rounds — same convention as the
+    # rounds[] list and anchors.json.
+    assert ap["rounds"] == ["1", "FINAL"]
+    # Hint is the locked text from ``anchor_pending_error``.
+    assert "sov anchor" in ap["hint"]
+
+
+def test_status_json_omits_anchor_pending_when_empty(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """`sov status --json` omits ``anchor_pending`` when nothing is pending.
+
+    The field is additive — present when there's something to report,
+    absent otherwise. Consumers can use ``"anchor_pending" in payload``
+    as the discriminator.
+    """
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("XRPL_SEED", _TEST_SEED)
+    _seed_game(tmp_path, game_over=False)
+
+    result = runner.invoke(app, ["status", "--json"])
+    assert result.exit_code == 0, f"output: {result.output!r}"
+
+    payload = json.loads(result.output)
+    assert "anchor_pending" not in payload

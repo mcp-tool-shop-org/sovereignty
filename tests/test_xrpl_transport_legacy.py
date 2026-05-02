@@ -81,14 +81,19 @@ def test_v2_0_2_single_memo_proof_verifies_under_v2_1(
     The wire shape on v2.0.2 was: one Payment, one memo, one round. Today's
     ``XRPLTransport.is_anchored_on_chain`` must handle that shape exactly
     as it handled it in v2.0.2 — the on-chain history is immutable, so any
-    operator with v2.0.2 anchors must keep being able to verify them.
+    operator with v2.0.2 anchors must keep being able to verify them. Note
+    the post-BRIDGE-004 return is ``ChainLookupResult.FOUND`` (not ``True``)
+    — the v2.0.2 verify call site went through ``verify()`` which still
+    returns ``bool``; this test pins the v2.1 surface ``is_anchored_on_chain``
+    behavior on the same recorded shape.
     """
-    from sov_transport.xrpl import XRPLNetwork, XRPLTransport, _to_hex
+    from sov_transport.xrpl import ChainLookupResult, XRPLNetwork, XRPLTransport, _to_hex
 
     expected_hash = "abc123def4567890abc123def4567890abc123def4567890abc123def4567890"
     legacy_memo = f"SOV|campfire_v1|s42|r1|sha256:{expected_hash}"
 
     fake_response = MagicMock()
+    fake_response.is_successful.return_value = True
     fake_response.result = {
         # v2.0.2 wire shape: top-level Memos with exactly one entry.
         "Memos": [{"Memo": {"MemoData": _to_hex(legacy_memo)}}],
@@ -100,7 +105,8 @@ def test_v2_0_2_single_memo_proof_verifies_under_v2_1(
 
     transport = XRPLTransport(XRPLNetwork.TESTNET)
     assert (
-        transport.is_anchored_on_chain(txid="recorded-tx-hash", expected_hash=expected_hash) is True
+        transport.is_anchored_on_chain(txid="recorded-tx-hash", expected_hash=expected_hash)
+        is ChainLookupResult.FOUND
     )
 
 

@@ -54,11 +54,13 @@ import time
 from sov_transport import TransportError
 from sov_transport.base import BatchEntry
 from sov_transport.xrpl_internals import (
+    _MAX_BATCH_MEMO_BYTES,
     _MAX_MEMO_BYTES,
     _NETWORK_TABLE,
     _SUBMIT_BACKOFF_SECONDS,
     _SUBMIT_DEADLINE_SECONDS,
     _SUBMIT_MAX_ATTEMPTS,
+    ChainLookupResult,
     XRPLNetwork,
     _classify_submit_error,
     _extract_memos,
@@ -158,9 +160,15 @@ class AsyncXRPLTransport:
                 response shape.
         """
         del round_hash  # unused — preserved for legacy API surface
-        if len(memo.encode("utf-8")) > _MAX_MEMO_BYTES:
-            raise ValueError(f"memo exceeds {_MAX_MEMO_BYTES} bytes")
-        return await self._submit([memo], signer)
+        try:
+            if len(memo.encode("utf-8")) > _MAX_MEMO_BYTES:
+                raise ValueError(f"memo exceeds {_MAX_MEMO_BYTES} bytes")
+            return await self._submit([memo], signer)
+        finally:
+            # Caller-frame seed scrub (BRIDGE-001) — see sync sibling for
+            # rationale. Same gap (Sentry with-locals + ipdb post-mortem
+            # walking ``tb.tb_frame.f_locals`` up to this frame), same fix.
+            signer = ""  # noqa: F841 — intentional caller-frame scrub
 
     async def anchor_batch(self, rounds: list[BatchEntry], signer: str) -> str:
         """Async anchor N rounds in one Payment via N memos. Returns single txid.
@@ -182,20 +190,40 @@ class AsyncXRPLTransport:
             TransportError: On retry exhaustion / network failure / unexpected
                 response shape.
         """
-        if not rounds:
-            raise ValueError("anchor_batch requires at least one round entry")
+        try:
+            if not rounds:
+                raise ValueError("anchor_batch requires at least one round entry")
 
-        memos: list[str] = []
-        for entry in rounds:
-            rendered = _format_memo(entry)
-            if len(rendered.encode("utf-8")) > _MAX_MEMO_BYTES:
+            memos: list[str] = []
+            total_bytes = 0
+            for entry in rounds:
+                rendered = _format_memo(entry)
+                memo_bytes = len(rendered.encode("utf-8"))
+                if memo_bytes > _MAX_MEMO_BYTES:
+                    raise ValueError(
+                        f"memo for round_key={entry['round_key']!r} exceeds "
+                        f"{_MAX_MEMO_BYTES} bytes ({memo_bytes})"
+                    )
+                total_bytes += memo_bytes
+                memos.append(rendered)
+
+            # BRIDGE-002: pre-submit total-tx-size validation. See sync
+            # sibling for the design rationale (8KB cap leaves headroom
+            # under the ~10KB XRPL Payment wire limit).
+            if total_bytes > _MAX_BATCH_MEMO_BYTES:
                 raise ValueError(
-                    f"memo for round_key={entry['round_key']!r} exceeds "
-                    f"{_MAX_MEMO_BYTES} bytes ({len(rendered.encode('utf-8'))})"
+                    f"Batch payload {total_bytes} bytes exceeds XRPL Payment "
+                    f"ceiling {_MAX_BATCH_MEMO_BYTES} bytes; reduce round "
+                    "count or shorten ruleset / game-id to fit. "
+                    "(Per-memo cap is unchanged at "
+                    f"{_MAX_MEMO_BYTES} bytes; this is the per-tx total.)"
                 )
-            memos.append(rendered)
 
-        return await self._submit(memos, signer)
+            return await self._submit(memos, signer)
+        finally:
+            # Caller-frame seed scrub (BRIDGE-001) — see anchor() finally
+            # block for rationale; same gap, same fix.
+            signer = ""  # noqa: F841 — intentional caller-frame scrub
 
     async def _submit(self, memos: list[str], signer: str) -> str:
         """Async submit a Payment carrying one or more memos. Internal helper.
@@ -386,26 +414,27 @@ class AsyncXRPLTransport:
             wallet = None
             signer = ""  # noqa: F841 — intentional scrub of caller's seed
 
-    async def is_anchored_on_chain(self, txid: str, expected_hash: str) -> bool:
-        """Async pure on-chain lookup: does ``txid`` carry ``expected_hash``?
+    async def is_anchored_on_chain(self, txid: str, expected_hash: str) -> ChainLookupResult:
+        """Async 3-state on-chain lookup. Mirrors the sync sibling exactly.
 
-        Same semantics as the sync impl: returns ``True`` if any memo on the
-        transaction encodes ``sha256:<expected_hash>`` via the SOV grammar,
-        ``False`` if the tx exists but no matching memo is found. The 3-state
-        ``AnchorStatus`` composition lives in the engine layer; this method
-        intentionally returns a plain ``bool``.
+        Returns one of ``ChainLookupResult.FOUND`` / ``NOT_FOUND`` /
+        ``LOOKUP_FAILED`` per BRIDGE-004. See ``XRPLTransport.is_anchored_on_chain``
+        for the full state semantics.
 
         Args:
-            txid: The XRPL transaction hash.
+            txid: Non-empty XRPL transaction hash.
             expected_hash: Non-empty SHA-256 hex digest to match.
 
         Returns:
-            ``True`` if any memo encodes the expected hash; ``False`` otherwise.
+            One of ``ChainLookupResult.FOUND`` / ``NOT_FOUND`` /
+            ``LOOKUP_FAILED``.
 
         Raises:
-            ValueError: If ``expected_hash`` is empty.
+            ValueError: If ``txid`` or ``expected_hash`` is empty.
             RuntimeError: If xrpl-py is not installed.
         """
+        if not txid:
+            raise ValueError("txid must be non-empty")
         if not expected_hash:
             raise ValueError("expected_hash must be non-empty")
 
@@ -418,22 +447,62 @@ class AsyncXRPLTransport:
             ) from e
 
         client = AsyncJsonRpcClient(self.url)
-        response = await client.request(Tx(transaction=txid))
+        try:
+            try:
+                response = await client.request(Tx(transaction=txid))
+            except Exception as e:
+                logger.warning(
+                    "is_anchored_on_chain.lookup_failed txid=%s exc=%s",
+                    txid,
+                    type(e).__name__,
+                )
+                return ChainLookupResult.LOOKUP_FAILED
 
-        memos = _extract_memos(response.result)
-        for m in memos:
-            if not isinstance(m, dict):
-                continue
-            memo_obj = m.get("Memo", {})
-            if not isinstance(memo_obj, dict):
-                continue
-            data = _from_hex(memo_obj.get("MemoData", ""))
-            if not data:
-                continue
-            for field in data.split("|"):
-                if field.startswith("sha256:") and field[len("sha256:") :] == expected_hash:
-                    return True
-        return False
+            check = getattr(response, "is_successful", None)
+            if callable(check):
+                try:
+                    ok = bool(check())
+                except Exception:
+                    ok = True
+                if not ok:
+                    result_for_err = getattr(response, "result", None)
+                    err_token = None
+                    if isinstance(result_for_err, dict):
+                        err_token = result_for_err.get("error")
+                    if err_token == "txnNotFound":
+                        return ChainLookupResult.NOT_FOUND
+                    logger.warning(
+                        "is_anchored_on_chain.lookup_failed txid=%s error=%s",
+                        txid,
+                        err_token,
+                    )
+                    return ChainLookupResult.LOOKUP_FAILED
+
+            memos = _extract_memos(response.result)
+            for m in memos:
+                if not isinstance(m, dict):
+                    continue
+                memo_obj = m.get("Memo", {})
+                if not isinstance(memo_obj, dict):
+                    continue
+                data = _from_hex(memo_obj.get("MemoData", ""))
+                if not data:
+                    continue
+                for field in data.split("|"):
+                    if field.startswith("sha256:") and field[len("sha256:") :] == expected_hash:
+                        return ChainLookupResult.FOUND
+            return ChainLookupResult.NOT_FOUND
+        finally:
+            # BRIDGE-005: async client lifecycle. xrpl-py 2.x's
+            # ``AsyncJsonRpcClient`` does not currently expose a close
+            # method (each request internally builds its own httpx
+            # AsyncClient via ``async with``), but if a future release
+            # adds explicit lifecycle we want to honor it. Pattern A
+            # (try/finally per call) chosen over Pattern B (cached
+            # client) because the audit's daemon-coordination concern
+            # (per-tab × per-round polling) is naturally bounded by the
+            # daemon's single-flight + 5s cache (DAEMON-006).
+            await _maybe_aclose(client)
 
     async def get_memo_text(self, txid: str) -> str | None:
         """Async retrieve the first decodable memo text from a transaction.
@@ -442,6 +511,8 @@ class AsyncXRPLTransport:
         that fail to decode are skipped rather than raising, so an adversarial
         memo cannot DoS this call.
         """
+        if not txid:
+            raise ValueError("txid must be non-empty")
         try:
             from xrpl.asyncio.clients import AsyncJsonRpcClient
             from xrpl.models import Tx
@@ -451,16 +522,55 @@ class AsyncXRPLTransport:
             ) from e
 
         client = AsyncJsonRpcClient(self.url)
-        response = await client.request(Tx(transaction=txid))
+        try:
+            response = await client.request(Tx(transaction=txid))
 
-        memos = _extract_memos(response.result)
-        for m in memos:
-            if not isinstance(m, dict):
-                continue
-            memo_obj = m.get("Memo", {})
-            if not isinstance(memo_obj, dict):
-                continue
-            data = _from_hex(memo_obj.get("MemoData", ""))
-            if data:
-                return data
-        return None
+            memos = _extract_memos(response.result)
+            for m in memos:
+                if not isinstance(m, dict):
+                    continue
+                memo_obj = m.get("Memo", {})
+                if not isinstance(memo_obj, dict):
+                    continue
+                data = _from_hex(memo_obj.get("MemoData", ""))
+                if data:
+                    return data
+            return None
+        finally:
+            # BRIDGE-005: see ``is_anchored_on_chain`` for rationale.
+            await _maybe_aclose(client)
+
+
+async def _maybe_aclose(client: object) -> None:
+    """Best-effort async close of an xrpl-py client.
+
+    xrpl-py 2.x's ``AsyncJsonRpcClient`` does not currently expose an async
+    ``close()`` / ``aclose()`` method (each ``request`` call internally builds
+    its own ``httpx.AsyncClient`` via ``async with``, which closes on exit).
+    This helper still tries the documented async-client lifecycle methods so
+    the lifecycle pattern is forward-compatible — when xrpl-py adds an
+    explicit close API or we cache + reuse a client (BRIDGE-005 Pattern B),
+    we will not have to re-walk every call site.
+
+    Tries (in order): ``aclose()`` (httpx-style), ``close()`` (sync). Both
+    are best-effort: any exception is swallowed because we are in a
+    ``finally`` block and a cleanup error must not mask the real one.
+    """
+    aclose = getattr(client, "aclose", None)
+    if callable(aclose):
+        try:
+            result = aclose()
+            # ``aclose`` may be sync or awaitable depending on the impl.
+            if hasattr(result, "__await__"):
+                await result
+            return
+        except Exception:  # pragma: no cover — best-effort cleanup
+            return
+    close = getattr(client, "close", None)
+    if callable(close):
+        try:
+            result = close()
+            if hasattr(result, "__await__"):
+                await result
+        except Exception:  # pragma: no cover — best-effort cleanup
+            return
