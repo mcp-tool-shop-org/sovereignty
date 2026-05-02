@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.md">English</a> | <a href="README.zh.md">中文</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -33,22 +33,22 @@ from camo with its own cache.
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## 30秒でインストール
+## インストール + 最初のゲーム
 
-最も簡単な方法：Pythonユーザー向け：
+最も簡単な方法：インストール後、すぐにプレイ開始：
 
 ```bash
-pipx install sovereignty-game
-sov tutorial
+pip install sovereignty-game
+sov play campfire_v1
 ```
 
-Pythonをお使いでない場合でも、問題ありません。`npx` コマンドを使用すると、あらかじめビルドされたバイナリをダウンロードできます。
+`sov play campfire_v1` は、設定不要で簡単に開始できるコマンドです。これは、1人のプレイヤーと、デフォルトの対戦相手が「Campfire」のルールセットで対戦するものです。複数人でプレイする場合は、`sov new -p Alice -p Bob -p Carol` を使用してください。詳細な手順については、`sov tutorial` を実行してください。
+
+Python がインストールされていない場合：`npx` コマンドを使用すると、あらかじめコンパイルされたバイナリをダウンロードできます。
 
 ```bash
 npx @mcptoolshop/sovereignty tutorial
 ```
-
-これで完了です。`sov tutorial` コマンドを実行すると、約60秒でルールを学ぶことができます。
 
 ## 最初のゲーム
 
@@ -82,11 +82,17 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 
 15ラウンド繰り返します。`sov game-end` コマンドを実行すると、最終スコアが表示されます。
 
+- **保存されたゲームの複数保存** (v2.1 以降): `sov games` で保存されたゲームの一覧を表示し、`sov resume <ゲームID>` でゲームを切り替えます。
+- **バッチアンカー** (v2.1 以降): ゲーム終了時に `sov anchor` を実行すると、保留中のすべてのラウンドが単一の XRPL トランザクションにまとめられます。これにより、ゲームごとに検証可能なチェーンポインタが 1 つ作成されます。ゲーム中にフラッシュする場合は、`sov anchor --checkpoint` を使用してください。
+- **ネットワークの選択** (v2.1 以降): `sov anchor --network testnet|mainnet|devnet` (または環境変数 `SOV_XRPL_NETWORK` を設定。デフォルトは `testnet`)。
+- **デーモンモード** (v2.1 以降、オプション): `sov daemon start` を実行すると、デスクトップ統合とバックグラウンドでのチェーン監視を行うための、ローカルホストの HTTP/JSON サーバーが起動します。詳細は、以下の「デーモンモード」を参照してください。
+- **監査ビューアデスクトップアプリ** (v2.1 以降、オプション): `npm --prefix app run tauri dev`。詳細は、以下の「デスクトップアプリ」を参照してください。
+
 > まず、ゲーム内チュートリアルを試してみたいですか？ `sov tutorial` コマンドを実行してください。
 > ソフトウェアを使わずにプレイしたいですか？ [Print & Play](docs/print-and-play.md) を参照してください。
 > より詳細なルールを知りたいですか？ [ここから始めましょう](docs/start_here.md) または、[完全なマニュアル](https://mcp-tool-shop-org.github.io/sovereignty/handbook/) を参照してください。
 
-> _短いデモGIFまたはスクリーンショットがここに表示されるべきです。これはStage Dのフォローアップとして追跡され、READMEに実際のゲームプレイの様子を表示できるようにします。_
+上記の `sov turn` の例は、コンソール上でラウンドがどのように見えるかを示しています。v2.1 のデスクトップでの可視化については、以下の「デスクトップアプリ」を参照してください。
 
 ## コンソールなしでプレイ
 
@@ -98,9 +104,13 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 <summary>Full command reference</summary>
 
 ```bash
+sov play campfire_v1                 # no-config quickstart (v2.1+) — alias for sov new
 sov new --recipe cozy -p ...         # curated vibe (cozy/spicy/market/promise)
 sov new --tier treaty-table -p ...   # pick a tier
 sov new --code "SOV|..." -p ...      # play from a share code
+sov games                            # list saved games (multi-save, v2.1+)
+sov games --json                     # machine-readable saves list (v2.1+)
+sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
 sov status                           # show current game state
@@ -120,8 +130,16 @@ sov vote mvp Alice                   # table votes: mvp/chaos/promise
 sov toast Alice                      # +1 Rep, once per player per game
 sov end-round                        # generate round proof
 sov game-end                         # final scores + Story Points
+sov anchor                           # batch pending rounds to XRPL (v2.1+)
+sov anchor --checkpoint              # mid-game flush (v2.1+)
+sov anchor --network mainnet         # network selection (v2.1+)
+sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
+sov daemon status                    # running | stale | none
+sov daemon stop                      # SIGTERM + cleanup
 sov postcard                         # shareable summary
-sov season-postcard                  # season standings across games
+sov season                           # season standings across games (v2.1+)
+sov season-postcard                  # printable season recap
 sov feedback                         # issue-ready play report
 sov scenario list                    # browse scenario packs
 sov scenario code cozy-night -s 42   # generate a share code
@@ -134,6 +152,94 @@ sov support-bundle                   # diagnostic zip for bug reports
 </details>
 
 コンソールがスコアを記録します。あなたは約束を守ります。
+
+## デーモンモード (オプション、v2.1 以降)
+
+デスクトップ統合 (監査ビューア、Tauri シェル) またはバックグラウンドでのチェーン監視を行うには、sovereignty をローカルホストの HTTP デーモンとして実行します。
+
+```bash
+pip install 'sovereignty-game[daemon]'
+sov daemon start --readonly        # audit-only, no wallet seed
+sov daemon start                   # full daemon with anchor endpoints (loads XRPL_SEED)
+sov daemon status                  # running | stale | none
+sov daemon stop
+```
+
+デーモンは `127.0.0.1` のポート番号をランダムに選択して接続し、接続情報は `.sov/daemon.json` に保存されます。プロジェクトのルートディレクトリには、デーモンを 1 つだけ実行できます。詳細については、[docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) を参照してください。
+
+## デスクトップアプリ (オプション、v2.1 以降)
+
+監査ビューアは、v2.1 のデスクトップアプリです。これは、Tauri シェル (Rust + Webview) で、監査ビューアと、読み取り専用のゲームビューをデーモンの上で実行します。
+
+### インストール (バイナリ)
+
+v2.1.0 は、あらかじめコンパイルされたバイナリを [GitHub Releases ページ](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) で提供しています。
+
+- **macOS (universal):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
+- **Linux (x64):** `sovereignty-app-2.1.0-linux-x64.AppImage`
+
+アプリのバックグラウンドで動作する Python デーモンも必要です。`pip install 'sovereignty-game[daemon]'==2.1.0` でインストールしてください。
+
+> **初回起動時の警告が表示される場合があります。** macOS では「身元不明の開発者」と表示される場合があります。この場合、.app を右クリックし、「開く」を選択して確認してください。Windows の SmartScreen では「未登録のパブリッシャー」と表示される場合があります。「詳細情報」をクリックし、「とにかく実行する」を選択してください。これらの警告は、v2.1 がビルドの信頼性情報を付与しているだけで、OS レベルでのコード署名が行われていないことを示しています。ワークスペースレベルの署名機能は v2.2 で提供されます。
+
+### 信頼性の検証
+
+すべてのリリースアーティファクトには、SLSA のビルド信頼性情報が付与されています。実行する前に、必ず検証してください。
+
+```bash
+gh attestation verify \
+  --repo mcp-tool-shop-org/sovereignty \
+  ./sovereignty-app-2.1.0-darwin-universal.dmg
+```
+
+検証が成功すると、そのバイナリが特定のコミットから、リリースワークフローによって、このリポジトリでビルドされたことが証明されます。これは、OS レベルのコード署名とは異なる信頼性の層です。バイナリは引き続き OS の警告を引き起こしますが、そのサプライチェーンの信頼性は暗号的に検証されています。
+
+### ソースコードからのビルド
+
+ソースコードからビルドしたい場合、またはバイナリがプラットフォームで動作しない場合は、こちらの手順に従ってください。
+
+```bash
+# 1. Install Python + daemon deps
+pip install -e '.[xrpl,daemon]'
+
+# 2. Install frontend + Rust deps (one-time)
+cd app && npm install && cd ..
+cargo build --manifest-path app/src-tauri/Cargo.toml
+
+# 3. Start the dev shell (auto-starts the daemon in readonly mode)
+npm --prefix app run tauri dev
+```
+
+Tauri シェルは、起動時に読み取り専用のデーモンを自動的に起動し、終了時に自動的に停止します。外部から起動されたデーモン (`sov daemon start`) は、シェルを再起動しても動作し続けます。
+
+詳細については、[docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) を参照してください。
+
+<p align="center">
+  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
+  <br>
+  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
+</p>
+
+<p align="center">
+  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
+  <br>
+  <em>Game Shell — passive real-time display of the active game.</em>
+</p>
+
+<p align="center">
+  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
+  <br>
+  <em>Settings — daemon network selection and configuration.</em>
+</p>
+
+監査ビューアには、次の 3 つのビューが用意されています。
+
+- **`/audit`**：XRPLに紐づいた検証結果表示機能。ゲームごとのリストは折りたたみ可能で、ラウンドごとの検証状況が表示されます。「すべてのラウンドを検証」を実行すると、ローカルでの検証計算とチェーンの参照が順番に実行されます。監査担当者向けの機能で、生のJSONデータを読まずに、ゲームが正当に実行されたかどうかを確認できます。
+- **`/game`**：現在進行中のゲームのリアルタイムの状態を表示します。プレイヤーのリソースカード、ラウンドのタイムライン、過去20件のSSEイベントログが表示されます。読み取り専用であり、コマンドラインインターフェース（CLI）で別のターミナルからプレイできます。
+- **`/settings`**：デーモンの設定を表示し、ネットワークの切り替え（テストネット/メインネット/開発ネット）が可能です。メインネットへの接続には、確認が必要です。
+
+詳細な仕様については、[docs/v2.1-views.md](docs/v2.1-views.md) を参照してください。
 
 ## 仕組み
 

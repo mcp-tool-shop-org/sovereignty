@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.md">English</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.md">English</a>
 </p>
 
 <p align="center">
@@ -33,22 +33,22 @@ from camo with its own cache.
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## Instale em 30 segundos
+## Instale + primeiro jogo
 
-A maneira mais rápida — para usuários de Python:
+O caminho mais rápido: instale e comece a jogar:
 
 ```bash
-pipx install sovereignty-game
-sov tutorial
+pip install sovereignty-game
+sov play campfire_v1
 ```
 
-Não usa Python? Sem problemas. O comando `npx` baixa um binário pré-compilado:
+`sov play campfire_v1` é a forma rápida de começar, sem configurações: um jogador humano contra um oponente padrão, usando as regras do "Campfire". Para jogar com vários jogadores, use `sov new -p Alice -p Bob -p Carol`. Para um tutorial guiado de 60 segundos, use `sov tutorial`.
+
+Não tem Python? O comando `npx` baixa um binário pré-compilado:
 
 ```bash
 npx @mcptoolshop/sovereignty tutorial
 ```
-
-Pronto. O comando `sov tutorial` te guiará pelas regras em cerca de 60 segundos.
 
 ## Sua primeira partida
 
@@ -82,12 +82,18 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 
 Repita por 15 rodadas. O comando `sov game-end` exibe as pontuações finais.
 
+- **Múltiplos jogos salvos** (v2.1+): `sov games` lista os jogos salvos; `sov resume <id-do-jogo>` alterna entre eles.
+- **Agrupamento de transações** (v2.1+): `sov anchor` no final do jogo agrupa todas as rodadas pendentes em uma única transação XRPL — um ponteiro de cadeia verificável por jogo. Use `sov anchor --checkpoint` para "flush" durante o jogo.
+- **Seleção de rede** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (ou variável de ambiente `SOV_XRPL_NETWORK`; padrão: `testnet`).
+- **Modo daemon** (v2.1+, opcional): `sov daemon start` executa um servidor HTTP/JSON local para integração com a área de trabalho e monitoramento da cadeia em segundo plano. Veja [Modo daemon](#daemon-mode-optional-v21) abaixo.
+- **Aplicativo de desktop "Audit Viewer"** (v2.1+, opcional): `npm --prefix app run tauri dev`. Veja [Aplicativo de desktop](#desktop-app-optional-v21) abaixo.
+
 > Quer um tutorial interativo primeiro? Execute o comando `sov tutorial`.
 > Quer jogar sem nenhum software? Veja [Jogar em papel](docs/print-and-play.md).
 > Quer uma visão mais detalhada das regras? Veja [Comece aqui](docs/start_here.md) ou
 > o [manual completo](https://mcp-tool-shop-org.github.io/sovereignty/handbook/).
 
-> _Um pequeno GIF ou captura de tela demonstrativa deve ser colocado aqui — será rastreado como uma tarefa de acompanhamento da Fase D para que o README possa mostrar como uma rodada realmente acontece._
+O exemplo de `sov turn` acima mostra como uma rodada se parece no console; para a visualização de desktop da v2.1, veja [Aplicativo de desktop](#desktop-app-optional-v21) abaixo.
 
 ## Jogue sem o console
 
@@ -100,9 +106,13 @@ O jogo funciona completamente na mesa.
 <summary>Full command reference</summary>
 
 ```bash
+sov play campfire_v1                 # no-config quickstart (v2.1+) — alias for sov new
 sov new --recipe cozy -p ...         # curated vibe (cozy/spicy/market/promise)
 sov new --tier treaty-table -p ...   # pick a tier
 sov new --code "SOV|..." -p ...      # play from a share code
+sov games                            # list saved games (multi-save, v2.1+)
+sov games --json                     # machine-readable saves list (v2.1+)
+sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
 sov status                           # show current game state
@@ -122,8 +132,16 @@ sov vote mvp Alice                   # table votes: mvp/chaos/promise
 sov toast Alice                      # +1 Rep, once per player per game
 sov end-round                        # generate round proof
 sov game-end                         # final scores + Story Points
+sov anchor                           # batch pending rounds to XRPL (v2.1+)
+sov anchor --checkpoint              # mid-game flush (v2.1+)
+sov anchor --network mainnet         # network selection (v2.1+)
+sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
+sov daemon status                    # running | stale | none
+sov daemon stop                      # SIGTERM + cleanup
 sov postcard                         # shareable summary
-sov season-postcard                  # season standings across games
+sov season                           # season standings across games (v2.1+)
+sov season-postcard                  # printable season recap
 sov feedback                         # issue-ready play report
 sov scenario list                    # browse scenario packs
 sov scenario code cozy-night -s 42   # generate a share code
@@ -136,6 +154,94 @@ sov support-bundle                   # diagnostic zip for bug reports
 </details>
 
 O console registra a pontuação. Você cumpre sua palavra.
+
+## Modo daemon (opcional, v2.1+)
+
+Para integração com a área de trabalho (Audit Viewer, shell Tauri) ou monitoramento da cadeia em segundo plano, execute o "sovereignty" como um daemon HTTP local:
+
+```bash
+pip install 'sovereignty-game[daemon]'
+sov daemon start --readonly        # audit-only, no wallet seed
+sov daemon start                   # full daemon with anchor endpoints (loads XRPL_SEED)
+sov daemon status                  # running | stale | none
+sov daemon stop
+```
+
+O daemon se conecta a `127.0.0.1` em uma porta aleatória; os detalhes da conexão (porta + token de autenticação) estão em `.sov/daemon.json`. Um daemon por diretório do projeto. Veja [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) para o contrato completo de IPC.
+
+## Aplicativo de desktop (opcional, v2.1+)
+
+O "Audit Viewer" é o aplicativo de desktop da v2.1 — um shell Tauri (Rust + webview) que executa o visualizador de auditoria e uma visualização de jogo somente leitura, sobre o daemon.
+
+### Instalação (binários)
+
+A v2.1.0 inclui binários pré-compilados na [página de lançamentos do GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
+
+- **macOS (universal):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
+- **Linux (x64):** `sovereignty-app-2.1.0-linux-x64.AppImage`
+
+Você também precisa do daemon Python que suporta o aplicativo: `pip install 'sovereignty-game[daemon]'==2.1.0`.
+
+> **Aviso de primeiro lançamento é esperado.** No macOS, aparecerá "desenvolvedor não identificado" — clique com o botão direito no arquivo .app, escolha "Abrir", confirme. No Windows, o SmartScreen exibirá "editor desconhecido" — clique em "Mais informações" e depois em "Executar mesmo assim". Ambos os avisos indicam que a v2.1 é fornecida com apenas a atestação de origem da compilação (verifique com `gh attestation verify`), e não com a assinatura de código no nível do sistema operacional. A infraestrutura de assinatura no nível do workspace será incluída na v2.2.
+
+### Verificar a origem
+
+Cada artefato de lançamento possui uma atestação de origem de compilação SLSA. Verifique antes de executar:
+
+```bash
+gh attestation verify \
+  --repo mcp-tool-shop-org/sovereignty \
+  ./sovereignty-app-2.1.0-darwin-universal.dmg
+```
+
+Uma verificação bem-sucedida comprova que o binário foi construído a partir de um commit específico, pelo fluxo de trabalho de lançamento, neste repositório. É um nível de confiança diferente da assinatura de código no nível do sistema operacional — o binário ainda aciona o aviso do sistema operacional, mas sua origem na cadeia de suprimentos é fixada criptograficamente.
+
+### Executar a partir do código-fonte
+
+Se você preferir compilar a partir do código-fonte (ou se o binário não for executado em sua plataforma):
+
+```bash
+# 1. Install Python + daemon deps
+pip install -e '.[xrpl,daemon]'
+
+# 2. Install frontend + Rust deps (one-time)
+cd app && npm install && cd ..
+cargo build --manifest-path app/src-tauri/Cargo.toml
+
+# 3. Start the dev shell (auto-starts the daemon in readonly mode)
+npm --prefix app run tauri dev
+```
+
+O shell Tauri inicia automaticamente um daemon somente leitura na inicialização e o interrompe automaticamente na saída. Os daemons iniciados externamente (`sov daemon start`) permanecem ativos mesmo após a reinicialização do shell.
+
+Veja [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) para o contrato completo.
+
+<p align="center">
+  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
+  <br>
+  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
+</p>
+
+<p align="center">
+  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
+  <br>
+  <em>Game Shell — passive real-time display of the active game.</em>
+</p>
+
+<p align="center">
+  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
+  <br>
+  <em>Settings — daemon network selection and configuration.</em>
+</p>
+
+O "Audit Viewer" é fornecido com três visualizações:
+
+- **`/audit`** — Visualizador de provas ancoradas no XRPL. Lista de jogos com opção de recolhimento, status da âncora por rodada, "Verificar todas as rodadas" executa um recálculo local da prova e uma consulta na cadeia. A visão do auditor: confirmar que um jogo foi executado de forma honesta sem ler o JSON bruto.
+- **`/game`** — Exibição em tempo real do estado do jogo ativo. Cartas de recursos dos jogadores, linha do tempo das rodadas, registro dos últimos 20 eventos SSE. Apenas para leitura; para jogar, use a interface de linha de comando em outro terminal.
+- **`/settings`** — Exibição da configuração do daemon + chaveadora de rede (testnet / mainnet / devnet) com proteção para a rede principal.
+
+Especificação completa da interface em [docs/v2.1-views.md](docs/v2.1-views.md).
 
 ## Como funciona
 
