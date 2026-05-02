@@ -1,7 +1,18 @@
 # Combined release workflow: PyPI publish + platform binaries.
 # Asset naming convention (locked):
-#   sovereignty-<version>-<os>-<arch>[.exe]
+#   sovereignty-<version>-<os>-<arch>[.exe]            (PyInstaller CLI)
+#   sovereignty-app-<version>-<target>.<dmg|msi|AppImage>  (Tauri desktop app, v2.1+)
 #   checksums-<version>.txt
+#
+# v2.1 BRIDGE-A-bis-003 distribution context: PyInstaller CLI binaries ship the
+# Python ``sov`` command (already in place since v2.0). Wave 11 added the Tauri
+# shell binary matrix alongside — built from ``app/src-tauri/`` via
+# ``npm --prefix app run tauri build``, attested by
+# ``actions/attest-build-provenance``, and uploaded to the same GH Release. NO
+# OS-level code signing in v2.1 — workspace-level signing infrastructure
+# (Apple Developer ID + Authenticode) ships in v2.2 (see docs/v2.2-backlog.md).
+# Users see first-launch OS warnings; supply-chain provenance is verifiable
+# via ``gh attestation verify``.
 
 name: Release
 
@@ -23,7 +34,7 @@ jobs:
   # for hotfix scenarios documented in BUILD.md.
   publish:
     if: github.event_name == 'release'
-    needs: [build-binaries]
+    needs: [build-binaries, build-tauri-binaries]
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -168,9 +179,112 @@ jobs:
           name: binary-${{ matrix.target }}
           path: dist/${{ env.ASSET_NAME }}
 
+  # --- Tauri desktop app binaries (v2.1+) ---
+  # Wave 11 BRIDGE-A-bis-003 distribution: build the Tauri shell on each
+  # platform and ship the OS-native installer alongside the PyInstaller CLI
+  # binaries. NO Apple/Microsoft signing — first-launch OS warnings are
+  # expected and documented in README. Build provenance via
+  # ``actions/attest-build-provenance`` covers the supply-chain trust layer.
+  # Workspace-level signing infrastructure (Apple Developer ID +
+  # Authenticode) is v2.2 work that benefits sovereignty + GlyphStudio +
+  # CommandUI together.
+  build-tauri-binaries:
+    if: github.event_name == 'release'
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: darwin-universal
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+            tauri-args: "--target universal-apple-darwin"
+            bundle-base: app/src-tauri/target/universal-apple-darwin/release/bundle
+            artifacts: |
+              dmg/Sovereignty_*_universal.dmg
+          - os: windows-latest
+            target: win-x64
+            rust-targets: ""
+            tauri-args: ""
+            bundle-base: app/src-tauri/target/release/bundle
+            artifacts: |
+              msi/Sovereignty_*_x64_en-US.msi
+          - os: ubuntu-latest
+            target: linux-x64
+            rust-targets: ""
+            tauri-args: ""
+            bundle-base: app/src-tauri/target/release/bundle
+            artifacts: |
+              appimage/sovereignty_*_amd64.AppImage
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Tauri 2 webview deps (Linux only — same as ci.yml tauri-and-frontend job).
+      - name: Install Tauri Linux deps
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable @ 2025-01
+        with:
+          toolchain: stable
+          targets: ${{ matrix.rust-targets }}
+
+      - name: Setup Node
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install frontend deps
+        run: npm --prefix app ci
+
+      - name: Build Tauri app
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm --prefix app run tauri build -- ${{ matrix.tauri-args }}
+
+      # Stage artifacts under a flat dist/ with the locked naming convention:
+      # ``sovereignty-app-<version>-<target>.<ext>``. The ``-app-`` infix
+      # disambiguates from the existing PyInstaller CLI binaries which use
+      # ``sovereignty-<version>-<target>``. Mac ships .dmg only at v2.1
+      # (the .app.tar.gz duplicate is auto-update-update bundle territory,
+      # deferred to v2.2 alongside the Tauri 2 updater).
+      - name: Stage artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=${GITHUB_REF_NAME#v}
+          mkdir -p dist
+          for src in $(ls ${{ matrix.bundle-base }}/${{ matrix.artifacts }} 2>/dev/null); do
+            ext="${src##*.}"
+            outname="sovereignty-app-${VERSION}-${{ matrix.target }}.${ext}"
+            cp "$src" "dist/${outname}"
+            echo "Staged: dist/${outname}"
+          done
+          ls -la dist/
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
+        with:
+          subject-path: dist/sovereignty-app-*
+
+      - uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: tauri-binary-${{ matrix.target }}
+          path: dist/sovereignty-app-*
+
   upload-binaries:
     if: github.event_name == 'release'
-    needs: build-binaries
+    needs: [build-binaries, build-tauri-binaries]
     runs-on: ubuntu-latest
     permissions:
       contents: write
