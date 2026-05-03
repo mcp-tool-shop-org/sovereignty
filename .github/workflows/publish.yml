@@ -212,13 +212,29 @@ jobs:
             bundle-base: app/src-tauri/target/release/bundle
             artifacts: |
               msi/Sovereignty_*_x64_en-US.msi
-          - os: ubuntu-latest
-            target: linux-x64
-            rust-targets: ""
-            tauri-args: ""
-            bundle-base: app/src-tauri/target/release/bundle
-            artifacts: |
-              appimage/sovereignty_*_amd64.AppImage
+          # Linux Tauri AppImage build deferred to v2.2: linuxdeploy
+          # (Tauri's AppImage bundler) is itself an AppImage, and Ubuntu
+          # 24.04 noble runners can't mount FUSE-based AppImages even
+          # with libfuse2t64 installed (CI seccomp/namespace constraints).
+          # ``APPIMAGE_EXTRACT_AND_RUN=1`` env var doesn't propagate
+          # through Tauri's spawn-linuxdeploy chain. Workarounds explored:
+          # (1) wrap linuxdeploy with APPIMAGE_EXTRACT_AND_RUN-aware
+          # shim (brittle, Tauri internals); (2) switch to .deb target
+          # (Tauri supports it but ecosystem expectation is AppImage on
+          # GH Releases); (3) use `tauri-action` GitHub Action instead
+          # of raw tauri build (has better Linux handling). All three
+          # are >1-day investigations; v2.2 picks one. PyPI CLI Linux
+          # binary still ships in build-binaries job above, so Linux
+          # users get the CLI; the desktop app on Linux runs from
+          # source per the README's "Run from source" section. Tracked
+          # in docs/v2.2-backlog.md under "Linux Tauri AppImage build."
+          # - os: ubuntu-latest  ← deferred to v2.2
+          #   target: linux-x64
+          #   rust-targets: ""
+          #   tauri-args: ""
+          #   bundle-base: app/src-tauri/target/release/bundle
+          #   artifacts: |
+          #     appimage/sovereignty_*_amd64.AppImage
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2

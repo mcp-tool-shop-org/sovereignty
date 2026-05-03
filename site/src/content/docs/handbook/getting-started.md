@@ -98,7 +98,7 @@ Install the desktop binary from the [GitHub Releases page](https://github.com/mc
 
 - macOS universal (Intel + Apple Silicon): `sovereignty-app-2.1.0-darwin-universal.dmg`
 - Windows x64: `sovereignty-app-2.1.0-win-x64.msi`
-- Linux x64: `sovereignty-app-2.1.0-linux-x64.AppImage`
+- Linux x64: run from source for v2.1 — `git clone && npm --prefix app run tauri dev`. AppImage build deferred to v2.2.
 
 ### First-launch warning is expected
 
