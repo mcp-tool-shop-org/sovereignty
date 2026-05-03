@@ -252,6 +252,13 @@ jobs:
 
       - name: Build Tauri app
         shell: bash
+        # Ubuntu 24.04 (noble) runners can't mount FUSE-based AppImages
+        # even with libfuse2t64 installed; ``linuxdeploy`` (which is itself
+        # an AppImage) silently fails with "failed to run linuxdeploy".
+        # ``APPIMAGE_EXTRACT_AND_RUN=1`` bypasses FUSE by extracting the
+        # AppImage to a temp dir before running. No-op on Mac/Win.
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
         run: |
           set -euo pipefail
           npm --prefix app run tauri build -- ${{ matrix.tauri-args }}
