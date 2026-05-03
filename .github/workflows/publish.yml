@@ -212,43 +212,39 @@ jobs:
             bundle-base: app/src-tauri/target/release/bundle
             artifacts: |
               msi/Sovereignty_*_x64_en-US.msi
-          # Linux Tauri AppImage build deferred to v2.2: linuxdeploy
-          # (Tauri's AppImage bundler) is itself an AppImage, and Ubuntu
-          # 24.04 noble runners can't mount FUSE-based AppImages even
-          # with libfuse2t64 installed (CI seccomp/namespace constraints).
-          # ``APPIMAGE_EXTRACT_AND_RUN=1`` env var doesn't propagate
-          # through Tauri's spawn-linuxdeploy chain. Workarounds explored:
-          # (1) wrap linuxdeploy with APPIMAGE_EXTRACT_AND_RUN-aware
-          # shim (brittle, Tauri internals); (2) switch to .deb target
-          # (Tauri supports it but ecosystem expectation is AppImage on
-          # GH Releases); (3) use `tauri-action` GitHub Action instead
-          # of raw tauri build (has better Linux handling). All three
-          # are >1-day investigations; v2.2 picks one. PyPI CLI Linux
-          # binary still ships in build-binaries job above, so Linux
-          # users get the CLI; the desktop app on Linux runs from
-          # source per the README's "Run from source" section. Tracked
-          # in docs/v2.2-backlog.md under "Linux Tauri AppImage build."
-          # - os: ubuntu-latest  ← deferred to v2.2
-          #   target: linux-x64
-          #   rust-targets: ""
-          #   tauri-args: ""
-          #   bundle-base: app/src-tauri/target/release/bundle
-          #   artifacts: |
-          #     appimage/sovereignty_*_amd64.AppImage
+          # Linux ships .deb (Debian/Ubuntu native) at v2.1 — NOT AppImage.
+          # Why .deb and not AppImage: ``linuxdeploy`` (Tauri's AppImage
+          # bundler) is itself an AppImage, and Ubuntu 24.04 noble CI
+          # runners can't mount FUSE-based AppImages even with
+          # libfuse2t64 installed. ``APPIMAGE_EXTRACT_AND_RUN=1`` doesn't
+          # propagate through Tauri's spawn-linuxdeploy chain. The fix
+          # path with the highest reliability and lowest CI complexity
+          # is to bypass linuxdeploy entirely by emitting a .deb — Tauri
+          # 2 builds .deb cleanly without FUSE. tauri-apps/tauri#15106
+          # documents this as the upstream-recommended workaround. .deb
+          # covers Debian + Ubuntu + derivatives (the bulk of the Linux
+          # desktop audience); AppImage support can return in v2.2 when
+          # the upstream FUSE issue is resolved or via tauri-action.
+          - os: ubuntu-latest
+            target: linux-x64
+            rust-targets: ""
+            tauri-args: "--bundles deb"
+            bundle-base: app/src-tauri/target/release/bundle
+            artifacts: |
+              deb/*_amd64.deb
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # Tauri 2 webview + AppImage bundler deps (Linux only). webkit2gtk-4.1
-      # + libsoup-3.0 are the v2 line; libssl-dev satisfies reqwest. libfuse2
-      # is required by ``linuxdeploy`` (the AppImage bundler Tauri runs at
-      # bundle time) — without it bundle fails with ``failed to run
-      # linuxdeploy`` even though the underlying Rust binary builds clean.
+      # Tauri 2 webview deps (Linux only). webkit2gtk-4.1 + libsoup-3.0
+      # are the v2 line; libssl-dev satisfies reqwest. .deb bundling
+      # does not require libfuse2 (that was an AppImage/linuxdeploy
+      # requirement); the .deb path uses dpkg-deb only.
       - name: Install Tauri Linux deps
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev libfuse2
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable @ 2025-01
@@ -268,13 +264,6 @@ jobs:
 
       - name: Build Tauri app
         shell: bash
-        # Ubuntu 24.04 (noble) runners can't mount FUSE-based AppImages
-        # even with libfuse2t64 installed; ``linuxdeploy`` (which is itself
-        # an AppImage) silently fails with "failed to run linuxdeploy".
-        # ``APPIMAGE_EXTRACT_AND_RUN=1`` bypasses FUSE by extracting the
-        # AppImage to a temp dir before running. No-op on Mac/Win.
-        env:
-          APPIMAGE_EXTRACT_AND_RUN: "1"
         run: |
           set -euo pipefail
           npm --prefix app run tauri build -- ${{ matrix.tauri-args }}

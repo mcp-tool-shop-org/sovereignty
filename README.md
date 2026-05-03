@@ -182,7 +182,7 @@ v2.1.0 ships pre-built binaries on the [GitHub Releases page](https://github.com
 
 - **macOS (universal):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
 - **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
-- **Linux:** Run from source for v2.1 (`npm --prefix app run tauri dev`); AppImage build deferred to v2.2 (Ubuntu 24.04 runner FUSE / linuxdeploy interaction needs investigation). Linux users still get the CLI binary `sovereignty-2.1.0-linux-x64` for `sov` itself.
+- **Linux (x64, .deb):** `sovereignty-app-2.1.0-linux-x64.deb` — Debian / Ubuntu / derivatives. Install with `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`. AppImage support deferred to v2.2 (upstream `linuxdeploy` / Ubuntu 24.04 FUSE interaction).
 
 You also need the Python daemon backing the app: `pip install 'sovereignty-game[daemon]'==2.1.0`.
 

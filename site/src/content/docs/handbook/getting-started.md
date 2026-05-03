@@ -98,7 +98,7 @@ Install the desktop binary from the [GitHub Releases page](https://github.com/mc
 
 - macOS universal (Intel + Apple Silicon): `sovereignty-app-2.1.0-darwin-universal.dmg`
 - Windows x64: `sovereignty-app-2.1.0-win-x64.msi`
-- Linux x64: run from source for v2.1 — `git clone && npm --prefix app run tauri dev`. AppImage build deferred to v2.2.
+- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.1.0-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`. AppImage support deferred to v2.2.
 
 ### First-launch warning is expected
 
@@ -106,7 +106,7 @@ v2.1 ships with build-provenance attestation only — not OS-level code signing.
 
 - **macOS**: control-click the .app → Open → "Are you sure?" → Open
 - **Windows**: SmartScreen says "unrecognized publisher" → "More info" → "Run anyway"
-- **Linux**: AppImage just runs
+- **Linux (.deb)**: `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`, then launch from your app menu
 
 ### Verify supply-chain provenance
 
