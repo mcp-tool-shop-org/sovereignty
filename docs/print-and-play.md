@@ -6,8 +6,8 @@ Everything you need to play tonight. No screens required.
 
 | File | Pages | What it is |
 |------|-------|------------|
-| `assets/print/event-cards.md` | 2 | 28 Event cards (cut along lines) |
-| `assets/print/deal-cards.md` | 2 | 22 Deal & Voucher cards (cut along lines) |
+| `assets/print/event-cards.md` | 2 | 20 Event cards (cut along lines) |
+| `assets/print/deal-cards.md` | 2 | 20 Deal & Voucher cards — 10 each (cut along lines) |
 | `assets/print/player-mat.md` | 1 | Player mat (one per player, tracks coins/rep/promises) |
 | `assets/print/quick-ref.md` | 1 | Quick reference: board spaces, turn order, Promise rules |
 | `assets/print/treaty-quick-ref.md` | 1 | Treaty Table quick reference (Tier 3 only) |
