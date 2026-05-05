@@ -66,7 +66,7 @@ No Python? The `npx` path downloads a prebuilt binary:
 npx @mcptoolshop/sovereignty tutorial
 ```
 
-## A real session
+## Your first game
 
 Once you and 2-3 friends are at the table, the console runs the round and you do the talking. A real session looks like this:
 
