@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sovereignty — Print Entry</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* Production print entry. No nav, no labels, no design-canvas chrome.
+     Only fonts referenced in this file: Cormorant Garamond, IM Fell English,
+     JetBrains Mono (for treaty console block), and the locked color tokens. */
+  @page { size: 8.5in 11in; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #f4ead4; }
+  body { font-family: 'Cormorant Garamond', Georgia, serif; color: #2a1d10; }
+  .sov-page {
+    width: 1700px;
+    height: 2200px;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+  }
+  /* Last page: no trailing blank */
+  .sov-page:last-child { page-break-after: auto; break-after: auto; }
+  /* Hide everything until JSX has mounted to keep print-time DOM minimal */
+  body.is-loading > #pages { visibility: hidden; }
+</style>
+</head>
+<body class="is-loading">
+
+<main id="pages"></main>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Same artifact modules as the viewer build. No design-canvas, no primitives chrome. -->
+<script src="tokens.js"></script>
+<script type="text/babel" src="tile-icons.jsx"></script>
+<script type="text/babel" src="tile-data.jsx"></script>
+<script type="text/babel" src="board-a.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="artifact-player-mat.jsx"></script>
+<script type="text/babel" src="artifact-quick-ref.jsx"></script>
+<script type="text/babel" src="artifact-treaty-ref.jsx"></script>
+<script type="text/babel" src="artifact-cards.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+  // ── Artifact registry ────────────────────────────────────────────────────
+  // Each entry is { id, render } — render returns an array of one or more
+  // React elements (each = one US-Letter page).
+  const ARTIFACTS = [
+    { id: "board",    render: () => [<window.SovBoardA />] },
+    { id: "mat",      render: () => [<window.SovPlayerMat />] },
+    { id: "quickref", render: () => [<window.SovQuickRef />] },
+    { id: "treaty",   render: () => [<window.SovTreatyQuickRef />] },
+    { id: "events",   render: () => window.SovEventPages() },
+    { id: "deals",    render: () => window.SovDealPages() },
+    { id: "vouchers", render: () => window.SovVoucherPages() },
+  ];
+
+  // ── Filter via ?only=<id>[,<id>] ─────────────────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+  const only = params.get("only");
+  const allow = only
+    ? new Set(only.split(",").map(s => s.trim()).filter(Boolean))
+    : null;
+
+  const sequence = allow
+    ? ARTIFACTS.filter(a => allow.has(a.id))
+    : ARTIFACTS;
+
+  // ── Mount ────────────────────────────────────────────────────────────────
+  const pages = document.getElementById("pages");
+  for (const art of sequence) {
+    const elements = art.render();
+    elements.forEach((el, i) => {
+      const wrap = document.createElement("div");
+      wrap.className = "sov-page";
+      wrap.dataset.artifact = art.id;
+      wrap.dataset.pageIndex = String(i);
+      pages.appendChild(wrap);
+      ReactDOM.createRoot(wrap).render(el);
+    });
+  }
+
+  // Reveal once fonts have loaded — gives Puppeteer a deterministic settle
+  // signal beyond document.fonts.ready.
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      document.body.classList.remove("is-loading");
+      document.body.dataset.ready = "true";
+    });
+  } else {
+    document.body.classList.remove("is-loading");
+    document.body.dataset.ready = "true";
+  }
+</script>
+</body>
+</html>

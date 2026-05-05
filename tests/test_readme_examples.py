@@ -1,4 +1,4 @@
-"""README "Your first game" smoke test.
+"""README "A real session" smoke test.
 
 The README's quickstart shows a worked example: ``sov new``, a few
 ``sov turn`` calls, then ``sov status``. If a code change drifts that
@@ -15,9 +15,10 @@ Coordination contract with engine F-002:
     plain ``sov status`` shape otherwise (skip the structure assertions
     that depend on the brief format).
 
-If the README's "Your first game" section gets renamed or its
+If the README's "A real session" section gets renamed or its
 ``sov`` commands change, update both this test and the README in the
-same commit — they are joined contracts.
+same commit — they are joined contracts. The section was renamed from
+"Your first game" to "A real session" in v2.2.0 (humanized voice).
 """
 
 from __future__ import annotations
@@ -37,17 +38,17 @@ README_PATH = REPO_ROOT / "README.md"
 
 
 def _readme_first_game_section() -> str:
-    """Extract the "Your first game" section text from README.md.
+    """Extract the "A real session" section text from README.md.
 
     Returns the section body (between its H2 and the next H2). Raises
     AssertionError if the section is missing — that itself is a contract
     violation worth failing on.
     """
     text = README_PATH.read_text(encoding="utf-8")
-    # Find "## Your first game" heading and slice to the next "## "
-    start_match = re.search(r"^## Your first game\s*$", text, re.MULTILINE)
+    # Find "## A real session" heading and slice to the next "## "
+    start_match = re.search(r"^## A real session\s*$", text, re.MULTILINE)
     assert start_match, (
-        "README.md must contain a '## Your first game' section. "
+        "README.md must contain a '## A real session' section. "
         "If you renamed it, also update tests/test_readme_examples.py."
     )
     after_heading = text[start_match.end() :]
@@ -57,7 +58,7 @@ def _readme_first_game_section() -> str:
 
 
 def test_readme_first_game_section_exists_and_quotes_core_commands():
-    """The "Your first game" section must reference the core commands.
+    """The "A real session" section must reference the core commands.
 
     If a future edit drops one of these commands, the test fails so the
     follow-up commit can either (a) add the command back or (b) update
@@ -66,7 +67,7 @@ def test_readme_first_game_section_exists_and_quotes_core_commands():
     section = _readme_first_game_section()
     for cmd in ("sov new", "sov turn", "sov status"):
         assert cmd in section, (
-            f"README 'Your first game' section must reference {cmd!r}. "
+            f"README 'A real session' section must reference {cmd!r}. "
             f"Section content was:\n{section!r}"
         )
 

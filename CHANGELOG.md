@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.0] - 2026-05-04
+
+### Highlights
+
+**Tier 1 print pack — production-grade printable PDFs.** Sovereignty now ships eight ready-to-print PDFs covering the entire Tier 1 (Campfire) and Tier 3 (Treaty Table) print package: a 16-space Campfire board, a player mat, two quick-references, and three decks (20 Event cards + 10 Deal cards + 10 Voucher cards). The previous "draw the board on a piece of paper or count spaces 0-15" instruction is gone — the board is now a real printable artifact. PDFs are vector with embedded fonts (Cormorant Garamond, IM Fell English, JetBrains Mono, ZapfDingbats), zero system fallbacks, US Letter portrait, home-printer-friendly. The visual contract is locked in `docs/visual-language.md` as Direction A (Parchment Heritage) — cream parchment ground, monoline iconography on 8 of 16 tiles, paper-margin border treatment, compass-rose center medallion, light per-card-type pill differentiation (Event / Deal / Voucher).
+
+**Re-render pipeline ships with the package.** JSX components, the print-only HTML entry, render scripts, and a step-by-step recipe live at `assets/print/source/` so the PDFs can be reproduced from scratch with headless Chromium. The recipe inlines Google Fonts as base64 data URIs to eliminate the network race that plagues `chrome --print-to-pdf` against in-browser Babel-compiled JSX, and uses Puppeteer's `document.body.dataset.ready` wait for deterministic settle.
+
+**Humanized README + handbook.** The README now leads with "play tonight" and the print pack, with the console install moved to "want a console to keep score?" framing. The handbook print-and-play page links the actual PDFs (was: source markdown). The board source-of-truth doc (`docs/board/board_v1.md`) carries both the verbatim full-effect wording and the tile-face-compressed wording so artifact and source stay aligned.
+
+### Added
+
+- 8 production PDFs in `assets/print/pdf/`:
+  - `Sovereignty-Print-Pack.pdf` — 11 sheets, all artifacts in one file.
+  - `board.pdf`, `mat.pdf`, `quickref.pdf`, `treaty.pdf` — 1 sheet each.
+  - `events.pdf` (3 sheets, 20 cards 9-up), `deals.pdf` (2 sheets, 10 cards), `vouchers.pdf` (2 sheets, 10 IOUs).
+- `docs/visual-language.md` — locked palette (10 print-safe tokens), typography (Cormorant Garamond + IM Fell English + JetBrains Mono), border treatment, card-type pill rules, footer line, render path.
+- `assets/print/source/` — re-render pipeline:
+  - JSX components: `board-a.jsx`, `artifact-cards.jsx`, `artifact-player-mat.jsx`, `artifact-quick-ref.jsx`, `artifact-treaty-ref.jsx`, `primitives.jsx`, `tile-data.jsx`, `tile-icons.jsx`.
+  - Token source: `tokens.js` mirroring `docs/visual-language.md`.
+  - Print-only HTML entry (`Sovereignty Print Pack - print.html`) with `?only=<id>` filter for per-artifact PDFs.
+  - Viewer build (`Sovereignty Print Pack.html`) for design iteration.
+  - `inline-fonts.py` — fetches Google Fonts CSS + downloads woff2 + embeds as base64 data URIs.
+  - `render.mjs` — Puppeteer rig with `data-ready` wait + `scale: 0.48` (200dpi-design → 96dpi-print) + `printBackground: true`.
+  - `assets/print/source/README.md` — full re-render recipe.
+
+### Changed
+
+- `README.md` — humanized. Leads with print-and-play package and the combined PDF link; install moved below to "Want a console to keep score?". Stale card-count claims fixed (was "28 Event cards" / "22 Deal & Voucher cards" → now "20 Event cards" / "10 Deal cards + 10 Voucher cards").
+- `docs/print-and-play.md` — links the PDFs (was: source markdown). Added board row to the file table. Removed "A piece of paper to draw the board (or just count spaces 0-15)" instruction. Tier page-counts updated: Campfire = 9 sheets (was "~6"), Treaty Table = 10 sheets (was "~7").
+- `site/src/content/docs/handbook/print-and-play.md` — same updates, humanized lead.
+- `docs/board/board_v1.md` — added "Tile face (printed on board)" column showing the compressed wording on the artifact alongside the full effect wording. Both forms are normative; the compressed wording is canonical for the tile face, the full wording for the rules text.
+
+### Notes
+
+- Direction B (folk-craft warmth) preserved at `assets/print/source/board-b.jsx` for future-comparison purposes; not mounted in v2.2 print entry.
+- Render scale 0.48 maps the 1700×2200 px design canvas (200dpi-equivalent) onto an 8.5×11 in page (96dpi). Combined Print Pack: 11 pages exactly.
+- Fonts inline-step is required because in-browser Babel JSX compile completes after `--virtual-time-budget` — without inlined fonts headless Chrome prints with system fallbacks (Georgia, Lucida) regardless of `display=block` or `display=swap`.
+
+### Translation
+
+The English README has been humanized. Translations (`README.{ja,zh,pt-BR,...}.md`) need a follow-up pass via `polyglot-mcp` to sync. Translation is user-side per repo convention.
+
+---
+
 ## [2.1.0] - 2026-05-02
 
 ### Highlights

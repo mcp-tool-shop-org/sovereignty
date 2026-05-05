@@ -33,16 +33,32 @@
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## Install + first game
+## Play tonight
 
-The fastest path — install, then start playing:
+Print [the whole print-and-play package](assets/print/pdf/Sovereignty-Print-Pack.pdf) — board, player mats, quick reference, and three decks of cards on 11 sheets of US Letter paper. Find a die and some coins. Sit down with two or three friends. You're playing in twenty minutes.
+
+If you want individual sheets:
+
+- **[Board](assets/print/pdf/board.pdf)** — the 16-space Campfire loop, one page.
+- **[Player mat](assets/print/pdf/mat.pdf)** — coins, reputation, upgrades, promises. One per player.
+- **[Quick reference](assets/print/pdf/quickref.pdf)** — board spaces, turn order, promise rules.
+- **[Event cards](assets/print/pdf/events.pdf)** — 20 cards, three pages, cut along the lines.
+- **[Deal cards](assets/print/pdf/deals.pdf)** — 10 cards, two pages.
+- **[Voucher cards](assets/print/pdf/vouchers.pdf)** — 10 IOUs between players, two pages.
+- **[Treaty quick reference](assets/print/pdf/treaty.pdf)** — Tier 3 only.
+
+The PDFs are vector with embedded fonts — they print clean on any home printer. Setup walkthrough lives at [Print & Play](docs/print-and-play.md).
+
+## Want a console to keep score?
+
+Optional. The game runs fine on paper. But if someone has a laptop handy, `sov` tracks coins, rep, promises, and produces a tamper-proof receipt at the end:
 
 ```bash
 pip install sovereignty-game
 sov play campfire_v1
 ```
 
-`sov play campfire_v1` is the no-config quickstart — one human plus a default opponent on the Campfire ruleset. For multi-player at the table, use `sov new -p Alice -p Bob -p Carol`. For a guided 60-second walkthrough, use `sov tutorial`.
+`sov play campfire_v1` is the no-config quickstart — one human plus a default opponent. For multi-player at the table, use `sov new -p Alice -p Bob -p Carol`. For a guided 60-second walkthrough, use `sov tutorial`.
 
 No Python? The `npx` path downloads a prebuilt binary:
 
@@ -50,10 +66,9 @@ No Python? The `npx` path downloads a prebuilt binary:
 npx @mcptoolshop/sovereignty tutorial
 ```
 
-## Your first game
+## A real session
 
-Once you and 2-3 friends are at the table, the console runs the round and
-you do the talking. A real session looks like this:
+Once you and 2-3 friends are at the table, the console runs the round and you do the talking. A real session looks like this:
 
 ```bash
 # Start a game with three players
@@ -69,8 +84,7 @@ sov status
 sov end-round
 ```
 
-`sov status` shows a Rich-formatted table with player coins, rep, upgrades,
-position, and goal. For a quick one-line glance between turns:
+`sov status` shows a Rich-formatted table with player coins, rep, upgrades, position, and goal. For a quick one-line glance between turns:
 
 ```bash
 sov status --brief
@@ -91,17 +105,10 @@ Repeat for 15 rounds. `sov game-end` prints the final scores.
 - **Audit Viewer desktop app** (v2.1+, optional): `npm --prefix app run tauri dev`. See [Desktop app](#desktop-app-optional-v21) below.
 
 > Want a guided in-app walkthrough first? Run `sov tutorial`.
-> Want to play with no software at all? See [Print & Play](docs/print-and-play.md).
 > Want a deeper rules tour? See [Start here](docs/start_here.md) or
 > the [full handbook](https://mcp-tool-shop-org.github.io/sovereignty/handbook/).
 
-The inline `sov turn` example above shows what a round looks like in the
-console; for the v2.1 desktop visualization, see [Desktop app](#desktop-app-optional-v21) below.
-
-## Play without the console
-
-Print the cards, grab a die and some coins, sit down with 2-4 people.
-The game works fully on the table.
+The inline `sov turn` example above shows what a round looks like in the console; for the v2.1 desktop visualization, see [Desktop app](#desktop-app-optional-v21) below.
 
 **[Start here](docs/start_here.md)** | **[Print & Play](docs/print-and-play.md)** | **[Full rules](docs/rules/campfire_v1.md)** | **[Play with strangers](docs/play-with-strangers.md)**
 
@@ -248,24 +255,15 @@ Full view spec at [docs/v2.1-views.md](docs/v2.1-views.md).
 
 ## How it works
 
-You start with **5 coins** and **3 reputation**. Roll a die, move around
-a 16-space board, and land on spaces that give you choices: trade, help
-someone, take a risk, or draw a card.
+You start with **5 coins** and **3 reputation**. Roll a die, move around a 16-space board, and land on spaces that give you choices: trade, help someone, take a risk, or draw a card.
 
-**28 Event cards** read like moments: *"Has anyone seen a small leather
-pouch?"* (Lost Wallet) or *"Nobody saw... right?"* (Found a Shortcut).
-Includes 8 market-shift events for Town Hall games.
+**20 Event cards** read like moments: *"Has anyone seen a small leather pouch?"* (Lost Wallet) or *"Nobody saw... right?"* (Found a Shortcut). Includes market-shift events for Town Hall games.
 
-**22 Deal & Voucher cards** force conversation: *"Spot me 2 coins? I'll
-pay 3 back."* or *"I've got your back if you've got mine."* Deals set
-goals with deadlines; Vouchers are IOUs you issue to other players.
+**10 Deal cards + 10 Voucher cards** force conversation: *"Spot me 2 coins? I'll pay 3 back."* or *"I've got your back if you've got mine."* Deals set goals with deadlines; Vouchers are IOUs you issue to other players.
 
-**The Promise rule:** Once per round, say "I promise..." out loud and
-commit to something. Keep it: +1 reputation. Break it: -2 reputation.
-The table decides.
+**The Promise rule:** Once per round, say "I promise..." out loud and commit to something. Keep it: +1 reputation. Break it: -2 reputation. The table decides.
 
-**The Apology:** Once per game, if you broke a promise, publicly apologize.
-Pay 1 coin to who you wronged, regain +1 reputation.
+**The Apology:** Once per game, if you broke a promise, publicly apologize. Pay 1 coin to who you wronged, regain +1 reputation.
 
 **Pick your goal** (secret or public):
 - **Prosperity** — reach 20 coins
@@ -276,12 +274,9 @@ After 15 rounds, highest combined score wins.
 
 ## What is Diary Mode?
 
-Every round, the console can produce a **proof** — a fingerprint of the
-game state. If anyone changes the score, the fingerprint won't match.
+Every round, the console can produce a **proof** — a fingerprint of the game state. If anyone changes the score, the fingerprint won't match.
 
-Optionally, that fingerprint can be posted to the **XRPL Testnet** — a
-public ledger. Think of it as writing the score on a wall that nobody
-can erase.
+Optionally, that fingerprint can be posted to the **XRPL Testnet** — a public ledger. Think of it as writing the score on a wall that nobody can erase.
 
 ```bash
 sov end-round                        # generate proof
@@ -290,8 +285,7 @@ sov anchor                           # post hash to XRPL (optional)
 sov verify proof.json --tx <txid>    # trust but verify
 ```
 
-Only the host needs a wallet. Nobody else touches a screen. The game
-works perfectly without anchoring — it's just the diary that remembers.
+Only the host needs a wallet. Nobody else touches a screen. The game works perfectly without anchoring — it's just the diary that remembers.
 
 ## Three tiers
 
@@ -325,7 +319,7 @@ sovereignty/
   sov_cli/          # Typer CLI (the "Round Console")
   tests/            # Engine, transport, and CLI tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
-  assets/print/     # Printable cards, player mat, quick reference
+  assets/print/     # Print pack — markdown sources, rendered PDFs, JSX render sources
 ```
 
 ## Development
@@ -342,19 +336,15 @@ uv run ruff check .
 
 > "Teach through consequences, not terminology."
 
-Players learn by doing: issuing IOUs, breaking promises, trading at
-shifting prices. The concepts map to Web3 primitives — wallets, tokens,
-trust lines — but players don't need to know that to have fun.
+Players learn by doing: issuing IOUs, breaking promises, trading at shifting prices. The concepts map to Web3 primitives — wallets, tokens, trust lines — but players don't need to know that to have fun.
 
 ## Contributing
 
-The easiest way to contribute is to [add a card](CONTRIBUTING.md).
-No engine knowledge needed — just a name, a description, and some flavor text.
+The easiest way to contribute is to [add a card](CONTRIBUTING.md). No engine knowledge needed — just a name, a description, and some flavor text.
 
 ## Security
 
-Wallet seeds, game state, and proof files — what to share and what not to.
-No telemetry, no analytics, no phone-home. The only optional network call is XRPL Testnet anchoring.
+Wallet seeds, game state, and proof files — what to share and what not to. No telemetry, no analytics, no phone-home. The only optional network call is XRPL Testnet anchoring.
 
 See [SECURITY.md](SECURITY.md).
 
