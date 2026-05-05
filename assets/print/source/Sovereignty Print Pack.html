@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Sovereignty — Print &amp; Play (Tier 1)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  @page { size: 8.5in 11in; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #2a221a; font-family: 'IM Fell English', Georgia, serif; color: #f4ead4; }
+  /* Index strip — only on screen */
+  #toc { position: fixed; top: 0; left: 0; right: 0; z-index: 50; background: rgba(20,15,10,0.92); border-bottom: 1px solid #c08a2e; padding: 10px 18px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; backdrop-filter: blur(6px); }
+  #toc .brand { font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: 5px; text-transform: uppercase; font-size: 13px; color: #e0af68; padding-right: 14px; border-right: 1px solid #5a4a35; margin-right: 6px; }
+  #toc a { color: #f4ead4; text-decoration: none; font-family: 'Cormorant Garamond', serif; font-size: 14px; padding: 6px 12px; border: 1px solid transparent; border-radius: 2px; letter-spacing: 1px; }
+  #toc a:hover { border-color: #c08a2e; color: #e0af68; }
+  #toc a.active { border-color: #c08a2e; color: #e0af68; background: rgba(192,138,46,0.1); }
+  #toc .spacer { flex: 1; }
+  #toc .meta { font-family: 'IM Fell English', serif; font-style: italic; font-size: 12px; color: #7a5d33; }
+  #pages { padding-top: 70px; padding-bottom: 60px; display: flex; flex-direction: column; align-items: center; gap: 30px; }
+  .page-host { transform-origin: top left; overflow: hidden; position: relative; }
+  .page-wrap { background: #f4ead4; box-shadow: 0 6px 28px rgba(0,0,0,0.5); transform-origin: top left; }
+  .page-label { color: #7a5d33; font-family: 'Cormorant Garamond', serif; letter-spacing: 6px; font-size: 11px; text-transform: uppercase; padding: 4px 0 0; }
+  @media print {
+    body { background: #fff; }
+    #toc, .page-label { display: none !important; }
+    #pages { padding: 0; gap: 0; }
+    .page-wrap { box-shadow: none !important; page-break-after: always; }
+    .page-host { transform: none !important; width: auto !important; height: auto !important; overflow: visible !important; }
+    .page-wrap { transform: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="toc" data-screen-label="00 Index">
+  <span class="brand">Sovereignty · Print &amp; Play</span>
+  <a href="#sec-board" data-target="sec-board">Board</a>
+  <a href="#sec-mat" data-target="sec-mat">Player Mat</a>
+  <a href="#sec-qr" data-target="sec-qr">Quick-Ref</a>
+  <a href="#sec-treaty" data-target="sec-treaty">Treaty Ref</a>
+  <a href="#sec-events" data-target="sec-events">Events</a>
+  <a href="#sec-deals" data-target="sec-deals">Deals</a>
+  <a href="#sec-vouchers" data-target="sec-vouchers">Vouchers</a>
+  <span class="spacer"></span>
+  <span class="meta">v1.0 · Tier 1 print pack</span>
+</nav>
+
+<main id="pages"></main>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="tokens.js"></script>
+<script type="text/babel" src="tile-icons.jsx"></script>
+<script type="text/babel" src="tile-data.jsx"></script>
+<script type="text/babel" src="board-a.jsx"></script>
+<script type="text/babel" src="primitives.jsx"></script>
+<script type="text/babel" src="artifact-player-mat.jsx"></script>
+<script type="text/babel" src="artifact-quick-ref.jsx"></script>
+<script type="text/babel" src="artifact-treaty-ref.jsx"></script>
+<script type="text/babel" src="artifact-cards.jsx"></script>
+
+<script type="text/babel" data-presets="env,react">
+  // Each Page is mounted into its own host so React errors in one don't kill others.
+  function makeSection({ id, label, label2, render }) {
+    const wrap = document.createElement("section");
+    wrap.id = id;
+    wrap.dataset.screenLabel = label2 || label;
+    wrap.style.display = "flex";
+    wrap.style.flexDirection = "column";
+    wrap.style.alignItems = "center";
+    wrap.style.gap = "6px";
+
+    const tag = document.createElement("div");
+    tag.className = "page-label";
+    tag.textContent = label;
+    wrap.appendChild(tag);
+
+    const sized = document.createElement("div");
+    sized.className = "page-host";
+    const inner = document.createElement("div");
+    inner.className = "page-wrap";
+    inner.style.width = "1700px";
+    inner.style.height = "2200px";
+    sized.appendChild(inner);
+    wrap.appendChild(sized);
+
+    document.getElementById("pages").appendChild(wrap);
+    ReactDOM.createRoot(inner).render(render());
+    return sized;
+  }
+
+  // Render every section
+  const hosts = [];
+  hosts.push(makeSection({ id: "sec-board", label: "Campfire Board · 1 of 7", label2: "01 Board",
+    render: () => <window.SovBoardA /> }));
+  hosts.push(makeSection({ id: "sec-mat", label: "Player Mat · 2 of 7", label2: "02 Player Mat",
+    render: () => <window.SovPlayerMat /> }));
+  hosts.push(makeSection({ id: "sec-qr", label: "Quick Reference · 3 of 7", label2: "03 Quick Ref",
+    render: () => <window.SovQuickRef /> }));
+  hosts.push(makeSection({ id: "sec-treaty", label: "Treaty Quick-Reference · 4 of 7", label2: "04 Treaty Ref",
+    render: () => <window.SovTreatyQuickRef /> }));
+
+  // Multi-page card sheets — each returns an array of pages
+  function multiSection(id, label2, builderFn, baseLabel) {
+    const arr = builderFn();
+    arr.forEach((pageEl, i) => {
+      const tag = arr.length > 1 ? `${baseLabel} · sheet ${i+1}/${arr.length}` : baseLabel;
+      hosts.push(makeSection({
+        id: i === 0 ? id : `${id}-${i}`,
+        label: tag,
+        label2: arr.length > 1 ? `${label2} ${i+1}` : label2,
+        render: () => pageEl,
+      }));
+    });
+  }
+  multiSection("sec-events",   "05 Events",   window.SovEventPages,   "Event Cards");
+  multiSection("sec-deals",    "06 Deals",    window.SovDealPages,    "Deal Cards");
+  multiSection("sec-vouchers", "07 Vouchers", window.SovVoucherPages, "Voucher Cards");
+
+  // Fit-to-viewport scaling (screen only)
+  function fit() {
+    const target = Math.min((window.innerWidth - 80) / 1700, 0.55);
+    document.querySelectorAll(".page-host").forEach(h => {
+      h.style.width = `${1700 * target}px`;
+      h.style.height = `${2200 * target}px`;
+      const wrap = h.querySelector(".page-wrap");
+      if (wrap) wrap.style.transform = `scale(${target})`;
+    });
+  }
+  window.addEventListener("resize", fit);
+  requestAnimationFrame(fit);
+
+  // Active-link highlight in TOC
+  const links = document.querySelectorAll("#toc a[data-target]");
+  function updateActive() {
+    const y = window.scrollY + 120;
+    let activeId = null;
+    document.querySelectorAll("#pages > section").forEach(sec => {
+      const top = sec.offsetTop;
+      if (top <= y) {
+        // Match section id to TOC entry (events/deals/vouchers may have multi-page ids)
+        const base = sec.id.split("-").slice(0, 2).join("-");
+        activeId = base;
+      }
+    });
+    links.forEach(a => a.classList.toggle("active", a.dataset.target === activeId));
+  }
+  window.addEventListener("scroll", updateActive, { passive: true });
+  updateActive();
+</script>
+</body>
+</html>

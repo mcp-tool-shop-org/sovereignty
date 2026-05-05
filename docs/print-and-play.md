@@ -1,36 +1,41 @@
 # Sovereignty — Print & Play
 
-Everything you need to play tonight. No screens required.
+Everything you need to play tonight. No screens at the table.
 
 ## What to print
 
+The full Tier 1 print pack ships as ready-to-print PDFs. One file per artifact, plus a combined Sovereignty-Print-Pack.pdf with all 11 sheets in one document.
+
 | File | Pages | What it is |
 |------|-------|------------|
-| `assets/print/event-cards.md` | 2 | 20 Event cards (cut along lines) |
-| `assets/print/deal-cards.md` | 2 | 20 Deal & Voucher cards — 10 each (cut along lines) |
-| `assets/print/player-mat.md` | 1 | Player mat (one per player, tracks coins/rep/promises) |
-| `assets/print/quick-ref.md` | 1 | Quick reference: board spaces, turn order, Promise rules |
-| `assets/print/treaty-quick-ref.md` | 1 | Treaty Table quick reference (Tier 3 only) |
+| [`assets/print/pdf/Sovereignty-Print-Pack.pdf`](../assets/print/pdf/Sovereignty-Print-Pack.pdf) | 11 | The whole package — print this and you're set |
+| [`assets/print/pdf/board.pdf`](../assets/print/pdf/board.pdf) | 1 | Campfire board (16 spaces, square loop) |
+| [`assets/print/pdf/mat.pdf`](../assets/print/pdf/mat.pdf) | 1 | Player mat — coins / rep / upgrades / promises (one per player) |
+| [`assets/print/pdf/quickref.pdf`](../assets/print/pdf/quickref.pdf) | 1 | Quick reference — board spaces, turn order, promise rules |
+| [`assets/print/pdf/treaty.pdf`](../assets/print/pdf/treaty.pdf) | 1 | Treaty Table quick reference (Tier 3 only) |
+| [`assets/print/pdf/events.pdf`](../assets/print/pdf/events.pdf) | 3 | 20 Event cards, 9-up grid (cut along lines) |
+| [`assets/print/pdf/deals.pdf`](../assets/print/pdf/deals.pdf) | 2 | 10 Deal cards |
+| [`assets/print/pdf/vouchers.pdf`](../assets/print/pdf/vouchers.pdf) | 2 | 10 Voucher cards (IOUs between players) |
+
+The PDFs are vector with embedded fonts (Cormorant Garamond, IM Fell English, JetBrains Mono, ZapfDingbats) — they print cleanly on any home printer at US Letter portrait. Source files for re-rendering live in [`assets/print/source/`](../assets/print/source/README.md).
 
 ## Which tier are you playing?
 
-| Tier | What to print | Total pages |
-|------|--------------|-------------|
-| **Campfire** | Event cards + Deal cards + Player mat + Quick ref | ~6 pages |
-| **Market Day** | Same as Campfire (resources tracked on player mat) | ~6 pages |
-| **Town Hall** | Same as Campfire (market prices tracked on board) | ~6 pages |
-| **Treaty Table** | Everything above + Treaty quick ref | ~7 pages |
+| Tier | What to print | Pages |
+|------|--------------|-------|
+| **Campfire** | Board + Player mat + Quick ref + Event cards + Deal cards + Voucher cards | 9 |
+| **Market Day** | Same as Campfire (resources tracked on player mat) | 9 |
+| **Town Hall** | Same as Campfire (market prices tracked on board margin) | 9 |
+| **Treaty Table** | Everything above + Treaty quick ref | 10 |
 
 Print double-sided to save paper.
 
 ## What else you need
 
 - 1 six-sided die
-- Coins or tokens (pennies, buttons, whatever — you need ~40 total)
-- Something to mark board position (different colored buttons, bottle caps)
-- A piece of paper to draw the board (or just count spaces 0-15)
-- **Market Day / Town Hall / Treaty Table:** Resource tokens in 3 colors
-  (for Food, Wood, Tools — buttons, beads, or colored paper squares)
+- Coins or tokens (pennies, buttons, whatever — about 40 total)
+- Position markers — different colored buttons or bottle caps, one per player
+- **Market Day / Town Hall / Treaty Table:** Resource tokens in 3 colors (Food, Wood, Tools — buttons, beads, or colored paper squares)
 
 ## Setup (2 minutes)
 
