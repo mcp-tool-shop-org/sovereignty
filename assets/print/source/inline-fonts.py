@@ -13,6 +13,7 @@ Usage:
 The generated *.RENDER.html should NOT be committed — it's ~1.5MB of base64 fonts.
 Re-run any time the source HTML's <link href="...fonts.googleapis.com..."> changes.
 """
+
 import base64
 import re
 import sys
@@ -62,10 +63,14 @@ def main(html_path: str) -> None:
         count=1,
     )
     if patched == html:
-        print("ERROR: failed to patch HTML — preconnect/stylesheet pattern not found", file=sys.stderr)
+        msg = "ERROR: failed to patch HTML — preconnect/stylesheet pattern not found"
+        print(msg, file=sys.stderr)
         sys.exit(2)
 
-    out = src.with_suffix(".RENDER.html") if src.suffix == ".html" else Path(str(src) + ".RENDER.html")
+    if src.suffix == ".html":
+        out = src.with_suffix(".RENDER.html")
+    else:
+        out = Path(str(src) + ".RENDER.html")
     # If src has spaces / no nice .html replace, place RENDER before extension
     if src.name.endswith(".html"):
         out = src.with_name(src.stem + ".RENDER.html")
