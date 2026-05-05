@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.md">English</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.md">English</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -33,24 +33,40 @@ from camo with its own cache.
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## 30 सेकंड में इंस्टॉल करें
+## आज रात खेलें
 
-सबसे तेज़ तरीका — पायथन उपयोगकर्ताओं के लिए:
+प्रिंट करें [पूरे प्रिंट-एंड-प्ले पैकेज](assets/print/pdf/Sovereignty-Print-Pack.pdf) — बोर्ड, खिलाड़ी के लिए शीट, त्वरित संदर्भ, और कार्ड के तीन डेक, जो 11 अमेरिकी लेटर पेपर शीट पर हैं। एक पासा और कुछ सिक्के ढूंढें। दो या तीन दोस्तों के साथ बैठें। आप बीस मिनट में खेल रहे होंगे।
+
+यदि आप व्यक्तिगत शीट चाहते हैं:
+
+- **[बोर्ड](assets/print/pdf/board.pdf)** — 16 स्थानों वाला कैम्पफायर लूप, एक पृष्ठ।
+- **[खिलाड़ी की शीट](assets/print/pdf/mat.pdf)** — सिक्के, प्रतिष्ठा, अपग्रेड, वादे। प्रत्येक खिलाड़ी के लिए एक।
+- **[त्वरित संदर्भ](assets/print/pdf/quickref.pdf)** — बोर्ड के स्थान, बारी का क्रम, वादे के नियम।
+- **[इवेंट कार्ड](assets/print/pdf/events.pdf)** — 20 कार्ड, तीन पृष्ठ, रेखाओं के साथ काटें।
+- **[डील कार्ड](assets/print/pdf/deals.pdf)** — 10 कार्ड, दो पृष्ठ।
+- **[वॉउचर कार्ड](assets/print/pdf/vouchers.pdf)** — खिलाड़ियों के बीच 10 ऋण, दो पृष्ठ।
+- **[ट्रीटि का त्वरित संदर्भ](assets/print/pdf/treaty.pdf)** — केवल स्तर 3 के लिए।
+
+पीडीएफ वेक्टर हैं और उनमें एम्बेडेड फ़ॉन्ट हैं — वे किसी भी होम प्रिंटर पर साफ प्रिंट होते हैं। सेटअप का विवरण [प्रिंट एंड प्ले](docs/print-and-play.md) पर दिया गया है।
+
+## क्या आप स्कोर रखने के लिए एक कंसोल चाहते हैं?
+
+वैकल्पिक। खेल कागज पर ठीक से चलता है। लेकिन अगर किसी के पास लैपटॉप है, तो `sov` सिक्कों, प्रतिष्ठा, वादों को ट्रैक करता है, और अंत में एक छेड़छाड़-रोधी रसीद उत्पन्न करता है:
 
 ```bash
-pipx install sovereignty-game
-sov tutorial
+pip install sovereignty-game
+sov play campfire_v1
 ```
 
-क्या आपके पास पायथन नहीं है? कोई बात नहीं। `npx` का उपयोग करके, एक पहले से तैयार बाइनरी डाउनलोड हो जाएगी:
+`sov play campfire_v1` कोई कॉन्फ़िगरेशन नहीं वाला त्वरित शुरुआत है — एक मानव और एक डिफ़ॉल्ट प्रतिद्वंद्वी। मल्टी-प्लेयर गेम के लिए, `sov new -p Alice -p Bob -p Carol` का उपयोग करें। एक निर्देशित 60-सेकंड के विवरण के लिए, `sov tutorial` का उपयोग करें।
+
+क्या आपके पास पायथन नहीं है? `npx` पथ एक पहले से निर्मित बाइनरी डाउनलोड करता है:
 
 ```bash
 npx @mcptoolshop/sovereignty tutorial
 ```
 
-बस इतना ही। `sov tutorial` आपको लगभग 60 सेकंड में नियमों के बारे में बताएगा।
-
-## आपका पहला खेल
+## एक वास्तविक सत्र
 
 जब आप और 2-3 दोस्त एक साथ हों, तो कंसोल राउंड चलाएगा और आप बातचीत करेंगे। एक वास्तविक सत्र ऐसा दिखता है:
 
@@ -82,18 +98,17 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 
 15 राउंड तक दोहराएं। `sov game-end` अंतिम स्कोर प्रिंट करेगा।
 
-> क्या आप पहले एक निर्देशित इन-ऐप ट्यूटोरियल चाहते हैं? `sov tutorial` चलाएं।
-> क्या आप बिना किसी सॉफ्टवेयर के खेलना चाहते हैं? [प्रिंट और खेलें](docs/print-and-play.md) देखें।
+- **कई सहेजे गए गेम** (v2.1+): `sov games` सेव किए गए गेम की सूची दिखाता है; `sov resume <game-id>` का उपयोग करके आप उनके बीच स्विच कर सकते हैं।
+- **बैच एंकरिंग** (v2.1+): `sov anchor` गेम के अंत में सभी लंबित राउंड को एक एकल XRPL लेनदेन में समूहित करता है — प्रत्येक गेम के लिए एक सत्यापन योग्य चेन पॉइंटर। मध्य-खेल में फ्लश करने के लिए `sov anchor --checkpoint` का उपयोग करें।
+- **नेटवर्क चयन** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (या `SOV_XRPL_NETWORK` पर्यावरण चर; डिफ़ॉल्ट `testnet`)।
+- **डेमन मोड** (v2.1+, वैकल्पिक): `sov daemon start` एक लोकलहोस्ट HTTP/JSON सर्वर चलाता है जो डेस्कटॉप एकीकरण और पृष्ठभूमि चेन पोलिंग के लिए उपयोग किया जाता है। नीचे [डेमन मोड](#daemon-mode-optional-v21) देखें।
+- **ऑडिट व्यूअर डेस्कटॉप ऐप** (v2.1+, वैकल्पिक): `npm --prefix app run tauri dev`। नीचे [डेस्कटॉप ऐप](#desktop-app-optional-v21) देखें।
+
+> क्या आप पहले ऐप में एक निर्देशित विवरण देखना चाहते हैं? `sov tutorial` चलाएं।
 > क्या आप नियमों के बारे में अधिक जानना चाहते हैं? [यहां से शुरू करें](docs/start_here.md) या
 > [पूरा मैनुअल](https://mcp-tool-shop-org.github.io/sovereignty/handbook/) देखें।
 
-> _एक छोटा डेमो GIF या स्क्रीनशॉट यहां होना चाहिए — इसे स्टेज डी के रूप में ट्रैक किया गया है
-> ताकि README यह दिखा सके कि एक बारी वास्तव में कैसी दिखती है।_
-
-## कंसोल के बिना खेलें
-
-कार्ड प्रिंट करें, एक पासा और कुछ सिक्के लें, 2-4 लोगों के साथ बैठें।
-यह खेल पूरी तरह से टेबल पर खेला जा सकता है।
+ऊपर दिया गया `sov turn` का इनलाइन उदाहरण दिखाता है कि कंसोल में एक राउंड कैसा दिखता है; v2.1 डेस्कटॉप विज़ुअलाइज़ेशन के लिए, नीचे [डेस्कटॉप ऐप](#desktop-app-optional-v21) देखें।
 
 **[यहां से शुरू करें](docs/start_here.md)** | **[प्रिंट और खेलें](docs/print-and-play.md)** | **[नियम](docs/rules/campfire_v1.md)** | **[अजनबियों के साथ खेलें](docs/play-with-strangers.md)**
 
@@ -101,9 +116,13 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 <summary>Full command reference</summary>
 
 ```bash
+sov play campfire_v1                 # no-config quickstart (v2.1+) — alias for sov new
 sov new --recipe cozy -p ...         # curated vibe (cozy/spicy/market/promise)
 sov new --tier treaty-table -p ...   # pick a tier
 sov new --code "SOV|..." -p ...      # play from a share code
+sov games                            # list saved games (multi-save, v2.1+)
+sov games --json                     # machine-readable saves list (v2.1+)
+sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
 sov status                           # show current game state
@@ -123,8 +142,16 @@ sov vote mvp Alice                   # table votes: mvp/chaos/promise
 sov toast Alice                      # +1 Rep, once per player per game
 sov end-round                        # generate round proof
 sov game-end                         # final scores + Story Points
+sov anchor                           # batch pending rounds to XRPL (v2.1+)
+sov anchor --checkpoint              # mid-game flush (v2.1+)
+sov anchor --network mainnet         # network selection (v2.1+)
+sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
+sov daemon status                    # running | stale | none
+sov daemon stop                      # SIGTERM + cleanup
 sov postcard                         # shareable summary
-sov season-postcard                  # season standings across games
+sov season                           # season standings across games (v2.1+)
+sov season-postcard                  # printable season recap
 sov feedback                         # issue-ready play report
 sov scenario list                    # browse scenario packs
 sov scenario code cozy-night -s 42   # generate a share code
@@ -137,6 +164,94 @@ sov support-bundle                   # diagnostic zip for bug reports
 </details>
 
 कंसोल स्कोर रखता है। आप अपने वादे निभाते हैं।
+
+## डेमन मोड (वैकल्पिक, v2.1+)
+
+डेस्कटॉप एकीकरण (ऑडिट व्यूअर, टाउरी शेल) या पृष्ठभूमि चेन पोलिंग के लिए, सॉवरेनिटी को एक लोकलहोस्ट HTTP डेमन के रूप में चलाएं:
+
+```bash
+pip install 'sovereignty-game[daemon]'
+sov daemon start --readonly        # audit-only, no wallet seed
+sov daemon start                   # full daemon with anchor endpoints (loads XRPL_SEED)
+sov daemon status                  # running | stale | none
+sov daemon stop
+```
+
+डेमन `127.0.0.1` पर एक यादृच्छिक पोर्ट पर बंधा होता है; कनेक्शन विवरण (पोर्ट + बेयरर टोकन) `.sov/daemon.json` में होते हैं। प्रत्येक प्रोजेक्ट रूट में एक डेमन होता है। पूर्ण आईपीसी अनुबंध के लिए [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) देखें।
+
+## डेस्कटॉप ऐप (वैकल्पिक, v2.1+)
+
+ऑडिट व्यूअर v2.1 डेस्कटॉप ऐप है — एक टाउरी शेल (रस्ट + वेबव्यू) जो ऑडिट व्यूअर और एक रीड-ओनली गेम व्यू को डेमन के ऊपर चलाता है।
+
+### इंस्टॉल करें (बाइनरी)
+
+v2.1.0 में पहले से निर्मित बाइनरी [GitHub रिलीज़ पृष्ठ](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) पर उपलब्ध हैं:
+
+- **macOS (यूनिवर्सल):** `sovereignty-app-2.1.0-darwin-universal.dmg` — इंटेल + एप्पल सिलिकॉन
+- **विंडोज (x64):** `sovereignty-app-2.1.0-win-x64.msi`
+- **लिनक्स (x64, .deb):** `sovereignty-app-2.1.0-linux-x64.deb` — डेबियन / उबंटू / व्युत्पन्न। `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb` के साथ स्थापित करें। ऐपइमेज सपोर्ट संस्करण 2.2 में उपलब्ध होगा (अपस्ट्रीम `linuxdeploy` / उबंटू 24.04 FUSE इंटरैक्शन)।
+
+आपको ऐप के लिए आवश्यक पायथन डेमॉन भी स्थापित करना होगा: `pip install 'sovereignty-game[daemon]'==2.1.0`.
+
+> **पहली बार चलाने पर चेतावनी दिखाई दे सकती है।** macOS में "अज्ञात डेवलपर" लिखा दिखाई देगा — कंट्रोल-क्लिक करें, "ओपन" चुनें, और पुष्टि करें। विंडोज स्मार्टस्क्रीन में "अपरिचित प्रकाशक" लिखा दिखाई देगा — "अधिक जानकारी" पर क्लिक करें, फिर "फिर भी चलाएं"। दोनों चेतावनियाँ दर्शाती हैं कि संस्करण 2.1 केवल बिल्ड-प्रूवेनेंस प्रमाणन के साथ आता है (इसे `gh attestation verify` से सत्यापित करें), न कि ऑपरेटिंग सिस्टम-स्तरीय कोड साइनिंग के साथ। वर्कस्पेस-स्तरीय साइनिंग इंफ्रास्ट्रक्चर संस्करण 2.2 में उपलब्ध होगा।
+
+### प्रूवेनेंस सत्यापित करें
+
+प्रत्येक रिलीज़ आर्टिफैक्ट में SLSA बिल्ड-प्रूवेनेंस प्रमाणन होता है। चलाने से पहले इसे सत्यापित करें:
+
+```bash
+gh attestation verify \
+  --repo mcp-tool-shop-org/sovereignty \
+  ./sovereignty-app-2.1.0-darwin-universal.dmg
+```
+
+सफलतापूर्वक सत्यापन यह साबित करता है कि बाइनरी एक विशिष्ट कमिट से बनाई गई थी, रिलीज़ वर्कफ़्लो द्वारा, इस रिपॉजिटरी में। यह ऑपरेटिंग सिस्टम-स्तरीय कोड साइनिंग से अलग एक अलग स्तर का विश्वास है — बाइनरी अभी भी ऑपरेटिंग सिस्टम की चेतावनी को ट्रिगर करता है, लेकिन इसकी सप्लाई-चेन प्रूवेनेंस क्रिप्टोग्राफिक रूप से सुरक्षित है।
+
+### स्रोत कोड से चलाएं
+
+यदि आप स्रोत कोड से बनाना चाहते हैं (या बाइनरी आपके प्लेटफ़ॉर्म पर नहीं चल रहा है):
+
+```bash
+# 1. Install Python + daemon deps
+pip install -e '.[xrpl,daemon]'
+
+# 2. Install frontend + Rust deps (one-time)
+cd app && npm install && cd ..
+cargo build --manifest-path app/src-tauri/Cargo.toml
+
+# 3. Start the dev shell (auto-starts the daemon in readonly mode)
+npm --prefix app run tauri dev
+```
+
+टॉरी शेल लॉन्च होने पर स्वचालित रूप से एक रीड-ओनली डेमॉन शुरू करता है और बंद होने पर इसे स्वचालित रूप से बंद कर देता है। बाहरी रूप से शुरू किए गए डेमॉन (`sov daemon start`) शेल रीस्टार्ट होने पर भी सक्रिय रहते हैं।
+
+पूरे विवरण के लिए [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) देखें।
+
+<p align="center">
+  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
+  <br>
+  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
+</p>
+
+<p align="center">
+  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
+  <br>
+  <em>Game Shell — passive real-time display of the active game.</em>
+</p>
+
+<p align="center">
+  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
+  <br>
+  <em>Settings — daemon network selection and configuration.</em>
+</p>
+
+ऑडिट व्यूअर में तीन दृश्य शामिल हैं:
+
+- **`/audit`** — XRPL-आधारित प्रमाण दर्शक। प्रत्येक गेम की सूची, प्रत्येक राउंड की स्थिति, "सभी राउंड सत्यापित करें" स्थानीय प्रमाण की पुनर्गणना और श्रृंखला लुकअप को एक साथ चलाता है। ऑडिटर का दृश्य: यह पुष्टि करें कि कोई गेम बिना कच्चे JSON डेटा पढ़े ईमानदारी से चला।
+- **`/game`** — सक्रिय गेम के लिए वास्तविक समय की स्थिति प्रदर्शित करता है। खिलाड़ी संसाधन कार्ड, राउंड टाइमलाइन, पिछले 20 SSE इवेंट लॉग। केवल पढ़ने के लिए; अन्य टर्मिनल में CLI में खेलें।
+- **`/settings`** — डेमॉन कॉन्फ़िगरेशन प्रदर्शित करता है + नेटवर्क स्विचर (टेस्टनेट / मेननेट / डेवनेट) जिसमें मेननेट-पुष्टि सुरक्षा उपाय शामिल हैं।
+
+पूरे विवरण के लिए [docs/v2.1-views.md](docs/v2.1-views.md) देखें।
 
 ## यह कैसे काम करता है
 
@@ -204,7 +319,7 @@ sovereignty/
   sov_cli/          # Typer CLI (the "Round Console")
   tests/            # Engine, transport, and CLI tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
-  assets/print/     # Printable cards, player mat, quick reference
+  assets/print/     # Print pack — markdown sources, rendered PDFs, JSX render sources
 ```
 
 ## विकास
