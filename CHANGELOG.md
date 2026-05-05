@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [2.2.1] - 2026-05-04
+
+### Fixed
+
+- `tests/test_daemon_lifecycle.py::test_daemon_sigterm_removes_daemon_json_on_clean_exit` no longer flakes on slow CI runners. The test sent SIGTERM as soon as `start_daemon()` returned, but `start_daemon()` returns once `.sov/daemon.json` is written — which happens BEFORE uvicorn's `server.run()` installs its SIGTERM handler. If the signal landed in that window, Python's default SIGTERM handler fired (terminate without running the cleanup `finally:`), leaving `.sov/daemon.json` behind and failing the assertion. Fix: poll `GET /health` (with the bearer token from the returned `info` dict) until 200 OK before signalling — proves uvicorn is in its event loop, signal handlers installed, cleanup wired. Also bumped the cleanup-poll deadline from 10s to 30s; cold Python interpreter + Starlette teardown + file removal can spike past 10s under contention on a GitHub-hosted runner. The daemon's SIGTERM handler itself is unchanged — the test was racing it.
+
 ## [2.2.0] - 2026-05-04
 
 ### Highlights

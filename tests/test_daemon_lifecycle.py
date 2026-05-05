@@ -29,7 +29,10 @@ import os
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -51,6 +54,36 @@ def _pid_alive(pid: int) -> bool:
     except (ProcessLookupError, OSError):
         return False
     return True
+
+
+def _wait_until_daemon_ready(info: dict[str, Any], *, timeout: float = 10.0) -> None:
+    """Poll ``GET /health`` until the daemon answers 200 OK.
+
+    ``start_daemon`` returns once ``.sov/daemon.json`` is written, but
+    uvicorn installs its SIGTERM handler later — inside ``server.run()``,
+    after the handshake write. Sending a signal in that window means
+    Python's default SIGTERM handler fires (terminate without running
+    the cleanup ``finally:``), and ``.sov/daemon.json`` is left behind.
+    Polling ``/health`` until 200 proves uvicorn is in its event loop:
+    listening socket bound, signal handlers installed, cleanup wired.
+    """
+    port = info["port"]
+    token = info["token"]
+    url = f"http://127.0.0.1:{port}/health"
+    request = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+    deadline = time.monotonic() + timeout
+    last_err: Exception | None = None
+    while time.monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(request, timeout=1.0) as resp:  # noqa: S310
+                if resp.status == 200:
+                    return
+        except (urllib.error.URLError, ConnectionError, OSError) as exc:
+            last_err = exc
+        time.sleep(0.05)
+    raise RuntimeError(
+        f"daemon /health did not return 200 within {timeout:.1f}s; last error: {last_err!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -319,9 +352,18 @@ def test_daemon_sigterm_removes_daemon_json_on_clean_exit(
     state_file = tmp_path / ".sov" / "daemon.json"
     assert state_file.exists()
 
+    # Wait for uvicorn to enter its event loop (signal handlers installed,
+    # cleanup wired) before signalling. Otherwise SIGTERM may land in the
+    # window between handshake write and uvicorn's handler install, which
+    # falls through to Python's default-terminate and skips the
+    # ``.sov/daemon.json`` cleanup ``finally:`` block.
+    _wait_until_daemon_ready(info)
+
     os.kill(pid, signal.SIGTERM)
 
-    deadline = time.monotonic() + 10.0
+    # 30s deadline: cold Python interpreter + Starlette teardown + file
+    # removal can spike past 10s on a contended GitHub-hosted runner.
+    deadline = time.monotonic() + 30.0
     while state_file.exists() and time.monotonic() < deadline:
         time.sleep(0.1)
     assert not state_file.exists(), (
