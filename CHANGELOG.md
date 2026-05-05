@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [2.2.1] - 2026-05-04
+## [2.2.1] - 2026-05-05
+
+### Added
+
+- README translated into all 8 languages: Japanese (`README.ja.md`), Simplified Chinese (`README.zh.md`), Spanish (`README.es.md`), French (`README.fr.md`), Hindi (`README.hi.md`), Italian (`README.it.md`), and Brazilian Portuguese (`README.pt-BR.md`) via TranslateGemma 12B (local, zero API cost). Language nav bar added to the English README.
 
 ### Fixed
 
