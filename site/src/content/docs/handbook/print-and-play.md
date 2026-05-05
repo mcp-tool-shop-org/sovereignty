@@ -13,8 +13,8 @@ Each link goes to the source markdown on GitHub — open, print, cut, play.
 
 - [Quick reference](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/assets/print/quick-ref.md) — board spaces (0-15), turn order, promise rules, scoring. One page.
 - [Player mat](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/assets/print/player-mat.md) — coins, reputation, promises, upgrades trackers. One per player.
-- [Deal cards](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/assets/print/deal-cards.md) — 22 Deal and Voucher cards. Two pages, cut along lines.
-- [Event cards](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/assets/print/event-cards.md) — 28 Event cards. Two pages, cut along lines.
+- [Deal cards](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/assets/print/deal-cards.md) — 20 Deal and Voucher cards (10 each). Two pages, cut along lines.
+- [Event cards](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/assets/print/event-cards.md) — 20 Event cards. Two pages, cut along lines.
 - [Treaty quick reference](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/assets/print/treaty-quick-ref.md) — Tier 3 only. Treaty types, escrow rules, judgment process.
 
 ## Which sheets do I need?
