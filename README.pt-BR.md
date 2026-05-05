@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.md">English</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.md">English</a>
 </p>
 
 <p align="center">
@@ -33,9 +33,25 @@ from camo with its own cache.
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## Instale + primeiro jogo
+## Jogue hoje à noite
 
-O caminho mais rápido: instale e comece a jogar:
+Imprima [todo o pacote para impressão e jogo](assets/print/pdf/Sovereignty-Print-Pack.pdf) — tabuleiro, tapetes para os jogadores, guia rápido e três baralhos de cartas em 11 folhas de papel no formato US Letter. Encontre um dado e algumas moedas. Sente-se com dois ou três amigos. Você estará jogando em vinte minutos.
+
+Se você quiser as folhas individualmente:
+
+- **[Tabuleiro](assets/print/pdf/board.pdf)** — o circuito de 16 espaços da fogueira, uma página.
+- **[Tapete do jogador](assets/print/pdf/mat.pdf)** — moedas, reputação, melhorias, promessas. Um para cada jogador.
+- **[Guia rápido](assets/print/pdf/quickref.pdf)** — espaços do tabuleiro, ordem de turno, regras das promessas.
+- **[Cartas de evento](assets/print/pdf/events.pdf)** — 20 cartas, três páginas, corte ao longo das linhas.
+- **[Cartas de acordo](assets/print/pdf/deals.pdf)** — 10 cartas, duas páginas.
+- **[Cartas de vale](assets/print/pdf/vouchers.pdf)** — 10 títulos de dívida entre os jogadores, duas páginas.
+- **[Guia rápido de tratados](assets/print/pdf/treaty.pdf)** — apenas para o Nível 3.
+
+Os arquivos PDF são vetoriais e possuem fontes incorporadas — eles imprimem com boa qualidade em qualquer impressora doméstica. O guia de instalação está disponível em [Print & Play](docs/print-and-play.md).
+
+## Quer um console para registrar a pontuação?
+
+Opcional. O jogo funciona bem no papel. Mas, se alguém tiver um laptop por perto, o programa `sov` registra moedas, reputação, promessas e gera um recibo inviolável no final:
 
 ```bash
 pip install sovereignty-game
@@ -50,7 +66,7 @@ Não tem Python? O comando `npx` baixa um binário pré-compilado:
 npx @mcptoolshop/sovereignty tutorial
 ```
 
-## Sua primeira partida
+## Uma sessão real
 
 Depois que você e 2-3 amigos estiverem à mesa, o console conduz a rodada e você faz a parte de conversar. Uma partida real acontece assim:
 
@@ -88,17 +104,11 @@ Repita por 15 rodadas. O comando `sov game-end` exibe as pontuações finais.
 - **Modo daemon** (v2.1+, opcional): `sov daemon start` executa um servidor HTTP/JSON local para integração com a área de trabalho e monitoramento da cadeia em segundo plano. Veja [Modo daemon](#daemon-mode-optional-v21) abaixo.
 - **Aplicativo de desktop "Audit Viewer"** (v2.1+, opcional): `npm --prefix app run tauri dev`. Veja [Aplicativo de desktop](#desktop-app-optional-v21) abaixo.
 
-> Quer um tutorial interativo primeiro? Execute o comando `sov tutorial`.
-> Quer jogar sem nenhum software? Veja [Jogar em papel](docs/print-and-play.md).
-> Quer uma visão mais detalhada das regras? Veja [Comece aqui](docs/start_here.md) ou
+> Quer um tutorial guiado dentro do aplicativo primeiro? Execute `sov tutorial`.
+> Quer uma visão geral mais detalhada das regras? Consulte [Comece aqui](docs/start_here.md) ou
 > o [manual completo](https://mcp-tool-shop-org.github.io/sovereignty/handbook/).
 
 O exemplo de `sov turn` acima mostra como uma rodada se parece no console; para a visualização de desktop da v2.1, veja [Aplicativo de desktop](#desktop-app-optional-v21) abaixo.
-
-## Jogue sem o console
-
-Imprima as cartas, pegue um dado e algumas moedas, sente-se com 2-4 pessoas.
-O jogo funciona completamente na mesa.
 
 **[Comece aqui](docs/start_here.md)** | **[Jogar em papel](docs/print-and-play.md)** | **[Regras completas](docs/rules/campfire_v1.md)** | **[Jogue com estranhos](docs/play-with-strangers.md)**
 
@@ -179,7 +189,7 @@ A v2.1.0 inclui binários pré-compilados na [página de lançamentos do GitHub]
 
 - **macOS (universal):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
 - **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
-- **Linux (x64):** `sovereignty-app-2.1.0-linux-x64.AppImage`
+- **Linux (x64, .deb):** `sovereignty-app-2.1.0-linux-x64.deb` — Debian / Ubuntu / derivados. Instale com `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`. O suporte para AppImage será implementado na versão 2.2 (upstream `linuxdeploy` / interação Ubuntu 24.04 FUSE).
 
 Você também precisa do daemon Python que suporta o aplicativo: `pip install 'sovereignty-game[daemon]'==2.1.0`.
 
@@ -319,7 +329,7 @@ sovereignty/
   sov_cli/          # Typer CLI (the "Round Console")
   tests/            # Engine, transport, and CLI tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
-  assets/print/     # Printable cards, player mat, quick reference
+  assets/print/     # Print pack — markdown sources, rendered PDFs, JSX render sources
 ```
 
 ## Desenvolvimento
