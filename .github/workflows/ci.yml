@@ -51,7 +51,7 @@ jobs:
         # Parking F-593530-010: 3.13 is in classifiers; CI must prove it.
         python-version: ["3.11", "3.12", "3.13"]
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Install uv
         uses: astral-sh/setup-uv@4db96194c378173c656ce18a155ffc14a9fc4355 # v5.2.2
@@ -123,7 +123,7 @@ jobs:
     # misses and transient slow runners (CI-TOOLING-B-004).
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       # Tauri 2 webview deps. webkit2gtk-4.1 + libsoup-3.0 are the v2 line
       # (v1 was 4.0/2.4). libssl-dev satisfies reqwest in the Rust shell.
@@ -154,7 +154,7 @@ jobs:
       # actions/setup-node has built-in npm caching via cache: 'npm' +
       # cache-dependency-path — simpler than a separate actions/cache step.
       - name: Setup Node
-        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: "20"
           cache: "npm"
@@ -262,7 +262,7 @@ jobs:
     # (CI-TOOLING-B-004).
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - uses: astral-sh/setup-uv@4db96194c378173c656ce18a155ffc14a9fc4355 # v5.2.2
         with:
@@ -322,7 +322,7 @@ jobs:
     # uv sync + 3 CLI invocations; healthy run ~2min (CI-TOOLING-B-004).
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - uses: astral-sh/setup-uv@4db96194c378173c656ce18a155ffc14a9fc4355 # v5.2.2
         with:
