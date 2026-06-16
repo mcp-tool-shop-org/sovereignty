@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+
+- Bumped `starlette` 1.1.0 → 1.3.1 in `uv.lock` to clear two pip-audit HIGH findings: CVE-2026-54282 (fix 1.3.0) and CVE-2026-54283 (fix 1.3.1). Both still satisfy the existing `starlette>=0.36,<2.0` constraint in `pyproject.toml`, so `--frozen` installs remain valid; no source changes (daemon test suite unchanged, 851 tests green).
+
+### Changed
+
+- CI `security` job: replaced `gitleaks/gitleaks-action` with TruffleHog OSS for the advisory secret scan. `gitleaks-action` requires a paid `GITLEAKS_LICENSE` for organization-owned repos (the requirement predates v3; the v3.0.0 bump only moved Node 20 → 24), so it errored on every run for `mcp-tool-shop-org/sovereignty`. TruffleHog OSS is free for organizations, Docker-based (unaffected by the Node 20 → 24 deprecation), and runs with `--results=verified` so it does not false-positive on the dummy XRPL testnet seeds in `tests/`. Secret scanning stays advisory (`continue-on-error: true`) pending the v2.2 hard-gate policy pass.
+
 ## [2.2.1] - 2026-05-05
 
 ### Added
