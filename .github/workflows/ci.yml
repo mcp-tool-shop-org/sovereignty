@@ -252,17 +252,21 @@ jobs:
   # Supply-chain hard-gate scan. pip-audit promoted from advisory to fail-on-HIGH
   # in Stage B-2 (Wave 7-B) per Stage B target C lock. Allowlist mechanism via
   # .pip-audit-ignore at repo root (one PYSEC/GHSA/CVE id per line, # comments
-  # ok). gitleaks remains advisory at v2.1; promotion to hard gate deferred to
-  # v2.2 alongside the .gitleaks.toml / cargo-deny / deny.toml allowlist policy
-  # surface design pass.
+  # ok). Secret scan remains advisory at v2.1; promotion to hard gate deferred
+  # to v2.2 alongside the trufflehog-exclude / cargo-deny / deny.toml allowlist
+  # policy surface design pass.
   security:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    # uv sync + pip-audit DB fetch + gitleaks scan; healthy run ~3min
+    # uv sync + pip-audit DB fetch + secret scan; healthy run ~3min
     # (CI-TOOLING-B-004).
     timeout-minutes: 30
     steps:
+      # fetch-depth: 0 gives the TruffleHog secret scan full git history so its
+      # diff-range scan (base..head on push/PR) resolves. pip-audit ignores it.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
 
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
@@ -307,11 +311,21 @@ jobs:
           # positional --ignore-vuln args. Allowlist is the failure-mode gate.
           uv run pip-audit $ALLOWLIST_ARGS
 
-      - name: Secret scan with gitleaks (advisory)
+      # Secret scan. Replaced gitleaks/gitleaks-action (v3.0.0) — that action
+      # requires a paid GITLEAKS_LICENSE for ORGANIZATION-owned repos like
+      # mcp-tool-shop-org/sovereignty (the license check predates v3; the v3
+      # bump only moved Node 20 -> 24). Without a license it errors on every
+      # run. TruffleHog OSS is free for orgs (no license), Go/Docker-based so
+      # it's unaffected by the Node 20 -> 24 deprecation that drove this bump,
+      # and --results=verified reports only live, confirmed credentials — so it
+      # does NOT false-positive on the dummy XRPL testnet seeds in tests/
+      # (e.g. tests/test_daemon_amend_wave7.py). Stays advisory at v2.1 per the
+      # job comment above; promotion to a hard gate is the v2.2 policy pass.
+      - name: Secret scan with TruffleHog (advisory)
         continue-on-error: true
-        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+        uses: trufflesecurity/trufflehog@d411fff7b8879a62509f3fa98c07f247ac089a51 # v3.95.5
+        with:
+          extra_args: --results=verified
 
   # Canary CLI smoke. Runs on workflow_dispatch (manual) AND on a daily cron
   # so we catch upstream environmental drift even when no PRs are flowing
