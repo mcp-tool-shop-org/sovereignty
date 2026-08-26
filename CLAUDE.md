@@ -1,6 +1,6 @@
 # Sovereignty — Repo Instructions
 
-Strategy game about governance, trust, and trade. Offline tabletop play (Python CLI) + XRPL online verification of round proofs. **Currently v2.0.2 — shipped 2026-04-30.** Distribution: `pip install sovereignty-game==2.0.2` and `npx @mcptoolshop/sovereignty`.
+Strategy game about governance, trust, and trade. Offline tabletop play (Python CLI) + XRPL online verification of round proofs. **Currently v2.2.1.** Distribution: `pip install sovereignty-game` or `pip install sovereignty-game==2.2.1` and `npx @mcptoolshop/sovereignty`.
 
 Global instructions in `~/.claude/CLAUDE.md` always apply. This file holds sovereignty-specific context that isn't discoverable from code or git history.
 
@@ -12,7 +12,7 @@ Use the `speakline` skill (`~/.claude/skills/speakline/speak`, Kokoro neural TTS
 
 ```bash
 uv sync --all-extras            # set up venv (UV_LINK_MODE=copy on T9-Shared)
-uv run pytest                   # 490 Python tests post-Wave-5 (also: 23 cargo, 101 vitest)
+uv run pytest                   # 786 Python tests collected; CI green on 4aed445 (also: 23 cargo, 101 vitest)
 uv run ruff check .             # lint (clean is mandatory before commit)
 uv run ruff format --check .    # format (clean is mandatory)
 uv run mypy sov_engine sov_transport sov_cli   # strict, BLOCKING in CI
