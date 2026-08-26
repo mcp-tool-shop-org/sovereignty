@@ -170,7 +170,7 @@ jobs:
           echo "ASSET_NAME=${OUTNAME}" >> "$GITHUB_ENV"
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
         with:
           subject-path: dist/${{ env.ASSET_NAME }}
 
@@ -289,7 +289,7 @@ jobs:
           ls -la dist/
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
         with:
           subject-path: dist/sovereignty-app-*
 
@@ -324,7 +324,7 @@ jobs:
       # Attest the checksums file as well so downstream verifiers can prove
       # the manifest itself came from this workflow (covers F-593530-019).
       - name: Attest checksum manifest
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
         with:
           subject-path: artifacts/checksums-*.txt
 
