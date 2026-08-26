@@ -8,7 +8,7 @@
 //   4. The component subscribes to the Tauri event bus on mount and the
 //      subscription is cleaned up on unmount.
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PanicPayload } from "../types/daemon";
 
@@ -99,7 +99,9 @@ describe("PanicModal — shell-panic event consumer", () => {
     await waitFor(() => {
       expect(screen.getByText(/fatal error/i)).toBeTruthy();
     });
-    fireEvent.click(screen.getByRole("button", { name: /Dismiss/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Dismiss/i }));
+    });
     await waitFor(() => {
       expect(screen.queryByText(/fatal error/i)).toBeNull();
     });
