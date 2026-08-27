@@ -120,3 +120,17 @@ We deliberately do **not** pass `skip-existing: true` to
 version is a signal that something went wrong upstream — we want the loud
 HTTP 400 rather than a silent no-op. If you legitimately need to retry,
 bump the version (e.g. `2.0.0rc1` → `2.0.0rc2`).
+
+## Tauri updater signing (CI)
+
+`build-tauri-binaries` in `.github/workflows/publish.yml` passes these GitHub
+Actions secret **names** into the Tauri build environment (values never
+committed):
+
+- `TAURI_SIGNING_PRIVATE_KEY`
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+
+See [SECURITY.md](SECURITY.md) (Desktop updater signing) for the full names-only
+policy. The public key lives in `app/src-tauri/tauri.conf.json`. Apple /
+Authenticode OS signing stays gated skip.
+

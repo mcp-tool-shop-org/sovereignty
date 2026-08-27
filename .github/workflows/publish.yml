@@ -258,6 +258,8 @@ jobs:
         env:
           APPIMAGE_EXTRACT_AND_RUN: "1"
           NO_STRIP: "true"
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
           npm --prefix app run tauri build -- ${{ matrix.tauri-args }}
@@ -265,9 +267,9 @@ jobs:
       # Stage artifacts under a flat dist/ with the locked naming convention:
       # ``sovereignty-app-<version>-<target>.<ext>``. The ``-app-`` infix
       # disambiguates from the existing PyInstaller CLI binaries which use
-      # ``sovereignty-<version>-<target>``. Mac ships .dmg only at v2.1
-      # (the .app.tar.gz duplicate is auto-update-update bundle territory,
-      # deferred to v2.2 alongside the Tauri 2 updater).
+      # ``sovereignty-<version>-<target>``. Mac ships .dmg; updater
+      # signatures (``.sig``) are extra artifacts from createUpdaterArtifacts.
+      # Apple/Authenticode OS signing stays gated skip (JOB-028 hold).
       - name: Stage artifact
         shell: bash
         run: |
