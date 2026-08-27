@@ -188,7 +188,8 @@ v2.2.1 は、あらかじめコンパイルされたバイナリを [GitHub Rele
 
 - **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
 - **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / その派生版。`sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`でインストールしてください。AppImageのサポートはv2.2で実装予定（upstream `linuxdeploy` / Ubuntu 24.04 FUSEとの連携）。
+- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / その派生版。`sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`でインストールしてください。
+- **Linux (x64, AppImage):** `sovereignty-app-2.2.1-linux-x64.AppImage` — ポータブル。`chmod +x` して実行。
 
 アプリのバックグラウンドで動作する Python デーモンも必要です。`pip install 'sovereignty-game[daemon]'==2.2.1` でインストールしてください。
 

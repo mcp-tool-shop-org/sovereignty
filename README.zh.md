@@ -189,7 +189,8 @@ v2.2.1 提供了预构建的二进制文件，位于 [GitHub 发布页面](https
 
 - **macOS (通用):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
 - **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / 及其衍生版本。使用 `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb` 进行安装。AppImage 支持将在 v2.2 中实现（上游 `linuxdeploy` / Ubuntu 24.04 FUSE 交互）。
+- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / 及其衍生版本。使用 `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb` 进行安装。
+- **Linux (x64, AppImage):** `sovereignty-app-2.2.1-linux-x64.AppImage` — 便携。`chmod +x` 后运行。
 
 您还需要 Python 守护进程来支持该应用程序：`pip install 'sovereignty-game[daemon]'==2.2.1`。
 

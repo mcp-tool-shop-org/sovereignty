@@ -98,7 +98,8 @@ Install the desktop binary from the [GitHub Releases page](https://github.com/mc
 
 - macOS universal (Intel + Apple Silicon): `sovereignty-app-2.2.1-darwin-universal.dmg`
 - Windows x64: `sovereignty-app-2.2.1-win-x64.msi`
-- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.2.1-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. No AppImage build yet.
+- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.2.1-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`.
+- Linux x64 (AppImage): `sovereignty-app-2.2.1-linux-x64.AppImage` — portable. `chmod +x` then run.
 
 ### First-launch warning is expected
 
@@ -107,6 +108,7 @@ Current releases ship with build-provenance attestation only — not OS-level co
 - **macOS**: control-click the .app → Open → "Are you sure?" → Open
 - **Windows**: SmartScreen says "unrecognized publisher" → "More info" → "Run anyway"
 - **Linux (.deb)**: `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`, then launch from your app menu
+- **Linux (AppImage)**: `chmod +x sovereignty-app-2.2.1-linux-x64.AppImage`, then run
 
 ### Verify supply-chain provenance
 
