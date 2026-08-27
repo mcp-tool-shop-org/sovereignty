@@ -510,6 +510,39 @@ def test_daemon010_subprocess_env_signer_file_does_not_forward_xrpl_seed(
     assert env.get("SOV_DAEMON_SIGNER_FILE") == str(fake_signer)
 
 
+def test_readonly_subprocess_env_omits_seed_material(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """F-50fade01: ``readonly=True`` must not forward signing material.
+
+    Spec §9: a readonly child skips seed load. Both existing
+    ``_build_subprocess_env`` tests pass ``readonly=False`` and the full-mode
+    case asserts ``XRPL_SEED`` IS forwarded. Re-copying the parent seed into a
+    ``--readonly`` child env would keep those tests green. Pin that
+    ``seed_env='XRPL_SEED'`` plus a signer file still omit ``XRPL_SEED``,
+    ``SOV_DAEMON_SEED_ENV``, and ``SOV_DAEMON_SIGNER_FILE``.
+    """
+    from sov_daemon.lifecycle import _build_subprocess_env
+
+    monkeypatch.setenv("XRPL_SEED", "sEdTM1uX8pu2do5XvTnutH6HsouMaM2")
+    fake_signer = Path("/tmp/fake-readonly-signer")  # noqa: S108
+
+    env = _build_subprocess_env(
+        port=12345,
+        token="tok",
+        network="testnet",
+        readonly=True,
+        seed_env="XRPL_SEED",
+        signer_file=fake_signer,
+    )
+
+    assert "XRPL_SEED" not in env
+    assert "SOV_DAEMON_SEED_ENV" not in env
+    assert "SOV_DAEMON_SIGNER_FILE" not in env
+    assert env["SOV_DAEMON_READONLY"] == "1"
+    assert env["SOV_DAEMON_PORT"] == "12345"
+
+
 # ---------------------------------------------------------------------------
 # DAEMON-008 — broadcaster lock + iteration safety
 # ---------------------------------------------------------------------------

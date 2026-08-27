@@ -53,13 +53,14 @@ sov end-round
 
 For the physical version, print the cards and reference sheets from `assets/print/` (the PDFs in `assets/print/pdf/`). You need:
 
-- 20 Event cards
-- 10 Deal cards
+- 28 Event cards
+- 12 Deal cards
 - 10 Voucher cards
+- Market Board (Market Day / Town Hall)
 - A six-sided die
 - Coins (real or tokens)
 
-The digital / Town Hall deck is larger (28 events + 12 deals); the extra 8 events and 2 deals are console-only. See [How to Play](/sovereignty/handbook/how-to-play/) and the [full rules](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/docs/rules/campfire_v1.md).
+See [How to Play](/sovereignty/handbook/how-to-play/) and the [full rules](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/docs/rules/campfire_v1.md).
 
 ## Multiple games at once (v2.1+)
 

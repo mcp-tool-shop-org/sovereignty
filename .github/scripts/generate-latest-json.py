@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -35,7 +35,7 @@ def generate_latest_json(
     tag = tag if tag.startswith("v") else f"v{tag}"
     base = f"https://github.com/{repo}/releases/download/{tag}"
     if pub_date is None:
-        pub_date = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        pub_date = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     platforms: dict[str, dict[str, str]] = {}
 

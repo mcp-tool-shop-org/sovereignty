@@ -35,16 +35,17 @@
 
 ## Juega esta noche
 
-Imprime [todo el paquete para imprimir y jugar](assets/print/pdf/Sovereignty-Print-Pack.pdf): tablero, tapetes de jugador, referencia rápida y tres mazos de cartas en 11 hojas de papel tamaño carta estadounidense. Busca un dado y algunas monedas. Siéntate con dos o tres amigos. Estarán jugando en veinte minutos.
+Imprime [todo el paquete para imprimir y jugar](assets/print/pdf/Sovereignty-Print-Pack.pdf): tablero, tapetes de jugador, referencia rápida, tablero de mercado y tres mazos de cartas en 13 hojas de papel tamaño carta estadounidense. Busca un dado y algunas monedas. Siéntate con dos o tres amigos. Estarán jugando en veinte minutos.
 
 Si quieres hojas individuales:
 
 - **[Tablero](assets/print/pdf/board.pdf)**: el circuito de la fogata de 16 espacios, una página.
 - **[Tapete de jugador](assets/print/pdf/mat.pdf)**: monedas, reputación, mejoras, promesas. Uno por jugador.
 - **[Referencia rápida](assets/print/pdf/quickref.pdf)**: espacios del tablero, orden de turno, reglas de las promesas.
-- **[Cartas de evento](assets/print/pdf/events.pdf)**: 20 cartas, tres páginas, cortar por las líneas.
-- **[Cartas de acuerdo](assets/print/pdf/deals.pdf)**: 10 cartas, dos páginas.
+- **[Cartas de evento](assets/print/pdf/events.pdf)**: 28 cartas, cuatro páginas, cortar por las líneas.
+- **[Cartas de acuerdo](assets/print/pdf/deals.pdf)**: 12 cartas, dos páginas.
 - **[Cartas de vale](assets/print/pdf/vouchers.pdf)**: 10 vales entre jugadores, dos páginas.
+- **[Tablero de mercado](assets/print/pdf/market.pdf)**: Market Day / Town Hall, una página.
 - **[Referencia rápida del tratado](assets/print/pdf/treaty.pdf)**: solo nivel 3.
 
 Los archivos PDF son vectoriales con fuentes incrustadas; se imprimen de forma nítida en cualquier impresora doméstica. Las instrucciones paso a paso están disponibles en [Imprimir y jugar](docs/print-and-play.md).
@@ -237,9 +238,9 @@ La especificación completa se encuentra en [docs/v2.1-views.md](docs/v2.1-views
 
 Comienzas con **5 monedas** y **3 puntos de reputación**. Lanza un dado, muévete por un tablero de 16 casillas y aterriza en las casillas que te ofrecen opciones: intercambiar, ayudar a alguien, asumir un riesgo o robar una carta.
 
-**20 cartas de evento** se leen como momentos: *"¿Alguien ha visto una pequeña bolsa de cuero?"* (Cartera perdida) o *"Nadie lo vio... ¿verdad?"* (Encontró un atajo). Incluye eventos de cambio de mercado para juegos de Ayuntamiento.
+**28 cartas de evento** se leen como momentos: *"¿Alguien ha visto una pequeña bolsa de cuero?"* (Cartera perdida) o *"Nadie lo vio... ¿verdad?"* (Encontró un atajo). Incluye eventos de cambio de mercado para juegos de Ayuntamiento.
 
-**10 cartas de acuerdo + 10 cartas de vale** obligan a la conversación: *"¿Me prestas 2 monedas? Te devolveré 3."* o *"Te cubro las espaldas si tú me cubres a mí". Los acuerdos establecen objetivos con plazos; los vales son pagarés que emites a otros jugadores.
+**12 cartas de acuerdo + 10 cartas de vale** obligan a la conversación: *"¿Me prestas 2 monedas? Te devolveré 3."* o *"Te cubro las espaldas si tú me cubres a mí". Los acuerdos establecen objetivos con plazos; los vales son pagarés que emites a otros jugadores.
 
 **La regla de la promesa:** Una vez por ronda, di en voz alta "Lo prometo..." y comprométete a algo. Cúmplelo: +1 punto de reputación. Incúmplelo: -2 puntos de reputación. La mesa decide.
 

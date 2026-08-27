@@ -69,12 +69,15 @@ def inline_local_images(html: str, base: Path) -> str:
         path = (base / src).resolve()
         if not path.is_file():
             return match.group(0)
-        mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml"}.get(
-            path.suffix.lower(), "application/octet-stream"
-        )
+        mime = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".svg": "image/svg+xml",
+        }.get(path.suffix.lower(), "application/octet-stream")
         b64 = base64.b64encode(path.read_bytes()).decode("ascii")
         print(f"inlined image {src} ({path.stat().st_size} bytes)", file=sys.stderr)
-        return f'{prefix}data:{mime};base64,{b64}{suffix}'
+        return f"{prefix}data:{mime};base64,{b64}{suffix}"
 
     return re.sub(r'(<img\b[^>]*\bsrc=")([^"]+)(")', repl, html)
 
@@ -120,8 +123,10 @@ def main(html_path: str) -> None:
             file=sys.stderr,
         )
         sys.exit(1)
-    out = src.with_name(src.stem + ".RENDER.html") if src.name.endswith(".html") else Path(
-        str(src) + ".RENDER.html"
+    out = (
+        src.with_name(src.stem + ".RENDER.html")
+        if src.name.endswith(".html")
+        else Path(str(src) + ".RENDER.html")
     )
     out.write_text(patched, encoding="utf-8")
     print(f"wrote {out} ({len(html):,} -> {len(patched):,} bytes)", file=sys.stderr)

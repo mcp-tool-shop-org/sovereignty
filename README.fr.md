@@ -35,16 +35,17 @@
 
 ## Jouez ce soir
 
-Imprimez [l’ensemble complet pour l’impression et le jeu](assets/print/pdf/Sovereignty-Print-Pack.pdf) : plateau, tapis de joueur, aide-mémoire et trois jeux de cartes sur 11 feuilles de papier au format US Letter. Trouvez un dé et quelques pièces. Asseyez-vous avec deux ou trois amis. Vous pourrez commencer à jouer dans vingt minutes.
+Imprimez [l’ensemble complet pour l’impression et le jeu](assets/print/pdf/Sovereignty-Print-Pack.pdf) : plateau, tapis de joueur, aide-mémoire, plateau du marché et trois jeux de cartes sur 13 feuilles de papier au format US Letter. Trouvez un dé et quelques pièces. Asseyez-vous avec deux ou trois amis. Vous pourrez commencer à jouer dans vingt minutes.
 
 Si vous souhaitez des feuilles individuelles :
 
 - **[Plateau](assets/print/pdf/board.pdf)** : le plateau de jeu Campfire avec 16 cases, une page.
 - **[Tapis de joueur](assets/print/pdf/mat.pdf)** : pièces, réputation, améliorations, promesses. Un par joueur.
 - **[Aide-mémoire](assets/print/pdf/quickref.pdf)** : cases du plateau, ordre de tour, règles des promesses.
-- **[Cartes d’événements](assets/print/pdf/events.pdf)** : 20 cartes, trois pages, à découper le long des lignes.
-- **[Cartes d’échange](assets/print/pdf/deals.pdf)** : 10 cartes, deux pages.
+- **[Cartes d’événements](assets/print/pdf/events.pdf)** : 28 cartes, quatre pages, à découper le long des lignes.
+- **[Cartes d’échange](assets/print/pdf/deals.pdf)** : 12 cartes, deux pages.
 - **[Cartes de caution](assets/print/pdf/vouchers.pdf)** : 10 reconnaissances de dette entre les joueurs, deux pages.
+- **[Plateau du marché](assets/print/pdf/market.pdf)** : Market Day / Town Hall, une page.
 - **[Aide-mémoire sur le traité](assets/print/pdf/treaty.pdf)** : uniquement pour le niveau 3.
 
 Les fichiers PDF sont vectoriels et contiennent des polices intégrées ; ils s’impriment parfaitement sur n’importe quelle imprimante domestique. Le guide d’installation est disponible à l’adresse [Print & Play](docs/print-and-play.md).
@@ -237,9 +238,9 @@ Spécifications complètes disponibles sur [docs/v2.1-views.md](docs/v2.1-views.
 
 Vous commencez avec **5 pièces** et **3 points de réputation**. Lancez un dé, déplacez-vous sur un plateau de 16 cases, et atterrissez sur des cases qui vous offrent des choix : échanger, aider quelqu’un, prendre un risque ou piocher une carte.
 
-**20 cartes d’événements** ressemblent à des moments : « Quelqu’un a-t-il vu une petite bourse en cuir ? » (Portefeuille perdu) ou « Personne n’a rien vu… pas vrai ? » (Raccourci trouvé). Inclut des événements de changement de marché pour les jeux Town Hall.
+**28 cartes d’événements** ressemblent à des moments : « Quelqu’un a-t-il vu une petite bourse en cuir ? » (Portefeuille perdu) ou « Personne n’a rien vu… pas vrai ? » (Raccourci trouvé). Inclut des événements de changement de marché pour les jeux Town Hall.
 
-**10 cartes d’échange + 10 cartes de bons** obligent à la conversation : « Vous me prêtez 2 pièces ? Je vous en rembourserai 3. » ou « Je vous soutiens si vous me soutenez. ». Les échanges fixent des objectifs avec des échéances ; les bons sont des reconnaissances de dette que vous émettez à d’autres joueurs.
+**12 cartes d’échange + 10 cartes de bons** obligent à la conversation : « Vous me prêtez 2 pièces ? Je vous en rembourserai 3. » ou « Je vous soutiens si vous me soutenez. ». Les échanges fixent des objectifs avec des échéances ; les bons sont des reconnaissances de dette que vous émettez à d’autres joueurs.
 
 **La règle de la promesse :** Une fois par tour, dites à voix haute « Je promets… » et engagez-vous sur quelque chose. Tenez votre promesse : +1 point de réputation. Rompez votre promesse : -2 points de réputation. C’est au groupe de décider.
 

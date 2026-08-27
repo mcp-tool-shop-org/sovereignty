@@ -564,6 +564,145 @@ def test_save_load_round_trip_preserves_treaties_with_dedup(monkeypatch, tmp_pat
     assert alice2.active_treaties[0].treaty_id == treaty_id
 
 
+def _save_via_production_and_reload(state, rng=None):
+    """Persist through ``_save_state`` then ``_load_game`` (fresh stream bind).
+
+    Writes ``rng_seed.txt`` the same way the treaty round-trip does — seed
+    file is not the MT stream. Stream position lives in ``state.json``
+    ``rng_state`` emitted by the production writer.
+    """
+    from sov_cli import main as cli_main
+    from sov_engine.io_utils import rng_seed_file
+
+    cli_main._save_state(state, rng)
+    seed = state.config.seed
+    rng_seed_file(f"s{seed}").write_text(str(seed), encoding="utf-8")
+    cli_main._loaded_rng = None
+    loaded = cli_main._load_game()
+    assert loaded is not None, "_load_game must round-trip a saved game"
+    return loaded
+
+
+def test_save_load_round_trip_continues_rng_stream(monkeypatch, tmp_path):
+    """F-c4e6ecfc: save after N rolls / load in a fresh ``_load_game``.
+
+    Seed 42, ``roll_d6`` five times, persist via ``_save_state`` (not a
+    hand-built ``rng_state`` blob). Next d6 after reload is roll 6 of that
+    seed (2), not roll 1 (6). Reverting ``GameRng`` to seed-only
+    reconstruction and dropping ``rng_state`` from ``state.json`` must fail.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    from sov_engine.rng import GameRng
+
+    state, _discarded = new_game(42, ["Alice", "Bob"])
+    rng = GameRng(42)
+    five = [rng.roll_d6() for _ in range(5)]
+    assert five[0] == 6, f"seed 42 roll 1 must be 6; got {five!r}"
+
+    loaded = _save_via_production_and_reload(state, rng)
+    _state2, rng2 = loaded
+
+    seed_only = GameRng(42)
+    assert seed_only.roll_d6() == 6
+    assert rng2.roll_d6() == 2, (
+        "after 5 rolls + _save_state + _load_game, next d6 must be roll 6 "
+        "of seed 42 (2), not roll 1 (6)"
+    )
+
+
+def test_save_load_round_trip_preserves_vouchers_and_deals(monkeypatch, tmp_path):
+    """F-f936bfe4: issue_voucher + accept_deal survive ``_save_state`` / load.
+
+    Sibling of the treaty round-trip. Reverting the player restore loop
+    (drop ``vouchers_issued`` / ``vouchers_held`` / ``active_deals``, omit
+    ``ActiveDeal.reward_*``) must fail: counters and collections survive,
+    ``check_voucher_deadlines`` still defaults, ``complete_deal`` still
+    pays the original ``reward_coins`` / ``reward_rep`` / ``penalty_rep``.
+    """
+    monkeypatch.chdir(tmp_path)
+
+    from sov_engine.models import CardType, DealCard, DealStatus, VoucherCard, VoucherStatus
+    from sov_engine.rules.campfire import (
+        accept_deal,
+        check_voucher_deadlines,
+        complete_deal,
+        issue_voucher,
+    )
+
+    state, rng = new_game(42, ["Alice", "Bob"])
+    alice, bob = state.players
+    voucher_template = VoucherCard(
+        id="vouch_persist",
+        name="Persist Loan",
+        card_type=CardType.VOUCHER,
+        description="I owe you 2 coins.",
+        face_value=2,
+        deadline_rounds=3,
+        default_penalty_rep=3,
+    )
+    deal_template = DealCard(
+        id="deal_persist",
+        name="Persist Supply",
+        card_type=CardType.DEAL,
+        description="Deliver something.",
+        reward_coins=4,
+        reward_rep=2,
+        penalty_rep=3,
+        deadline_rounds=2,
+    )
+
+    issued = issue_voucher(state, alice, bob, voucher_template)
+    deal = accept_deal(state, alice, deal_template)
+    assert issued.penalty_rep == 3
+    assert deal.reward_coins == 4
+    assert deal.reward_rep == 2
+    assert deal.penalty_rep == 3
+    assert state.next_voucher_id == 1
+    assert state.next_deal_id == 1
+
+    loaded = _save_via_production_and_reload(state, rng)
+    state2, _rng2 = loaded
+    alice2, bob2 = state2.players
+
+    assert state2.next_voucher_id == 1, (
+        f"next_voucher_id must survive reload; got {state2.next_voucher_id}"
+    )
+    assert state2.next_deal_id == 1, f"next_deal_id must survive reload; got {state2.next_deal_id}"
+    assert len(alice2.vouchers_issued) == 1
+    assert len(bob2.vouchers_held) == 1
+    assert alice2.vouchers_issued[0] is bob2.vouchers_held[0], (
+        "shared voucher must be ONE object after reload (issuer + holder)"
+    )
+    voucher2 = alice2.vouchers_issued[0]
+    assert voucher2.voucher_id == issued.voucher_id
+    assert voucher2.face_value == 2
+    assert voucher2.penalty_rep == 3
+    assert voucher2.status == VoucherStatus.ACTIVE
+    assert voucher2.deadline_round == issued.deadline_round
+
+    assert len(alice2.active_deals) == 1
+    deal2 = alice2.active_deals[0]
+    assert deal2.deal_id == deal.deal_id
+    assert deal2.reward_coins == 4
+    assert deal2.reward_rep == 2
+    assert deal2.penalty_rep == 3
+    assert deal2.status == DealStatus.ACTIVE
+
+    coins_before = alice2.coins
+    rep_before = alice2.reputation
+    complete_deal(state2, alice2, deal2)
+    assert deal2.status == DealStatus.COMPLETED
+    assert alice2.coins == coins_before + 4
+    assert alice2.reputation == rep_before + 2
+
+    state2.current_round = voucher2.deadline_round + 1
+    messages = check_voucher_deadlines(state2)
+    assert messages, "expired voucher must default after reload"
+    assert voucher2.status == VoucherStatus.DEFAULTED
+    assert alice2.reputation == (rep_before + 2) - 3
+
+
 # ---------------------------------------------------------------------------
 # Suppress unused-import warnings for save_proof / Path (kept for forward use)
 # ---------------------------------------------------------------------------

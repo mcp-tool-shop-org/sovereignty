@@ -35,16 +35,17 @@
 
 ## Play tonight
 
-Print [the whole print-and-play package](assets/print/pdf/Sovereignty-Print-Pack.pdf) — board, player mats, quick reference, and three decks of cards on 11 sheets of US Letter paper. Find a die and some coins. Sit down with two or three friends. You're playing in twenty minutes.
+Print [the whole print-and-play package](assets/print/pdf/Sovereignty-Print-Pack.pdf) — board, player mats, quick reference, Market Board, and three decks of cards on 13 sheets of US Letter paper. Find a die and some coins. Sit down with two or three friends. You're playing in twenty minutes.
 
 If you want individual sheets:
 
 - **[Board](assets/print/pdf/board.pdf)** — the 16-space Campfire loop, one page.
 - **[Player mat](assets/print/pdf/mat.pdf)** — coins, reputation, upgrades, promises. One per player.
 - **[Quick reference](assets/print/pdf/quickref.pdf)** — board spaces, turn order, promise rules.
-- **[Event cards](assets/print/pdf/events.pdf)** — 20 cards, three pages, cut along the lines.
-- **[Deal cards](assets/print/pdf/deals.pdf)** — 10 cards, two pages.
+- **[Event cards](assets/print/pdf/events.pdf)** — 28 cards, four pages, cut along the lines.
+- **[Deal cards](assets/print/pdf/deals.pdf)** — 12 cards, two pages.
 - **[Voucher cards](assets/print/pdf/vouchers.pdf)** — 10 IOUs between players, two pages.
+- **[Market Board](assets/print/pdf/market.pdf)** — Market Day / Town Hall, one page.
 - **[Treaty quick reference](assets/print/pdf/treaty.pdf)** — Tier 3 only.
 
 The PDFs are vector with embedded fonts — they print clean on any home printer. Setup walkthrough lives at [Print & Play](docs/print-and-play.md).
@@ -238,9 +239,9 @@ Full view spec at [docs/v2.1-views.md](docs/v2.1-views.md).
 
 You start with **5 coins** and **3 reputation**. Roll a die, move around a 16-space board, and land on spaces that give you choices: trade, help someone, take a risk, or draw a card.
 
-**20 Event cards** read like moments: *"Has anyone seen a small leather pouch?"* (Lost Wallet) or *"Nobody saw... right?"* (Found a Shortcut). Includes market-shift events for Town Hall games.
+**28 Event cards** read like moments: *"Has anyone seen a small leather pouch?"* (Lost Wallet) or *"Nobody saw... right?"* (Found a Shortcut). Includes market-shift events for Town Hall games.
 
-**10 Deal cards + 10 Voucher cards** force conversation: *"Spot me 2 coins? I'll pay 3 back."* or *"I've got your back if you've got mine."* Deals set goals with deadlines; Vouchers are IOUs you issue to other players.
+**12 Deal cards + 10 Voucher cards** force conversation: *"Spot me 2 coins? I'll pay 3 back."* or *"I've got your back if you've got mine."* Deals set goals with deadlines; Vouchers are IOUs you issue to other players.
 
 **The Promise rule:** Once per round, say "I promise..." out loud and commit to something. Keep it: +1 reputation. Break it: -2 reputation. The table decides.
 

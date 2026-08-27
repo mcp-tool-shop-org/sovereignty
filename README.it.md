@@ -35,16 +35,17 @@
 
 ## Gioca stasera
 
-Scarica il pacchetto completo per la stampa e il gioco [qui](assets/print/pdf/Sovereignty-Print-Pack.pdf): include il tabellone, i tappetini dei giocatori, un riferimento rapido e tre mazzi di carte su 11 fogli di carta formato US Letter. Procurati un dado e delle monete. Siediti con due o tre amici. Tra venti minuti inizierete a giocare.
+Scarica il pacchetto completo per la stampa e il gioco [qui](assets/print/pdf/Sovereignty-Print-Pack.pdf): include il tabellone, i tappetini dei giocatori, un riferimento rapido, il tabellone del mercato e tre mazzi di carte su 13 fogli di carta formato US Letter. Procurati un dado e delle monete. Siediti con due o tre amici. Tra venti minuti inizierete a giocare.
 
 Se desideri i singoli fogli:
 
 - **[Tabellone](assets/print/pdf/board.pdf)**: il percorso "Campfire" con 16 spazi, una pagina.
 - **[Tappetino giocatore](assets/print/pdf/mat.pdf)**: monete, reputazione, miglioramenti, promesse. Uno per giocatore.
 - **[Riferimento rapido](assets/print/pdf/quickref.pdf)**: spazi del tabellone, ordine di turno, regole delle promesse.
-- **[Carte evento](assets/print/pdf/events.pdf)**: 20 carte, tre pagine, da tagliare lungo le linee.
-- **[Carte affare](assets/print/pdf/deals.pdf)**: 10 carte, due pagine.
+- **[Carte evento](assets/print/pdf/events.pdf)**: 28 carte, quattro pagine, da tagliare lungo le linee.
+- **[Carte affare](assets/print/pdf/deals.pdf)**: 12 carte, due pagine.
 - **[Carte promessa](assets/print/pdf/vouchers.pdf)**: 10 "IOU" tra i giocatori, due pagine.
+- **[Tabellone del mercato](assets/print/pdf/market.pdf)**: Market Day / Town Hall, una pagina.
 - **[Riferimento rapido al trattato](assets/print/pdf/treaty.pdf)**: solo livello 3.
 
 I file PDF sono vettoriali con font incorporati: si stampano in modo chiaro su qualsiasi stampante domestica. Le istruzioni per la preparazione del gioco sono disponibili qui: [Stampa e Gioca](docs/print-and-play.md).
@@ -238,9 +239,9 @@ La specifica completa è disponibile all'indirizzo [docs/v2.1-views.md](docs/v2.
 
 Inizi con **5 monete** e **3 punti reputazione**. Lancia un dado, muoviti su una scacchiera di 16 caselle e atterra su caselle che ti offrono delle scelte: commercia, aiuta qualcuno, corri un rischio o pesca una carta.
 
-**20 carte Evento** sono formulate come momenti: *"Qualcuno ha visto una piccola borsa di cuoio?"* (Portafoglio smarrito) oppure *"Nessuno l'ha vista... vero?"* (Trovata una scorciatoia). Include eventi che modificano il mercato per le partite in Town Hall.
+**28 carte Evento** sono formulate come momenti: *"Qualcuno ha visto una piccola borsa di cuoio?"* (Portafoglio smarrito) oppure *"Nessuno l'ha vista... vero?"* (Trovata una scorciatoia). Include eventi che modificano il mercato per le partite in Town Hall.
 
-**10 carte Affare + 10 carte Voucher** forzano la conversazione: *"Mi presti 2 monete? Te ne restituirò 3."* oppure *"Ti copro le spalle se tu fai lo stesso per me."* Gli affari stabiliscono obiettivi con scadenze; i voucher sono promesse di pagamento che emetti ad altri giocatori.
+**12 carte Affare + 10 carte Voucher** forzano la conversazione: *"Mi presti 2 monete? Te ne restituirò 3."* oppure *"Ti copro le spalle se tu fai lo stesso per me."* Gli affari stabiliscono obiettivi con scadenze; i voucher sono promesse di pagamento che emetti ad altri giocatori.
 
 **La regola della Promessa:** Una volta per turno, dì ad alta voce "Prometto..." e impegnati a fare qualcosa. Mantienila: +1 punto reputazione. Infrangila: -2 punti reputazione. La decisione spetta al tavolo.
 

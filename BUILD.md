@@ -75,43 +75,58 @@ ModuleNotFoundError: No module named 'rich._unicode_data.unicode17-0-0'
 
 ## Release pipeline ordering (locked spec)
 
-The `publish.yml` workflow is structured so that **PyPI publish blocks on
-binaries existing**. The dependency chain is:
+The `publish.yml` workflow splits CLI/PyPI from desktop. **PyPI publish
+blocks on CLI binaries existing**, not on Tauri. The dependency chain is:
 
 ```
-release: published
+release: published  OR  workflow_dispatch (existing v* tag input)
   ├── build-binaries  (matrix: linux-x64, darwin-arm64, win-x64)
   │     └── attest-build-provenance per matrix leg
-  ├── publish (PyPI, OIDC trusted publishing)        needs: build-binaries
-  └── upload-binaries (GitHub Release + checksums)   needs: build-binaries
+  ├── publish (PyPI, OIDC trusted publishing)              needs: [build-binaries]
+  ├── upload-cli-binaries (GitHub Release CLI + checksums) needs: [build-binaries]
+  ├── build-tauri-binaries (matrix: darwin-universal, win-x64, linux-x64)
+  └── upload-tauri-binaries (desktop GH assets + latest.json)
+        needs: [build-tauri-binaries]
+        if: always() so a single OS failure still attaches the others
 ```
 
-This ordering matters because `npx @mcptoolshop/sovereignty` consumers
-resolve binaries from the GitHub Release manifest. If PyPI shipped on a
-major version while binaries were missing, npm users would hit a 404 on
-install. The `needs: [build-binaries]` constraint on `publish` makes that
-impossible — a transient OIDC/fulcio failure on any of the three matrix
-legs blocks PyPI too, fail-closed.
+CLI jobs (`publish`, `upload-cli-binaries`) need `build-binaries` only.
+Desktop (`upload-tauri-binaries`) needs `build-tauri-binaries` with
+`always()` so a linuxdeploy / mac / win failure still attaches the other
+OS artifacts. A Tauri failure must not skip PyPI or CLI GitHub Release
+assets.
+
+`npx @mcptoolshop/sovereignty` consumers resolve CLI binaries from the
+GitHub Release. The `needs: [build-binaries]` constraint on `publish`
+keeps a major-version PyPI release from shipping without those CLI
+binaries — a transient OIDC/fulcio failure on any of the three CLI
+matrix legs blocks PyPI too, fail-closed. Desktop is not on that path.
+
+Jobs run on `release: published` **or** on `workflow_dispatch` when
+`github.ref` or `inputs.tag` is a `v*` tag. Dispatch never creates or
+moves tags. Do not retag `v2.3.0`; next publish is `2.3.1`.
 
 ### Recovery procedure for a partial release
 
-If `build-binaries` fails on one of the three platforms after a tag was
-published:
+If a tagged release is missing PyPI wheels or GitHub assets (as with
+`v2.3.0`):
 
-1. **Do not** delete the GitHub Release tag yet — its existence does not
-   imply a PyPI publish (publish hasn't run; it was blocked).
-2. Diagnose the matrix leg (most often: transient sigstore/fulcio outage,
-   GitHub Actions runner image rotation, or a flaky `pip install` step).
-3. Re-trigger via the GitHub UI: Actions → Release → Run workflow on the
-   release tag. The `if: github.event_name == 'release'` gate is satisfied
-   by re-running on the original release context.
-4. If you must publish to PyPI without binaries (true emergency), trigger
-   via `workflow_dispatch` — the `publish` job's `if: github.event_name ==
-   'release'` gate will skip it under workflow_dispatch, so you'll need to
-   relax that condition for the one-off run. **Document the gap loudly in
-   the release notes.**
-5. After binaries succeed, upload-binaries will attach them to the Release
-   page and `checksums-<version>.txt` will be regenerated.
+1. **Do not** delete or move the GitHub Release tag. Do not retag
+   `v2.3.0`. Next publish is `2.3.1`.
+2. Diagnose the failing job. CLI/PyPI and desktop are independent —
+   a Tauri/linuxdeploy failure is not a reason to skip CLI recovery.
+3. Re-trigger via Actions → Release → Run workflow. That is
+   `workflow_dispatch`. Supply the existing `v*` tag (`tag` input, or
+   check out the tag ref). Assets attach to the current Release; the
+   tag does not move. Live jobs run on dispatch when `github.ref` or
+   `inputs.tag` is a `v*` tag — including `publish` and
+   `upload-cli-binaries`. There is no "dispatch skips publish / relax
+   the `if:`" emergency.
+4. After CLI jobs succeed, `upload-cli-binaries` attaches PyInstaller
+   binaries and regenerates `checksums-<version>.txt`. After desktop
+   jobs succeed (even with one OS failed), `upload-tauri-binaries`
+   attaches whatever matrix legs uploaded and regenerates
+   `checksums-app-<version>.txt`.
 
 ### Why no `skip-existing` on PyPI publish
 

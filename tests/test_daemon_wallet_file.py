@@ -10,9 +10,6 @@ import pytest
 pytest.importorskip("starlette", reason="daemon extra not installed")
 httpx = pytest.importorskip("httpx", reason="daemon extra not installed")
 
-from sov_daemon.server import ConfigNoWalletError, _load_seed, flush_pending_anchors
-from sov_engine.io_utils import add_pending_anchor
-
 _FILE = "sEdFILEONLY"
 _ENV = "sEdENVONLY"
 _SIGNER = "sEdSIGNERONLY"
@@ -23,6 +20,8 @@ def _state(*, signer_file: Path | None = None, seed_env: str = "XRPL_SEED") -> S
 
 
 def test_load_seed_reads_wallet_file(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from sov_daemon.server import _load_seed
+
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("XRPL_SEED", raising=False)
     (tmp_path / ".sov").mkdir()
@@ -31,6 +30,8 @@ def test_load_seed_reads_wallet_file(monkeypatch: pytest.MonkeyPatch, tmp_path: 
 
 
 def test_load_seed_wallet_file_beats_env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from sov_daemon.server import _load_seed
+
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("XRPL_SEED", _ENV)
     (tmp_path / ".sov").mkdir()
@@ -38,7 +39,11 @@ def test_load_seed_wallet_file_beats_env(monkeypatch: pytest.MonkeyPatch, tmp_pa
     assert _load_seed(_state()) == _FILE
 
 
-def test_load_seed_signer_file_beats_wallet(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+def test_load_seed_signer_file_beats_wallet(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from sov_daemon.server import _load_seed
+
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("XRPL_SEED", _ENV)
     (tmp_path / ".sov").mkdir()
@@ -49,6 +54,8 @@ def test_load_seed_signer_file_beats_wallet(monkeypatch: pytest.MonkeyPatch, tmp
 
 
 def test_load_seed_none_when_missing(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    from sov_daemon.server import _load_seed
+
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("XRPL_SEED", raising=False)
     assert _load_seed(_state()) is None
@@ -58,6 +65,9 @@ def test_load_seed_none_when_missing(monkeypatch: pytest.MonkeyPatch, tmp_path: 
 async def test_flush_pending_empty_seed_raises_config_no_wallet(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
+    from sov_daemon.server import ConfigNoWalletError, flush_pending_anchors
+    from sov_engine.io_utils import add_pending_anchor
+
     monkeypatch.chdir(tmp_path)
     add_pending_anchor("s42", "1", "a" * 64)
     with pytest.raises(ConfigNoWalletError):
@@ -79,6 +89,8 @@ async def test_anchor_without_seed_returns_config_no_wallet(
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("XRPL_SEED", raising=False)
     _seed_game(tmp_path, "s42")
+    from sov_engine.io_utils import add_pending_anchor
+
     add_pending_anchor("s42", "1", "a" * 64)
     app = build_app(DaemonConfig(network="testnet", readonly=False, token=_FIXED_TOKEN))
     transport = httpx.ASGITransport(app=app)

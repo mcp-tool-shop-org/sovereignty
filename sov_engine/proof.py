@@ -27,7 +27,12 @@ from pathlib import Path
 from typing import Any
 
 from sov_cli.errors import ProofFormatError
-from sov_engine.io_utils import anchors_file, atomic_write_text, read_pending_anchors
+from sov_engine.io_utils import (
+    anchors_file,
+    atomic_write_text,
+    clear_pending_anchors,
+    read_pending_anchors,
+)
 from sov_engine.serialize import canonical_json
 from sov_transport.base import LedgerTransport
 
@@ -324,6 +329,25 @@ def record_anchors(game_id: str, round_to_txid: dict[str, str]) -> None:
     existing.update({str(k): str(v) for k, v in round_to_txid.items()})
     path.parent.mkdir(parents=True, exist_ok=True)
     _migrate_anchors_to_wrapped(path, existing)
+
+
+def record_anchors_and_clear_pending(
+    game_id: str,
+    round_to_txid: dict[str, str],
+) -> None:
+    """Record txids then drop those keys from the pending index.
+
+    Two atomic writes (``anchors.json`` then ``pending-anchors.json``).
+    A crash between them is recovered by
+    ``heal_stale_pending_against_anchors``: recorded txid wins, stale
+    pending rows are dropped, and a subsequent flush submits nothing
+    for those rounds. Empty ``round_to_txid`` is a no-op.
+    """
+    if not round_to_txid:
+        return
+    normalized = {str(k): str(v) for k, v in round_to_txid.items()}
+    record_anchors(game_id, normalized)
+    clear_pending_anchors(game_id, list(normalized))
 
 
 def read_anchors_file(path: Path) -> dict[str, str]:

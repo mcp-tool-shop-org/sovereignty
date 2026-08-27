@@ -8,7 +8,8 @@ Contracts pinned by Wave 3 tests:
 
 * ``start_daemon`` refuses if a live daemon already runs in this project
   root (``DaemonAlreadyRunningError``). It auto-cleans a stale
-  ``.sov/daemon.json`` whose pid is dead, then proceeds.
+  ``.sov/daemon.json`` whose pid is dead or no longer a ``sov_daemon``
+  process (pid recycle), then proceeds.
 * The token is a fresh ``secrets.token_urlsafe(32)`` per start; it is held
   in memory by the running daemon AND persisted to ``.sov/daemon.json``
   so CLI clients can read it. The seed (``XRPL_SEED`` / ``--signer-file``)
@@ -20,9 +21,10 @@ Contracts pinned by Wave 3 tests:
   Windows), polls ``os.kill(pid, 0)`` until exit (max 10s), removes the
   handshake on success.
 * ``daemon_status`` returns a ``DaemonStatus`` enum: ``RUNNING`` (pid
-  alive), ``STALE`` (handshake present, pid dead), or ``NONE`` (no
-  handshake). ``daemon_info`` is the companion that returns the parsed
-  handshake dict for RUNNING / STALE statuses.
+  alive AND still a ``sov_daemon`` process), ``STALE`` (handshake
+  present, pid dead or recycled onto a non-daemon process), or ``NONE``
+  (no handshake). ``daemon_info`` is the companion that returns the
+  parsed handshake dict for RUNNING / STALE statuses.
 
 The detached-background spawn uses ``subprocess.Popen`` with
 ``start_new_session=True`` on POSIX and ``DETACHED_PROCESS |
@@ -72,8 +74,9 @@ _STOP_POLL_INTERVAL_SECONDS = 0.05
 class DaemonStatus(StrEnum):
     """3-state lifecycle status. Mirrors the spec §8 vocabulary.
 
-    ``RUNNING`` — handshake present, pid responds to ``os.kill(pid, 0)``.
-    ``STALE`` — handshake present, pid is dead (crashed without cleanup).
+    ``RUNNING`` — handshake present, pid alive, and identity is ``sov_daemon``.
+    ``STALE`` — handshake present, pid dead, or live pid is not ``sov_daemon``
+    (kernel recycled the pid after a crash).
     ``NONE`` — no handshake file in this project root.
     """
 
@@ -230,8 +233,10 @@ def _remove_handshake() -> None:
 def daemon_status() -> DaemonStatus:
     """Return the lifecycle status for the current project root.
 
-    ``RUNNING`` — handshake present and ``pid`` alive.
-    ``STALE`` — handshake present, ``pid`` dead.
+    ``RUNNING`` — handshake present, ``pid`` alive, and the pid still
+    names a ``sov_daemon`` process (same identity helper as ``stop_daemon``).
+    ``STALE`` — handshake present, ``pid`` dead, or pid live but not a
+    ``sov_daemon`` process (kernel recycled the pid after a crash).
     ``NONE`` — no handshake file.
 
     Companion ``daemon_info()`` returns the parsed handshake dict (or
@@ -243,6 +248,9 @@ def daemon_status() -> DaemonStatus:
         return DaemonStatus.NONE
     pid = info.get("pid")
     if not isinstance(pid, int) or not _pid_alive(pid):
+        return DaemonStatus.STALE
+    # Recycled pid is not a live daemon: start_daemon auto-cleans STALE.
+    if not _is_sov_daemon_pid(pid):
         return DaemonStatus.STALE
     return DaemonStatus.RUNNING
 
@@ -500,7 +508,8 @@ def start_daemon(
 
     Refuses (raises ``DaemonAlreadyRunningError``) when a live daemon
     already runs in this project root. Auto-cleans a stale handshake
-    whose pid is dead, then proceeds.
+    whose pid is dead or no longer names a ``sov_daemon`` process
+    (pid recycle), then proceeds.
 
     The seed source for anchoring is named — never embedded — in the
     spawn env: ``seed_env`` names an env var the child reads, or

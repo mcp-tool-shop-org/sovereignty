@@ -791,6 +791,16 @@ async def anchor_checkpoint_handler(request: Request) -> JSONResponse:
     return await _do_anchor(request, game_id, checkpoint=True)
 
 
+def _commit_anchored_chunk(game_id: str, round_to_txid: dict[str, str]) -> None:
+    """Record a succeeded chunk's txids, then drop those rounds from pending.
+
+    Pair is record-then-clear (same order as a full-batch flush). A crash
+    between the two writes is recovered by ``_heal_stale_pending_against_anchors``.
+    """
+    _record_anchors(game_id, round_to_txid)
+    clear_pending_anchors(game_id, list(round_to_txid))
+
+
 async def flush_pending_anchors(
     *,
     game_id: str,
@@ -801,9 +811,12 @@ async def flush_pending_anchors(
     """Flush every pending anchor for ``game_id`` to the chain.
 
     Reads ``pending-anchors.json``, builds one ``BatchEntry`` per
-    pending round, calls ``AsyncXRPLTransport.anchor_batch``, records
-    the resulting txid in ``anchors.json``, and clears the flushed
-    rounds from the pending index.
+    pending round, submits ``AsyncXRPLTransport.anchor_batch`` one
+    ≤8-memo chunk at a time, records each chunk's txid in
+    ``anchors.json``, and clears that chunk from the pending index
+    before the next submit. A later TransportError therefore cannot
+    discard already-on-chain txids: the succeeded prefix is local, and
+    retry only re-submits remaining pending rounds.
 
     Top-level (not a closure / method) so the test surface can monkey-
     patch it without instantiating the whole transport stack:
@@ -830,7 +843,6 @@ async def flush_pending_anchors(
 
     network_enum = XRPLNetwork(network)
     rounds: list[BatchEntry] = []
-    round_keys: list[str] = []
     for round_key in sorted(pending.keys(), key=_round_sort_key):
         envelope_hash = pending[round_key]["envelope_hash"]
         rounds.append(
@@ -841,7 +853,6 @@ async def flush_pending_anchors(
                 envelope_hash=envelope_hash,
             )
         )
-        round_keys.append(round_key)
 
     transport = AsyncXRPLTransport(network=network_enum)
 
@@ -856,24 +867,42 @@ async def flush_pending_anchors(
             n_memos=len(rounds),
         )
 
-    # Wave 10 BRIDGE-A-bis-003: ``anchor_batch`` returns ``list[str]``;
-    # one txid per ≤8-memo chunk. Build a round_key → txid map matching
-    # the bridge's chunking so anchors.json records the correct txid per
-    # round.
-    txids = await transport.anchor_batch(rounds, seed)
-    round_to_txid: dict[str, str] = {}
-    for chunk_idx, txid in enumerate(txids):
-        chunk_start = chunk_idx * _MAX_MEMOS_PER_TX
-        chunk_end = min(chunk_start + _MAX_MEMOS_PER_TX, len(rounds))
-        for entry in rounds[chunk_start:chunk_end]:
-            round_to_txid[entry["round_key"]] = txid
+    # One ≤8-memo AccountSet at a time. ``anchor_batch`` documents
+    # partial-success (earlier chunks stay on chain) but does not attach
+    # those txids to TransportError — the daemon must record each chunk
+    # before the next submit so heal-on-read has a txid to keep.
+    txids: list[str] = []
+    flushed_keys: list[str] = []
+    try:
+        for chunk_start in range(0, len(rounds), _MAX_MEMOS_PER_TX):
+            chunk = rounds[chunk_start : chunk_start + _MAX_MEMOS_PER_TX]
+            chunk_txids = await transport.anchor_batch(chunk, seed)
+            if not chunk_txids:
+                raise RuntimeError("anchor_batch returned no txids")
+            txid = str(chunk_txids[0])
+            chunk_map = {entry["round_key"]: txid for entry in chunk}
+            _commit_anchored_chunk(game_id, chunk_map)
+            txids.append(txid)
+            flushed_keys.extend(chunk_map.keys())
+    except Exception as exc:
+        if flushed_keys:
+            logger.warning(
+                "anchor.batch.partial",
+                extra={
+                    "game_id": game_id,
+                    "txid": txids[-1] if txids else "",
+                    "exception_type": type(exc).__name__,
+                    "exception_detail": str(exc),
+                    "error_code": "ANCHOR_FAILED",
+                },
+                exc_info=True,
+            )
+        raise
 
-    _record_anchors(game_id, round_to_txid)
-    clear_pending_anchors(game_id, round_keys)
     explorer_urls = [transport.explorer_tx_url(t) for t in txids]
     return {
         "txids": txids,
-        "rounds": round_keys,
+        "rounds": flushed_keys,
         "explorer_urls": explorer_urls,
     }
 

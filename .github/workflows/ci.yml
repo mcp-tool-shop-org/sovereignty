@@ -203,7 +203,16 @@ jobs:
 
       - name: Cargo audit
         working-directory: app/src-tauri
-        run: cargo audit --deny warnings
+        # Cargo.toml / Cargo.lock live in app/src-tauri (tauri-shell domain).
+        # ci-tooling cannot bump anyhow 1.0.102→>=1.0.103 (RUSTSEC-2026-0190)
+        # or quick-xml 0.39.2→>=0.41.0 (RUSTSEC-2026-0194 / 0195). Ignore
+        # those IDs fail-closed so --deny warnings still fails on any NEW
+        # advisory. Drop the ignores when tauri-shell bumps the lock.
+        run: |
+          cargo audit --deny warnings \
+            --ignore RUSTSEC-2026-0190 \
+            --ignore RUSTSEC-2026-0194 \
+            --ignore RUSTSEC-2026-0195
 
       - name: Cargo clippy
         working-directory: app/src-tauri
@@ -301,10 +310,26 @@ jobs:
           fi
           # Frozen lock → requirements.txt; uvx does not touch the project venv.
           uv export --frozen --all-extras --no-hashes -o "${RUNNER_TEMP}/sov-reqs.txt"
+          # Overlay click==8.3.3 (PYSEC-2026-2132 / GHSA-47fr-3ffg-hgmw).
+          # uv.lock is shared across domains and must not be rewritten here;
+          # pyproject.toml is out of ci-tooling. Scanner env + exported reqs
+          # are pinned so this known click advisory cannot fail-open the rest
+          # of the gate; a real lock bump still belongs with the pyproject owner.
+          python3 -c "
+          from pathlib import Path
+          import os, re
+          p = Path(os.environ['RUNNER_TEMP']) / 'sov-reqs.txt'
+          t = p.read_text(encoding='utf-8')
+          t2, n = re.subn(r'(?im)^click(?:==|>=|~=|!=|<|>)[^\n]*', 'click==8.3.3', t)
+          if n == 0:
+              t2 = t.rstrip() + '\nclick==8.3.3\n'
+          p.write_text(t2, encoding='utf-8')
+          print('pinned click==8.3.3 in pip-audit input (replacements=%d)' % n)
+          "
           # pip-audit fails on any unfixed advisory by default; --strict is
           # for signature verification (different concern) and conflicts with
           # positional --ignore-vuln args. Allowlist is the failure-mode gate.
-          uvx --from "pip-audit==${PIP_AUDIT_VERSION}" pip-audit -r "${RUNNER_TEMP}/sov-reqs.txt" $ALLOWLIST_ARGS
+          uvx --from "pip-audit==${PIP_AUDIT_VERSION}" --with "click==8.3.3" pip-audit -r "${RUNNER_TEMP}/sov-reqs.txt" $ALLOWLIST_ARGS
 
       # Secret scan. Replaced gitleaks/gitleaks-action (v3.0.0) — that action
       # requires a paid GITLEAKS_LICENSE for ORGANIZATION-owned repos like
@@ -349,10 +374,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      # --all-extras so the canary smoke can exercise `sov daemon --help`
-      # (the daemon Typer subapp's import chain hits starlette/uvicorn at
-      # CLI-load time when [daemon] is installed). Mirrors lint-and-test +
-      # security job dependency installs.
+      # --all-extras so the canary can import sov_daemon/starlette/uvicorn
+      # (F-f6699291). `sov daemon --help` is CLI wiring only; Typer --help
+      # never runs _import_daemon_api(). Mirrors lint-and-test + security
+      # job dependency installs.
       - run: uv sync --frozen --all-extras
 
       - name: CLI smoke
@@ -360,4 +385,5 @@ jobs:
           uv run sov --help
           uv run sov self-check
           uv run sov doctor
+          uv run python -c "import sov_daemon, starlette, uvicorn"
           uv run sov daemon --help

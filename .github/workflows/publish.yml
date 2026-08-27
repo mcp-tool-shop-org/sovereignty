@@ -19,9 +19,12 @@
 # Recovery (do not retag v2.3.0):
 #   CLI/PyPI and desktop are separate jobs. A Tauri/linuxdeploy failure must
 #   not skip PyPI or CLI GitHub Release assets. Re-run via Actions → Release
-#   → Run workflow on a v* tag, or dispatch from a workflow-fix ref with
-#   input tag=vX.Y.Z (GITHUB_REF_NAME / inputs.tag is the version tag).
-#   workflow_dispatch never creates or moves tags.
+#   → Run workflow with inputs.tag=vX.Y.Z (from a workflow-fix branch or
+#   from the tag ref; tag-ref dispatch must pass the same value). Blank tag
+#   on the default branch fails require-release-tag (not a green no-op).
+#   workflow_dispatch never creates or moves tags. Concurrency is keyed on
+#   the target RELEASE_TAG so a branch recovery queues behind an in-flight
+#   tag run rather than overlapping OIDC publishes.
 
 name: Release
 
@@ -33,13 +36,16 @@ on:
       tag:
         description: >-
           Existing v* GitHub Release tag to attach assets to (e.g. v2.3.0).
-          Required when the selected ref is not already a v* tag. Does not
-          create or move tags.
-        required: false
+          Required. When dispatching from a v* tag ref, pass the same value.
+          Does not create or move tags.
+        required: true
         type: string
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Key on the target release tag (F-114f1242). github.ref would let a
+  # workflow-fix branch recovery overlap an in-flight tag run (two OIDC
+  # publishes, two attestations, mixed-SHA assets on one Release).
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && (inputs.tag || github.ref_name) || github.ref_name }}
   # One-shot Trusted Publisher + attestations: never cancel an in-flight publish.
   cancel-in-progress: false
 
@@ -47,6 +53,32 @@ env:
   RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && (inputs.tag || github.ref_name) || github.ref_name }}
 
 jobs:
+  # Fail-loud when Actions → Release → Run workflow is used on the default
+  # branch with a blank/non-v* tag (F-dad9a49b). Per-job `if` still skip
+  # the publish matrix; without this job the run was a green zero-job success.
+  require-release-tag:
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Fail unless a v* tag is targeted
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GIT_REF: ${{ github.ref }}
+          TAG_INPUT: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || '' }}
+        run: |
+          set -euo pipefail
+          if [[ "$GIT_REF" == refs/tags/v* ]]; then
+            echo "ok: github.ref=$GIT_REF"
+            exit 0
+          fi
+          if [[ "$TAG_INPUT" =~ ^v ]]; then
+            echo "ok: inputs.tag=$TAG_INPUT"
+            exit 0
+          fi
+          echo "::error::Release requires github.ref=refs/tags/v* or workflow_dispatch inputs.tag matching ^v (event=$EVENT_NAME ref=$GIT_REF tag='$TAG_INPUT'). Actions → Release → Run workflow on the default branch with a blank tag is not a recovery; pass tag=vX.Y.Z or dispatch from the tag ref with the same value."
+          exit 1
+
   # --- PyPI publish (trusted publishing via OIDC) ---
   # Locked spec: publish MUST depend on build-binaries success so a
   # major-version PyPI release is never shipped without the CLI binaries that
@@ -112,11 +144,12 @@ jobs:
           # shellcheck disable=SC1091
           source "$SMOKE_DIR/venv/bin/activate"
           pip install --upgrade pip
-          # Install with both extras. The [daemon] extra brings in
-          # starlette/uvicorn/httpx — if any are missing, the daemon Typer
-          # subapp's import fails at CLI-load time and breaks ALL `sov`
-          # invocations (not just `sov daemon ...`). The `sov daemon --help`
-          # check below is a load-bearing surface verification.
+          # Install with both extras. [daemon] pulls starlette/uvicorn/httpx.
+          # hatch wheel packages are sov_engine/sov_transport/sov_cli —
+          # sov_daemon is not on the import path unless the extra's install
+          # layout actually exposes it. `sov daemon --help` is CLI wiring
+          # only (Typer never imports sov_daemon). Import-surface check is
+          # `python -c "import sov_daemon, starlette, uvicorn"` (F-f6699291).
           pip install "${WHEEL}[xrpl,daemon]"
           # 1. --version exits 0 with a non-empty version line
           VERSION_OUT=$(sov --version)
@@ -132,11 +165,13 @@ jobs:
             ok|warn) echo "Smoke test passed." ;;
             *) echo "::error::sov self-check --json reported status=$STATUS (expected ok|warn)"; exit 1 ;;
           esac
-          # 4. Verify the daemon Typer subapp is wired (import surface check
-          # for the [daemon] extra — does NOT start the server). If
-          # uvicorn/starlette aren't actually installed, this fails because
-          # the subapp import chain hits a missing dep.
-          sov daemon --help > /dev/null || { echo "::error::sov daemon --help failed — [daemon] extra not wired"; exit 1; }
+          # 4. CLI wiring: daemon Typer subapp is registered (does NOT
+          # import sov_daemon / starlette / uvicorn).
+          sov daemon --help > /dev/null || { echo "::error::sov daemon --help failed — daemon CLI not wired"; exit 1; }
+          # 5. Import surface for the [daemon] extra (F-f6699291). Typer
+          # --help never runs _import_daemon_api(); missing extra deps or a
+          # wheel that omitted sov_daemon must fail here.
+          python -c "import sov_daemon, starlette, uvicorn" || { echo "::error::[daemon] extra import surface missing (sov_daemon/starlette/uvicorn)"; exit 1; }
           deactivate
           rm -rf "$SMOKE_DIR"
 

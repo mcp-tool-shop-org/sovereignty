@@ -4,18 +4,19 @@ Everything you need to play tonight. No screens at the table.
 
 ## What to print
 
-The full Tier 1 print pack ships as ready-to-print PDFs. One file per artifact, plus a combined Sovereignty-Print-Pack.pdf with all 11 sheets in one document.
+The full print pack ships as ready-to-print PDFs. One file per artifact, plus a combined Sovereignty-Print-Pack.pdf with all 13 sheets in one document.
 
 | File | Pages | What it is |
 |------|-------|------------|
-| [`assets/print/pdf/Sovereignty-Print-Pack.pdf`](../assets/print/pdf/Sovereignty-Print-Pack.pdf) | 11 | The whole package — print this and you're set |
+| [`assets/print/pdf/Sovereignty-Print-Pack.pdf`](../assets/print/pdf/Sovereignty-Print-Pack.pdf) | 13 | The whole package — print this and you're set |
 | [`assets/print/pdf/board.pdf`](../assets/print/pdf/board.pdf) | 1 | Campfire board (16 spaces, square loop) |
 | [`assets/print/pdf/mat.pdf`](../assets/print/pdf/mat.pdf) | 1 | Player mat — coins / rep / upgrades / promises (one per player) |
 | [`assets/print/pdf/quickref.pdf`](../assets/print/pdf/quickref.pdf) | 1 | Quick reference — board spaces, turn order, promise rules |
 | [`assets/print/pdf/treaty.pdf`](../assets/print/pdf/treaty.pdf) | 1 | Treaty Table quick reference (Tier 3 only) |
-| [`assets/print/pdf/events.pdf`](../assets/print/pdf/events.pdf) | 3 | 20 Event cards, 9-up grid (cut along lines) |
-| [`assets/print/pdf/deals.pdf`](../assets/print/pdf/deals.pdf) | 2 | 10 Deal cards |
+| [`assets/print/pdf/events.pdf`](../assets/print/pdf/events.pdf) | 4 | 28 Event cards, 9-up grid (cut along lines) |
+| [`assets/print/pdf/deals.pdf`](../assets/print/pdf/deals.pdf) | 2 | 12 Deal cards |
 | [`assets/print/pdf/vouchers.pdf`](../assets/print/pdf/vouchers.pdf) | 2 | 10 Voucher cards (IOUs between players) |
+| [`assets/print/pdf/market.pdf`](../assets/print/pdf/market.pdf) | 1 | Market Board — Market Day / Town Hall supply and prices |
 
 The PDFs are vector with embedded fonts (Cormorant Garamond, IM Fell English, JetBrains Mono, ZapfDingbats) — they print cleanly on any home printer at US Letter portrait. Source files for re-rendering live in [`assets/print/source/`](../assets/print/source/README.md).
 
@@ -23,10 +24,10 @@ The PDFs are vector with embedded fonts (Cormorant Garamond, IM Fell English, Je
 
 | Tier | What to print | Pages |
 |------|--------------|-------|
-| **Campfire** | Board + Player mat + Quick ref + Event cards + Deal cards + Voucher cards | 9 |
-| **Market Day** | Same as Campfire (resources tracked on player mat) | 9 |
-| **Town Hall** | Same as Campfire (market prices tracked on board margin) | 9 |
-| **Treaty Table** | Everything above + Treaty quick ref | 10 |
+| **Campfire** | Board + Player mat + Quick ref + Event cards + Deal cards + Voucher cards | 11 |
+| **Market Day** | Campfire + Market Board | 12 |
+| **Town Hall** | Campfire + Market Board | 12 |
+| **Treaty Table** | Campfire + Market Board + Treaty quick ref | 13 |
 
 Print double-sided to save paper.
 

@@ -13,9 +13,9 @@ Each player starts with **5 coins** and **3 reputation** (clamped between 0 and 
 
 ## Cards
 
-**28 Event cards** (digital / Town Hall deck) read like moments — situations that affect all players or force individual choices. The deck includes 20 core events and 8 market-shift events that trigger in Town Hall games. The print pack ships 20 Event cards; the extra 8 are console-only.
+**28 Event cards** read like moments — situations that affect all players or force individual choices. The deck includes 20 core events and 8 market-shift events that trigger in Town Hall games. All 28 print on `events.pdf` (4 pages).
 
-**12 Deal cards** (digital) force conversation — offers, trades, and agreements between players. Each deal has a deadline and a reward for completion, plus a reputation penalty for failure. The print pack ships 10 Deal cards; the extra 2 are console-only.
+**12 Deal cards** force conversation — offers, trades, and agreements between players. Each deal has a deadline and a reward for completion, plus a reputation penalty for failure. All 12 print on `deals.pdf`.
 
 **10 Voucher cards** are IOUs you issue to another player. You need at least 2 reputation to issue a voucher. If you default, you lose reputation. Trusted issuers (reputation 5 or higher) pay a bonus when redeeming.
 

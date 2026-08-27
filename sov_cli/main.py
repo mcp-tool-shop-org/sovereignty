@@ -55,7 +55,6 @@ from sov_engine.io_utils import (
     add_pending_anchor,
     anchors_file,
     atomic_write_text,
-    clear_pending_anchors,
     game_dir,
     get_active_game_id,
     list_saved_games,
@@ -954,7 +953,7 @@ def doctor(
     # entry's added_iso within the last hour (operator presumably mid-game);
     # older than that is a `warn` because it suggests they forgot to flush.
     if active_id:
-        pending = read_pending_anchors(active_id)
+        pending = read_pending_anchors(active_id, heal=True)
         if pending:
             n = len(pending)
             plural = "s" if n != 1 else ""
@@ -2157,7 +2156,7 @@ def anchor(
             # no active game can be resolved. Re-raise so the user sees
             # the structured no_active_game_error rather than swallowing.
             raise
-        if not read_pending_anchors(active_id_for_noop_check):
+        if not read_pending_anchors(active_id_for_noop_check, heal=True):
             # CLI-D-003: canonical empty-state shape (split headline + hint).
             console.print("  [dim]◯ No pending anchors.[/dim]")
             console.print(
@@ -2222,15 +2221,9 @@ def anchor(
             # Persist txid so postcard / feedback can surface the explorer link
             # in future invocations (the anchor receipt was previously read-only).
             # Final proofs record/clear the ``FINAL`` key, not the numeric round.
-            _record_anchor(round_key, txid, game_id)
-            # CLI-002: clear any pending entry for this round on the legacy
-            # path. Without this, ``end-round`` queues round N into
-            # ``pending-anchors.json``, the legacy single-round anchor
-            # writes the txid into ``anchors.json`` AND leaves the entry
-            # pending, and the next batch flush re-anchors round N as a
-            # duplicate on chain. ``clear_pending_anchors`` is idempotent
-            # on rounds that weren't pending so the write is cheap.
-            clear_pending_anchors(game_id, [round_key])
+            from sov_engine.proof import record_anchors_and_clear_pending
+
+            record_anchors_and_clear_pending(game_id, {round_key: txid})
             logger.info("anchor.success round=%s txid=%s", round_key, txid)
 
             explorer = transport.explorer_tx_url(txid)
@@ -2267,7 +2260,7 @@ def anchor(
     # Batch path: flush pending-anchors.json as a single multi-memo tx.
     # ------------------------------------------------------------------
     active_id = _resolve_active_game_id()
-    pending = read_pending_anchors(active_id)
+    pending = read_pending_anchors(active_id, heal=True)
 
     # Refuse mid-game flush without --checkpoint. The active game-state
     # tells us "in progress" vs "complete"; use the same source the rest
@@ -2370,26 +2363,11 @@ def anchor(
             for entry in rounds[chunk_start:chunk_end]:
                 round_to_txid[entry["round_key"]] = txid
 
-        # anchors.json keeps round_key → txid; multi-tx batches just mean
-        # different keys map to different txids. No schema bump needed.
-        for entry in rounds:
-            rk = entry["round_key"]
-            round_key_for_record: int | str
-            if rk == "FINAL":
-                round_key_for_record = "FINAL"
-            else:
-                try:
-                    round_key_for_record = int(rk)
-                except ValueError:
-                    round_key_for_record = rk
-            _record_anchor(round_key_for_record, round_to_txid[rk], game_id)
+        # Combined writer: one anchors.json merge then one pending clear.
+        # Crash between those files is recovered by heal (txid wins).
+        from sov_engine.proof import record_anchors_and_clear_pending
 
-        # Clear the flushed entries from pending. The bridge's per-chunk
-        # submission has partial-success semantics (Wave 10 BRIDGE-A-bis-003);
-        # if any chunk fails the bridge raises and we don't reach this clear,
-        # leaving pending populated for retry. Reaching here means every
-        # chunk succeeded — every entry in ``rounds`` is on chain.
-        clear_pending_anchors(game_id, list(sorted_keys))
+        record_anchors_and_clear_pending(game_id, round_to_txid)
         logger.info(
             "anchor_batch.success rounds=%d txs=%d txids=%s game_id=%s",
             n,
@@ -3273,7 +3251,7 @@ def game_end(
                 "\n  [dim]The final proof is already saved locally — anchoring is optional.[/dim]"
             )
         else:
-            pending = read_pending_anchors(active_id)
+            pending = read_pending_anchors(active_id, heal=True)
             if not pending:
                 console.print("\n  [dim]No pending anchors to flush.[/dim]")
             else:
@@ -3319,19 +3297,9 @@ def game_end(
                         for chunk_entry in rounds[chunk_start:chunk_end]:
                             round_to_txid[chunk_entry["round_key"]] = txid
 
-                    for batch_entry in rounds:
-                        rk = batch_entry["round_key"]
-                        round_key_for_record: int | str
-                        if rk == "FINAL":
-                            round_key_for_record = "FINAL"
-                        else:
-                            try:
-                                round_key_for_record = int(rk)
-                            except ValueError:
-                                round_key_for_record = rk
-                        _record_anchor(round_key_for_record, round_to_txid[rk], game_id)
+                    from sov_engine.proof import record_anchors_and_clear_pending
 
-                    clear_pending_anchors(active_id, list(sorted_keys))
+                    record_anchors_and_clear_pending(active_id, round_to_txid)
                     logger.info(
                         "anchor_batch.success rounds=%d txs=%d txids=%s game_id=%s",
                         n,
@@ -4065,7 +4033,7 @@ def _print_brief_status(state: GameState) -> None:
     # Single-line additive output; deterministic format for README pinning.
     game_id = f"s{state.config.seed}"
     try:
-        pending = read_pending_anchors(game_id)
+        pending = read_pending_anchors(game_id, heal=True)
     except Exception as exc:  # noqa: BLE001
         logger.warning(
             "status.pending_probe.failed exc=%s detail=%s",
@@ -4106,7 +4074,7 @@ def _status_json_payload(state: GameState) -> dict[str, Any]:
     """
     game_id = f"s{state.config.seed}"
 
-    pending = read_pending_anchors(game_id)
+    pending = read_pending_anchors(game_id, heal=True)
 
     # Read anchors.json defensively — same recovery posture as `_record_anchor`.
     # Stage 7-B amend (CLI-B-002 + CLI-B-003): tolerates both the v0 bare-dict

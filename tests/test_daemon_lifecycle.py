@@ -29,7 +29,6 @@ import os
 import subprocess
 import sys
 import time
-import urllib.error
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -56,34 +55,19 @@ def _pid_alive(pid: int) -> bool:
     return True
 
 
-def _wait_until_daemon_ready(info: dict[str, Any], *, timeout: float = 10.0) -> None:
-    """Poll ``GET /health`` until the daemon answers 200 OK.
-
-    ``start_daemon`` returns once ``.sov/daemon.json`` is written, but
-    uvicorn installs its SIGTERM handler later — inside ``server.run()``,
-    after the handshake write. Sending a signal in that window means
-    Python's default SIGTERM handler fires (terminate without running
-    the cleanup ``finally:``), and ``.sov/daemon.json`` is left behind.
-    Polling ``/health`` until 200 proves uvicorn is in its event loop:
-    listening socket bound, signal handlers installed, cleanup wired.
-    """
+def _get_health_once(info: dict[str, Any], *, timeout: float = 2.0) -> int:
+    """Single ``GET /health`` with no retry. ``start_daemon`` return implies bind."""
     port = info["port"]
     token = info["token"]
     url = f"http://127.0.0.1:{port}/health"
-    request = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
-    deadline = time.monotonic() + timeout
-    last_err: Exception | None = None
-    while time.monotonic() < deadline:
-        try:
-            with urllib.request.urlopen(request, timeout=1.0) as resp:  # noqa: S310
-                if resp.status == 200:
-                    return
-        except (urllib.error.URLError, ConnectionError, OSError) as exc:
-            last_err = exc
-        time.sleep(0.05)
-    raise RuntimeError(
-        f"daemon /health did not return 200 within {timeout:.1f}s; last error: {last_err!r}"
+    request = urllib.request.Request(
+        url,
+        headers={"Authorization": f"Bearer {token}"},
+        method="GET",
     )
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    with opener.open(request, timeout=timeout) as resp:  # noqa: S310
+        return int(getattr(resp, "status", 0) or 0)
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +119,47 @@ def test_start_daemon_writes_daemon_json_with_expected_shape(
         assert info["pid"] == payload["pid"]
     finally:
         stop_daemon()
+
+
+def test_start_daemon_return_implies_health_200_without_polling(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """F-5a8e112a: ``start_daemon`` return itself implies ``GET /health`` 200.
+
+    Handshake-on-disk is not readiness. A revert that writes ``daemon.json``
+    then returns before bind would keep a poll-until-200 helper green. This
+    pin does one GET with no retry after ``start_daemon`` returns.
+    """
+    from sov_daemon.lifecycle import start_daemon, stop_daemon
+    from sov_transport.xrpl_internals import XRPLNetwork
+
+    monkeypatch.chdir(tmp_path)
+    info = start_daemon(network=XRPLNetwork.TESTNET, readonly=True)
+    try:
+        assert _get_health_once(info) == 200
+    finally:
+        stop_daemon()
+
+
+def test_start_then_immediate_stop_removes_handshake(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """F-5a8e112a: stop immediately after start always removes ``daemon.json``.
+
+    Readiness already includes bind + signal-handler install, so there is
+    no pre-bind window where SIGTERM / stop would skip the cleanup
+    ``finally:`` and leave the handshake behind.
+    """
+    from sov_daemon.lifecycle import start_daemon, stop_daemon
+    from sov_transport.xrpl_internals import XRPLNetwork
+
+    monkeypatch.chdir(tmp_path)
+    start_daemon(network=XRPLNetwork.TESTNET, readonly=True)
+    stop_daemon()
+    assert not (tmp_path / ".sov" / "daemon.json").exists(), (
+        "stop immediately after start_daemon must remove .sov/daemon.json "
+        "because start_daemon return already includes bind"
+    )
 
 
 def test_start_daemon_token_is_url_safe_base64_minimum_256_bits(
@@ -199,20 +224,19 @@ def test_start_daemon_auto_cleans_stale_entry_with_dead_pid(
         stop_daemon()
 
 
-def test_start_daemon_refuses_when_live_daemon_already_running(
+def test_start_daemon_treats_live_non_sov_pid_as_stale(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """Spec §8: start refuses if ``.sov/daemon.json`` exists AND pid is alive."""
+    """A recycled live pid that is not sov_daemon is STALE; start may proceed."""
     import json
 
-    from sov_daemon.lifecycle import start_daemon
+    from sov_daemon.lifecycle import start_daemon, stop_daemon
     from sov_transport.xrpl_internals import XRPLNetwork
 
     monkeypatch.chdir(tmp_path)
     sov_dir = tmp_path / ".sov"
     sov_dir.mkdir(parents=True, exist_ok=True)
 
-    # Spawn a real subprocess so the pid liveness check returns True.
     live_proc = _spawn_sleeper(60.0)
     try:
         live_payload = {
@@ -227,12 +251,9 @@ def test_start_daemon_refuses_when_live_daemon_already_running(
         }
         (sov_dir / "daemon.json").write_text(json.dumps(live_payload), encoding="utf-8")
 
-        with pytest.raises(Exception) as exc_info:
-            start_daemon(network=XRPLNetwork.TESTNET, readonly=True)
-        msg = str(exc_info.value).lower()
-        assert "already" in msg or "running" in msg or "daemon" in msg, (
-            f"refusal message must mention already-running daemon: {msg!r}"
-        )
+        info = start_daemon(network=XRPLNetwork.TESTNET, readonly=True)
+        assert info["pid"] != live_proc.pid
+        stop_daemon()
     finally:
         live_proc.terminate()
         live_proc.wait(timeout=5)
@@ -352,13 +373,9 @@ def test_daemon_sigterm_removes_daemon_json_on_clean_exit(
     state_file = tmp_path / ".sov" / "daemon.json"
     assert state_file.exists()
 
-    # Wait for uvicorn to enter its event loop (signal handlers installed,
-    # cleanup wired) before signalling. Otherwise SIGTERM may land in the
-    # window between handshake write and uvicorn's handler install, which
-    # falls through to Python's default-terminate and skips the
-    # ``.sov/daemon.json`` cleanup ``finally:`` block.
-    _wait_until_daemon_ready(info)
-
+    # start_daemon already waits for handshake + GET /health (bind and
+    # uvicorn SIGTERM handler installed). Signal immediately — do not poll
+    # /health here, or a pre-bind handshake write would stay green.
     os.kill(pid, signal.SIGTERM)
 
     # 30s deadline: cold Python interpreter + Starlette teardown + file
@@ -442,5 +459,77 @@ def test_cli_daemon_status_json_reports_running_with_fields(
         assert "pid" in fields, f"pid field missing from --json envelope: {payload!r}"
         assert "network" in fields, f"network field missing from --json envelope: {payload!r}"
         assert fields["network"]["value"] == "testnet"
+    finally:
+        stop_daemon()
+
+
+def test_cli_status_brief_json_and_doctor_report_running_when_daemon_alive(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """F-d5577be5: ``sov status`` / ``--brief`` / ``--json`` and ``sov doctor``.
+
+    Wave 10 CLI-D-bis-002 only pinned ``sov daemon status``. Sibling surfaces
+    read ``DaemonStatus`` via ``status.value`` + ``daemon_info()``. Restoring
+    ``getattr(status, 'state', None)`` on those helpers left this file green.
+    Same assertions as ``test_cli_daemon_status_json_reports_running_with_fields``.
+    """
+    import json as json_mod
+
+    from typer.testing import CliRunner
+
+    from sov_cli.main import app
+    from sov_daemon.lifecycle import start_daemon, stop_daemon
+    from sov_transport.xrpl_internals import XRPLNetwork
+    from tests.test_cli_integration import _seed_minimal_game
+
+    monkeypatch.chdir(tmp_path)
+    _seed_minimal_game(tmp_path, players=["Alice", "Bob"])
+    runner = CliRunner()
+    start_daemon(network=XRPLNetwork.TESTNET, readonly=True)
+    try:
+        status_text = runner.invoke(app, ["status"])
+        assert status_text.exit_code == 0, (
+            f"sov status exit={status_text.exit_code} output={status_text.output!r}"
+        )
+        assert "running" in status_text.output.lower(), (
+            f"sov status must contain 'running'; got: {status_text.output!r}"
+        )
+        assert "daemon: none" not in status_text.output.lower(), (
+            f"sov status must NOT report 'daemon: none' when alive; got: {status_text.output!r}"
+        )
+
+        brief = runner.invoke(app, ["status", "--brief"])
+        assert brief.exit_code == 0, (
+            f"sov status --brief exit={brief.exit_code} output={brief.output!r}"
+        )
+        assert "running" in brief.output.lower(), (
+            f"sov status --brief must contain 'running'; got: {brief.output!r}"
+        )
+        assert "daemon: none" not in brief.output.lower(), (
+            f"sov status --brief must NOT report 'daemon: none' when alive; got: {brief.output!r}"
+        )
+
+        status_json = runner.invoke(app, ["status", "--json"])
+        assert status_json.exit_code == 0, (
+            f"sov status --json exit={status_json.exit_code} output={status_json.output!r}"
+        )
+        payload = json_mod.loads(status_json.output)
+        daemon_field = payload.get("daemon")
+        assert isinstance(daemon_field, dict), f"daemon field missing: {payload!r}"
+        assert daemon_field.get("state") == "running", (
+            f"sov status --json daemon.state must be 'running'; got: {daemon_field!r}"
+        )
+        assert "port" in daemon_field, f"port missing from daemon field: {daemon_field!r}"
+        assert "pid" in daemon_field, f"pid missing from daemon field: {daemon_field!r}"
+        assert daemon_field.get("network") == "testnet"
+
+        doctor = runner.invoke(app, ["doctor"])
+        assert doctor.exit_code == 0, f"sov doctor exit={doctor.exit_code} output={doctor.output!r}"
+        assert "running" in doctor.output.lower(), (
+            f"sov doctor must contain 'running'; got: {doctor.output!r}"
+        )
+        assert "daemon: none" not in doctor.output.lower(), (
+            f"sov doctor must NOT report 'daemon: none' when alive; got: {doctor.output!r}"
+        )
     finally:
         stop_daemon()

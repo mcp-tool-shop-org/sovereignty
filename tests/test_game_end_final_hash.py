@@ -7,8 +7,8 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from sov_cli.main import app
-from sov_engine.io_utils import proofs_dir
 from sov_engine.hashing import verify_proof
+from sov_engine.io_utils import proofs_dir
 
 runner = CliRunner()
 

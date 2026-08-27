@@ -607,6 +607,14 @@ def _recover_partial_migration(crumb: dict[str, object]) -> str | None:
 # 3-state ``proof_anchor_status`` (in ``sov_engine/proof.py``) and by the
 # ``sov anchor`` flush path in the CLI.
 #
+# Crash window: ``record_anchors`` and ``clear_pending_anchors`` are two
+# atomic writes. A crash between them leaves the same round in both
+# ``anchors.json`` (txid present) and ``pending-anchors.json``.
+# ``heal_stale_pending_against_anchors`` drops those pending keys so
+# status / flush cannot re-submit already-on-chain rounds. Callers that
+# consume pending as "work to do" pass ``heal=True`` on
+# ``read_pending_anchors``.
+#
 # File layout (per spec ``docs/v2.1-bridge-changes.md`` §4):
 #
 #     .sov/games/<game-id>/pending-anchors.json
@@ -779,18 +787,73 @@ def _read_pending_anchors_tagged(
     return "ok", cleaned
 
 
-def read_pending_anchors(game_id: str) -> dict[str, PendingEntry]:
+def _recorded_txid(anchors: dict[str, str], round_key: str) -> str | None:
+    """Return a non-empty recorded txid for ``round_key``, or None."""
+    txid = anchors.get(round_key)
+    if isinstance(txid, str) and txid.strip():
+        return txid
+    return None
+
+
+def heal_stale_pending_against_anchors(game_id: str) -> dict[str, PendingEntry]:
+    """Drop pending rows that already have a txid in ``anchors.json``.
+
+    Flush paths write ``anchors.json`` then clear pending. A crash
+    between those atomic writes leaves the round in both indexes. A
+    recorded txid means submit already succeeded — keep the txid and
+    drop the stale pending row so status cannot recommend a re-flush
+    and the next ``sov anchor`` cannot re-submit.
+
+    Returns the healed pending map. Write failures are swallowed so
+    the in-memory view still skips those keys even if the pending
+    file could not be rewritten. Validates ``game_id``.
+    """
+    _validate_game_id(game_id)
+    _, pending = _read_pending_anchors_tagged(game_id)
+    if not pending:
+        return pending
+    from sov_engine.proof import _read_anchors
+
+    anchors = _read_anchors(game_id)
+    stale = [key for key in list(pending) if _recorded_txid(anchors, key) is not None]
+    if not stale:
+        return pending
+    with contextlib.suppress(OSError, ValueError, TypeError):
+        clear_pending_anchors(game_id, stale)
+    for key in stale:
+        pending.pop(key, None)
+    logger.info(
+        "pending_anchors.heal.stale_dropped game_id=%s rounds=%s",
+        game_id,
+        ",".join(stale),
+    )
+    return pending
+
+
+def read_pending_anchors(
+    game_id: str,
+    *,
+    heal: bool = False,
+) -> dict[str, PendingEntry]:
     """Read the pending-anchor index. Returns the ``entries`` sub-dict.
 
     Returns an empty dict if the file does not exist, is unreadable, or
     has a malformed shape — pending-anchor reads should never crash a
     status / verify path. Malformed reads are logged at WARNING.
 
+    Pass ``heal=True`` to drop pending keys that already have a recorded
+    txid (crash window after recording anchors before clearing pending).
+    Flush / status / doctor paths that treat pending as "work remaining"
+    must pass ``heal=True``. Default ``False`` preserves a raw read for
+    verify and tests that inspect the on-disk race window.
+
     Note: callers receive only the inner ``entries`` map, not the
     wrapper containing ``schema_version``. The wrapper is an implementation
     detail of the on-disk format. Validates ``game_id``.
     """
     _validate_game_id(game_id)
+    if heal:
+        return heal_stale_pending_against_anchors(game_id)
     _, entries = _read_pending_anchors_tagged(game_id)
     return entries
 

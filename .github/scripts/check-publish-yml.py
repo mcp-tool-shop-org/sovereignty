@@ -43,7 +43,9 @@ def _fail(msg: str) -> None:
 def extract_artifacts_values(text: str) -> list[str]:
     if re.search(r"^\s+artifacts:\s*[|>]", text, re.M):
         _fail("matrix.artifacts must be a single-line scalar, not a YAML | or > block")
-    values = [m.group(1).strip().strip("\"'") for m in re.finditer(r"^\s+artifacts:\s*(.+)$", text, re.M)]
+    values = [
+        m.group(1).strip().strip("\"'") for m in re.finditer(r"^\s+artifacts:\s*(.+)$", text, re.M)
+    ]
     if not values:
         _fail("no matrix.artifacts values found")
     for value in values:
@@ -113,8 +115,15 @@ done
     if re.search(r"^  publish:.*?needs: \[build-binaries, build-tauri-binaries\]", text, re.S):
         _fail("publish still needs build-tauri-binaries")
 
-    if "cancel-in-progress: true" in text.split("jobs:")[0]:
+    preamble = text.split("jobs:")[0]
+    if "cancel-in-progress: true" in preamble:
         _fail("publish.yml concurrency must not cancel-in-progress")
+    # F-114f1242: recovery dispatch from a workflow-fix branch must queue
+    # with the tag run, not overlap it. github.ref is a different group.
+    if "github.workflow }}-${{ github.ref }}" in preamble:
+        _fail("concurrency group must not key on github.ref")
+    if "inputs.tag || github.ref_name" not in preamble:
+        _fail("concurrency group must key on inputs.tag || github.ref_name")
 
     if "libfuse2t64" not in text or "patchelf" not in text or "librsvg2-dev" not in text:
         _fail("Linux bundler package set (file/patchelf/libfuse2t64/librsvg2) missing")
@@ -122,10 +131,25 @@ done
     # workflow_dispatch must be able to run jobs on a v* tag (F-830579dd).
     if "workflow_dispatch" not in text:
         _fail("workflow_dispatch trigger missing")
-    if text.count("github.event_name == 'release'") >= 4 and "workflow_dispatch" in text:
-        # Every job used to be release-only; require the dispatch clause.
-        if "startsWith(github.ref, 'refs/tags/v')" not in text:
-            _fail("jobs must run on workflow_dispatch when github.ref is a v* tag")
+    if (
+        text.count("github.event_name == 'release'") >= 4
+        and "workflow_dispatch" in text
+        and "startsWith(github.ref, 'refs/tags/v')" not in text
+    ):
+        _fail("jobs must run on workflow_dispatch when github.ref is a v* tag")
+
+    # F-dad9a49b: blank-tag dispatch on the default branch must be red.
+    if "require-release-tag:" not in text:
+        _fail("require-release-tag job missing")
+    if re.search(r"^  require-release-tag:\n(?:    .*\n)*    if: always\(\)", text, re.M) is None:
+        _fail("require-release-tag must use if: always()")
+
+    # F-f6699291: wheel-smoke must load the [daemon] extra, not just --help.
+    if "import sov_daemon, starlette, uvicorn" not in text:
+        _fail("wheel-smoke must import sov_daemon, starlette, uvicorn")
+    ci_text = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    if "import sov_daemon, starlette, uvicorn" not in ci_text:
+        _fail("canary must import sov_daemon, starlette, uvicorn")
 
     # Smoke generate-latest-json.py against compound extensions.
     with tempfile.TemporaryDirectory() as tmp:

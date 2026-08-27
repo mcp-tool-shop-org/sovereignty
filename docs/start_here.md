@@ -8,7 +8,7 @@ You need a table, 2-4 people, a six-sided die, and some coins or tokens.
 
 **Step 1: Print the kit**
 
-Print [the combined print pack](../assets/print/pdf/Sovereignty-Print-Pack.pdf) — 11 sheets (Campfire set is 9). Cut the cards.
+Print [the combined print pack](../assets/print/pdf/Sovereignty-Print-Pack.pdf) — 13 sheets (Campfire set is 11). Cut the cards.
 Full walkthrough: [Print & Play guide](print-and-play.md)
 
 **Step 2: Learn the rules**

@@ -10,6 +10,7 @@
 //! daemon must NOT freeze the webview's polling spinner. On timeout the helper
 //! returns `ShellError::SubprocessFailed { exit_code: -1, stderr: "timeout" }`.
 
+use std::path::Path;
 use std::process::{Output, Stdio};
 use std::time::Duration;
 
@@ -24,11 +25,17 @@ use crate::config;
 pub const SOV_BIN: &str = "sov";
 
 /// Hard wall-clock cap for any single `sov daemon ...` subprocess invocation.
-/// Status is supposed to be near-instant (local-only), start binds a port +
-/// writes a handshake (a few seconds), stop must shut down SSE + close the
-/// port (a few seconds). 10s is generous for all three on a healthy system
-/// and short enough that a hung CLI doesn't strand the webview indefinitely.
-pub const SUBPROCESS_TIMEOUT: Duration = Duration::from_secs(10);
+///
+/// Must be **strictly greater** than Python's
+/// `_START_HANDSHAKE_TIMEOUT_SECONDS` (10) and `_STOP_POLL_TIMEOUT_SECONDS`
+/// (10). Matching those bounds (the v2.1 10s wall) raced SIGKILL against a
+/// live `sov daemon start`: the CLI had already detached the real daemon
+/// (`start_new_session=True` / `DETACHED_PROCESS`) and was still inside
+/// `_wait_for_handshake`, so killing the CLI tree left the grandchild +
+/// handshake behind (F-029f9c24). A longer cap lets a failed start return
+/// and `_remove_handshake()` instead of racing the kill; the timeout path
+/// still reaps via the handshake pid if the CLI never returns.
+pub const SUBPROCESS_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// Apply the portable subprocess envelope: `kill_on_drop`, a new process
 /// group (so timeout can reap grandchildren), piped stdio, and cwd pinned
@@ -53,6 +60,10 @@ fn configure_daemon_command(cmd: &mut Command) {
 /// Kill a spawned `sov daemon` child and its process group. `start_kill`
 /// covers the direct child; the group/tree kill covers grandchildren the
 /// CLI may have spawned before we timed out.
+///
+/// This does **not** reap a daemon that already `setsid`/`DETACHED_PROCESS`'d
+/// itself — that pid lives in a different group and is tracked only via
+/// `.sov/daemon.json`. See [`reap_handshake_daemon_at`].
 fn kill_process_tree(pid: u32) {
     #[cfg(unix)]
     {
@@ -70,6 +81,63 @@ fn kill_process_tree(pid: u32) {
             .stderr(Stdio::null())
             .status();
     }
+}
+
+/// Signal one pid (the process, not `-{pid}` the group).
+///
+/// Needed for the post-`os.fork()` daemon: handshake `pid` is the grandchild,
+/// whose PGID is the (already-exited) intermediate parent, so
+/// `kill -KILL -handshake_pid` is ESRCH. Windows `taskkill /T` still covers
+/// that pid's remaining children.
+fn kill_pid(pid: u32) {
+    #[cfg(unix)]
+    {
+        let _ = std::process::Command::new("kill")
+            .args(["-KILL", &pid.to_string()])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+    #[cfg(windows)]
+    {
+        kill_process_tree(pid);
+    }
+}
+
+/// Best-effort pid from `{path}` — loose JSON so a schema-mismatch handshake
+/// still names the process we have to reap.
+fn handshake_pid_at(path: &Path) -> Option<u32> {
+    let contents = std::fs::read_to_string(path).ok()?;
+    let value: serde_json::Value = serde_json::from_str(&contents).ok()?;
+    let pid = value.get("pid")?.as_u64()?;
+    u32::try_from(pid).ok()
+}
+
+/// On `sov daemon start` timeout, reap the detached grandchild named by the
+/// handshake rather than only the CLI process group (F-029f9c24).
+///
+/// Skips when `pid` is unchanged from `prior_pid` so a hang *before* spawn
+/// cannot SIGKILL an already-running external daemon whose handshake we
+/// merely observed.
+fn reap_handshake_daemon_at(path: &Path, prior_pid: Option<u32>) {
+    let Some(pid) = handshake_pid_at(path) else {
+        return;
+    };
+    if prior_pid == Some(pid) {
+        return;
+    }
+    kill_pid(pid);
+    kill_process_tree(pid);
+}
+
+fn is_timeout_error(result: &Result<Output, ShellError>) -> bool {
+    matches!(
+        result,
+        Err(ShellError::SubprocessFailed {
+            exit_code: -1,
+            stderr
+        }) if stderr.contains("did not respond")
+    )
 }
 
 /// Best-effort liveness probe used by the timeout-kill regression.
@@ -109,6 +177,32 @@ async fn run_with_timeout(cmd: &mut Command) -> Result<Output, ShellError> {
     run_with_timeout_inner(cmd, SUBPROCESS_TIMEOUT)
         .await
         .0
+}
+
+/// Start-specific timeout wrapper: after the CLI tree is killed, reap the
+/// detached daemon named by `{handshake_path}` unless that pid pre-existed
+/// the spawn attempt.
+async fn run_start_with_timeout(
+    cmd: &mut Command,
+    handshake_path: &Path,
+    prior_pid: Option<u32>,
+) -> Result<Output, ShellError> {
+    run_start_with_timeout_inner(cmd, SUBPROCESS_TIMEOUT, handshake_path, prior_pid)
+        .await
+        .0
+}
+
+async fn run_start_with_timeout_inner(
+    cmd: &mut Command,
+    bound: Duration,
+    handshake_path: &Path,
+    prior_pid: Option<u32>,
+) -> (Result<Output, ShellError>, Option<u32>) {
+    let (result, pid) = run_with_timeout_inner(cmd, bound).await;
+    if is_timeout_error(&result) {
+        reap_handshake_daemon_at(handshake_path, prior_pid);
+    }
+    (result, pid)
 }
 
 /// Inner seam — accepts an explicit duration so tests can drive timeouts on a
@@ -204,7 +298,11 @@ pub async fn daemon_start_subprocess(
         cmd.args(["--network", net]);
     }
 
-    let output = run_with_timeout(&mut cmd).await?;
+    // Snapshot the handshake pid *before* spawn so a timeout cannot reap an
+    // external daemon whose file we merely observed (hang-before-spawn).
+    let handshake_path = config::default_config_path();
+    let prior_pid = handshake_pid_at(&handshake_path);
+    let output = run_start_with_timeout(&mut cmd, &handshake_path, prior_pid).await?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
@@ -385,6 +483,7 @@ fn extract_config(value: &serde_json::Value) -> Result<DaemonConfig, ShellError>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
     use std::process::ExitStatus;
 
     fn make_output(code: i32, stdout: &str, stderr: &str) -> Output {
@@ -433,6 +532,72 @@ mod tests {
         #[cfg(unix)]
         {
             Command::new("true")
+        }
+    }
+
+    /// Detached grandchild matching `sov daemon start`: new session / process
+    /// group so a CLI-tree `kill -KILL -pid` / `taskkill /T` cannot reap it.
+    fn spawn_detached_grandchild() -> (u32, std::process::Child) {
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::CommandExt;
+            const DETACHED_PROCESS: u32 = 0x0000_0008;
+            const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+            const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+            let child = std::process::Command::new("cmd")
+                .args(["/C", "ping", "-n", "30", "127.0.0.1"])
+                .creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()
+                .expect("spawn detached grandchild");
+            wait_until_alive(child.id());
+            (child.id(), child)
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::CommandExt;
+            let child = std::process::Command::new("sleep")
+                .arg("30")
+                .process_group(0)
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()
+                .expect("spawn detached grandchild");
+            wait_until_alive(child.id());
+            (child.id(), child)
+        }
+    }
+
+    fn wait_until_alive(pid: u32) {
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while std::time::Instant::now() < deadline && !pid_is_alive(pid) {
+            std::thread::sleep(Duration::from_millis(20));
+        }
+    }
+
+    fn write_handshake(path: &Path, pid: u32) {
+        let body = format!(
+            r#"{{
+            "schema_version": 1,
+            "pid": {pid},
+            "port": 9,
+            "token": "t",
+            "network": "testnet",
+            "readonly": true,
+            "ipc_version": 1,
+            "started_iso": "2026-05-01T00:00:00Z"
+        }}"#
+        );
+        std::fs::write(path, body).unwrap();
+    }
+
+    /// Best-effort cleanup so a failed assertion does not leak a 30s ping/sleep.
+    struct PidGuard(u32);
+    impl Drop for PidGuard {
+        fn drop(&mut self) {
+            kill_pid(self.0);
+            kill_process_tree(self.0);
         }
     }
 
@@ -581,15 +746,91 @@ mod tests {
     }
 
     #[test]
-    fn subprocess_timeout_kills_the_child() {
-        // F-a0203bc4: the timeout seam must actually terminate the child,
-        // not just return exit_code == -1 while leaving `sov daemon start`
-        // running. Drive the real seam, then assert the captured pid is dead.
+    fn subprocess_timeout_exceeds_cli_handshake_wait() {
+        // F-029f9c24: Python `_START_HANDSHAKE_TIMEOUT_SECONDS = 10`. The
+        // shell bound must be strictly larger so a failed `sov daemon start`
+        // can return and `_remove_handshake()` instead of racing SIGKILL.
+        assert!(
+            SUBPROCESS_TIMEOUT > Duration::from_secs(10),
+            "SUBPROCESS_TIMEOUT ({SUBPROCESS_TIMEOUT:?}) must exceed CLI handshake wait (10s)"
+        );
+    }
+
+    #[test]
+    fn subprocess_timeout_kills_detached_handshake_grandchild() {
+        // F-029f9c24: replaces the F-a0203bc4 ping/sleep in-group pin. The
+        // production start tree detaches the real daemon before waiting on
+        // handshake; killing the CLI group leaves that grandchild alive.
+        // Drive the start-timeout seam against a detached grandchild named
+        // by a temp handshake — both CLI pid and handshake pid must die.
+        let tmp = tempfile::TempDir::new().unwrap();
+        let handshake = tmp.path().join("daemon.json");
+
+        let (grandchild_pid, _grandchild) = spawn_detached_grandchild();
+        let _reap_grandchild = PidGuard(grandchild_pid);
+        write_handshake(&handshake, grandchild_pid);
+        assert!(
+            pid_is_alive(grandchild_pid),
+            "fixture grandchild must be alive before the seam"
+        );
+
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
-        let (result, pid) = runtime.block_on(async {
+        let (result, cli_pid) = runtime.block_on(async {
+            let mut cmd = hanging_command();
+            run_start_with_timeout_inner(
+                &mut cmd,
+                Duration::from_millis(200),
+                &handshake,
+                None,
+            )
+            .await
+        });
+        match result {
+            Err(ShellError::SubprocessFailed { exit_code, .. }) => {
+                assert_eq!(exit_code, -1);
+            }
+            other => panic!("expected timeout SubprocessFailed, got {other:?}"),
+        }
+        let cli_pid = cli_pid.expect("timeout path must report the child pid");
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(3);
+        while std::time::Instant::now() < deadline
+            && (pid_is_alive(cli_pid) || pid_is_alive(grandchild_pid))
+        {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(
+            !pid_is_alive(cli_pid),
+            "CLI child pid {cli_pid} must be dead after timeout kill"
+        );
+        assert!(
+            !pid_is_alive(grandchild_pid),
+            "detached handshake pid {grandchild_pid} must be dead after start-timeout reap"
+        );
+    }
+
+    #[test]
+    fn cli_tree_timeout_does_not_reap_detached_grandchild() {
+        // Fixture-validity pin for F-029f9c24: a handshake pid outside the
+        // CLI process group must survive `run_with_timeout_inner` (tree kill
+        // only). If this assertion fails, the grandchild is still in-group
+        // and `subprocess_timeout_kills_detached_handshake_grandchild`
+        // would go green without exercising handshake reap.
+        let tmp = tempfile::TempDir::new().unwrap();
+        let handshake = tmp.path().join("daemon.json");
+
+        let (grandchild_pid, _grandchild) = spawn_detached_grandchild();
+        let _reap_grandchild = PidGuard(grandchild_pid);
+        write_handshake(&handshake, grandchild_pid);
+
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let (result, cli_pid) = runtime.block_on(async {
             let mut cmd = hanging_command();
             run_with_timeout_inner(&mut cmd, Duration::from_millis(200)).await
         });
@@ -599,17 +840,36 @@ mod tests {
             }
             other => panic!("expected timeout SubprocessFailed, got {other:?}"),
         }
-        let pid = pid.expect("timeout path must report the child pid");
-        // Reap window: start_kill + process-tree kill + wait(2s) already ran
-        // inside the seam. Poll briefly in case the OS is slow to drop the
-        // tasklist/kill-0 view.
+        let cli_pid = cli_pid.expect("timeout path must report the child pid");
+
         let deadline = std::time::Instant::now() + Duration::from_secs(3);
-        while std::time::Instant::now() < deadline && pid_is_alive(pid) {
+        while std::time::Instant::now() < deadline && pid_is_alive(cli_pid) {
             std::thread::sleep(Duration::from_millis(50));
         }
         assert!(
-            !pid_is_alive(pid),
-            "child pid {pid} must be dead after timeout kill"
+            !pid_is_alive(cli_pid),
+            "CLI child pid {cli_pid} must be dead after tree kill"
+        );
+        assert!(
+            pid_is_alive(grandchild_pid),
+            "detached handshake pid {grandchild_pid} must still be alive after CLI-tree-only kill"
+        );
+    }
+
+    #[test]
+    fn handshake_reap_skips_preexisting_pid() {
+        // Hang-before-spawn must not SIGKILL an external daemon whose
+        // handshake we merely observed.
+        let tmp = tempfile::TempDir::new().unwrap();
+        let handshake = tmp.path().join("daemon.json");
+        let (grandchild_pid, _grandchild) = spawn_detached_grandchild();
+        let _reap_grandchild = PidGuard(grandchild_pid);
+        write_handshake(&handshake, grandchild_pid);
+
+        reap_handshake_daemon_at(&handshake, Some(grandchild_pid));
+        assert!(
+            pid_is_alive(grandchild_pid),
+            "pre-existing handshake pid {grandchild_pid} must not be killed"
         );
     }
 
