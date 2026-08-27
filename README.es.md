@@ -229,24 +229,6 @@ La capa Tauri inicia automáticamente un demonio de solo lectura al iniciarse y 
 
 Consulte [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) para obtener la especificación completa.
 
-<p align="center">
-  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
-  <br>
-  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
-  <br>
-  <em>Game Shell — passive real-time display of the active game.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
-  <br>
-  <em>Settings — daemon network selection and configuration.</em>
-</p>
-
 El visor de auditoría incluye tres vistas:
 
 - **`/audit`** — Visor de pruebas anclado a XRPL. Lista de juegos que se puede contraer, estado de anclaje por ronda, "Verificar todas las rondas" ejecuta un nuevo cálculo de la prueba y una búsqueda en la cadena. La vista del auditor: confirma que un juego se ejecutó de manera honesta sin leer JSON sin formato.

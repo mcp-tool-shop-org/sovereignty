@@ -228,24 +228,6 @@ Tauri 壳在启动时会自动启动一个只读守护进程，并在退出时�
 
 有关完整的协议，请参阅 [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md)。
 
-<p align="center">
-  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
-  <br>
-  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
-  <br>
-  <em>Game Shell — passive real-time display of the active game.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
-  <br>
-  <em>Settings — daemon network selection and configuration.</em>
-</p>
-
 审计查看器包含三个视图：
 
 - **`/audit`** — 基于 XRPL 的证明查看器。可折叠的每个游戏列表，每个回合的锚定状态，"验证所有回合" 会运行本地证明重新计算 + 链查找。审计员的视图：确认游戏是否诚实运行，而无需读取原始 JSON。

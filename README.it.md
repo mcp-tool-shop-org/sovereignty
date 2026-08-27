@@ -229,24 +229,6 @@ La shell Tauri avvia automaticamente un demone in sola lettura all'avvio e lo in
 
 Consulta [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) per il contratto completo.
 
-<p align="center">
-  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
-  <br>
-  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
-  <br>
-  <em>Game Shell — passive real-time display of the active game.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
-  <br>
-  <em>Settings — daemon network selection and configuration.</em>
-</p>
-
 L'Audit Viewer include tre visualizzazioni:
 
 - **`/audit`** — Visualizzatore di prove ancorate a XRPL. Elenco dei giochi collassabile, stato dell'ancora per ogni round, "Verifica tutti i round" esegue un calcolo locale delle prove + ricerca nella blockchain. La visualizzazione dell'auditore: conferma che un gioco è stato eseguito onestamente senza leggere il JSON grezzo.
