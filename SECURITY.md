@@ -49,6 +49,13 @@ stored locally in `.sov/wallet_seed.txt`. This file contains your seed.
 ## Environment variables
 
 The CLI reads wallet config from `.sov/wallet_seed.txt` by default.
+
+**Mainnet prefers the OS keychain** (via the `keyring` package: Windows
+Credential Manager, macOS Keychain, or libsecret). Store with
+`XRPL_SEED=<seed> sov wallet --network mainnet` — the seed is never printed.
+Plaintext `.sov/wallet_seed.txt` remains for testnet/devnet only; do not use
+it as the primary mainnet store. CI/sandbox hosts without an OS secret store
+get `KEYRING_UNAVAILABLE` rather than a silent plaintext write.
 The optional `XRPL_SEED` environment variable can override the on-disk seed
 for ephemeral or CI-style use.
 

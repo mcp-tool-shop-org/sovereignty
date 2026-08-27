@@ -27,6 +27,7 @@ classifiers = [
 dependencies = [
     "typer>=0.9",
     "rich>=13.0",
+    "keyring>=25,<27",
 ]
 
 [project.optional-dependencies]
