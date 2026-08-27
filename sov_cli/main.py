@@ -28,12 +28,13 @@ from sov_cli.errors import (
     invalid_action_error,
     invalid_game_id_error,
     invalid_network_error,
+    keyring_unavailable_error,
     mainnet_faucet_rejected_error,
     market_error,
     no_active_game_error,
     no_game_error,
-    nothing_to_undo_error,
     no_wallet_error,
+    nothing_to_undo_error,
     player_count_error,
     player_not_found_error,
     proof_file_error,
@@ -114,6 +115,11 @@ from sov_engine.rules.treaty_table import (
     treaty_keep as engine_treaty_keep,
 )
 from sov_engine.serialize import canonical_json, game_state_snapshot
+from sov_engine.wallet_seed import (
+    KeyringUnavailableError,
+    resolve_wallet_seed,
+    set_mainnet_seed,
+)
 
 
 def _version_callback(value: bool) -> None:
@@ -2011,21 +2017,14 @@ def anchor(
             raise typer.Exit(0)
 
     # Resolve wallet seed once — both paths need it. Precedence:
-    # explicit ``--signer-file`` (operator override) > ``.sov/wallet_seed.txt``
-    # (the file ``sov wallet`` writes; the canonical convention surfaced
-    # by ``sov doctor`` and the ``sov game-end --anchor`` path) > env var.
-    # Wave 10 CLI-D-bis-001: previously this command only checked
-    # signer_file + env var, so users who ran ``sov wallet`` then
-    # ``sov anchor`` saw CONFIG_NO_WALLET despite the wallet file existing.
-    seed: str | None = None
-    if signer_file and signer_file.exists():
-        seed = signer_file.read_text(encoding="utf-8").strip()
-    if not seed:
-        wallet_file = SAVE_DIR / "wallet_seed.txt"
-        if wallet_file.exists():
-            seed = wallet_file.read_text(encoding="utf-8").strip()
-    if not seed:
-        seed = os.environ.get(seed_env)
+    # ``--signer-file`` > OS keychain (mainnet only) > ``.sov/wallet_seed.txt``
+    # > env var. JOB-025: mainnet prefers keyring over plaintext.
+    seed = resolve_wallet_seed(
+        network=resolved_network.value,
+        signer_file=signer_file if signer_file and signer_file.exists() else None,
+        seed_env=seed_env,
+        wallet_file=SAVE_DIR / "wallet_seed.txt",
+    )
     if not seed:
         _fail(no_wallet_error(seed_env))
 
@@ -2308,9 +2307,9 @@ def wallet(
         typer.Option(
             "--network",
             help=(
-                "XRPL network for the wallet: testnet (default) or devnet. "
-                "Mainnet has no faucet — set XRPL_SEED to a funded mainnet seed "
-                "instead of running this."
+                "XRPL network: testnet (default), devnet, or mainnet. "
+                "Mainnet has no faucet — with XRPL_SEED set, stores the seed "
+                "in the OS keychain (never prints it)."
             ),
         ),
     ] = None,
@@ -2325,9 +2324,26 @@ def wallet(
     )
 
     if resolved_network == XRPLNetwork.MAINNET:
-        # Mainnet has no faucet; surface the structured error directly so the
-        # operator gets a clean code/message/hint instead of a raw exception.
-        _fail(mainnet_faucet_rejected_error())
+        # Mainnet has no faucet. If XRPL_SEED is set, store it in the OS
+        # keychain (never print the seed). Do not write plaintext to .sov/.
+        env_seed = os.environ.get("XRPL_SEED", "").strip()
+        if not env_seed:
+            _fail(mainnet_faucet_rejected_error())
+        try:
+            set_mainnet_seed(env_seed)
+        except KeyringUnavailableError as exc:
+            _fail(keyring_unavailable_error(str(exc)))
+        console.print(
+            Panel(
+                "  Mainnet seed stored in the OS keychain.\n\n"
+                "  [dim]Production uses Windows Credential Manager / macOS "
+                "Keychain / libsecret when present.\n"
+                "  Anchor with `sov anchor --network mainnet` "
+                "(keyring preferred over `.sov/wallet_seed.txt`).[/dim]",
+                title="Mainnet keychain",
+            )
+        )
+        raise typer.Exit(0)
 
     network_label = resolved_network.value.capitalize()
     console.print(f"\n  Creating a {network_label} wallet...")
@@ -3082,20 +3098,22 @@ def game_end(
         seed_val = state.config.seed
         game_id = proof.get("game_id", f"s{seed_val}")
 
-        wallet_file = SAVE_DIR / "wallet_seed.txt"
-        wallet_seed: str | None = None
-        if wallet_file.exists():
-            wallet_seed = wallet_file.read_text(encoding="utf-8").strip()
-        else:
-            wallet_seed = os.environ.get("XRPL_SEED")
+        resolved_network = _resolve_network(None)
+        wallet_seed = resolve_wallet_seed(
+            network=resolved_network.value,
+            seed_env="XRPL_SEED",
+            wallet_file=SAVE_DIR / "wallet_seed.txt",
+        )
 
         if not wallet_seed:
             console.print(
                 "\n  [yellow]No wallet seed found for anchoring.[/yellow]"
                 "\n  [dim]Pick one of:[/dim]"
                 "\n  [dim]  - Generate a Testnet wallet with `sov wallet`.[/dim]"
+                "\n  [dim]  - Mainnet: `XRPL_SEED=<seed> sov wallet --network mainnet` "
+                "(OS keychain).[/dim]"
                 "\n  [dim]  - Set `XRPL_SEED` in your environment.[/dim]"
-                "\n  [dim]  - Save a seed at `.sov/wallet_seed.txt`.[/dim]"
+                "\n  [dim]  - Save a testnet seed at `.sov/wallet_seed.txt`.[/dim]"
                 "\n  [dim]The final proof is already saved locally — anchoring is optional.[/dim]"
             )
         else:
@@ -3103,7 +3121,6 @@ def game_end(
             if not pending:
                 console.print("\n  [dim]No pending anchors to flush.[/dim]")
             else:
-                resolved_network = _resolve_network(None)
 
                 def _sort_key(round_key: str) -> tuple[int, int]:
                     if round_key == "FINAL":

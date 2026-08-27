@@ -458,9 +458,24 @@ def mainnet_faucet_rejected_error() -> SovError:
         code="MAINNET_FAUCET_REJECTED",
         message="Mainnet has no faucet.",
         hint=(
-            "Set `XRPL_SEED` to a funded mainnet wallet, "
-            "or run `sov wallet --network testnet` to generate a play-money "
-            "Testnet wallet instead."
+            "Store a funded mainnet seed in the OS keychain with "
+            "`XRPL_SEED=<seed> sov wallet --network mainnet` "
+            "(never prints the seed), or set `XRPL_SEED` for a one-shot. "
+            "For play money run `sov wallet --network testnet`."
+        ),
+    )
+
+
+def keyring_unavailable_error(detail: str) -> SovError:
+    """OS keychain cannot store the mainnet seed on this host."""
+    return SovError(
+        code="KEYRING_UNAVAILABLE",
+        message=f"OS keychain unavailable: {detail}.",
+        hint=(
+            "Install/configure an OS secret store (macOS Keychain, Windows "
+            "Credential Manager, or libsecret), then retry "
+            "`XRPL_SEED=<seed> sov wallet --network mainnet`. "
+            "Do not write the mainnet seed to `.sov/wallet_seed.txt`."
         ),
     )
 

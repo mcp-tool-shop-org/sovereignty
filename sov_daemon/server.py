@@ -992,34 +992,25 @@ def _record_anchors(game_id: str, round_to_txid: dict[str, str]) -> None:
 def _load_seed(state: Any) -> str | None:
     """Resolve the daemon's wallet seed at request time.
 
-    Order matches the CLI: ``signer_file`` (if set and non-empty) then
-    ``.sov/wallet_seed.txt`` then ``os.environ[seed_env]``. Returns None
+    Order matches the CLI: ``signer_file`` > OS keychain (mainnet) >
+    ``.sov/wallet_seed.txt`` > ``os.environ[seed_env]``. Returns None
     if none produce a non-empty string. Per spec 9, the seed is held in
-    memory only and never written to ``.sov/daemon.json``.
+    memory only and never written to ``.sov/daemon.json``. Never logs the
+    seed value.
     """
-    import os
+    from sov_engine.wallet_seed import resolve_wallet_seed
 
     signer_file: Path | None = state.signer_file
     seed_env: str | None = state.seed_env
+    network = getattr(state, "network", None)
+    network_name = getattr(network, "value", None) or str(network or "testnet")
 
-    if signer_file is not None:
-        try:
-            text = signer_file.read_text(encoding="utf-8").strip()
-        except OSError:
-            text = ""
-        if text:
-            return text
-    wallet_file = save_root() / "wallet_seed.txt"
-    try:
-        text = wallet_file.read_text(encoding="utf-8").strip()
-    except OSError:
-        text = ""
-    if text:
-        return text
-    if seed_env:
-        value = os.environ.get(seed_env, "").strip()
-        return value or None
-    return None
+    return resolve_wallet_seed(
+        network=network_name,
+        signer_file=signer_file,
+        seed_env=seed_env,
+        wallet_file=save_root() / "wallet_seed.txt",
+    )
 
 
 # ---------------------------------------------------------------------------
