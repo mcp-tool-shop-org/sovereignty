@@ -46,7 +46,7 @@ from sov_cli.errors import (
     upgrade_unavailable_error,
     wallet_error,
 )
-from sov_engine.hashing import make_round_proof, save_proof, verify_proof
+from sov_engine.hashing import make_round_proof, mark_final_proof, save_proof, verify_proof
 from sov_engine.io_utils import (
     GameSummary,
     add_pending_anchor,
@@ -3037,7 +3037,7 @@ def game_end(
 
     # Generate FINAL proof
     proof = make_round_proof(state)
-    proof["final"] = True
+    mark_final_proof(proof)
     active_id = f"s{state.config.seed}"
     out_dir = proofs_dir(active_id)
     out_dir.mkdir(parents=True, exist_ok=True)
