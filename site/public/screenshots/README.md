@@ -30,7 +30,7 @@ macOS title bar). Dark mode only (v2.1 ships dark only — no light theme).
 
 ```bash
 # 1. Build / run the Tauri shell
-cd /Volumes/T9-Shared/AI/sovereignty
+cd "$(git rev-parse --show-toplevel)"  # sovereignty clone root
 pip install -e '.[xrpl,daemon]'
 cd app && npm install && cd ..
 cargo build --manifest-path app/src-tauri/Cargo.toml
@@ -43,7 +43,7 @@ sov play campfire_v1
 sov anchor --network testnet
 
 # 3. Start the dev shell (auto-starts daemon in readonly mode)
-cd /Volumes/T9-Shared/AI/sovereignty
+cd "$(git rev-parse --show-toplevel)"  # sovereignty clone root
 npm --prefix app run tauri dev
 
 # 4. Capture each view at 1280×800 full window (dark mode), macOS canonical.
