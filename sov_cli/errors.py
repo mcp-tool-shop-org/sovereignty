@@ -875,3 +875,15 @@ def daemon_anchor_failed_error(exc_type: str, detail: str) -> SovError:
             "`sov anchor` to retry from the CLI."
         ),
     )
+
+def nothing_to_undo_error() -> SovError:
+    """No last-turn checkpoint available to restore."""
+    return SovError(
+        code="STATE_NOTHING_TO_UNDO",
+        message="Nothing to undo — no last-turn checkpoint.",
+        hint=(
+            "Take a turn with `sov turn` first. Undo only reverses the last "
+            "`sov turn` (not `sov end-round` or other commands)."
+        ),
+    )
+

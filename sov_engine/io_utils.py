@@ -154,6 +154,16 @@ def state_file(game_id: str) -> Path:
     return games_dir() / game_id / "state.json"
 
 
+def undo_state_file(game_id: str) -> Path:
+    """Return ``.sov/games/<game-id>/state.undo.json``. Validates ``game_id``.
+
+    Last-turn undo buffer only — one checkpoint, overwritten by the next
+    ``sov turn``. Not a full history journal.
+    """
+    _validate_game_id(game_id)
+    return games_dir() / game_id / "state.undo.json"
+
+
 def rng_seed_file(game_id: str) -> Path:
     """Return ``.sov/games/<game-id>/rng_seed.txt``. Validates ``game_id``."""
     _validate_game_id(game_id)
