@@ -74,10 +74,8 @@ describe("AnchorStatusResponse wire-shape regression (WEB-UI-B-003)", () => {
   });
 
   it("rejects pre-fix legacy shape `{game_id, round, status, ...}`", () => {
-    // Compile-time pin: the TS interface MUST NOT declare these legacy keys.
-    // If a refactor accidentally restored them, this test still passes at
-    // runtime (extra fields parse fine) BUT a parallel type-level assertion
-    // ensures the field name `status` is not on AnchorStatusResponse.
+    // The pre-fix wire used `status` / `game_id` / `explorer_url`.
+    // Daemon fixtures must not carry those keys.
     const legacy = {
       game_id: "s42", // not on AnchorStatusResponse anymore
       round: "3",
@@ -93,9 +91,14 @@ describe("AnchorStatusResponse wire-shape regression (WEB-UI-B-003)", () => {
     // fields.
     const bag: Record<string, unknown> = legacy;
     expect(bag.status).toBe("anchored"); // still in the bag
-    expect("status" in ({} as AnchorStatusResponse)).toBe(false);
-    expect("game_id" in ({} as AnchorStatusResponse)).toBe(false);
-    expect("explorer_url" in ({} as AnchorStatusResponse)).toBe(false);
+    // Runtime pin on the daemon fixtures, not `{} as T` (that is always
+    // an empty object at runtime and cannot fail if the type drifts).
+    for (const fixture of [anchoredFixture, pendingFixture, missingFixture]) {
+      expect("status" in fixture).toBe(false);
+      expect("game_id" in fixture).toBe(false);
+      expect("explorer_url" in fixture).toBe(false);
+      expect("anchor_status" in fixture).toBe(true);
+    }
   });
 
   it("Audit.tsx rendering branches (anchored / pending / missing) read anchor_status", () => {
