@@ -212,34 +212,25 @@ jobs:
             bundle-base: app/src-tauri/target/release/bundle
             artifacts: |
               msi/Sovereignty_*_x64_en-US.msi
-          # Linux ships .deb (Debian/Ubuntu native) at v2.1 — NOT AppImage.
-          # Why .deb and not AppImage: ``linuxdeploy`` (Tauri's AppImage
-          # bundler) is itself an AppImage, and Ubuntu 24.04 noble CI
-          # runners can't mount FUSE-based AppImages even with
-          # libfuse2t64 installed. ``APPIMAGE_EXTRACT_AND_RUN=1`` doesn't
-          # propagate through Tauri's spawn-linuxdeploy chain. The fix
-          # path with the highest reliability and lowest CI complexity
-          # is to bypass linuxdeploy entirely by emitting a .deb — Tauri
-          # 2 builds .deb cleanly without FUSE. tauri-apps/tauri#15106
-          # documents this as the upstream-recommended workaround. .deb
-          # covers Debian + Ubuntu + derivatives (the bulk of the Linux
-          # desktop audience); AppImage support can return in v2.2 when
-          # the upstream FUSE issue is resolved or via tauri-action.
+          # Linux ships .deb AND AppImage. Keep the .deb glob so the
+          # existing Debian/Ubuntu path is unchanged. AppImage is additive
+          # (JOB-027). tauri-bundler 2.6+ extract-and-run means linuxdeploy
+          # does not need FUSE. NO_STRIP=true avoids old strip vs .relr.dyn.
+          # Do not add OS-level signing here (JOB-028).
           - os: ubuntu-latest
             target: linux-x64
             rust-targets: ""
-            tauri-args: "--bundles deb"
+            tauri-args: "--bundles deb,appimage"
             bundle-base: app/src-tauri/target/release/bundle
-            artifacts: |
-              deb/*_amd64.deb
+            artifacts: deb/*_amd64.deb appimage/*_amd64.AppImage
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       # Tauri 2 webview deps (Linux only). webkit2gtk-4.1 + libsoup-3.0
-      # are the v2 line; libssl-dev satisfies reqwest. .deb bundling
-      # does not require libfuse2 (that was an AppImage/linuxdeploy
-      # requirement); the .deb path uses dpkg-deb only.
+      # are the v2 line; libssl-dev satisfies reqwest. .deb still uses
+      # dpkg-deb only. AppImage uses linuxdeploy extract-and-run (no
+      # libfuse2). Do not install FUSE just to bundle.
       - name: Install Tauri Linux deps
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -264,6 +255,9 @@ jobs:
 
       - name: Build Tauri app
         shell: bash
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          NO_STRIP: "true"
         run: |
           set -euo pipefail
           npm --prefix app run tauri build -- ${{ matrix.tauri-args }}
@@ -280,13 +274,18 @@ jobs:
           set -euo pipefail
           VERSION=${GITHUB_REF_NAME#v}
           mkdir -p dist
-          for src in $(ls ${{ matrix.bundle-base }}/${{ matrix.artifacts }} 2>/dev/null); do
-            ext="${src##*.}"
-            outname="sovereignty-app-${VERSION}-${{ matrix.target }}.${ext}"
-            cp "$src" "dist/${outname}"
-            echo "Staged: dist/${outname}"
+          shopt -s nullglob
+          # matrix.artifacts may list one or more relative globs (deb + AppImage).
+          for glob in ${{ matrix.artifacts }}; do
+            for src in ${{ matrix.bundle-base }}/$glob; do
+              ext="${src##*.}"
+              outname="sovereignty-app-${VERSION}-${{ matrix.target }}.${ext}"
+              cp "$src" "dist/${outname}"
+              echo "Staged: dist/${outname}"
+            done
           done
           ls -la dist/
+          [ "$(ls -A dist)" ] || { echo "::error::no Tauri artifacts staged"; exit 1; }
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4

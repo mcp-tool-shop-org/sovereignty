@@ -188,7 +188,8 @@ v2.2.1 ships pre-built binaries on the [GitHub Releases page](https://github.com
 
 - **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
 - **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / derivatives. Install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. No AppImage build yet (upstream `linuxdeploy` / Ubuntu 24.04 FUSE interaction).
+- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / derivatives. Install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`.
+- **Linux (x64, AppImage):** not on v2.2.1. `publish.yml` emits `sovereignty-app-<tag>-linux-x64.AppImage` on the next tagged release. `chmod +x` then run.
 
 You also need the Python daemon backing the app: `pip install 'sovereignty-game[daemon]'==2.2.1`.
 
