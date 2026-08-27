@@ -12,11 +12,11 @@
 //
 // Stage 9-D Theme 3 (WEB-UI-D-008/D-009/D-010):
 //   - sticky-top + z-index 100 (CSS) so the banner doesn't scroll out
-//   - auto-dismiss when daemon status flips back to "running"
+//   - auto-dismiss when daemon status flips back to running after a loss
 //   - explicit close (×) button preserved as redundant escape
 //   - slide-in + fade animation via CSS, prefers-reduced-motion honored
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDaemon } from "../hooks/useDaemon";
 import styles from "./DaemonDisconnectedBanner.module.css";
 
@@ -32,12 +32,17 @@ export function DaemonDisconnectedBanner() {
     };
   }, []);
 
-  // WEB-UI-D-009: auto-dismiss on reconnect. When the daemon SSE re-establishes
-  // the provider's status flips back to "running" — the banner is no longer
-  // useful, so unmount it. Manual dismiss (Reconnect / ×) preserved as
-  // redundant escape.
+  // WEB-UI-D-009: auto-dismiss on reconnect. SSE give-up
+  // (daemonConnectionLost) only fires while status is already running,
+  // so treating status===running as reconnect would hide the banner
+  // the moment it appears. Dismiss only on a transition into running.
+  const prevStatusRef = useRef(status);
   useEffect(() => {
-    if (status === "running" && visible) setVisible(false);
+    const prev = prevStatusRef.current;
+    prevStatusRef.current = status;
+    if (visible && prev !== "running" && status === "running") {
+      setVisible(false);
+    }
   }, [status, visible]);
 
   const onReconnect = useCallback(() => {
