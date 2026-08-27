@@ -35,10 +35,10 @@ logger = logging.getLogger("sov_engine")
 
 PROOF_VERSION = 2
 
-#: Current ``anchors.json`` schema version. Stage 7-B amend (BACKEND-B-002)
-#: introduces the ``{"schema_version": 1, "anchors": {...}}`` wrapper.
-#: Bare-dict files written by pre-Stage-7-B binaries are migrated on first
-#: read by ``_read_anchors``.
+#: Current ``anchors.json`` schema version. Canonical wrap is
+#: ``{"schema_version": 1, "entries": {...}}`` (CLI). Engine historically
+#: wrote ``anchors``; both inner keys are accepted on read. Bare-dict
+#: files are migrated on first read by ``_read_anchors``.
 _ANCHORS_SCHEMA_VERSION = 1
 
 
@@ -199,11 +199,11 @@ def _round_key_from_proof(proof: dict[str, Any]) -> str:
 def _read_anchors(game_id: str) -> dict[str, str]:
     """Read ``anchors.json`` as ``{round_key: txid}``.
 
-    Stage 7-B amend (BACKEND-B-002) introduces the
-    ``{"schema_version": 1, "anchors": {...}}`` wrapper. Backward-compat:
-    bare-dict files written by pre-amend binaries are detected and migrated
-    on read — the wrapped form is written back atomically so subsequent
-    reads find the canonical shape.
+    Canonical wrap is ``{"schema_version": 1, "entries": {...}}``.
+    Legacy engine wraps used ``anchors`` as the inner key; both are
+    accepted on read. Bare-dict files written by pre-amend binaries are
+    detected and migrated on read so subsequent reads find the canonical
+    shape.
 
     Returns an empty dict when the file is absent, unreadable, or has an
     unrecognised schema version. Malformed reads are logged at WARNING
@@ -251,10 +251,12 @@ def _read_anchors(game_id: str) -> dict[str, str]:
         )
         return {}
 
-    inner = data.get("anchors", {})
+    inner = data.get("entries")
+    if not isinstance(inner, dict):
+        inner = data.get("anchors", {})
     if not isinstance(inner, dict):
         logger.warning(
-            "anchors.read.malformed path=%s reason=anchors-not-an-object "
+            "anchors.read.malformed path=%s reason=entries-not-an-object "
             "(treating as empty; proof_anchor_status will degrade to MISSING)",
             path,
         )
@@ -285,7 +287,7 @@ def _migrate_anchors_to_wrapped(path: Path, entries: dict[str, str]) -> None:
     """
     document: dict[str, Any] = {
         "schema_version": _ANCHORS_SCHEMA_VERSION,
-        "anchors": dict(sorted(entries.items())),
+        "entries": dict(sorted(entries.items())),
     }
     try:
         atomic_write_text(
@@ -307,6 +309,46 @@ def _migrate_anchors_to_wrapped(path: Path, entries: dict[str, str]) -> None:
         _ANCHORS_SCHEMA_VERSION,
         len(entries),
     )
+
+
+def record_anchors(game_id: str, round_to_txid: dict[str, str]) -> None:
+    """Merge ``round_to_txid`` into ``anchors.json`` without dropping prior rows.
+
+    Shared writer for CLI and daemon. Always persists the canonical wrap
+    ``{"schema_version": 1, "entries": {...}}``. Existing round keys not
+    in ``round_to_txid`` are kept (daemon flush must not erase earlier
+    txids). Keys in the update overlay the prior value for that round.
+    """
+    path = anchors_file(game_id)
+    existing = _read_anchors(game_id)
+    existing.update({str(k): str(v) for k, v in round_to_txid.items()})
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _migrate_anchors_to_wrapped(path, existing)
+
+
+def read_anchors_file(path: Path) -> dict[str, str]:
+    """Read an ``anchors.json`` path without requiring a game_id.
+
+    Same shape rules as ``_read_anchors`` (bare dict, ``entries``, or
+    legacy ``anchors`` inner key) but does not migrate on read — CLI
+    migrates on the next write.
+    """
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    if data.get("schema_version") is None:
+        return _coerce_anchor_entries(data)
+    inner = data.get("entries")
+    if not isinstance(inner, dict):
+        inner = data.get("anchors", {})
+    if not isinstance(inner, dict):
+        return {}
+    return _coerce_anchor_entries(inner)
 
 
 def proof_anchor_status(

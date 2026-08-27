@@ -242,11 +242,11 @@ def test_anchors_json_bare_dict_migrates_to_wrapped(
     status = proof_anchor_status(proof_path, transport)
     assert status == AnchorStatus.ANCHORED
 
-    # Disk shape after the read: wrapped, with schema_version + anchors.
+    # Disk shape after the read: wrapped, with schema_version + entries.
     rewritten = json.loads(bare_path.read_text(encoding="utf-8"))
     assert rewritten == {
         "schema_version": 1,
-        "anchors": {"1": "TX-LEGACY", "FINAL": "TX-FINAL"},
+        "entries": {"1": "TX-LEGACY", "FINAL": "TX-FINAL"},
     }
 
 

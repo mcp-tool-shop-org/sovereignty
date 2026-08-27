@@ -332,67 +332,23 @@ def _resolve_network(cli_flag: str | None) -> Any:
 def _read_anchors_entries(anchor_file: Path) -> dict[str, str]:
     """Read ``anchors.json`` and return the ``{round_key: txid}`` map.
 
-    Stage 7-B amend (CLI-B-002 + CLI-B-003): the on-disk file may be
-    either the v0 bare-dict shape (pre-v2.1) or the v1 wrapped shape
-    (``{"schema_version": 1, "entries": {...}}``). Both forms surface the
-    same map to the caller. The migration to v1 happens on the next
-    write, not on read — readers stay tolerant so v2.0 → v2.1 in-place
-    upgrades don't trip on existing operator state.
-
-    Returns empty on missing / unreadable / malformed-JSON / wrong shape.
-    Logs at WARNING for any non-empty failure mode so the operator has a
-    grep target if anchors silently disappear from a status panel.
+    Delegates to the shared engine reader (bare dict, ``entries``, or
+    legacy ``anchors`` inner key). CLI still migrates on write.
     """
-    if not anchor_file.exists():
-        return {}
-    try:
-        raw = json.loads(anchor_file.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError) as exc:
-        logger.warning(
-            "anchors.read.failed path=%s exc=%s detail=%s (treating as empty)",
-            anchor_file,
-            type(exc).__name__,
-            exc,
-        )
-        return {}
-    if not isinstance(raw, dict):
-        return {}
-    # Wrapped form: {"schema_version": 1, "entries": {round: txid}}.
-    if "schema_version" in raw and "entries" in raw:
-        entries = raw.get("entries", {})
-        if not isinstance(entries, dict):
-            return {}
-        return {str(k): str(v) for k, v in entries.items() if isinstance(v, str)}
-    # Bare-dict form (v0): treat as the entries map directly. Migration
-    # happens on next ``_record_anchor`` write.
-    return {str(k): str(v) for k, v in raw.items() if isinstance(v, str)}
+    from sov_engine.proof import read_anchors_file
+
+    return read_anchors_file(anchor_file)
 
 
 def _record_anchor(round_key: int | str, txid: str, game_id: str) -> None:
     """Persist an XRPL anchor txid keyed by round (or "FINAL") to anchors.json.
 
-    Stage 7-B amend (CLI-B-003): writes the v1 wrapped shape
-    ``{"schema_version": 1, "entries": {round: txid}}``. Reads both the
-    v0 bare-dict and v1 wrapped forms via ``_read_anchors_entries``, so a
-    v2.0 operator save migrates on the next anchor without manual
-    intervention.
-
-    Called after a successful ``transport.anchor()`` so subsequent
-    invocations can surface the explorer link.
+    Shared engine writer: canonical wrap is ``{"schema_version": 1,
+    "entries": {...}}``. Existing txids for other rounds are kept.
     """
-    pdir = proofs_dir(game_id)
-    pdir.mkdir(parents=True, exist_ok=True)
-    anchor_file = anchors_file(game_id)
-    anchors = _read_anchors_entries(anchor_file)
-    anchors[str(round_key)] = txid
-    document = {
-        "schema_version": ANCHORS_SCHEMA_VERSION,
-        "entries": dict(sorted(anchors.items())),
-    }
-    atomic_write_text(
-        anchor_file,
-        json.dumps(document, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
-    )
+    from sov_engine.proof import record_anchors
+
+    record_anchors(game_id, {str(round_key): txid})
 
 
 def _load_game() -> tuple[GameState, GameRng] | None:
