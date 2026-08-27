@@ -32,6 +32,7 @@ from sov_cli.errors import (
     market_error,
     no_active_game_error,
     no_game_error,
+    nothing_to_undo_error,
     no_wallet_error,
     player_count_error,
     player_not_found_error,
@@ -62,6 +63,7 @@ from sov_engine.io_utils import (
     rng_seed_file,
     set_active_game_id,
     state_file,
+    undo_state_file,
 )
 from sov_engine.io_utils import (
     _validate_game_id as _engine_validate_game_id,
@@ -289,14 +291,38 @@ def _has_any_saved_game() -> bool:
     return bool(list_saved_games())
 
 
-def _save_state(state: GameState) -> None:
-    """Persist game state to disk atomically (per-game subtree)."""
+def _save_state(state: GameState, *, keep_undo: bool = False) -> None:
+    """Persist game state to disk atomically (per-game subtree).
+
+    By default clears the last-turn undo checkpoint so intervening saves
+    (promise, deal, etc.) cannot be wiped by a stale ``sov undo``. Pass
+    ``keep_undo=True`` from ``turn`` after writing the checkpoint.
+    """
     game_id = f"s{state.config.seed}"
     target = state_file(game_id)
     target.parent.mkdir(parents=True, exist_ok=True)
     snapshot = game_state_snapshot(state)
     atomic_write_text(target, canonical_json(snapshot))
     logger.info("save_state path=%s round=%d", target, state.current_round)
+    if not keep_undo:
+        _clear_undo(game_id)
+
+
+def _checkpoint_undo(state: GameState) -> None:
+    """Write a last-turn undo checkpoint for the current loaded state."""
+    game_id = f"s{state.config.seed}"
+    target = undo_state_file(game_id)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_text(target, canonical_json(game_state_snapshot(state)))
+    logger.info("undo_checkpoint path=%s round=%d", target, state.current_round)
+
+
+def _clear_undo(game_id: str) -> None:
+    """Remove the last-turn undo checkpoint if present."""
+    target = undo_state_file(game_id)
+    if target.exists():
+        target.unlink()
+        logger.info("undo_checkpoint.cleared path=%s", target)
 
 
 def _resolve_network(cli_flag: str | None) -> Any:
@@ -1691,6 +1717,9 @@ def turn() -> None:
         console.print("  [dim]Wrap up with `sov game-end`.[/dim]")
         raise typer.Exit(0)
 
+    # Last-turn undo only: snapshot pre-turn state before mutating.
+    _checkpoint_undo(state)
+
     player = state.current_player
     rnd = state.current_round
     console.print(f"\n  [bold]{player.name}[/bold], it's your turn. [dim](Round {rnd})[/dim]")
@@ -1728,7 +1757,7 @@ def turn() -> None:
     if winner:
         console.print(f"\n  [bold green]{winner} wins![/bold green]")
         console.print("  [dim]Record the season with `sov game-end`.[/dim]")
-        _save_state(state)
+        _save_state(state, keep_undo=True)
         raise typer.Exit(0)
 
     # Advance to next player
@@ -1757,9 +1786,43 @@ def turn() -> None:
         if state.market_board:
             state.market_board.reset_shifts()
 
-    _save_state(state)
+    _save_state(state, keep_undo=True)
     console.print()
     _print_brief_status(state)
+
+
+
+@app.command()
+def undo() -> None:
+    """Undo the last `sov turn` only (not a full history journal).
+
+    Restores the pre-turn checkpoint written by the most recent ``sov turn``.
+    Cleared by ``sov end-round`` (so sealed proofs stay consistent) and by
+    any other state save. Does not invent a multi-step replay engine.
+    """
+    migrate_v1_layout()
+    if not _has_any_saved_game():
+        _fail(no_game_error())
+
+    game_id = _resolve_active_game_id()
+    undo_path = undo_state_file(game_id)
+    if not undo_path.exists():
+        _fail(nothing_to_undo_error())
+
+    sf = state_file(game_id)
+    # Restore checkpoint atomically, then drop the one-shot buffer.
+    atomic_write_text(sf, undo_path.read_text(encoding="utf-8"))
+    _clear_undo(game_id)
+
+    console.print(
+        "\n  [bold]Undid the last turn.[/bold] "
+        "[dim]Last-turn undo only — not a full history journal.[/dim]"
+    )
+    result = _load_game()
+    if result is not None:
+        state, _ = result
+        console.print()
+        _print_brief_status(state)
 
 
 @app.command(name="end-round")
@@ -1795,6 +1858,9 @@ def end_round(
     # this somewhere else" operator action and shouldn't enqueue.
     if output is None:
         add_pending_anchor(game_id, str(proof["round"]), proof["envelope_hash"])
+
+    # Sealed round proof must not be undone via last-turn restore.
+    _clear_undo(game_id)
 
     console.print(
         Panel(
