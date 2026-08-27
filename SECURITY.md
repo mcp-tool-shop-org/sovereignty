@@ -15,9 +15,14 @@ gh issue create --label security --title "..." --body "..."
 ```
 
 For anything you'd rather not file in the open (e.g. a working exploit
-against a player who has not yet upgraded), email the maintainer at
-`64996768+mcp-tool-shop@users.noreply.github.com` and we'll coordinate a
-private fix and disclosure.
+against a player who has not yet upgraded), open a GitHub private advisory.
+Do not email — there is no mailbox on this project.
+
+https://github.com/mcp-tool-shop-org/sovereignty/security/advisories/new
+
+```bash
+gh api repos/mcp-tool-shop-org/sovereignty/security-advisories
+```
 
 When reporting, please include:
 
