@@ -127,6 +127,17 @@ export const defaultHandlers = [
   ),
 
   http.get(`${BASE}/games/s42/pending-anchors`, () => HttpResponse.json({})),
+
+  // GET /games/{id}/verify/{round} — additive chain lookup (JOB-026).
+  http.get(`${BASE}/games/s42/verify/:round`, ({ params }) =>
+    HttpResponse.json({
+      round: params.round,
+      anchor_status: "anchored",
+      envelope_hash: "a".repeat(64),
+      txid: "ABC123DEF",
+      chain_lookup: "found",
+    }),
+  ),
 ];
 
 export const PORT_FOR_TESTS = PORT;

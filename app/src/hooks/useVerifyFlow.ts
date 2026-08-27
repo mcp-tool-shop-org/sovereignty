@@ -216,23 +216,27 @@ export function useVerifyFlow(): UseVerifyFlow {
             continue;
           }
 
-          // 3. Chain lookup via daemon.
+          // 3. Chain lookup via additive GET /verify/{round}. Browse
+          // GET /anchor-status stays local-index only.
           if (cancelledRef.current) break;
           try {
-            const status = await client.anchorStatus(gameId, round, controller.signal);
+            const status = await client.verifyRound(gameId, round, controller.signal);
             if (cancelledRef.current) break;
-            // Stage 7-B WEB-UI-B-003: AnchorStatusResponse field renamed to
-            // `anchor_status` (was `status`) to match daemon wire shape.
-            if (status.anchor_status === "anchored") {
+            if (status.chain_lookup === "found") {
               setRoundState(round, { kind: "verified" });
+            } else if (status.chain_lookup === "lookup_failed") {
+              setRoundState(round, {
+                kind: "failed",
+                reason: "chain_unreachable",
+              });
             } else {
+              // not_found, or omitted (pending / no txid)
               setRoundState(round, { kind: "failed", reason: "not_on_chain" });
             }
           } catch (e) {
             if (cancelledRef.current) break;
-            // anchor-status failure here surfaces transient chain lookup
-            // failure (LOOKUP_FAILED on the Python side or daemon proxy
-            // 5xx). Distinct recovery from daemon_unreachable. WEB-UI-C-006.
+            // verify fetch failure here surfaces transient chain lookup
+            // failure. Distinct recovery from daemon_unreachable. WEB-UI-C-006.
             setRoundState(round, {
               kind: "failed",
               reason: "chain_unreachable",

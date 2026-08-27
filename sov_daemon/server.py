@@ -597,6 +597,95 @@ async def anchor_status_handler(request: Request) -> JSONResponse:
     return _json_response(payload)
 
 
+def get_verify_transport(network: str) -> Any:
+    """LedgerTransport used by GET /verify/{round}. Tests may patch this.
+
+    Production uses ``XRPLTransport``. Import/construct failures become
+    ``LOOKUP_FAILED`` at the handler (never collapsed to missing).
+    """
+    from sov_transport.xrpl import XRPLNetwork, XRPLTransport
+
+    return XRPLTransport(network=XRPLNetwork(network))
+
+
+async def verify_round_handler(request: Request) -> JSONResponse:
+    """``GET /games/{game_id}/verify/{round}`` — additive chain lookup.
+
+    Same local ``anchor_status`` keys as ``/anchor-status``. When a txid
+    is recorded, calls ``transport.is_anchored_on_chain`` and emits
+    ``chain_lookup``: ``found`` / ``not_found`` / ``lookup_failed``.
+    Omits ``chain_lookup`` when pending or no txid (no XRPL round-trip).
+    Does not bump ``ipc_version``. Browse ``/anchor-status`` stays local.
+    """
+    game_id = request.path_params["game_id"]
+    err = _validate_game_id(game_id)
+    if err is not None:
+        return err
+    round_key = _resolve_round_key(request.path_params["round"])
+    err = _validate_round_key(round_key)
+    if err is not None:
+        return err
+
+    proof_path = _proof_path_for_round(game_id, round_key)
+    if proof_path is None:
+        from sov_cli.errors import daemon_proof_not_found_error
+
+        return _sov_error_response(
+            daemon_proof_not_found_error(game_id, round_key), status_code=404
+        )
+    try:
+        proof_data = json.loads(proof_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        proof_data = {}
+    envelope_hash = proof_data.get("envelope_hash") if isinstance(proof_data, dict) else None
+
+    pending = read_pending_anchors(game_id)
+    anchors = _read_anchors(game_id)
+
+    if round_key in pending:
+        anchor_status = "pending"
+        txid: str | None = None
+    elif round_key in anchors:
+        anchor_status = "anchored"
+        txid = anchors[round_key]
+    else:
+        anchor_status = "missing"
+        txid = None
+
+    payload: dict[str, Any] = {
+        "round": round_key,
+        "anchor_status": anchor_status,
+        "envelope_hash": envelope_hash,
+    }
+    if txid is not None:
+        payload["txid"] = txid
+
+    # Chain lookup only when a recorded txid exists. Pending / missing
+    # omit chain_lookup so browse-style clients don't pay an RPC.
+    if txid and envelope_hash:
+        network = str(getattr(request.app.state, "network", "testnet"))
+        try:
+            transport = get_verify_transport(network)
+            result = transport.is_anchored_on_chain(str(txid), str(envelope_hash))
+            lookup = getattr(result, "value", result)
+            lookup_s = str(lookup)
+            if lookup_s in ("found", "not_found", "lookup_failed"):
+                payload["chain_lookup"] = lookup_s
+            else:
+                # Unknown transport result: fail open as lookup_failed,
+                # never collapse into missing.
+                payload["chain_lookup"] = "lookup_failed"
+        except Exception as exc:  # noqa: BLE001
+            logger.info(
+                "verify.chain_lookup_failed round=%s exc=%s",
+                round_key,
+                type(exc).__name__,
+            )
+            payload["chain_lookup"] = "lookup_failed"
+
+    return _json_response(payload)
+
+
 async def pending_anchors_handler(request: Request) -> JSONResponse:
     """``GET /games/{game_id}/pending-anchors`` — current pending index.
 
@@ -1173,6 +1262,11 @@ def build_app(
         Route(
             "/games/{game_id}/anchor-status/{round}",
             anchor_status_handler,
+            methods=["GET"],
+        ),
+        Route(
+            "/games/{game_id}/verify/{round}",
+            verify_round_handler,
             methods=["GET"],
         ),
         Route(

@@ -74,11 +74,13 @@ SHELL_ERROR_CODES = {
 # mirror gap on the next pytest run — no manual literal maintenance.
 ANCHOR_STATUS_VALUES = {"anchored", "pending", "missing"}
 XRPL_NETWORK_VALUES = {"testnet", "mainnet", "devnet"}
+CHAIN_LOOKUP_VALUES = {"found", "not_found", "lookup_failed"}
 
 # Union slot for parallel agents: every Python-side string union mirrored to
 # TS lands here. Docs agent extends DAEMON_ERROR_CODES; backend agent extends
-# ANCHOR_STATUS_VALUES / XRPL_NETWORK_VALUES; the parametrize set merges all.
-ENUM_LITERAL_VALUES = ANCHOR_STATUS_VALUES | XRPL_NETWORK_VALUES
+# ANCHOR_STATUS_VALUES / XRPL_NETWORK_VALUES / CHAIN_LOOKUP_VALUES; the
+# parametrize set merges all.
+ENUM_LITERAL_VALUES = ANCHOR_STATUS_VALUES | XRPL_NETWORK_VALUES | CHAIN_LOOKUP_VALUES
 
 
 @pytest.mark.parametrize("literal", sorted(SSE_EVENTS | DAEMON_ERROR_CODES | SHELL_ERROR_CODES))
@@ -138,5 +140,15 @@ def test_xrpl_network_values_match_python_enum() -> None:
 
     assert {n.value for n in XRPLNetwork} == XRPL_NETWORK_VALUES, (
         "XRPL_NETWORK_VALUES drifted from sov_transport.xrpl_internals.XRPLNetwork — "
+        "sync the constant and add the new value to app/src/types/daemon.ts"
+    )
+
+
+def test_chain_lookup_values_match_python_enum() -> None:
+    """CHAIN_LOOKUP_VALUES tracks ``sov_transport.base.ChainLookupResult``."""
+    from sov_transport.base import ChainLookupResult
+
+    assert {s.value for s in ChainLookupResult} == CHAIN_LOOKUP_VALUES, (
+        "CHAIN_LOOKUP_VALUES drifted from sov_transport.base.ChainLookupResult — "
         "sync the constant and add the new value to app/src/types/daemon.ts"
     )

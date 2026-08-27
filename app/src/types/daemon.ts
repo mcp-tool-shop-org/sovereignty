@@ -8,16 +8,11 @@ export type XRPLNetwork = "testnet" | "mainnet" | "devnet";
 // Anchor 3-state per Wave 2 verify split.
 export type AnchorStatus = "anchored" | "pending" | "missing";
 
-// INTENTIONAL NON-MIRROR: sov_transport/base.py exports ChainLookupResult
-// (StrEnum: FOUND / NOT_FOUND / LOOKUP_FAILED) but the engine collapses
-// LOOKUP_FAILED + NOT_FOUND -> AnchorStatus.MISSING at sov_engine/proof.py
-// before reaching the daemon. The /anchor-status endpoint never invokes
-// is_anchored_on_chain (it reads the local pending-anchors / anchors.json
-// indices only), so the frontend consumes a 3-state AnchorStatus and never
-// sees the chain-side 3-state. v2.2 may surface the distinction by adding
-// a /games/{id}/verify/{round} endpoint that does the chain lookup; at that
-// point ChainLookupResult earns a TS mirror. For v2.1 it stays Python-only.
-// Cross-domain D in wave-9/AMEND.md.
+// Chain lookup 3-state from sov_transport.base.ChainLookupResult.
+// Surfaced by GET /games/{game_id}/verify/{round} (JOB-026). Browse
+// GET /anchor-status stays local-index only and never hits XRPL.
+// Omit chain_lookup on the wire when pending / no txid.
+export type ChainLookupResult = "found" | "not_found" | "lookup_failed";
 
 // Daemon process state — what the Tauri shell reports back.
 export type DaemonState = "running" | "stale" | "none";
@@ -213,4 +208,15 @@ export interface AnchorStatusResponse {
   anchor_status: AnchorStatus;
   envelope_hash: string | null;
   txid?: string;
+}
+
+// GET /games/{id}/verify/{round} — additive chain lookup. Same local
+// anchor_status keys as /anchor-status, plus optional chain_lookup when
+// a txid is recorded. ipc_version stays 1 (additive route).
+export interface VerifyRoundResponse {
+  round: string;
+  anchor_status: AnchorStatus;
+  envelope_hash: string | null;
+  txid?: string;
+  chain_lookup?: ChainLookupResult;
 }

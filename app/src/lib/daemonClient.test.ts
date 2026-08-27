@@ -164,4 +164,27 @@ describe("DaemonClient", () => {
     expect(result).toEqual({});
     expect(fetchMock.mock.calls[0]?.[0]).toBe("http://127.0.0.1:47823/games/s42/pending-anchors");
   });
+
+  it("verifyRound fetches /verify/{round} with bearer auth", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        round: "1",
+        anchor_status: "anchored",
+        envelope_hash: "a".repeat(64),
+        txid: "ABC",
+        chain_lookup: "found",
+      }),
+    );
+    const c = new DaemonClient(cfg);
+    const result = await c.verifyRound("s42", "1");
+    expect(result.chain_lookup).toBe("found");
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("http://127.0.0.1:47823/games/s42/verify/1");
+    expect(fetchMock.mock.calls[0]?.[1]).toEqual(
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer test-token-abc",
+        }),
+      }),
+    );
+  });
 });

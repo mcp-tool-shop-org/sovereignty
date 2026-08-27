@@ -138,7 +138,7 @@ describe("useVerifyFlow", () => {
           }),
         );
       }
-      if (url.includes("/anchor-status/1")) {
+      if (url.includes("/verify/1")) {
         return Promise.resolve(
           new Response(
             JSON.stringify({
@@ -146,6 +146,7 @@ describe("useVerifyFlow", () => {
               anchor_status: "anchored",
               envelope_hash: "a".repeat(64),
               txid: "ABC",
+              chain_lookup: "found",
             }),
             {
               status: 200,
@@ -202,7 +203,7 @@ describe("useVerifyFlow", () => {
     }
   });
 
-  it("transitions to failed:not_on_chain when anchor-status returns non-anchored", async () => {
+  it("transitions to failed:not_on_chain when verify returns not_found", async () => {
     const envelope = { game_id: "s42", round: "1" };
     const expectedHash = await sha256Hex(canonicalJson(envelope));
     const proof = { ...envelope, envelope_hash: expectedHash };
@@ -216,13 +217,15 @@ describe("useVerifyFlow", () => {
           }),
         );
       }
-      if (url.includes("/anchor-status/1")) {
+      if (url.includes("/verify/1")) {
         return Promise.resolve(
           new Response(
             JSON.stringify({
               round: "1",
-              anchor_status: "missing",
+              anchor_status: "anchored",
               envelope_hash: "a".repeat(64),
+              txid: "ABC",
+              chain_lookup: "not_found",
             }),
             {
               status: 200,
@@ -246,6 +249,52 @@ describe("useVerifyFlow", () => {
     }
   });
 
+  it("transitions to failed:chain_unreachable when verify returns lookup_failed", async () => {
+    const envelope = { game_id: "s42", round: "1" };
+    const expectedHash = await sha256Hex(canonicalJson(envelope));
+    const proof = { ...envelope, envelope_hash: expectedHash };
+
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/proofs/1")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(proof), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      }
+      if (url.includes("/verify/1")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              round: "1",
+              anchor_status: "anchored",
+              envelope_hash: "a".repeat(64),
+              txid: "ABC",
+              chain_lookup: "lookup_failed",
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          ),
+        );
+      }
+      return Promise.reject(new Error("unexpected"));
+    });
+
+    const { result } = renderHook(() => useVerifyFlow());
+    await act(async () => {
+      await result.current.start("s42", ["1"]);
+    });
+
+    const state = result.current.perRound.get("1");
+    expect(state?.kind).toBe("failed");
+    if (state?.kind === "failed") {
+      expect(state.reason).toBe("chain_unreachable");
+    }
+  });
+
   it("transitions to failed:daemon_unreachable when proof fetch errors", async () => {
     // WEB-UI-C-006: proof endpoint is daemon-side, so a fetch reject here
     // means the daemon isn't reachable (down, restarting, 5xx). Distinct
@@ -264,8 +313,8 @@ describe("useVerifyFlow", () => {
     }
   });
 
-  it("transitions to failed:chain_unreachable when anchor-status fetch errors", async () => {
-    // WEB-UI-C-006: anchor-status failure (after a successful proof fetch)
+  it("transitions to failed:chain_unreachable when verify fetch errors", async () => {
+    // WEB-UI-C-006: verify-round failure (after a successful proof fetch)
     // surfaces transient chain lookup failure, distinct from daemon_unreachable.
     const envelope = { game_id: "s42", round: "1" };
     const expectedHash = await sha256Hex(canonicalJson(envelope));
@@ -280,7 +329,7 @@ describe("useVerifyFlow", () => {
           }),
         );
       }
-      if (url.includes("/anchor-status/1")) {
+      if (url.includes("/verify/1")) {
         return Promise.reject(new Error("chain rpc 503"));
       }
       return Promise.reject(new Error("unexpected"));
@@ -316,7 +365,7 @@ describe("useVerifyFlow", () => {
           }),
         );
       }
-      if (url.includes("/anchor-status/1")) {
+      if (url.includes("/verify/1")) {
         return Promise.resolve(
           new Response(
             JSON.stringify({
@@ -324,6 +373,7 @@ describe("useVerifyFlow", () => {
               anchor_status: "anchored",
               envelope_hash: "a".repeat(64),
               txid: "ABC",
+              chain_lookup: "found",
             }),
             {
               status: 200,
