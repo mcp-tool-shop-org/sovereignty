@@ -98,11 +98,11 @@ Install the desktop binary from the [GitHub Releases page](https://github.com/mc
 
 - macOS universal (Intel + Apple Silicon): `sovereignty-app-2.2.1-darwin-universal.dmg`
 - Windows x64: `sovereignty-app-2.2.1-win-x64.msi`
-- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.2.1-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. AppImage support deferred to v2.2.
+- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.2.1-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. No AppImage build yet.
 
 ### First-launch warning is expected
 
-v2.1 ships with build-provenance attestation only — not OS-level code signing.
+Current releases ship with build-provenance attestation only — not OS-level code signing.
 
 - **macOS**: control-click the .app → Open → "Are you sure?" → Open
 - **Windows**: SmartScreen says "unrecognized publisher" → "More info" → "Run anyway"
@@ -118,7 +118,7 @@ gh attestation verify \
   ./sovereignty-app-2.2.1-darwin-universal.dmg
 ```
 
-A clean verification proves the binary was built from a specific commit, by the release workflow, in this repo. Different layer of trust than OS-level code signing — the binary still triggers the OS warning, but its supply-chain provenance is cryptographically pinned. Workspace-level signing infrastructure ships in v2.2.
+A clean verification proves the binary was built from a specific commit, by the release workflow, in this repo. Different layer of trust than OS-level code signing — the binary still triggers the OS warning, but its supply-chain provenance is cryptographically pinned.
 
 ## Network selection (v2.1+)
 

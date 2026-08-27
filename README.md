@@ -188,11 +188,11 @@ v2.2.1 ships pre-built binaries on the [GitHub Releases page](https://github.com
 
 - **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
 - **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / derivatives. Install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. AppImage support deferred to v2.2 (upstream `linuxdeploy` / Ubuntu 24.04 FUSE interaction).
+- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / derivatives. Install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. No AppImage build yet (upstream `linuxdeploy` / Ubuntu 24.04 FUSE interaction).
 
 You also need the Python daemon backing the app: `pip install 'sovereignty-game[daemon]'==2.2.1`.
 
-> **First-launch warning is expected.** macOS will say "unidentified developer" — control-click the .app, choose Open, confirm. Windows SmartScreen will say "unrecognized publisher" — click "More info" then "Run anyway." Both warnings reflect that v2.1 ships with build-provenance attestation only (verify with `gh attestation verify`), not OS-level code signing. Workspace-level signing infrastructure ships in v2.2.
+> **First-launch warning is expected.** macOS will say "unidentified developer" — control-click the .app, choose Open, confirm. Windows SmartScreen will say "unrecognized publisher" — click "More info" then "Run anyway." Both warnings reflect that current releases ship with build-provenance attestation only (verify with `gh attestation verify`), not OS-level code signing.
 
 ### Verify provenance
 
