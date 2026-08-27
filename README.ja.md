@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.md">English</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.md">English</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -18,12 +18,12 @@
 </p>
 
 <!--
-Badge style policy (Stage D / W7CIDOCS-001): all badges use shields.io
-default `flat` style for visual consistency. Each shields.io URL pins
-`cacheSeconds=3600` so cold-cache renders fall back to the last known
-value rather than going blank when the upstream registry is slow. The
-CI badge is GitHub's first-party SVG and is exempt — GitHub serves it
-from camo with its own cache.
+  Badge style policy (Stage D / W7CIDOCS-001): all badges use shields.io
+  default `flat` style for visual consistency. Each shields.io URL pins
+  `cacheSeconds=3600` so cold-cache renders fall back to the last known
+  value rather than going blank when the upstream registry is slow. The
+  CI badge is GitHub's first-party SVG and is exempt — GitHub serves it
+  from camo with its own cache.
 -->
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -33,42 +33,42 @@ from camo with its own cache.
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## 今夜プレイしましょう
+## 今夜遊ぼう
 
-[印刷してプレイできるパッケージ全体](assets/print/pdf/Sovereignty-Print-Pack.pdf)を印刷します。これには、ゲームボード、プレイヤー用マット、クイックリファレンス、そして11枚のUSレターサイズの紙に印刷されるカードの3つのデッキが含まれます。サイコロとコインを用意してください。2～3人の友達と集まってください。20分でプレイできます。
+[印刷して遊べるパッケージ全体](assets/print/pdf/Sovereignty-Print-Pack.pdf)を印刷してください。ボード、プレイヤーマット、クイックリファレンス、カード3種類がそれぞれ11枚のUSレターサイズの用紙に収まるようにデザインされています。サイコロといくつかのコインを用意し、2～3人の友人と一緒に座ってゲームを始めましょう。20分以内にプレイできます。
 
-個別のシートが必要な場合は、以下をご覧ください。
+個別のシートが必要な場合：
 
-- **[ゲームボード](assets/print/pdf/board.pdf)**：16マス構成のキャンプファイヤーのループ、1ページ。
-- **[プレイヤー用マット](assets/print/pdf/mat.pdf)**：コイン、評判、アップグレード、約束などを記録するためのマット。1人1枚。
-- **[クイックリファレンス](assets/print/pdf/quickref.pdf)**：ゲームボードのマス、ターン順、約束のルールなどをまとめたもの。
-- **[イベントカード](assets/print/pdf/events.pdf)**：20枚のカード、3ページ。線に沿ってカットしてください。
-- **[取引カード](assets/print/pdf/deals.pdf)**：10枚のカード、2ページ。
-- **[バウチャーカード](assets/print/pdf/vouchers.pdf)**：プレイヤー間の借用証、10枚、2ページ。
-- **[条約のクイックリファレンス](assets/print/pdf/treaty.pdf)**：Tier 3のみ。
+- **[ボード](assets/print/pdf/board.pdf)** — 16マスからなるキャンプファイアのループ、1ページ。
+- **[プレイヤーマット](assets/print/pdf/mat.pdf)** — コイン、評判、アップグレード、約束。各プレイヤーに1つずつ。
+- **[クイックリファレンス](assets/print/pdf/quickref.pdf)** — ボードのマス、ターンの順番、約束に関するルール。
+- **[イベントカード](assets/print/pdf/events.pdf)** — 20枚、3ページ。線に沿って切り取ってください。
+- **[取引カード](assets/print/pdf/deals.pdf)** — 10枚、2ページ。
+- **[引換券カード](assets/print/pdf/vouchers.pdf)** — プレイヤー間のIOU（借用証）10枚、2ページ。
+- **[条約クイックリファレンス](assets/print/pdf/treaty.pdf)** — Tier 3のみ。
 
-これらのPDFファイルはベクター形式で、フォントが埋め込まれているため、家庭用プリンターでも綺麗に印刷できます。セットアップの手順は[印刷してプレイ](docs/print-and-play.md)で確認できます。
+PDFはベクター形式でフォントが埋め込まれているため、どの家庭用プリンターでもきれいに印刷できます。セットアップの手順については、[Print & Play](docs/print-and-play.md)をご覧ください。
 
-## スコアを記録するためのツールが必要ですか？
+## スコアを記録するためのコンソールが必要ですか？
 
-オプションです。このゲームは紙でも十分にプレイできます。ただし、もし誰かがノートパソコンを持っているなら、`sov`というツールがコイン、評判、約束などを記録し、最後に改ざん防止のレシートを出力します。
+オプションです。このゲームは紙の上でも問題なくプレイできます。ただし、誰かがラップトップを持っている場合は、`sov`を使用してコイン、評判、約束を追跡し、最後に改ざん防止のレシートを作成できます。
 
 ```bash
 pip install sovereignty-game
 sov play campfire_v1
 ```
 
-`sov play campfire_v1` は、設定不要で簡単に開始できるコマンドです。これは、1人のプレイヤーと、デフォルトの対戦相手が「Campfire」のルールセットで対戦するものです。複数人でプレイする場合は、`sov new -p Alice -p Bob -p Carol` を使用してください。詳細な手順については、`sov tutorial` を実行してください。
+`sov play campfire_v1`は設定不要のクイックスタート版で、1人のプレイヤーとデフォルトの対戦相手がいます。複数人でテーブルゲームをする場合は、`sov new -p Alice -p Bob -p Carol`を使用してください。60秒間のガイド付きチュートリアルが必要な場合は、`sov tutorial`を使用してください。
 
-Python がインストールされていない場合：`npx` コマンドを使用すると、あらかじめコンパイルされたバイナリをダウンロードできます。
+Pythonがない場合：`npx`パスでは、事前にビルドされたバイナリをダウンロードします。
 
 ```bash
 npx @mcptoolshop/sovereignty tutorial
 ```
 
-## 本格的なプレイ
+## 実際のゲームセッション
 
-あなたと2～3人の友人がテーブルを囲んだら、コンソールがゲームの進行を管理し、あなたが会話をします。実際のプレイは次のようになります。
+あなたと2～3人の友人がテーブルに座ったら、コンソールがラウンドを実行し、あなたは会話を行います。実際のゲームセッションは次のようになります。
 
 ```bash
 # Start a game with three players
@@ -84,7 +84,7 @@ sov status
 sov end-round
 ```
 
-`sov status` コマンドは、プレイヤーのコイン、評判、アップグレード、位置、目標などを表示する、Rich形式の表を表示します。ターン間の簡単な確認には、次の形式を使用します。
+`sov status`は、プレイヤーのコイン、評判、アップグレード、位置、目標をRich形式の表で表示します。ターンの合間にすばやく確認するには：
 
 ```bash
 sov status --brief
@@ -94,23 +94,22 @@ sov status --brief
 R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 ```
 
-(`Nc Nr Nu` = コイン / 評判 / アップグレード; `>` はアクティブなプレイヤーを示します。)
+（`Nc Nr Nu` = コイン / 評判 / アップグレード；`>`はアクティブなプレイヤーを示します。）
 
-15ラウンド繰り返します。`sov game-end` コマンドを実行すると、最終スコアが表示されます。
+これを15ラウンド繰り返します。`sov game-end`が最終スコアを印刷します。
 
-- **保存されたゲームの複数保存** (v2.1 以降): `sov games` で保存されたゲームの一覧を表示し、`sov resume <ゲームID>` でゲームを切り替えます。
-- **バッチアンカー** (v2.1 以降): ゲーム終了時に `sov anchor` を実行すると、保留中のすべてのラウンドが単一の XRPL トランザクションにまとめられます。これにより、ゲームごとに検証可能なチェーンポインタが 1 つ作成されます。ゲーム中にフラッシュする場合は、`sov anchor --checkpoint` を使用してください。
-- **ネットワークの選択** (v2.1 以降): `sov anchor --network testnet|mainnet|devnet` (または環境変数 `SOV_XRPL_NETWORK` を設定。デフォルトは `testnet`)。
-- **デーモンモード** (v2.1 以降、オプション): `sov daemon start` を実行すると、デスクトップ統合とバックグラウンドでのチェーン監視を行うための、ローカルホストの HTTP/JSON サーバーが起動します。詳細は、以下の「デーモンモード」を参照してください。
-- **監査ビューアデスクトップアプリ** (v2.1 以降、オプション): `npm --prefix app run tauri dev`。詳細は、以下の「デスクトップアプリ」を参照してください。
+- **複数の保存ゲーム**（v2.1以降）：`sov games`で保存されたゲームの一覧が表示され、`sov resume <game-id>`で切り替えることができます。
+- **バッチアンカー処理**（v2.1以降）：ゲーム終了時に`sov anchor`を使用すると、保留中のすべてのラウンドが単一のXRPLトランザクションにまとめて処理されます。これにより、各ゲームに対して検証可能なチェーンポインタが作成されます。ゲーム中にフラッシュする場合は、`sov anchor --checkpoint`を使用します。
+- **ネットワーク選択**（v2.1以降）：`sov anchor --network testnet|mainnet|devnet`（または環境変数`SOV_XRPL_NETWORK`；デフォルトは`testnet`）。
+- **デーモンモード**（v2.1以降、オプション）：`sov daemon start`を実行すると、ローカルホストのHTTP/JSONサーバーが起動し、デスクトップ統合やバックグラウンドでのチェーンポーリングが可能になります。詳細は[デーモンモード](#daemon-mode-optional-v21)をご覧ください。
+- **監査ビューアデスクトップアプリ**（v2.1以降、オプション）：`npm --prefix app run tauri dev`。詳細は[デスクトップアプリ](#desktop-app-optional-v21)をご覧ください。
 
-> まずは、アプリ内ガイド付きのチュートリアルを試してみたいですか？ `sov tutorial`を実行してください。
-> より詳細なルール説明が必要ですか？ [ここから始めましょう](docs/start_here.md)をご覧ください。
-> または、[完全なハンドブック](https://mcp-tool-shop-org.github.io/sovereignty/handbook/)を参照してください。
+> まず、ゲーム内ガイド付きチュートリアルを実行しますか？ `sov tutorial` を実行してください。
+> より詳細なルールを知りたいですか？ [ここから始めましょう](docs/start_here.md) または [完全なハンドブック](https://mcp-tool-shop-org.github.io/sovereignty/handbook/)をご覧ください。
 
-上記の `sov turn` の例は、コンソール上でラウンドがどのように見えるかを示しています。v2.1 のデスクトップでの可視化については、以下の「デスクトップアプリ」を参照してください。
+上記のインラインの`sov turn`の例は、コンソールでのラウンドがどのように表示されるかを示しています。v2.1デスクトップ版の視覚化については、[デスクトップアプリ](#desktop-app-optional-v21)をご覧ください。
 
-**[ここから始めましょう](docs/start_here.md)** | **[Print & Play](docs/print-and-play.md)** | **[完全なルール](docs/rules/campfire_v1.md)** | **[見知らぬ人とプレイ](docs/play-with-strangers.md)**
+**[ここから始めましょう](docs/start_here.md)** | **[印刷して遊ぼう](docs/print-and-play.md)** | **[完全なルール](docs/rules/campfire_v1.md)** | **[見知らぬ人と一緒にプレイする](docs/play-with-strangers.md)**
 
 <details>
 <summary>Full command reference</summary>
@@ -164,9 +163,9 @@ sov support-bundle                   # diagnostic zip for bug reports
 
 コンソールがスコアを記録します。あなたは約束を守ります。
 
-## デーモンモード (オプション、v2.1 以降)
+## デーモンモード（オプション、v2.1以降）
 
-デスクトップ統合 (監査ビューア、Tauri シェル) またはバックグラウンドでのチェーン監視を行うには、sovereignty をローカルホストの HTTP デーモンとして実行します。
+デスクトップ統合（監査ビューア、Tauriシェル）またはバックグラウンドでのチェーンポーリングのために、ソブリンティをローカルホストのHTTPデーモンとして実行します。
 
 ```bash
 pip install 'sovereignty-game[daemon]'
@@ -176,40 +175,40 @@ sov daemon status                  # running | stale | none
 sov daemon stop
 ```
 
-デーモンは `127.0.0.1` のポート番号をランダムに選択して接続し、接続情報は `.sov/daemon.json` に保存されます。プロジェクトのルートディレクトリには、デーモンを 1 つだけ実行できます。詳細については、[docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) を参照してください。
+デーモンは`127.0.0.1`にランダムなポートでバインドされます。接続の詳細（ポートとベアラートークン）は`.sov/daemon.json`に保存されます。プロジェクトルートごとに1つのデーモンを実行します。完全なIPCコントラクトについては、[docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md)をご覧ください。
 
-## デスクトップアプリ (オプション、v2.1 以降)
+## デスクトップアプリ（オプション、v2.1以降）
 
-監査ビューアは、v2.1 のデスクトップアプリです。これは、Tauri シェル (Rust + Webview) で、監査ビューアと、読み取り専用のゲームビューをデーモンの上で実行します。
+監査ビューアは、v2.1のデスクトップアプリです。Tauriシェル（Rust + webview）で、監査ビューアと読み取り専用のゲームビューをデーモンの上に実行します。
 
-### インストール (バイナリ)
+### インストール（バイナリ）
 
-v2.2.1 は、あらかじめコンパイルされたバイナリを [GitHub Releases ページ](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) で提供しています。
+v2.3.0には、[GitHubリリースページ](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest)に事前にビルドされたバイナリが含まれています。
 
-- **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / その派生版。`sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`でインストールしてください。
-- **Linux (x64, AppImage):** v2.2.1 にはありません。次のタグ付きリリースで `publish.yml` が `sovereignty-app-<tag>-linux-x64.AppImage` を出します。`chmod +x` して実行。
+- **macOS（ユニバーサル）：** `sovereignty-app-2.3.0-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows（x64）：** `sovereignty-app-2.3.0-win-x64.msi`
+- **Linux（x64、.deb）：** `sovereignty-app-2.3.0-linux-x64.deb` — Debian / Ubuntu / 派生ディストリビューション。`sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`でインストールします。
+- **Linux（x64、AppImage）：** `sovereignty-app-2.3.0-linux-x64.AppImage` — `chmod +x`を実行してから実行します。
 
-アプリのバックグラウンドで動作する Python デーモンも必要です。`pip install 'sovereignty-game[daemon]'==2.2.1` でインストールしてください。
+また、アプリをバックアップするPythonデーモンも必要です：`pip install 'sovereignty-game[daemon]'==2.3.0`。
 
-> **初回起動時の警告が表示される場合があります。** macOS では「身元不明の開発者」と表示される場合があります。この場合、.app を右クリックし、「開く」を選択して確認してください。Windows の SmartScreen では「未登録のパブリッシャー」と表示される場合があります。「詳細情報」をクリックし、「とにかく実行する」を選択してください。これらの警告は、v2.1 がビルドの信頼性情報を付与しているだけで、OS レベルでのコード署名が行われていないことを示しています。ワークスペースレベルの署名機能は v2.2 で提供されます。
+> **初回起動時に警告が表示される可能性があります。** macOSでは「未確認の開発者」と表示されます。アプリをコントロールクリックし、「開く」を選択して確認してください。WindowsのSmartScreenでは「認識されていない発行元」と表示されます。「詳細情報」をクリックしてから「実行する」をクリックします。これらの警告は、現在のリリースにはビルドプロセスの証拠のみが含まれており（`gh attestation verify`で検証）、OSレベルでのコード署名が行われていないことを示しています。
 
-### 信頼性の検証
+### プロベナンスを検証する
 
-すべてのリリースアーティファクトには、SLSA のビルド信頼性情報が付与されています。実行する前に、必ず検証してください。
+すべてのリリースアーティファクトには、SLSAビルドプロベナンスアテステーションが含まれています。実行前に検証してください。
 
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.2.1-darwin-universal.dmg
+  ./sovereignty-app-2.3.0-darwin-universal.dmg
 ```
 
-検証が成功すると、そのバイナリが特定のコミットから、リリースワークフローによって、このリポジトリでビルドされたことが証明されます。これは、OS レベルのコード署名とは異なる信頼性の層です。バイナリは引き続き OS の警告を引き起こしますが、そのサプライチェーンの信頼性は暗号的に検証されています。
+正常に検証されると、バイナリが特定のコミットから、このリポジトリのリリースワークフローによってビルドされたことが証明されます。これはOSレベルでのコード署名とは異なる信頼の層です。バイナリはOS警告を引き起こしますが、そのサプライチェーンプロベナンスは暗号化的に固定されています。
 
-### ソースコードからのビルド
+### ソースから実行する
 
-ソースコードからビルドしたい場合、またはバイナリがプラットフォームで動作しない場合は、こちらの手順に従ってください。
+ソースからビルドしたい場合（またはバイナリがプラットフォームで実行されない場合）：
 
 ```bash
 # 1. Install Python + daemon deps
@@ -223,42 +222,42 @@ cargo build --manifest-path app/src-tauri/Cargo.toml
 npm --prefix app run tauri dev
 ```
 
-Tauri シェルは、起動時に読み取り専用のデーモンを自動的に起動し、終了時に自動的に停止します。外部から起動されたデーモン (`sov daemon start`) は、シェルを再起動しても動作し続けます。
+Tauriシェルは、起動時に読み取り専用のデーモンを自動的に開始し、終了時に自動的に停止します。外部で開始されたデーモン（`sov daemon start`）は、シェルの再起動時にも存続します。
 
-詳細については、[docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) を参照してください。
+完全なコントラクトについては、[docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md)をご覧ください。
 
-監査ビューアには、次の 3 つのビューが用意されています。
+監査ビューアには、次の3つのビューが含まれています。
 
-- **`/audit`**：XRPLに紐づいた検証結果表示機能。ゲームごとのリストは折りたたみ可能で、ラウンドごとの検証状況が表示されます。「すべてのラウンドを検証」を実行すると、ローカルでの検証計算とチェーンの参照が順番に実行されます。監査担当者向けの機能で、生のJSONデータを読まずに、ゲームが正当に実行されたかどうかを確認できます。
-- **`/game`**：現在進行中のゲームのリアルタイムの状態を表示します。プレイヤーのリソースカード、ラウンドのタイムライン、過去20件のSSEイベントログが表示されます。読み取り専用であり、コマンドラインインターフェース（CLI）で別のターミナルからプレイできます。
-- **`/settings`**：デーモンの設定を表示し、ネットワークの切り替え（テストネット/メインネット/開発ネット）が可能です。メインネットへの接続には、確認が必要です。
+- **`/audit`** — XRPLに紐付けられたゲームの証拠を表示するツール。各ゲームごとのリストを折りたたみ可能、各ラウンドのアンカー状況を表示し、「すべてのラウンドを確認」機能では、ローカルで証拠を再計算し、チェーン上で検証を行う。監査者の視点：生のJSONデータを読み込まずに、ゲームが公正に実行されたことを確認する。
+- **`/game`** — 進行中のゲームの状態をリアルタイムで表示するツール。プレイヤーのリソースカード、ラウンドのタイムライン、過去20件のSSEイベントログを表示。読み取り専用であり、別のターミナルでCLI上でプレイできる。
+- **`/settings`** — デーモン設定を表示し、ネットワーク（テストネット/メインネット/開発ネット）を切り替える機能。メインネットでの確認機能を備えている。
 
-詳細な仕様については、[docs/v2.1-views.md](docs/v2.1-views.md) を参照してください。
+完全な仕様は[docs/v2.1-views.md](docs/v2.1-views.md)を参照。
 
 ## 仕組み
 
-ゲーム開始時に、**5つのコイン**と**3の評判**を持っています。サイコロを振り、16マスあるボード上を移動し、トレード、誰かを助ける、リスクを冒す、またはカードを引くなどの選択肢があるマスに止まります。
+最初に**5つのコイン**と**3の評判ポイント**から始める。サイコロを振って、16マスあるボード上を移動し、取引、誰かを助ける、リスクを取る、またはカードを引くという選択肢があるマスに止まる。
 
-**28枚のイベントカード**は、まるで出来事のように書かれています。例えば、*"小さな革製の小銭入れを見た人いますか？"* (Lost Wallet) または *"誰も見ていないよね？"* (Found a Shortcut)。タウンホールゲーム用のマーケットシフトイベントが8枚含まれています。
+**20枚のイベントカード**は、まるで出来事のように書かれている。「誰か小さな革製のポーチを見た？」(紛失した財布)や「誰も見ていない…そうだろう？」（隠された抜け道）など。タウンホールゲーム用の市場変動イベントも含まれている。
 
-**22枚の取引とバウチャーカード**は、会話を促します。例えば、*"2つのコインを貸してくれませんか？代わりに3つ返します。"* または *"もし君が助けてくれれば、僕も君を助けるよ。"* 取引は目標と期限を設定し、バウチャーは他のプレイヤーに発行する借用証です。
+**10枚の取引カードと10枚の引換券**は、会話を促す。「2つのコイン貸してくれないか？3つ返済するよ」や「君が困っているなら、私も助けるよ」。取引では期限付きの目標を設定し、引換券は他のプレイヤーに発行する借用証書である。
 
-**約束のルール:** 1ラウンドに1回、「約束します…」と声に出して、何かを約束します。それを守ると、評判が+1上がります。約束を破ると、評判が-2下がります。テーブルの全員で判断します。
+**約束のルール:** 各ラウンドで一度だけ、「私は～することを約束します…」と声に出して宣言し、何かを約束する。それを守る：+1の評判ポイント。破る：-2の評判ポイント。テーブル全体で判断する。
 
-**謝罪:** 1ゲームに1回、約束を破った場合、公に謝罪します。不正を行った人に1つのコインを支払い、評判を+1回復します。
+**謝罪:** ゲーム中に一度だけ、もし約束を破った場合、公に謝罪する。過ちを犯した相手に1つのコインを支払い、+1の評判ポイントを取り戻す。
 
-**目標を選択**（秘密または公開）：
-- **繁栄:** 20個のコインに到達
-- **愛される存在:** 10の評判に到達
-- **建築家:** 4つのアップグレードを完了
+**自分の目標を選ぶ**（秘密または公開）：
+- **繁栄** — 20枚のコインを集める
+- **愛される存在** — 10の評判ポイントを集める
+- **建設者** — 4つのアップグレードを完了する
 
-15ラウンド後、合計スコアが最も高い人が勝ちます。
+15ラウンド後、最も高い合計スコアを獲得した人が勝つ。
 
-## Diary Modeとは？
+## ダイアリーモードとは？
 
-各ラウンドで、コンソールはゲームの状態の**証明**（フィンガープリント）を生成できます。もし誰かがスコアを変更した場合、フィンガープリントは一致しません。
+各ラウンドで、コンソールは**証拠**（ゲームの状態のフィンガープリント）を生成できる。誰かがスコアを変更した場合、フィンガープリントが一致しない。
 
-オプションで、そのフィンガープリントを**XRPL Testnet**（パブリックな台帳）に投稿できます。これは、誰も消去できない壁にスコアを書き込むようなものです。
+オプションとして、そのフィンガープリントを**XRPLテストネット**（パブリックな台帳）に投稿することができる。これは、誰も消すことのできない壁にスコアを書くようなものだ。
 
 ```bash
 sov end-round                        # generate proof
@@ -267,32 +266,32 @@ sov anchor                           # post hash to XRPL (optional)
 sov verify proof.json --tx <txid>    # trust but verify
 ```
 
-ウォレットが必要なのはホストだけです。他のプレイヤーは画面に触れません。ゲームは完全にアンカーなしで動作します。記録を保持するのは、あくまで「日記」です。
+ホストだけがウォレットを持つ必要がある。他のプレイヤーは画面に触れる必要はない。ゲームはアンカーしなくても完全に機能する。ダイアリーモードは単に記録するためである。
 
 ## 3つのレベル
 
-| レベル | 名前 | ステータス | 追加される機能 |
+| レベル | 名前 | ステータス | 追加されるもの |
 |------|------|--------|-------------|
-| 1 | **Campfire** | プレイ可能 | コイン、評判、約束、借用証書 |
-| 2 | **Town Hall** | プレイ可能 | 共有市場、資源の枯渇 |
-| 3 | **Treaty Table** | プレイ可能 | 条件付き条約 — 実効力のある約束 |
+| 1 | **Campfire** | プレイ可能 | コイン、評判ポイント、約束、借用証書 |
+| 2 | **Town Hall** | プレイ可能 | 共有市場、リソースの希少性 |
+| 3 | **Treaty Table** | プレイ可能 | 拘束力のある条約 — 守らなければならない約束 |
 
-コアとなるルールはv1.xのバージョンを通じて安定しています。詳細については、[ロードマップ](docs/roadmap.md)をご覧ください。
+コアルールはv1.xまで安定している。詳細については[roadmap](docs/roadmap.md)を参照。
 
 ## シナリオパック
 
-新しいルールは一切ありません。雰囲気だけです。各パックは、ティア、レシピ、ムードを設定します。
+新しいルールはない。単に雰囲気だけだ。各パックは、レベル、レシピ、ムードを設定する。
 
-| シナリオ | レベル | 特におすすめな状況 |
+| シナリオ | レベル | 最適 |
 |----------|------|----------|
-| [Cozy Night](docs/scenarios/cozy-night.md) | 焚き火 / マーケットデイ | 初めてのゲーム、様々なグループ |
-| [Market Panic](docs/scenarios/market-panic.md) | タウンホール | 経済的なドラマ |
-| [Promises Matter](docs/scenarios/promises-matter.md) | 焚き火 | 信頼とコミットメント |
-| [Treaty Night](docs/scenarios/treaty-night.md) | 条約テーブル | 高リスクな合意 |
+| [Cozy Night](docs/scenarios/cozy-night.md) | キャンプファイヤー / マーケットデー | 最初のゲーム、混合グループ向け |
+| [Market Panic](docs/scenarios/market-panic.md) | タウンホール | 経済ドラマ |
+| [Promises Matter](docs/scenarios/promises-matter.md) | キャンプファイヤー | 信頼とコミットメント |
+| [Treaty Night](docs/scenarios/treaty-night.md) | 条約テーブル | ハイリスクな合意 |
 
-コンソールから`sov scenario list`でシナリオの一覧を表示できます。
+`sov scenario list`からコンソールで閲覧する。
 
-## プロジェクトの構成
+## プロジェクト構造
 
 ```
 sovereignty/
@@ -314,33 +313,31 @@ uv run pytest tests/ -v
 uv run ruff check .
 ```
 
-## 設計原則
+## デザイン原則
 
-> 「用語ではなく、結果を通して教える。」
+> 「用語ではなく、結果を通して教える」
 
-プレイヤーは、借用証書を発行したり、約束を破ったり、変動する価格で取引したりすることで学びます。これらの概念は、Web3の基本的な要素（ウォレット、トークン、信用取引など）に対応していますが、プレイヤーはそれらを理解していなくても楽しむことができます。
+プレイヤーは実践を通じて学ぶ：借用証書を発行する、約束を破る、変動する価格で取引する。これらの概念は、ウォレット、トークン、信頼関係などのWeb3の基本的な要素に対応しているが、プレイヤーはそれを知らなくても楽しむことができる。
 
 ## 貢献
 
-最も簡単な貢献方法は、[カードを追加する](CONTRIBUTING.md)ことです。
-エンジンに関する知識は不要です。名前、説明、そして簡単なテキストがあればOKです。
+最も簡単な貢献方法は、[カードを追加すること](CONTRIBUTING.md)である。エンジンに関する知識は必要ない。名前、説明、そして少しのフレーバーテキストがあればよい。
 
 ## セキュリティ
 
-ウォレットのシード、ゲームの状態、および証明ファイル。何を共有し、何を共有しないか。
-テレメトリー、アナリティクス、および自動的なデータ送信はありません。オプションのネットワーク接続は、XRPL Testnetへのアンカー接続のみです。
+ウォレットシード、ゲームの状態、および証拠ファイル — 何を共有し、何を共有しないか。テレメトリー、分析、または外部への通信は行わない。オプションのネットワーク呼び出しは、XRPLテストネットへのアンカーのみである。
 
-[SECURITY.md](SECURITY.md) をご確認ください。
+[SECURITY.md](SECURITY.md)を参照。
 
 ## 脅威モデル
 
-| 脅威 | 対策 |
+| 脅威 | 軽減策 |
 |--------|-----------|
-| 証明書を介したシード情報の漏洩 | 証明書にはハッシュのみが含まれており、シード情報は含まれていません。 |
-| gitリポジトリへのシード情報の登録 | `.sov/` はgitで無視されます。`sov wallet` コマンドは、シード情報の取り扱いについて警告を表示します。 |
-| ゲームの状態の改ざん | ラウンドの証明における `envelope_hash` は、`game_id`、`round`、`ruleset`、`rng_seed`、`timestamp_utc`、`players`、および `state` をカバーします。`sov verify` コマンドは、証明全体に対する改ざんを検出します。証明のフォーマット v1 は、v2.0.0 以降ではサポートされていません。 |
-| XRPLアンカーの偽装 | 証明書のハッシュはオンチェーンでアンカーされており、`sov verify` コマンドで不一致を検出します。 |
-| プレイヤー名のプライバシー | プレイヤー名は、証明書に含まれています（トップレベルの `players` リストと、プレイヤーのスナップショット内）。プライベートなプレイの場合、`proof.json` ファイルを公開したり、ポストカードを共有したりしないでください。 |
+| 証拠を介したシードの漏洩 | 証拠にはハッシュのみが含まれ、シードは含まれない |
+| Gitにシードが残っている | `.sov/`はgitで無視され、`sov wallet`は警告を表示する |
+| ゲームの状態の改ざん | Round proofs `envelope_hash` covers `game_id`, `round`, `ruleset`, `rng_seed`, `timestamp_utc`, `players`, and `state`. `sov verify` detects tampering across the full envelope. Proof format v1 is no longer supported in v2.0.0+. |
+| XRPLアンカーの偽装 | 証拠ハッシュがオンチェーンにアンカーされ、検証時に不一致を検出する |
+| プレイヤー名のプライバシー | プレイヤー名は証拠（最上位レベルの`players`リストとプレイヤーのスナップショット内）に含まれている。プライベートなプレイを行う場合は、`proof.json`を公開したり、ポストカードを共有したりしないこと。 |
 
 ## ライセンス
 
@@ -348,4 +345,4 @@ MIT
 
 ---
 
-[MCP Tool Shop](https://mcp-tool-shop.github.io/) が開発しました。
+[MCP Tool Shop](https://mcp-tool-shop.github.io/)によって作成

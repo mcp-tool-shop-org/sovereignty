@@ -7,13 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-08-27
+
+### Added
+
+- `sov undo` — reverse the last turn on the active game (proof + pending-anchor index stay consistent).
+- Mainnet wallet seed prefers the OS credential store via PyPI `keyring` (Windows Credential Manager / macOS Keychain / libsecret). Tests use a fake backend only. Seed is never logged.
+- Additive daemon route `GET /games/{id}/verify/{round}` returns chain lookup `found` / `not_found` / `lookup_failed`. Browse `GET /anchor-status/{round}` stays local-index (no per-row XRPL hit). Audit "Verify all rounds" uses the new route.
+- Linux AppImage alongside the existing `.deb` (`publish.yml` `--bundles deb,appimage`).
+- Tauri updater plugin: public minisign key in `tauri.conf.json`; CI injects `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` from GitHub Actions secrets by name.
+
 ### Security
 
-- Bumped `starlette` 1.1.0 → 1.3.1 in `uv.lock` to clear two pip-audit HIGH findings: CVE-2026-54282 (fix 1.3.0) and CVE-2026-54283 (fix 1.3.1). Both still satisfy the existing `starlette>=0.36,<2.0` constraint in `pyproject.toml`, so `--frozen` installs remain valid; no source changes (daemon test suite unchanged, 851 tests green).
+- Bumped `starlette` 1.1.0 → 1.3.1 in `uv.lock` to clear two pip-audit HIGH findings: CVE-2026-54282 (fix 1.3.0) and CVE-2026-54283 (fix 1.3.1). Both still satisfy the existing `starlette>=0.36,<2.0` constraint in `pyproject.toml`.
+- CI `security` job: replaced `gitleaks/gitleaks-action` with TruffleHog OSS (`--results=verified`). Secret scanning stays advisory.
 
-### Changed
+### Notes
 
-- CI `security` job: replaced `gitleaks/gitleaks-action` with TruffleHog OSS for the advisory secret scan. `gitleaks-action` requires a paid `GITLEAKS_LICENSE` for organization-owned repos (the requirement predates v3; the v3.0.0 bump only moved Node 20 → 24), so it errored on every run for `mcp-tool-shop-org/sovereignty`. TruffleHog OSS is free for organizations, Docker-based (unaffected by the Node 20 → 24 deprecation), and runs with `--results=verified` so it does not false-positive on the dummy XRPL testnet seeds in `tests/`. Secret scanning stays advisory (`continue-on-error: true`) pending the v2.2 hard-gate policy pass.
+- OS-level Apple Developer ID / Authenticode signing is still deferred (first-launch OS warnings remain). Do not ship a fake signer.
+- `ipc_version` stays 1 (additive verify route).
 
 ## [2.2.1] - 2026-05-05
 

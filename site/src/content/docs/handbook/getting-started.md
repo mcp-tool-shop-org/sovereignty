@@ -77,7 +77,7 @@ The active-game pointer at `.sov/active-game` tracks which game `sov turn`, `sov
 The daemon is an optional HTTP/JSON server that backs the desktop app and external audit tools. Install with the `[daemon]` extra:
 
 ```bash
-pip install 'sovereignty-game[daemon]'==2.2.1
+pip install 'sovereignty-game[daemon]'==2.3.0
 
 sov daemon start --readonly   # for the audit viewer
 sov daemon status             # check pid/port/network/readonly
@@ -96,10 +96,10 @@ The Audit Viewer visualizes XRPL-anchored proofs as collapsible per-game lists w
 
 Install the desktop binary from the [GitHub Releases page](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest). Three platforms:
 
-- macOS universal (Intel + Apple Silicon): `sovereignty-app-2.2.1-darwin-universal.dmg`
-- Windows x64: `sovereignty-app-2.2.1-win-x64.msi`
-- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.2.1-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`.
-- Linux x64 (AppImage): not on v2.2.1. `publish.yml` emits `sovereignty-app-<tag>-linux-x64.AppImage` on the next tagged release.
+- macOS universal (Intel + Apple Silicon): `sovereignty-app-2.3.0-darwin-universal.dmg`
+- Windows x64: `sovereignty-app-2.3.0-win-x64.msi`
+- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.3.0-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`.
+- Linux x64 (AppImage): `sovereignty-app-2.3.0-linux-x64.AppImage` — `chmod +x` then run.
 
 ### First-launch warning is expected
 
@@ -107,8 +107,8 @@ Current releases ship with build-provenance attestation only — not OS-level co
 
 - **macOS**: control-click the .app → Open → "Are you sure?" → Open
 - **Windows**: SmartScreen says "unrecognized publisher" → "More info" → "Run anyway"
-- **Linux (.deb)**: `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`, then launch from your app menu
-- **Linux (AppImage)**: after the next tagged release, `chmod +x sovereignty-app-<tag>-linux-x64.AppImage`, then run
+- **Linux (.deb)**: `sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`, then launch from your app menu
+- **Linux (AppImage)**: `chmod +x sovereignty-app-2.3.0-linux-x64.AppImage`, then run
 
 ### Verify supply-chain provenance
 
@@ -117,7 +117,7 @@ Every release artifact carries a SLSA build-provenance attestation:
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.2.1-darwin-universal.dmg
+  ./sovereignty-app-2.3.0-darwin-universal.dmg
 ```
 
 A clean verification proves the binary was built from a specific commit, by the release workflow, in this repo. Different layer of trust than OS-level code signing — the binary still triggers the OS warning, but its supply-chain provenance is cryptographically pinned.

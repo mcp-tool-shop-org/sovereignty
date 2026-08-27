@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.md">English</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.ja.md">日本語</a> | <a href="README.md">English</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -17,13 +17,13 @@
   No prior games like this needed. No screens at the table.
 </p>
 
-```
 <!--
-徽标样式策略 (Stage D / W7CIDOCS-001): 所有徽标都使用 shields.io
-默认使用 `flat` 样式，以保持视觉一致性。 每个 shields.io URL 都设置了
-`cacheSeconds=3600`，因此当上游注册中心速度较慢时，缓存未命中会回退到
-上一次已知的值，而不是显示空白。 GitHub 的 CI 徽标是 GitHub 自己的 SVG 格式，
-因此不受此处的限制，GitHub 会使用其自己的缓存机制提供该徽标。
+  Badge style policy (Stage D / W7CIDOCS-001): all badges use shields.io
+  default `flat` style for visual consistency. Each shields.io URL pins
+  `cacheSeconds=3600` so cold-cache renders fall back to the last known
+  value rather than going blank when the upstream registry is slow. The
+  CI badge is GitHub's first-party SVG and is exempt — GitHub serves it
+  from camo with its own cache.
 -->
 <p align="center">
   <a href="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml"><img src="https://github.com/mcp-tool-shop-org/sovereignty/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
@@ -33,42 +33,42 @@
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## 今晚开始游戏
+## 今晚一起玩吧
 
-打印 [完整的打印游戏包](assets/print/pdf/Sovereignty-Print-Pack.pdf)——包括游戏板、玩家垫、快速参考以及 11 张美国标准信纸上的三副卡牌。 找一个骰子和一些硬币。 找两个或三个朋友一起玩。 你们可以在 20 分钟内开始游戏。
+打印[完整的纸质游戏套装](assets/print/pdf/Sovereignty-Print-Pack.pdf)，包括棋盘、玩家垫板、快速参考指南和三副卡牌，共11张美国信纸大小的纸。找一个骰子和一些硬币。和两三个朋友坐在一起。你们可以在二十分钟内开始游戏。
 
-如果您需要单独的卡牌：
+如果您需要单独的页面：
 
-- **[游戏板](assets/print/pdf/board.pdf)** — 包含 16 个营火地点的游戏板，单页。
-- **[玩家垫](assets/print/pdf/mat.pdf)** — 用于记录硬币、声誉、升级和承诺。 每个玩家一张。
-- **[快速参考](assets/print/pdf/quickref.pdf)** — 包含游戏板上的地点、回合顺序和承诺规则。
-- **[事件卡](assets/print/pdf/events.pdf)** — 20 张卡牌，3 页，沿虚线剪裁。
-- **[交易卡](assets/print/pdf/deals.pdf)** — 10 张卡牌，2 页。
-- **[代金券卡](assets/print/pdf/vouchers.pdf)** — 10 张玩家之间的 IOU，2 页。
-- **[条约快速参考](assets/print/pdf/treaty.pdf)** — 仅适用于 3 级。
+- **[棋盘](assets/print/pdf/board.pdf)**——16格篝火环，一页。
+- **[玩家垫板](assets/print/pdf/mat.pdf)**——硬币、声望、升级、承诺。每位玩家一张。
+- **[快速参考指南](assets/print/pdf/quickref.pdf)**——棋盘格子、回合顺序、承诺规则。
+- **[事件卡牌](assets/print/pdf/events.pdf)**——20张卡牌，三页，沿着线切割。
+- **[交易卡牌](assets/print/pdf/deals.pdf)**——10张卡牌，两页。
+- **[凭证卡牌](assets/print/pdf/vouchers.pdf)**——玩家之间的10个IOU（欠条），两页。
+- **[条约快速参考指南](assets/print/pdf/treaty.pdf)**——仅适用于第三层。
 
-这些 PDF 文件是矢量格式，并嵌入了字体，因此可以在任何家用打印机上清晰打印。 游戏设置的详细说明请参考 [打印游戏](docs/print-and-play.md)。
+这些PDF文件是矢量图，并嵌入了字体——它们可以在任何家用打印机上清晰地打印出来。设置教程请访问[纸质游戏](docs/print-and-play.md)。
 
 ## 想要一个控制台来记录分数吗？
 
-可选。 游戏可以在纸上进行。 但是，如果有人有一台笔记本电脑，`sov` 可以跟踪硬币、声誉、承诺，并在游戏结束时生成一个防篡改的收据：
+可选。这款游戏也可以在纸上进行。但是，如果有人手边有笔记本电脑，`sov`可以跟踪硬币、声望、承诺，并在最后生成一份防篡改的收据：
 
 ```bash
 pip install sovereignty-game
 sov play campfire_v1
 ```
 
-`sov play campfire_v1` 是一个无需配置的快速启动版本，包含一个真人玩家和一个默认的对手。 对于多人游戏，请使用 `sov new -p Alice -p Bob -p Carol`。 要进行 60 秒的引导教程，请使用 `sov tutorial`。
+`sov play campfire_v1`是一个无需配置的快速启动版本——一个玩家加上一个默认对手。对于桌面上的多人游戏，请使用`sov new -p Alice -p Bob -p Carol`。如果需要一个60秒的引导教程，请使用`sov tutorial`。
 
-没有安装 Python 吗？ 使用 `npx` 命令可以下载预编译的二进制文件：
+没有Python？ `npx`路径会下载一个预构建的二进制文件：
 
 ```bash
 npx @mcptoolshop/sovereignty tutorial
 ```
 
-## 一个真实的对局
+## 一次真实的体验
 
-当您和 2-3 个朋友在桌边时，控制台会运行游戏回合，而您负责进行游戏。 真实的对局会是这样：
+一旦您和2-3个朋友坐在桌旁，控制台将运行一轮游戏，而你们则进行对话。一次真实的体验如下所示：
 
 ```bash
 # Start a game with three players
@@ -84,7 +84,7 @@ sov status
 sov end-round
 ```
 
-`sov status` 会显示一个格式化的表格，其中包含玩家的硬币、声誉、升级、位置和目标。 在每个回合之间快速查看：
+`sov status`会显示一个格式丰富的表格，其中包含玩家的硬币、声望、升级、位置和目标。为了在回合之间快速查看单行信息：
 
 ```bash
 sov status --brief
@@ -94,24 +94,22 @@ sov status --brief
 R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 ```
 
-(`Nc Nr Nu` = 硬币 / 声誉 / 升级； `>` 标记当前玩家。)
+（`Nc Nr Nu` = 硬币/声望/升级；`>`标记当前玩家。）
 
-重复 15 个回合。 `sov game-end` 会打印最终得分。
+重复进行15轮游戏。 `sov game-end`会打印出最终分数。
 
-- **多个已保存的游戏** (v2.1+): `sov games` 列出已保存的游戏； `sov resume <game-id>` 可以在它们之间切换。
-- **批量锚定** (v2.1+): 在游戏结束时，使用 `sov anchor` 将所有待处理的回合批量处理到一个 XRPL 交易中，从而为每个游戏创建一个可验证的链指针。 使用 `sov anchor --checkpoint` 在游戏过程中刷新数据。
-- **网络选择** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (或 `SOV_XRPL_NETWORK` 环境变量；默认为 `testnet`)。
-- **守护进程模式** (v2.1+，可选): `sov daemon start` 运行一个本地 HTTP/JSON 服务器，用于桌面集成和后台链轮询。 详情请参阅 [守护进程模式](#daemon-mode-optional-v21) 部分。
-- **审计查看器桌面应用程序** (v2.1+，可选): `npm --prefix app run tauri dev`。 详情请参阅 [桌面应用程序](#desktop-app-optional-v21) 部分。
+- **多个已保存的游戏**（v2.1+）：`sov games`列出已保存的游戏；`sov resume <game-id>`在它们之间切换。
+- **批量锚定**（v2.1+）：游戏结束时，`sov anchor`会将所有待处理的回合批量合并到一个XRPL交易中——每个游戏都有一个可验证的链指针。使用`sov anchor --checkpoint`进行游戏中途刷新。
+- **网络选择**（v2.1+）：`sov anchor --network testnet|mainnet|devnet`（或`SOV_XRPL_NETWORK`环境变量；默认值为`testnet`）。
+- **守护进程模式**（v2.1+，可选）：`sov daemon start`在本地运行一个HTTP/JSON服务器，用于桌面集成和后台链轮询。请参阅下方的[守护进程模式](#daemon-mode-optional-v21)。
+- **审计查看器桌面应用程序**（v2.1+，可选）：`npm --prefix app run tauri dev`。请参阅下方的[桌面应用程序](#desktop-app-optional-v21)。
 
-> 想要先进行一个引导式的应用程序内教程吗？ 运行 `sov tutorial`。
-> 想要更深入地了解游戏规则吗？ 请参阅 [开始](docs/start_here.md) 或
-> [完整指南](https://mcp-tool-shop-org.github.io/sovereignty/handbook/)。
+> 是否想要先进行一个引导式应用内教程？运行`sov tutorial`。
+> 是否想要更深入地了解游戏规则？请参见[从这里开始](docs/start_here.md)或[完整手册](https://mcp-tool-shop-org.github.io/sovereignty/handbook/)。
 
-上面的 `sov turn` 示例展示了游戏回合在控制台中的样子；要查看 v2.1 桌面应用程序的可视化效果，请参阅 [桌面应用程序](#desktop-app-optional-v21) 部分。
-```
+上面的内联`sov turn`示例显示了控制台中一轮游戏的样子；对于v2.1桌面可视化，请参见下方的[桌面应用程序](#desktop-app-optional-v21)。
 
-**[开始](docs/start_here.md)** | **[打印版](docs/print-and-play.md)** | **[完整规则](docs/rules/campfire_v1.md)** | **[与陌生人一起玩](docs/play-with-strangers.md)**
+**[从这里开始](docs/start_here.md)** | **[纸质游戏](docs/print-and-play.md)** | **[完整规则](docs/rules/campfire_v1.md)** | **[与陌生人一起玩](docs/play-with-strangers.md)**
 
 <details>
 <summary>Full command reference</summary>
@@ -163,11 +161,11 @@ sov support-bundle                   # diagnostic zip for bug reports
 
 </details>
 
-控制台记录分数。你遵守承诺。
+控制台记录分数。你们遵守承诺。
 
 ## 守护进程模式（可选，v2.1+）
 
-要进行桌面集成（审计查看器、Tauri 壳）或后台链轮询，请将 sovereignty 作为本地 HTTP 守护进程运行：
+为了进行桌面集成（审计查看器、Tauri shell）或后台链轮询，请将主权游戏作为本地HTTP守护进程运行：
 
 ```bash
 pip install 'sovereignty-game[daemon]'
@@ -177,40 +175,40 @@ sov daemon status                  # running | stale | none
 sov daemon stop
 ```
 
-守护进程绑定到 `127.0.0.1` 的一个随机端口；连接信息（端口 + 令牌）位于 `.sov/daemon.json` 文件中。每个项目根目录只能有一个守护进程。有关完整的 IPC 协议，请参阅 [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md)。
+守护进程绑定到`127.0.0.1`上的随机端口；连接详细信息（端口+ bearer token）位于`.sov/daemon.json`中。每个项目根目录一个守护进程。有关完整的IPC协议，请参见[docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md)。
 
 ## 桌面应用程序（可选，v2.1+）
 
-审计查看器是 v2.1 桌面应用程序，它是一个 Tauri 壳（Rust + Web 视图），在守护进程之上运行审计查看器和只读游戏视图。
+审计查看器是v2.1桌面应用程序——一个Tauri shell（Rust + webview），它在守护进程之上运行审计查看器和只读游戏视图。
 
 ### 安装（二进制文件）
 
-v2.2.1 提供了预构建的二进制文件，位于 [GitHub 发布页面](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest)：
+v2.3.0版本在[GitHub Releases页面](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest)上提供了预构建的二进制文件：
 
-- **macOS (通用):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / 及其衍生版本。使用 `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb` 进行安装。
-- **Linux (x64, AppImage):** 不在 v2.2.1 中。`publish.yml` 会在下一个带 tag 的 release 产出 `sovereignty-app-<tag>-linux-x64.AppImage`。`chmod +x` 后运行。
+- **macOS（通用）：** `sovereignty-app-2.3.0-darwin-universal.dmg`——Intel + Apple Silicon
+- **Windows（x64）：** `sovereignty-app-2.3.0-win-x64.msi`
+- **Linux（x64，.deb）：** `sovereignty-app-2.3.0-linux-x64.deb`——Debian / Ubuntu / 衍生版本。使用`sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`进行安装。
+- **Linux（x64，AppImage）：** `sovereignty-app-2.3.0-linux-x64.AppImage`——`chmod +x`然后运行。
 
-您还需要 Python 守护进程来支持该应用程序：`pip install 'sovereignty-game[daemon]'==2.2.1`。
+您还需要支持该应用程序的Python守护进程：`pip install 'sovereignty-game[daemon]'==2.3.0`。
 
-> **首次启动时可能会出现警告。** macOS 会显示“未识别的开发者”——右键单击 .app 文件，选择“打开”，然后确认。Windows SmartScreen 会显示“未知的发布者”——单击“更多信息”，然后单击“继续运行”。这两个警告都表明 v2.1 包含构建来源证明（使用 `gh attestation verify` 进行验证），而不是操作系统级别的代码签名。工作区级别的签名基础设施将在 v2.2 中实现。
+> **首次启动时会出现警告。** macOS会显示“未知的开发者”——右键单击.app，选择打开，确认。Windows SmartScreen会显示“未经识别的发布者”——点击“更多信息”，然后点击“继续运行”。这两个警告都表明当前版本仅提供构建来源证明（使用`gh attestation verify`进行验证），而不是操作系统级别的代码签名。
 
 ### 验证来源
 
-每个发布版本都包含 SLSA 构建来源证明。在运行之前进行验证：
+每个发布工件都包含一个SLSA构建来源证明。在运行之前进行验证：
 
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.2.1-darwin-universal.dmg
+  ./sovereignty-app-2.3.0-darwin-universal.dmg
 ```
 
-干净的验证证明该二进制文件是由特定提交，通过发布工作流程，在这个仓库中构建的。这与操作系统级别的代码签名是不同的信任层——该二进制文件仍然会触发操作系统警告，但其供应链来源是经过密码学验证的。
+清晰的验证证明二进制文件是从特定的提交中构建的，由发布工作流程在当前存储库中构建。这与操作系统级别的代码签名不同——二进制文件仍然会触发操作系统的警告，但其供应链来源已通过密码方式固定。
 
-### 从源代码构建
+### 从源代码运行
 
-如果您更喜欢从源代码构建（或者二进制文件无法在您的平台上运行）：
+如果您想从源代码构建（或者二进制文件无法在您的平台上运行）：
 
 ```bash
 # 1. Install Python + daemon deps
@@ -224,42 +222,42 @@ cargo build --manifest-path app/src-tauri/Cargo.toml
 npm --prefix app run tauri dev
 ```
 
-Tauri 壳在启动时会自动启动一个只读守护进程，并在退出时自动停止它。外部启动的守护进程（`sov daemon start`）将在 shell 重启后保持运行。
+Tauri shell会在启动时自动启动只读守护进程，并在退出时自动停止它。外部启动的守护进程（`sov daemon start`）将在shell重启后继续运行。
 
-有关完整的协议，请参阅 [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md)。
+请参阅[docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md)以获取完整的协议。
 
-审计查看器包含三个视图：
+审计查看器提供了三个视图：
 
-- **`/audit`** — 基于 XRPL 的证明查看器。可折叠的每个游戏列表，每个回合的锚定状态，"验证所有回合" 会运行本地证明重新计算 + 链查找。审计员的视图：确认游戏是否诚实运行，而无需读取原始 JSON。
-- **`/game`** — 用于活动游戏的实时状态显示。玩家资源卡、回合时间线、最后 20 个 SSE 事件日志。只读；在另一个终端的 CLI 中进行游戏。
-- **`/settings`** — 守护进程配置显示 + 网络切换器（测试网络 / 主网络 / 开发网络），带有主网络确认保护。
+- **`/audit`** — 基于 XRPL 的游戏状态验证器。可折叠的游戏列表、每轮锚点状态，“验证所有回合”功能可在本地重新计算证明并按顺序在链上查找。审计员视图：确认游戏是否以诚实的方式进行，无需读取原始 JSON 数据。
+- **`/game`** — 当前游戏的被动实时状态显示。玩家资源卡、回合时间线、最近 20 个 SSE 事件日志。仅供阅读；在另一个终端的 CLI 中进行游戏操作。
+- **`/settings`** — 守护进程配置显示 + 网络切换器（测试网/主网/开发网），并具有主网确认保护机制。
 
-完整的视图规范位于 [docs/v2.1-views.md](docs/v2.1-views.md)。
+完整视图规范请参见 [docs/v2.1-views.md](docs/v2.1-views.md)。
 
 ## 工作原理
 
-您从 **5 个硬币** 和 **3 个声誉** 开始。掷骰子，在 16 个空间的棋盘上移动，并停留在提供选择的格子上：交易、帮助他人、冒险或抽取卡牌。
+游戏开始时，您拥有 **5 枚硬币**和 **3 点声望**。掷骰子，在 16 格棋盘上移动，并停留在提供各种选择的格子上：交易、帮助他人、冒险或抽取卡牌。
 
-**20张事件卡**，内容如同生活中的瞬间：“谁看到一个小的皮质小包了吗？”（丢失的钱包）或者“没有人看到……对吧？”（发现了一条捷径）。包含适用于“市政厅”游戏的市场变化事件。
+**20 张事件卡**就像一个个小故事：“有人见过一个小皮包吗？”（丢失的钱包）或者“没人看到……对吧？”（发现捷径）。包含适用于市政厅游戏的市场变化事件。
 
-**10张交易卡 + 10张凭证卡**，旨在促进交流：“借我2个硬币？我之后会还3个。”或者“我罩你，你罩我。” 交易卡设定目标和截止日期；凭证卡是您发给其他玩家的欠款凭证。
+**10 张交易卡 + 10 张凭证卡**促使玩家进行交流：“借我 2 枚硬币好吗？我会还 3 枚。”或者“如果你需要帮助，我也会支持你。”交易设定具有截止日期的目标；凭证是您发给其他玩家的欠条。
 
-**“承诺”规则：** 每轮，您可以大声说出“我承诺……”并承诺某事。如果遵守承诺：+1声誉。如果违背承诺：-2声誉。由大家决定。
+**承诺规则：**每轮游戏时，大声说出“我保证……”并承诺做某事。信守承诺：+1 声望。违背承诺：-2 声望。由大家决定。
 
-**“道歉”：** 每局游戏，如果您违背了承诺，请公开道歉。向您伤害的人支付1个硬币，恢复+1声誉。
+**道歉：**在整个游戏中，如果违反了承诺，请公开道歉一次。向您伤害的人支付 1 枚硬币，并恢复 +1 声望。
 
 **选择您的目标**（秘密或公开）：
-- **繁荣** — 获得20个硬币
-- **受人喜爱** — 获得10点声誉
-- **建设者** — 完成4次升级
+- **繁荣** — 达到 20 枚硬币
+- **受人喜爱** — 达到 10 点声望
+- **建设者** — 完成 4 次升级
 
-15轮后，总得分最高的玩家获胜。
+经过 15 轮游戏后，总分最高者获胜。
 
 ## 什么是日记模式？
 
-每轮，控制台可以生成一个**证明**——游戏状态的指纹。如果有人更改分数，指纹将不匹配。
+每轮游戏时，控制台都可以生成一个**证明**——游戏状态的指纹。如果有人更改了分数，指纹将不匹配。
 
-可选地，可以将此指纹发布到**XRPL测试网**——一个公共账本。可以把它想象成在墙上写下分数，没有人可以擦除。
+可选地，可以将该指纹发布到 **XRPL 测试网**——一个公共账本。您可以将其视为将分数写在墙上，没有人可以擦除。
 
 ```bash
 sov end-round                        # generate proof
@@ -268,30 +266,30 @@ sov anchor                           # post hash to XRPL (optional)
 sov verify proof.json --tx <txid>    # trust but verify
 ```
 
-只有主机需要一个钱包。其他人不需要触碰屏幕。游戏在没有锚定的情况下也能完美运行——只是日记会记住。
+只有主持人需要拥有钱包。其他玩家不需要触碰屏幕。游戏即使没有锚定也可以完美运行——只是日记会记住一切。
 
 ## 三个等级
 
 | 等级 | 名称 | 状态 | 新增内容 |
 |------|------|--------|-------------|
-| 1 | **Campfire** | 可玩 | 硬币、声誉、承诺、IOU |
-| 2 | **Town Hall** | 可玩 | 共享市场、资源稀缺 |
-| 3 | **Treaty Table** | 可玩 | 带有约束的条约——带有约束力的承诺 |
+| 1 | **Campfire** | 可玩 | 硬币、声望、承诺、欠条 |
+| 2 | **Town Hall** | 可玩 | 共享市场，资源稀缺 |
+| 3 | **Treaty Table** | 可玩 | 带有赌注的协议——具有约束力的承诺 |
 
-核心规则在v1.x版本中保持稳定。请参阅[路线图](docs/roadmap.md)。
+核心规则在 v1.x 版本中保持稳定。请参见 [roadmap](docs/roadmap.md)。
 
-## 情景包
+## 场景包
 
-没有新的规则。只是不同的氛围。每个包都设置了等级、配方和氛围。
+没有新的规则。只是氛围不同。每个包都设定了一个等级、配方和情绪。
 
-| 情景 | 等级 | 最适合 |
+| 场景 | 等级 | 最适合 |
 |----------|------|----------|
-| [Cozy Night](docs/scenarios/cozy-night.md) | 篝火/市场日 | 第一局游戏，混合群体 |
-| [Market Panic](docs/scenarios/market-panic.md) | 市政厅 | 经济剧 |
-| [Promises Matter](docs/scenarios/promises-matter.md) | 篝火 | 信任与承诺 |
-| [Treaty Night](docs/scenarios/treaty-night.md) | 条约表 | 高风险协议 |
+| [Cozy Night](docs/scenarios/cozy-night.md) | 篝火 / 市场日 | 第一次游戏，混合群体 |
+| [Market Panic](docs/scenarios/market-panic.md) | 市政厅 | 经济戏剧 |
+| [Promises Matter](docs/scenarios/promises-matter.md) | 篝火 | 信任和承诺 |
+| [Treaty Night](docs/scenarios/treaty-night.md) | 协议桌 | 高风险协议 |
 
-使用`sov scenario list`命令，可以在控制台中浏览情景。
+`sov scenario list` 从控制台浏览。
 
 ## 项目结构
 
@@ -317,34 +315,34 @@ uv run ruff check .
 
 ## 设计原则
 
-> “通过后果来学习，而不是通过术语。”
+> “通过后果进行教学，而不是通过术语。”
 
-玩家通过实践学习：发行IOU、违背承诺、以不断变化的价格进行交易。这些概念映射到Web3的基本原理——钱包、令牌、信任线——但玩家不需要了解这些才能获得乐趣。
+玩家通过实践学习：发行欠条、违背承诺、在不断变化的价格中进行交易。这些概念与 Web3 的基本要素（钱包、令牌、信任关系）相关联，但玩家不必了解这些才能获得乐趣。
 
 ## 贡献
 
-贡献最简单的方法是[添加一张卡片](CONTRIBUTING.md)。不需要了解引擎知识——只需要一个名称、一个描述和一些描述性文字。
+最简单的贡献方式是 [添加一张卡牌](CONTRIBUTING.md)。不需要引擎知识——只需要一个名称、描述和一些背景文字。
 
-## 安全
+## 安全性
 
-钱包密钥、游戏状态和证明文件——哪些应该分享，哪些不应该分享。没有遥测、没有分析、没有“回传”功能。唯一的可选网络调用是XRPL测试网的锚定。
+钱包种子、游戏状态和证明文件——哪些可以共享，哪些不可以共享。没有遥测数据、分析数据或“回家”功能。唯一的可选网络调用是 XRPL 测试网锚定。
 
-请参阅[SECURITY.md](SECURITY.md)。
+请参见 [SECURITY.md](SECURITY.md)。
 
 ## 威胁模型
 
 | 威胁 | 缓解措施 |
 |--------|-----------|
-| 通过证明泄露的密钥 | 证明只包含哈希值，不包含密钥 |
-| 密钥存储在git中 | `.sov/`目录被git忽略；`sov wallet`命令会发出警告 |
-| 游戏状态篡改 | 轮次证明的`envelope_hash`包含`game_id`、`round`、`ruleset`、`rng_seed`、`timestamp_utc`、`players`和`state`。`sov verify`命令可以检测到整个信封的篡改。v2.0.0+版本不再支持v1格式的证明。 |
-| XRPL锚定欺骗 | 哈希值与链上数据锚定；验证过程中检测不匹配情况。 |
-| 玩家姓名隐私 | 玩家姓名包含在证明数据中（顶级 `players` 列表以及玩家快照内部）。为了保护隐私，请不要发布 `proof.json` 文件，也不要分享明信片。 |
+| 通过证明泄露种子 | 证明仅包含哈希值，绝不包含种子 |
+| 种子存储在 git 中 | `.sov/` 已被 git 忽略；`sov wallet` 发出警告 |
+| 游戏状态操纵 | 回合证明 `envelope_hash` 涵盖 `game_id`、`round`、`ruleset`、`rng_seed`、`timestamp_utc`、`players` 和 `state`。`sov verify` 检测整个信封中的篡改行为。v2.0.0+ 版本不再支持 v1 版本的证明格式。 |
+| XRPL 锚点欺骗 | 将证明哈希值锚定在链上；验证中检测不匹配情况 |
+| 玩家姓名隐私 | 玩家姓名包含在证明中（顶级 `players` 列表和玩家快照内部）。对于私有游戏，请不要发布 `proof.json` 或共享明信片。 |
 
-## 许可协议
+## 许可证
 
-MIT 协议
+MIT
 
 ---
 
-由 [MCP Tool Shop](https://mcp-tool-shop.github.io/) 构建。
+由 [MCP Tool Shop](https://mcp-tool-shop.github.io/) 构建

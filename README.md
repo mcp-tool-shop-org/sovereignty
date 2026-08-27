@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.pt-BR.md">Português (BR)</a>
+  <a href="README.md">English</a> | <a href="README.ja.md">日本語</a> | <a href="README.zh.md">中文</a> | <a href="README.es.md">Español</a> | <a href="README.fr.md">Français</a> | <a href="README.hi.md">हिन्दी</a> | <a href="README.it.md">Italiano</a> | <a href="README.pt-BR.md">Português (BR)</a>
 </p>
 
 <p align="center">
@@ -184,14 +184,14 @@ The Audit Viewer is the v2.1 desktop app — a Tauri shell (Rust + webview) that
 
 ### Install (binaries)
 
-v2.2.1 ships pre-built binaries on the [GitHub Releases page](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
+v2.3.0 ships pre-built binaries on the [GitHub Releases page](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
 
-- **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / derivatives. Install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`.
-- **Linux (x64, AppImage):** not on v2.2.1. `publish.yml` emits `sovereignty-app-<tag>-linux-x64.AppImage` on the next tagged release. `chmod +x` then run.
+- **macOS (universal):** `sovereignty-app-2.3.0-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows (x64):** `sovereignty-app-2.3.0-win-x64.msi`
+- **Linux (x64, .deb):** `sovereignty-app-2.3.0-linux-x64.deb` — Debian / Ubuntu / derivatives. Install with `sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`.
+- **Linux (x64, AppImage):** `sovereignty-app-2.3.0-linux-x64.AppImage` — `chmod +x` then run.
 
-You also need the Python daemon backing the app: `pip install 'sovereignty-game[daemon]'==2.2.1`.
+You also need the Python daemon backing the app: `pip install 'sovereignty-game[daemon]'==2.3.0`.
 
 > **First-launch warning is expected.** macOS will say "unidentified developer" — control-click the .app, choose Open, confirm. Windows SmartScreen will say "unrecognized publisher" — click "More info" then "Run anyway." Both warnings reflect that current releases ship with build-provenance attestation only (verify with `gh attestation verify`), not OS-level code signing.
 
@@ -202,7 +202,7 @@ Every release artifact carries a SLSA build-provenance attestation. Verify befor
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.2.1-darwin-universal.dmg
+  ./sovereignty-app-2.3.0-darwin-universal.dmg
 ```
 
 A clean verification proves the binary was built from a specific commit, by the release workflow, in this repo. Different layer of trust than OS-level code signing — the binary still triggers the OS warning, but its supply-chain provenance is cryptographically pinned.
