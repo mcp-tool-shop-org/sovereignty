@@ -227,24 +227,6 @@ The Tauri shell auto-starts a readonly daemon on launch and auto-stops it on exi
 
 See [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) for the full contract.
 
-<p align="center">
-  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
-  <br>
-  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
-  <br>
-  <em>Game Shell — passive real-time display of the active game.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
-  <br>
-  <em>Settings — daemon network selection and configuration.</em>
-</p>
-
 The Audit Viewer ships with three views:
 
 - **`/audit`** — XRPL-anchored proof viewer. Collapsible per-game list, per-round anchor status, "Verify all rounds" runs local proof recompute + chain lookup in series. The auditor's view: confirm a game ran honestly without reading raw JSON.

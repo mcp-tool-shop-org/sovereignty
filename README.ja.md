@@ -227,24 +227,6 @@ Tauri シェルは、起動時に読み取り専用のデーモンを自動的�
 
 詳細については、[docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) を参照してください。
 
-<p align="center">
-  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
-  <br>
-  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
-  <br>
-  <em>Game Shell — passive real-time display of the active game.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
-  <br>
-  <em>Settings — daemon network selection and configuration.</em>
-</p>
-
 監査ビューアには、次の 3 つのビューが用意されています。
 
 - **`/audit`**：XRPLに紐づいた検証結果表示機能。ゲームごとのリストは折りたたみ可能で、ラウンドごとの検証状況が表示されます。「すべてのラウンドを検証」を実行すると、ローカルでの検証計算とチェーンの参照が順番に実行されます。監査担当者向けの機能で、生のJSONデータを読まずに、ゲームが正当に実行されたかどうかを確認できます。

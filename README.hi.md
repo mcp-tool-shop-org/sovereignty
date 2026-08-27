@@ -227,24 +227,6 @@ npm --prefix app run tauri dev
 
 पूरे विवरण के लिए [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) देखें।
 
-<p align="center">
-  <img src="site/public/screenshots/audit-viewer.png" alt="Audit Viewer — XRPL-anchored proofs visualized as a collapsible per-game list with per-round verify status" width="640">
-  <br>
-  <em>Audit Viewer — XRPL-anchored proofs verifiable per round.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/game-shell.png" alt="Game Shell — passive real-time display of the active game with player resource cards and round timeline" width="640">
-  <br>
-  <em>Game Shell — passive real-time display of the active game.</em>
-</p>
-
-<p align="center">
-  <img src="site/public/screenshots/settings.png" alt="Settings — daemon network selector (testnet / mainnet / devnet) with daemon connection status" width="640">
-  <br>
-  <em>Settings — daemon network selection and configuration.</em>
-</p>
-
 ऑडिट व्यूअर में तीन दृश्य शामिल हैं:
 
 - **`/audit`** — XRPL-आधारित प्रमाण दर्शक। प्रत्येक गेम की सूची, प्रत्येक राउंड की स्थिति, "सभी राउंड सत्यापित करें" स्थानीय प्रमाण की पुनर्गणना और श्रृंखला लुकअप को एक साथ चलाता है। ऑडिटर का दृश्य: यह पुष्टि करें कि कोई गेम बिना कच्चे JSON डेटा पढ़े ईमानदारी से चला।
