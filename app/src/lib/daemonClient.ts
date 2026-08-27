@@ -12,6 +12,7 @@ import type {
   HealthResponse,
   PendingEntry,
   ProofMeta,
+  VerifyRoundResponse,
 } from "../types/daemon";
 import type { GameState } from "../types/game";
 
@@ -101,5 +102,20 @@ export class DaemonClient {
     );
     if (!r.ok) throw new Error(`anchor-status ${gameId}/${round}: ${r.status}`);
     return (await r.json()) as AnchorStatusResponse;
+  }
+
+  /** GET /games/{id}/verify/{round} — local indices plus chain lookup.
+   * Browse continues to use anchorStatus(); Verify-all-rounds uses this. */
+  async verifyRound(
+    gameId: string,
+    round: string,
+    signal?: AbortSignal,
+  ): Promise<VerifyRoundResponse> {
+    const r = await fetch(
+      this.url(`/games/${encodeURIComponent(gameId)}/verify/${encodeURIComponent(round)}`),
+      { headers: this.headers(), signal },
+    );
+    if (!r.ok) throw new Error(`verify ${gameId}/${round}: ${r.status}`);
+    return (await r.json()) as VerifyRoundResponse;
   }
 }

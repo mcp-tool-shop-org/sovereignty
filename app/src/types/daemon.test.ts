@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import type {
   AnchorStatus,
   AnchorStatusResponse,
+  ChainLookupResult,
   DaemonError,
   DaemonErrorCode,
   DaemonStatus,
@@ -17,6 +18,7 @@ import type {
   SSEEventType,
   ShellError,
   ShellErrorCode,
+  VerifyRoundResponse,
   XRPLNetwork,
 } from "./daemon";
 
@@ -29,6 +31,18 @@ describe("daemon types — pinned literals", () => {
   it("AnchorStatus 3-state enum", () => {
     const s: AnchorStatus[] = ["anchored", "pending", "missing"];
     expect(s).toContain("anchored");
+  });
+
+  it("ChainLookupResult 3-state enum", () => {
+    const s: ChainLookupResult[] = ["found", "not_found", "lookup_failed"];
+    expect(s).toHaveLength(3);
+    const v: VerifyRoundResponse = {
+      round: "1",
+      anchor_status: "anchored",
+      envelope_hash: null,
+      chain_lookup: "found",
+    };
+    expect(v.chain_lookup).toBe("found");
   });
 
   it("SSEEventType covers all six daemon-IPC event types", () => {
