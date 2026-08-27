@@ -189,7 +189,7 @@ v2.2.1 में पहले से निर्मित बाइनरी [G
 - **macOS (यूनिवर्सल):** `sovereignty-app-2.2.1-darwin-universal.dmg` — इंटेल + एप्पल सिलिकॉन
 - **विंडोज (x64):** `sovereignty-app-2.2.1-win-x64.msi`
 - **लिनक्स (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — डेबियन / उबंटू / व्युत्पन्न। `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb` के साथ स्थापित करें।
-- **लिनक्स (x64, AppImage):** `sovereignty-app-2.2.1-linux-x64.AppImage` — पोर्टेबल। `chmod +x` करके चलाएँ।
+- **लिनक्स (x64, AppImage):** v2.2.1 पर नहीं है। अगले टैग्ड रिलीज़ पर `publish.yml` `sovereignty-app-<tag>-linux-x64.AppImage` बनाएगा। `chmod +x` करके चलाएँ।
 
 आपको ऐप के लिए आवश्यक पायथन डेमॉन भी स्थापित करना होगा: `pip install 'sovereignty-game[daemon]'==2.2.1`.
 

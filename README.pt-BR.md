@@ -189,7 +189,7 @@ A v2.2.1 inclui binários pré-compilados na [página de lançamentos do GitHub]
 - **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
 - **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
 - **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / derivados. Instale com `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`.
-- **Linux (x64, AppImage):** `sovereignty-app-2.2.1-linux-x64.AppImage` — portátil. `chmod +x` e execute.
+- **Linux (x64, AppImage):** não está no v2.2.1. O `publish.yml` gera `sovereignty-app-<tag>-linux-x64.AppImage` no próximo release com tag. `chmod +x` e execute.
 
 Você também precisa do daemon Python que suporta o aplicativo: `pip install 'sovereignty-game[daemon]'==2.2.1`.
 
