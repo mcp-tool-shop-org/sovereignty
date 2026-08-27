@@ -59,6 +59,7 @@ pub fn run() {
 
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(ShellState {
             started_by_shell: AtomicBool::new(false),
         })

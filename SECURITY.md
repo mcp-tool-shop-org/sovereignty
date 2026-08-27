@@ -73,6 +73,23 @@ standard way to override the CLI's log verbosity. It contains no secrets but
 is documented here because the canonical incident-response flow relies on it
 to capture full diagnostic output.
 
+## Desktop updater signing (names only)
+
+GitHub Actions secrets used by `publish.yml` `build-tauri-binaries` to minisign
+Tauri updater artifacts. **Names only — never commit, print, or log values:**
+
+- `TAURI_SIGNING_PRIVATE_KEY`
+- `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`
+
+The matching public key is committed in `app/src-tauri/tauri.conf.json` under
+`plugins.updater.pubkey`. The workflow injects the two secrets into the Tauri
+build environment as `secrets.TAURI_SIGNING_PRIVATE_KEY` and
+`secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD`. Do not generate a new keypair.
+
+OS-level Apple Developer ID / Authenticode signing is still gated skip
+(JOB-028 hold). Unsigned OS binaries remain allowed; first-launch OS warnings
+stay until those secrets exist.
+
 ## Game state files
 
 `.sov/game_state.json` contains player names and scores. It's local-only
