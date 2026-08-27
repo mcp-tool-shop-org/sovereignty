@@ -77,7 +77,7 @@ The active-game pointer at `.sov/active-game` tracks which game `sov turn`, `sov
 The daemon is an optional HTTP/JSON server that backs the desktop app and external audit tools. Install with the `[daemon]` extra:
 
 ```bash
-pip install 'sovereignty-game[daemon]'==2.1.0
+pip install 'sovereignty-game[daemon]'==2.2.1
 
 sov daemon start --readonly   # for the audit viewer
 sov daemon status             # check pid/port/network/readonly
@@ -96,9 +96,9 @@ The Audit Viewer visualizes XRPL-anchored proofs as collapsible per-game lists w
 
 Install the desktop binary from the [GitHub Releases page](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest). Three platforms:
 
-- macOS universal (Intel + Apple Silicon): `sovereignty-app-2.1.0-darwin-universal.dmg`
-- Windows x64: `sovereignty-app-2.1.0-win-x64.msi`
-- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.1.0-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`. AppImage support deferred to v2.2.
+- macOS universal (Intel + Apple Silicon): `sovereignty-app-2.2.1-darwin-universal.dmg`
+- Windows x64: `sovereignty-app-2.2.1-win-x64.msi`
+- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.2.1-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. AppImage support deferred to v2.2.
 
 ### First-launch warning is expected
 
@@ -106,7 +106,7 @@ v2.1 ships with build-provenance attestation only — not OS-level code signing.
 
 - **macOS**: control-click the .app → Open → "Are you sure?" → Open
 - **Windows**: SmartScreen says "unrecognized publisher" → "More info" → "Run anyway"
-- **Linux (.deb)**: `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`, then launch from your app menu
+- **Linux (.deb)**: `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`, then launch from your app menu
 
 ### Verify supply-chain provenance
 
@@ -115,7 +115,7 @@ Every release artifact carries a SLSA build-provenance attestation:
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.1.0-darwin-universal.dmg
+  ./sovereignty-app-2.2.1-darwin-universal.dmg
 ```
 
 A clean verification proves the binary was built from a specific commit, by the release workflow, in this repo. Different layer of trust than OS-level code signing — the binary still triggers the OS warning, but its supply-chain provenance is cryptographically pinned. Workspace-level signing infrastructure ships in v2.2.
