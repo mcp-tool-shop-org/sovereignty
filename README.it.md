@@ -187,13 +187,13 @@ L'Audit Viewer è l'applicazione desktop v2.1: una shell Tauri (Rust + webview) 
 
 ### Installazione (binari)
 
-La versione 2.1.0 include binari precompilati nella [pagina delle release di GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
+La versione 2.2.1 include binari precompilati nella [pagina delle release di GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
 
-- **macOS (universal):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.1.0-linux-x64.deb` — Debian / Ubuntu / derivati. Installa con `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`. Il supporto AppImage è previsto per la versione 2.2 (upstream `linuxdeploy` / Ubuntu 24.04 FUSE interaction).
+- **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
+- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / derivati. Installa con `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. Il supporto AppImage è previsto per la versione 2.2 (upstream `linuxdeploy` / Ubuntu 24.04 FUSE interaction).
 
-È necessario anche il demone Python che supporta l'applicazione: `pip install 'sovereignty-game[daemon]'==2.1.0`.
+È necessario anche il demone Python che supporta l'applicazione: `pip install 'sovereignty-game[daemon]'==2.2.1`.
 
 > **È previsto un avviso al primo avvio.** Su macOS, verrà visualizzato "sviluppatore non identificato": fai clic con il pulsante destro del mouse sul file .app, scegli Apri e conferma. Su Windows, SmartScreen visualizzerà "editore non riconosciuto": fai clic su "Altre informazioni" e quindi su "Esegui comunque". Entrambi gli avvisi indicano che la versione 2.1 viene fornita con l'attestazione della provenienza della build (verifica con `gh attestation verify`), e non con la firma del codice a livello di sistema operativo. L'infrastruttura di firma a livello di workspace è disponibile nella versione 2.2.
 
@@ -204,7 +204,7 @@ Ogni artefatto della release include un'attestazione della provenienza della bui
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.1.0-darwin-universal.dmg
+  ./sovereignty-app-2.2.1-darwin-universal.dmg
 ```
 
 Una verifica corretta dimostra che il binario è stato creato da un commit specifico, tramite il workflow di release, in questo repository. Questo livello di fiducia è diverso dalla firma del codice a livello di sistema operativo: il binario continua a generare l'avviso del sistema operativo, ma la sua provenienza della catena di fornitura è fissata crittograficamente.

@@ -185,13 +185,13 @@ O "Audit Viewer" é o aplicativo de desktop da v2.1 — um shell Tauri (Rust + w
 
 ### Instalação (binários)
 
-A v2.1.0 inclui binários pré-compilados na [página de lançamentos do GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
+A v2.2.1 inclui binários pré-compilados na [página de lançamentos do GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
 
-- **macOS (universal):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.1.0-linux-x64.deb` — Debian / Ubuntu / derivados. Instale com `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`. O suporte para AppImage será implementado na versão 2.2 (upstream `linuxdeploy` / interação Ubuntu 24.04 FUSE).
+- **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
+- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / derivados. Instale com `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. O suporte para AppImage será implementado na versão 2.2 (upstream `linuxdeploy` / interação Ubuntu 24.04 FUSE).
 
-Você também precisa do daemon Python que suporta o aplicativo: `pip install 'sovereignty-game[daemon]'==2.1.0`.
+Você também precisa do daemon Python que suporta o aplicativo: `pip install 'sovereignty-game[daemon]'==2.2.1`.
 
 > **Aviso de primeiro lançamento é esperado.** No macOS, aparecerá "desenvolvedor não identificado" — clique com o botão direito no arquivo .app, escolha "Abrir", confirme. No Windows, o SmartScreen exibirá "editor desconhecido" — clique em "Mais informações" e depois em "Executar mesmo assim". Ambos os avisos indicam que a v2.1 é fornecida com apenas a atestação de origem da compilação (verifique com `gh attestation verify`), e não com a assinatura de código no nível do sistema operacional. A infraestrutura de assinatura no nível do workspace será incluída na v2.2.
 
@@ -202,7 +202,7 @@ Cada artefato de lançamento possui uma atestação de origem de compilação SL
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.1.0-darwin-universal.dmg
+  ./sovereignty-app-2.2.1-darwin-universal.dmg
 ```
 
 Uma verificação bem-sucedida comprova que o binário foi construído a partir de um commit específico, pelo fluxo de trabalho de lançamento, neste repositório. É um nível de confiança diferente da assinatura de código no nível do sistema operacional — o binário ainda aciona o aviso do sistema operacional, mas sua origem na cadeia de suprimentos é fixada criptograficamente.
