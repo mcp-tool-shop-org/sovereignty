@@ -151,8 +151,7 @@ sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
 sov postcard                         # shareable summary
-sov season                           # season standings across games (v2.1+)
-sov season-postcard                  # printable season recap
+sov season-postcard                  # season standings / printable recap
 sov feedback                         # issue-ready play report
 sov scenario list                    # browse scenario packs
 sov scenario code cozy-night -s 42   # generate a share code
