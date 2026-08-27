@@ -185,13 +185,13 @@ sov daemon stop
 
 ### インストール (バイナリ)
 
-v2.1.0 は、あらかじめコンパイルされたバイナリを [GitHub Releases ページ](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) で提供しています。
+v2.2.1 は、あらかじめコンパイルされたバイナリを [GitHub Releases ページ](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) で提供しています。
 
-- **macOS (universal):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.1.0-linux-x64.deb` — Debian / Ubuntu / その派生版。`sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`でインストールしてください。AppImageのサポートはv2.2で実装予定（upstream `linuxdeploy` / Ubuntu 24.04 FUSEとの連携）。
+- **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
+- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / その派生版。`sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`でインストールしてください。AppImageのサポートはv2.2で実装予定（upstream `linuxdeploy` / Ubuntu 24.04 FUSEとの連携）。
 
-アプリのバックグラウンドで動作する Python デーモンも必要です。`pip install 'sovereignty-game[daemon]'==2.1.0` でインストールしてください。
+アプリのバックグラウンドで動作する Python デーモンも必要です。`pip install 'sovereignty-game[daemon]'==2.2.1` でインストールしてください。
 
 > **初回起動時の警告が表示される場合があります。** macOS では「身元不明の開発者」と表示される場合があります。この場合、.app を右クリックし、「開く」を選択して確認してください。Windows の SmartScreen では「未登録のパブリッシャー」と表示される場合があります。「詳細情報」をクリックし、「とにかく実行する」を選択してください。これらの警告は、v2.1 がビルドの信頼性情報を付与しているだけで、OS レベルでのコード署名が行われていないことを示しています。ワークスペースレベルの署名機能は v2.2 で提供されます。
 
@@ -202,7 +202,7 @@ v2.1.0 は、あらかじめコンパイルされたバイナリを [GitHub Rele
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.1.0-darwin-universal.dmg
+  ./sovereignty-app-2.2.1-darwin-universal.dmg
 ```
 
 検証が成功すると、そのバイナリが特定のコミットから、リリースワークフローによって、このリポジトリでビルドされたことが証明されます。これは、OS レベルのコード署名とは異なる信頼性の層です。バイナリは引き続き OS の警告を引き起こしますが、そのサプライチェーンの信頼性は暗号的に検証されています。

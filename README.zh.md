@@ -186,13 +186,13 @@ sov daemon stop
 
 ### 安装（二进制文件）
 
-v2.1.0 提供了预构建的二进制文件，位于 [GitHub 发布页面](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest)：
+v2.2.1 提供了预构建的二进制文件，位于 [GitHub 发布页面](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest)：
 
-- **macOS (通用):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.1.0-linux-x64.deb` — Debian / Ubuntu / 及其衍生版本。使用 `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb` 进行安装。AppImage 支持将在 v2.2 中实现（上游 `linuxdeploy` / Ubuntu 24.04 FUSE 交互）。
+- **macOS (通用):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
+- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / 及其衍生版本。使用 `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb` 进行安装。AppImage 支持将在 v2.2 中实现（上游 `linuxdeploy` / Ubuntu 24.04 FUSE 交互）。
 
-您还需要 Python 守护进程来支持该应用程序：`pip install 'sovereignty-game[daemon]'==2.1.0`。
+您还需要 Python 守护进程来支持该应用程序：`pip install 'sovereignty-game[daemon]'==2.2.1`。
 
 > **首次启动时可能会出现警告。** macOS 会显示“未识别的开发者”——右键单击 .app 文件，选择“打开”，然后确认。Windows SmartScreen 会显示“未知的发布者”——单击“更多信息”，然后单击“继续运行”。这两个警告都表明 v2.1 包含构建来源证明（使用 `gh attestation verify` 进行验证），而不是操作系统级别的代码签名。工作区级别的签名基础设施将在 v2.2 中实现。
 
@@ -203,7 +203,7 @@ v2.1.0 提供了预构建的二进制文件，位于 [GitHub 发布页面](https
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.1.0-darwin-universal.dmg
+  ./sovereignty-app-2.2.1-darwin-universal.dmg
 ```
 
 干净的验证证明该二进制文件是由特定提交，通过发布工作流程，在这个仓库中构建的。这与操作系统级别的代码签名是不同的信任层——该二进制文件仍然会触发操作系统警告，但其供应链来源是经过密码学验证的。

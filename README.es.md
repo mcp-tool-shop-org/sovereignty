@@ -187,13 +187,13 @@ El Audit Viewer es la aplicación de escritorio de la versión 2.1: una capa Tau
 
 ### Instalación (binarios)
 
-La versión 2.1.0 incluye binarios precompilados en la [página de lanzamientos de GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
+La versión 2.2.1 incluye binarios precompilados en la [página de lanzamientos de GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
 
-- **macOS (universal):** `sovereignty-app-2.1.0-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.1.0-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.1.0-linux-x64.deb` — Debian / Ubuntu / derivados. Instale con `sudo dpkg -i sovereignty-app-2.1.0-linux-x64.deb`. El soporte para AppImage se pospone a la versión 2.2 (interacción de `linuxdeploy` / Ubuntu 24.04 FUSE).
+- **macOS (universal):** `sovereignty-app-2.2.1-darwin-universal.dmg` — Intel + Apple Silicon
+- **Windows (x64):** `sovereignty-app-2.2.1-win-x64.msi`
+- **Linux (x64, .deb):** `sovereignty-app-2.2.1-linux-x64.deb` — Debian / Ubuntu / derivados. Instale con `sudo dpkg -i sovereignty-app-2.2.1-linux-x64.deb`. El soporte para AppImage se pospone a la versión 2.2 (interacción de `linuxdeploy` / Ubuntu 24.04 FUSE).
 
-También necesita el demonio de Python que da soporte a la aplicación: `pip install 'sovereignty-game[daemon]'==2.1.0`.
+También necesita el demonio de Python que da soporte a la aplicación: `pip install 'sovereignty-game[daemon]'==2.2.1`.
 
 > **Se espera una advertencia al iniciar por primera vez.** macOS mostrará "desarrollador no identificado": haga clic con el botón derecho en el archivo .app, elija "Abrir" y confirme. Windows SmartScreen mostrará "editor no reconocido": haga clic en "Más información" y luego en "Ejecutar de todos modos". Ambas advertencias indican que la versión 2.1 incluye solo la certificación de la procedencia de la compilación (verifique con `gh attestation verify`), y no la firma de código a nivel del sistema operativo. La infraestructura de firma a nivel de espacio de trabajo se incluirá en la versión 2.2.
 
@@ -204,7 +204,7 @@ Cada archivo de la versión incluye una certificación de la procedencia de la c
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.1.0-darwin-universal.dmg
+  ./sovereignty-app-2.2.1-darwin-universal.dmg
 ```
 
 Una verificación correcta demuestra que el binario se compiló a partir de un commit específico, utilizando el flujo de trabajo de la versión, en este repositorio. Es un nivel de confianza diferente a la firma de código a nivel del sistema operativo; el binario aún genera la advertencia del sistema operativo, pero su procedencia en la cadena de suministro está protegida criptográficamente.
