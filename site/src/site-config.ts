@@ -8,11 +8,11 @@ export const config: SiteConfig = {
   repoUrl: 'https://github.com/mcp-tool-shop-org/sovereignty',
   // HACK: site-theme's SiteConfig only exposes `npmUrl?` for the registry-link
   // slot, but sovereignty is a Python package on PyPI. We point npmUrl at the
-  // PyPI listing so the link lands correctly; the visible label still reads
-  // "npm". Tracked upstream:
-  //   https://github.com/mcp-tool-shop-org/site-theme/issues/4
-  // Once site-theme 0.3.0 ships `packageUrl`, rename this field and drop the
-  // HACK note.
+  // PyPI listing so the link lands correctly. Visible label is PyPI via the
+  // local BaseLayout override (site/src/components/BaseLayout.astro). Tracked
+  // upstream: https://github.com/mcp-tool-shop-org/site-theme/issues/4
+  // Once site-theme 0.3.0 ships `packageUrl`, rename this field, drop the
+  // local layout, and drop the HACK note.
   npmUrl: 'https://pypi.org/project/sovereignty-game/',
 
   // SECURITY — set:html boundary
@@ -77,9 +77,9 @@ export const config: SiteConfig = {
         { title: 'Install', code: 'pipx install sovereignty-game\n# or: uv tool install sovereignty-game' },
         { title: 'Quick start', code: 'sov tutorial           # learn in 60 seconds\nsov new -p Alice -p Bob # start a game\nsov turn               # roll, land, resolve\nsov end-round          # generate proof' },
         // DOCS-D-003 (Wave 13 Stage 9-D): desktop-app entry point alongside
-        // the CLI cards. Audit Viewer + Game Shell run from source for v2.1
-        // dev preview; signed binaries ship via Wave 11.
-        { title: 'Desktop app (v2.1, dev preview)', code: 'npm --prefix app run tauri dev\n# Audit Viewer + Game Shell — runs from source.\n# Signed binaries ship via Wave 11.' },
+        // the CLI cards. Audit Viewer + Game Shell run from source.
+        // Attested binaries ship on GitHub Releases v2.2.1.
+        { title: 'Desktop app', code: 'npm --prefix app run tauri dev\n# Audit Viewer + Game Shell — runs from source.\n# Attested binaries: GitHub Releases v2.2.1.' },
       ],
     },
     {
