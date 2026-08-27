@@ -224,21 +224,9 @@ def _read_state(game_id: str) -> dict[str, Any] | None:
 
 def _read_anchors(game_id: str) -> dict[str, str]:
     """Read ``anchors.json`` as ``{round_key: txid}``. Empty on missing."""
-    path = anchors_file(game_id)
-    if not path.exists():
-        return {}
-    try:
-        raw = path.read_text(encoding="utf-8")
-        data = json.loads(raw)
-    except (OSError, json.JSONDecodeError):
-        return {}
-    if not isinstance(data, dict):
-        return {}
-    cleaned: dict[str, str] = {}
-    for key, value in data.items():
-        if isinstance(key, str) and isinstance(value, str):
-            cleaned[key] = value
-    return cleaned
+    from sov_engine.proof import _read_anchors as engine_read_anchors
+
+    return engine_read_anchors(game_id)
 
 
 def _resolve_round_key(round_key: str) -> str:
@@ -993,24 +981,12 @@ def _round_sort_key(round_key: str) -> tuple[int, int]:
 def _record_anchors(game_id: str, round_to_txid: dict[str, str]) -> None:
     """Append ``{round_key: txid}`` rows to ``anchors.json``.
 
-    Wave 10 BRIDGE-A-bis-003: caller passes a precomputed ``round_to_txid``
-    mapping so multi-tx batches (>8 memos) record the correct txid per
-    round_key. Single-tx batches still pass a single-value mapping.
-
-    Preserves any existing rows so re-anchoring on a fresh checkpoint
-    doesn't drop earlier rounds. Atomic-write via the same engine
-    helper used by the CLI.
+    Shared engine writer. Merges with existing rows so a daemon flush
+    does not erase earlier txids. Canonical wrap is ``entries``.
     """
-    from sov_engine.io_utils import atomic_write_text
+    from sov_engine.proof import record_anchors
 
-    path = anchors_file(game_id)
-    existing = _read_anchors(game_id)
-    existing.update(round_to_txid)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(
-        path,
-        json.dumps(existing, indent=2, ensure_ascii=False, sort_keys=True) + "\n",
-    )
+    record_anchors(game_id, round_to_txid)
 
 
 def _load_seed(state: Any) -> str | None:
