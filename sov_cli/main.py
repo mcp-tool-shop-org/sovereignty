@@ -515,6 +515,54 @@ def _record_anchor(round_key: int | str, txid: str, game_id: str) -> None:
     record_anchors(game_id, {str(round_key): txid})
 
 
+def _commit_anchor_chunks(
+    transport: Any,
+    *,
+    game_id: str,
+    rounds: list[Any],
+    seed: str,
+) -> list[str]:
+    """Submit pending rounds one ≤8-memo chunk at a time, recording each.
+
+    Mirrors ``sov_daemon.server.flush_pending_anchors`` /
+    ``_commit_anchored_chunk``. ``anchor_batch`` documents partial-success
+    (earlier chunks stay on chain) but does not attach those txids to
+    TransportError — the CLI must record each chunk before the next submit
+    so heal-on-read has a txid to keep. A later failure therefore cannot
+    discard already-on-chain txids: the succeeded prefix is local, and
+    retry only re-submits remaining pending rounds.
+    """
+    from sov_engine.proof import record_anchors_and_clear_pending
+    from sov_transport.xrpl_internals import _MAX_MEMOS_PER_TX
+
+    txids: list[str] = []
+    flushed_keys: list[str] = []
+    try:
+        for chunk_start in range(0, len(rounds), _MAX_MEMOS_PER_TX):
+            chunk = rounds[chunk_start : chunk_start + _MAX_MEMOS_PER_TX]
+            chunk_txids = transport.anchor_batch(chunk, seed)
+            if not chunk_txids:
+                raise RuntimeError("anchor_batch returned no txids")
+            txid = str(chunk_txids[0])
+            chunk_map = {entry["round_key"]: txid for entry in chunk}
+            record_anchors_and_clear_pending(game_id, chunk_map)
+            txids.append(txid)
+            flushed_keys.extend(chunk_map.keys())
+    except Exception as exc:
+        if flushed_keys:
+            logger.warning(
+                "anchor_batch.partial game_id=%s txs=%d flushed=%d "
+                "exc=%s detail=%s (succeeded prefix kept; retry submits leftover)",
+                game_id,
+                len(txids),
+                len(flushed_keys),
+                type(exc).__name__,
+                exc,
+            )
+        raise
+    return txids
+
+
 def _load_game() -> tuple[GameState, GameRng] | None:
     """Load game state from disk.
 
@@ -2257,7 +2305,9 @@ def anchor(
         return
 
     # ------------------------------------------------------------------
-    # Batch path: flush pending-anchors.json as a single multi-memo tx.
+    # Batch path: flush pending-anchors.json in ≤8-memo chunks.
+    # Each chunk is submitted then recorded+cleared before the next
+    # submit so a later TransportError cannot discard on-chain prefix txids.
     # ------------------------------------------------------------------
     active_id = _resolve_active_game_id()
     pending = read_pending_anchors(active_id, heal=True)
@@ -2348,26 +2398,13 @@ def anchor(
         from sov_transport.xrpl_internals import _MAX_MEMOS_PER_TX
 
         transport = XRPLTransport(network=resolved_network)
-        # Wave 10 BRIDGE-A-bis-003: anchor_batch returns ``list[str]``.
-        # Single-tx batches (≤8 memos) get a 1-element list; >8-memo
-        # batches get one txid per chunk in submission order.
-        txids = transport.anchor_batch(rounds, seed)
-
-        # Map each round_key to the txid that carried it on the wire.
-        # Chunks are contiguous slices of ``rounds`` in ``_MAX_MEMOS_PER_TX``-
-        # sized blocks (matching the bridge's chunking).
-        round_to_txid: dict[str, str] = {}
-        for chunk_idx, txid in enumerate(txids):
-            chunk_start = chunk_idx * _MAX_MEMOS_PER_TX
-            chunk_end = min(chunk_start + _MAX_MEMOS_PER_TX, len(rounds))
-            for entry in rounds[chunk_start:chunk_end]:
-                round_to_txid[entry["round_key"]] = txid
-
-        # Combined writer: one anchors.json merge then one pending clear.
-        # Crash between those files is recovered by heal (txid wins).
-        from sov_engine.proof import record_anchors_and_clear_pending
-
-        record_anchors_and_clear_pending(game_id, round_to_txid)
+        # One ≤8-memo AccountSet at a time. ``anchor_batch`` documents
+        # partial-success but does not attach those txids to TransportError
+        # — record+clear each chunk before the next submit so a later
+        # failure cannot discard already-on-chain prefix txids.
+        txids = _commit_anchor_chunks(
+            transport, game_id=game_id, rounds=rounds, seed=seed
+        )
         logger.info(
             "anchor_batch.success rounds=%d txs=%d txids=%s game_id=%s",
             n,
@@ -2414,11 +2451,11 @@ def anchor(
             )
         )
     except RuntimeError as e:
-        # Transport-level failure. Pending stays untouched so the operator
-        # can retry — `sov anchor` is idempotent on the same pending set.
+        # Transport-level failure. Succeeded chunks are already recorded;
+        # leftover pending is retried by a subsequent `sov anchor`.
         logger.error(
             "anchor_batch.failed rounds=%d exc=RuntimeError detail=%s "
-            "(non-fatal: pending kept; re-run `sov anchor` to retry)",
+            "(non-fatal: succeeded prefix kept; re-run `sov anchor` for leftover)",
             n,
             e,
         )
@@ -2426,7 +2463,7 @@ def anchor(
     except Exception as e:
         logger.error(
             "anchor_batch.failed rounds=%d exc=%s detail=%s "
-            "(non-fatal: pending kept; re-run `sov anchor` to retry)",
+            "(non-fatal: succeeded prefix kept; re-run `sov anchor` for leftover)",
             n,
             type(e).__name__,
             e,
@@ -3225,9 +3262,10 @@ def game_end(
 
     _save_state(state)
 
-    # Optional anchor — flush all pending entries (per-round + FINAL) as one
-    # multi-memo Payment. v2.1 audit-ergonomics path replaces the v2.0.x
-    # single-memo FINAL anchor.
+    # Optional anchor — flush all pending entries (per-round + FINAL) in
+    # ≤8-memo chunks. v2.1 audit-ergonomics path replaces the v2.0.x
+    # single-memo FINAL anchor. Per-chunk record-then-clear matches
+    # `sov anchor` so a later TransportError keeps the succeeded prefix.
     if do_anchor:
         seed_val = state.config.seed
         game_id = proof.get("game_id", f"s{seed_val}")
@@ -3283,23 +3321,17 @@ def game_end(
                 console.print(f"\n  Anchoring {n} pending round{plural}...")
                 try:
                     from sov_transport.xrpl import XRPLTransport
-                    from sov_transport.xrpl_internals import _MAX_MEMOS_PER_TX
 
                     transport = XRPLTransport(network=resolved_network)
-                    # Wave 10 BRIDGE-A-bis-003: list[str] of txids; one per
-                    # ≤8-memo chunk. Map each round_key to its chunk's txid.
-                    txids = transport.anchor_batch(rounds, wallet_seed)
-
-                    round_to_txid: dict[str, str] = {}
-                    for chunk_idx, txid in enumerate(txids):
-                        chunk_start = chunk_idx * _MAX_MEMOS_PER_TX
-                        chunk_end = min(chunk_start + _MAX_MEMOS_PER_TX, len(rounds))
-                        for chunk_entry in rounds[chunk_start:chunk_end]:
-                            round_to_txid[chunk_entry["round_key"]] = txid
-
-                    from sov_engine.proof import record_anchors_and_clear_pending
-
-                    record_anchors_and_clear_pending(active_id, round_to_txid)
+                    # Same per-chunk record-then-clear as `sov anchor`:
+                    # a later TransportError keeps the succeeded prefix
+                    # local so retry only submits remaining pending.
+                    txids = _commit_anchor_chunks(
+                        transport,
+                        game_id=active_id,
+                        rounds=rounds,
+                        seed=wallet_seed,
+                    )
                     logger.info(
                         "anchor_batch.success rounds=%d txs=%d txids=%s game_id=%s",
                         n,
@@ -3317,12 +3349,13 @@ def game_end(
                             console.print(f"  TX {chunk_idx + 1}/{len(txids)}: [dim]{txid}[/dim]")
                             console.print(f"    [dim]{transport.explorer_tx_url(txid)}[/dim]")
                 except Exception as e:
-                    # Batch anchor failed; the proof files are still saved
-                    # locally and pending-anchors.json is intact. Operator
-                    # retries with `sov anchor` (idempotent on the same set).
+                    # Batch anchor failed after zero-or-more chunks. Proof
+                    # files are still saved locally. Succeeded chunks are
+                    # already recorded; leftover pending retries via
+                    # `sov anchor`.
                     logger.error(
                         "anchor_batch.failed rounds=%d exc=%s detail=%s "
-                        "(non-fatal: pending kept; retry with `sov anchor`)",
+                        "(non-fatal: succeeded prefix kept; retry leftover with `sov anchor`)",
                         len(rounds),
                         type(e).__name__,
                         e,

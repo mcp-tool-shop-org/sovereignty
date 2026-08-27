@@ -98,9 +98,7 @@ def verify_proof(proof_path: Path) -> tuple[bool, str]:
         text = proof_path.read_text(encoding="utf-8")
         proof = json.loads(text)
     except (OSError, json.JSONDecodeError) as e:
-        return False, (
-            f"Failed to read proof: {e}. Run `sov verify --tx <tx-hash>` to verify on-chain."
-        )
+        raise ProofFormatError(f"Failed to read proof: {e}") from e
 
     version = proof.get("proof_version")
     if version is None or version == 1:
@@ -111,7 +109,9 @@ def verify_proof(proof_path: Path) -> tuple[bool, str]:
         )
 
     if version != PROOF_VERSION:
-        return False, f"Unknown proof_version: {version} (this binary supports v{PROOF_VERSION})."
+        raise ProofFormatError(
+            f"Unknown proof_version: {version} (this binary supports v{PROOF_VERSION})."
+        )
 
     if "envelope_hash" not in proof:
         return False, "Proof missing 'envelope_hash' field."

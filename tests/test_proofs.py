@@ -13,11 +13,22 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from typer.testing import CliRunner
 
 from sov_cli.errors import ProofFormatError
+from sov_cli.main import app
 from sov_engine.hashing import make_round_proof, save_proof, verify_proof
 from sov_engine.rules.campfire import new_game
 from sov_engine.serialize import canonical_json, game_state_snapshot
+
+runner = CliRunner()
+
+# Invalid recovery form F-d26e6014 removed from the README: Typer requires
+# positional proof_file, so `sov verify --tx <hash>` is rejected.
+_ORPHAN_VERIFY_TX = "sov verify --tx"
+# proof_invalid_error(kind="MODIFIED") hint. Hash-mismatch is the only path
+# that may emit this; IO / unknown-version must not.
+_MODIFIED_HINT = "bytes don't match"
 
 # ---------------------------------------------------------------------------
 # Determinism / canonical JSON
@@ -196,34 +207,6 @@ def _game_id_change(p: dict[str, Any]) -> None:
     p["game_id"] = p["game_id"] + "_tampered"
 
 
-def _proof_version_field_tamper(p: dict[str, Any]) -> None:
-    """Mutate ``proof_version`` while keeping it a recognized version.
-
-    Direct value-bump (e.g. to 99) short-circuits at ``hashing.py:94`` via
-    the 'Unknown proof_version' branch BEFORE ``_compute_envelope_hash``
-    runs, which means the envelope_hash protection over ``proof_version``
-    isn't empirically demonstrated. Instead we set the version to the
-    same canonical value (2) but via a different Python object identity --
-    ``True`` -- which serializes to ``true`` in canonical JSON and therefore
-    changes the hashed payload while not tripping the version check
-    (``int(True) == 1`` is rejected as v1, but bool(True) compared by ``!= 2``
-    is True in Python: ``True == 1`` so this still won't work via the
-    short-circuit). Pragmatic alternative used here: tamper the version
-    AND patch the version check pre-condition by setting a
-    string-shaped variant that the verifier currently doesn't accept.
-
-    Practical approach: the tamper is the empirical *negative* check that
-    ``proof_version`` IS hashed. We mutate version to a different int-shaped
-    value (``3``); verify_proof's contract returns False with the
-    'Unknown proof_version' message. While this is the version-check
-    short-circuit, the tamper still demonstrates the FIELD's coverage by
-    way of the companion test ``test_envelope_hash_includes_proof_version``
-    below which directly shows the hash differs when the field is removed
-    from the canonical payload.
-    """
-    p["proof_version"] = 3
-
-
 def test_envelope_hash_includes_proof_version() -> None:
     """Direct empirical proof that ``proof_version`` is in the hashed payload.
 
@@ -262,18 +245,15 @@ def test_envelope_hash_includes_proof_version() -> None:
         ("rng_seed_change", _rng_seed_change),
         ("timestamp_tweak", _timestamp_tweak),
         ("game_id_change", _game_id_change),
-        ("proof_version_field", _proof_version_field_tamper),
     ],
 )
 def test_v2_envelope_field_tampering_invalidates_proof(tamper_name, tamper_fn):
-    """One test per tamper vector. Each mutates a single envelope field and
-    asserts ``verify_proof`` returns (False, ...). This is the F-V2CUT-001
-    coverage that proves ``envelope_hash`` actually covers each named field.
+    """One test per tamper vector. Each mutates a single hashed envelope field
+    and asserts ``verify_proof`` returns (False, hash-mismatch).
 
-    Most vectors trip the "Hash mismatch" branch; the ``proof_version`` vector
-    short-circuits earlier at the version check (hashing.py:94) and produces
-    an "Unknown proof_version" message. Both are valid rejection paths: the
-    contract is that the proof MUST be rejected, not the specific message.
+    Unknown ``proof_version`` is not a tamper vector: it raises
+    ``ProofFormatError`` (same as ``_load_proof``). Field coverage for
+    ``proof_version`` is ``test_envelope_hash_includes_proof_version``.
     """
     proof = _make_proof_for_tamper()
     tamper_fn(proof)
@@ -282,9 +262,7 @@ def test_v2_envelope_field_tampering_invalidates_proof(tamper_name, tamper_fn):
         path = _write_proof(proof, Path(tmp))
         valid, msg = verify_proof(path)
         assert not valid, f"tamper '{tamper_name}' should invalidate envelope_hash"
-        # Accept either rejection path: hash-mismatch or version-check.
-        msg_lower = msg.lower()
-        assert "mismatch" in msg_lower or "unknown proof_version" in msg_lower, (
+        assert "mismatch" in msg.lower(), (
             f"tamper '{tamper_name}' produced unexpected message: {msg}"
         )
 
@@ -352,38 +330,46 @@ def test_explicit_v1_proof_version_is_rejected():
 
 
 # ---------------------------------------------------------------------------
-# verify_proof negative branches (parking-lot F-432101-019)
+# verify_proof negative branches (F-b0e0c574 / F-516d1a7f)
+# IO and unknown proof_version raise ProofFormatError, same as _load_proof.
+# Hash mismatch remains the (False, ...) / CLI kind=MODIFIED path.
 # ---------------------------------------------------------------------------
 
 
-def test_verify_proof_returns_false_when_file_missing(tmp_path):
-    """A path that doesn't exist must yield (False, message), not raise.
+def _assert_format_error_not_orphan_tx(exc: BaseException) -> str:
+    """ProofFormatError must not recommend the no-file ``sov verify --tx`` form."""
+    msg = str(exc)
+    assert msg, "ProofFormatError must carry a non-empty message"
+    assert _ORPHAN_VERIFY_TX not in msg, (
+        f"recovery must not be `{_ORPHAN_VERIFY_TX} <hash>` (no proof_file); got: {msg!r}"
+    )
+    return msg
 
-    ``verify_proof`` already wraps ``read_text`` in a try/except for
-    ``OSError``; this test pins that contract so a future refactor that
-    drops the catch will fail loud.
+
+def test_verify_proof_raises_when_file_missing(tmp_path):
+    """A path that doesn't exist raises ProofFormatError, not (False, ...).
+
+    Returning False here made ``sov verify`` wrap the miss as
+    ``kind=MODIFIED`` ("bytes don't match"). Same contract as ``_load_proof``.
     """
     missing = tmp_path / "does_not_exist.proof.json"
     assert not missing.exists()
 
-    valid, msg = verify_proof(missing)
-    assert valid is False
-    assert msg, "verify_proof must return a non-empty message on failure"
-    # Message should mention the read failure or the missing file.
-    assert "failed to read" in msg.lower() or "no such" in msg.lower()
+    with pytest.raises(ProofFormatError) as exc_info:
+        verify_proof(missing)
+    msg = _assert_format_error_not_orphan_tx(exc_info.value)
+    assert "read" in msg.lower() or "no such" in msg.lower() or missing.name in msg
 
 
-def test_verify_proof_returns_false_on_invalid_json(tmp_path):
-    """Garbage JSON must return (False, message), not propagate
-    ``json.JSONDecodeError`` to the caller.
-    """
+def test_verify_proof_raises_on_invalid_json(tmp_path):
+    """Garbage JSON raises ProofFormatError, not json.JSONDecodeError or False."""
     bad = tmp_path / "bad.proof.json"
     bad.write_text("not json{", encoding="utf-8")
 
-    valid, msg = verify_proof(bad)
-    assert valid is False
-    assert msg
-    assert "failed to read" in msg.lower()
+    with pytest.raises(ProofFormatError) as exc_info:
+        verify_proof(bad)
+    msg = _assert_format_error_not_orphan_tx(exc_info.value)
+    assert "read" in msg.lower() or "json" in msg.lower() or "parse" in msg.lower()
 
 
 def test_verify_proof_returns_false_on_missing_envelope_hash_field(tmp_path):
@@ -413,12 +399,11 @@ def test_verify_proof_returns_false_on_missing_envelope_hash_field(tmp_path):
     assert "envelope_hash" in msg, f"missing-field error must name the missing field; got: {msg!r}"
 
 
-def test_verify_proof_raises_or_returns_false_on_unknown_proof_version(tmp_path):
-    """An unknown ``proof_version`` (e.g. 99) must NOT silently verify.
+def test_verify_proof_raises_on_unknown_proof_version(tmp_path):
+    """Unknown ``proof_version`` (e.g. 3 or 99) raises ProofFormatError.
 
-    Contract: either return ``(False, "Unknown proof_version: ...")`` (current
-    behavior) OR raise a structured error. This test accepts either path so
-    the engine team can tighten the contract without breaking the test.
+    Returning False made the CLI report tampering (kind=MODIFIED). v1 is
+    already ProofFormatError; unknown future versions must match _load_proof.
     """
     state, _ = new_game(42, ["Alice", "Bob"])
     snapshot = game_state_snapshot(state)
@@ -442,18 +427,90 @@ def test_verify_proof_raises_or_returns_false_on_unknown_proof_version(tmp_path)
         newline="\n",
     )
 
-    try:
-        valid, msg = verify_proof(path)
-    except (ProofFormatError, ValueError) as exc:
-        # Acceptable: structured raise with mention of the version.
-        assert "99" in str(exc) or "version" in str(exc).lower()
-        return
-
-    # Acceptable: (False, "Unknown proof_version: 99 ...").
-    assert valid is False
-    assert "99" in msg or "unknown proof_version" in msg.lower(), (
-        f"unknown proof_version must produce a version-specific message; got: {msg!r}"
+    with pytest.raises(ProofFormatError) as exc_info:
+        verify_proof(path)
+    msg = _assert_format_error_not_orphan_tx(exc_info.value)
+    assert "99" in msg or "version" in msg.lower(), (
+        f"unknown proof_version must name the version; got: {msg!r}"
     )
+
+
+def _write_v3_proof(tmp_path: Path) -> Path:
+    state, _ = new_game(42, ["Alice", "Bob"])
+    snapshot = game_state_snapshot(state)
+    path = tmp_path / "v3.proof.json"
+    path.write_text(
+        canonical_json(
+            {
+                "game_id": "sov_42",
+                "proof_version": 3,
+                "round": 1,
+                "ruleset": "campfire_v1",
+                "rng_seed": 42,
+                "timestamp_utc": "2024-01-01T00:00:00Z",
+                "players": ["Alice", "Bob"],
+                "state": snapshot,
+                "envelope_hash": "0" * 64,
+            }
+        ),
+        encoding="utf-8",
+        newline="\n",
+    )
+    return path
+
+
+def _assert_cli_verify_not_modified(result: Any, *, label: str) -> None:
+    """sov verify on IO / unknown-version must not look like tampering."""
+    output = result.output
+    assert result.exit_code != 0, f"{label}: sov verify must fail; output={output!r}"
+    lower = output.lower()
+    assert _MODIFIED_HINT not in lower, (
+        f"{label}: must not emit STATE_PROOF_INVALID kind=MODIFIED "
+        f"({_MODIFIED_HINT!r}); got: {output!r}"
+    )
+    assert _ORPHAN_VERIFY_TX not in output, (
+        f"{label}: must not recommend `{_ORPHAN_VERIFY_TX} <hash>` (no proof_file); got: {output!r}"
+    )
+
+
+def test_cli_verify_missing_file_is_not_modified(tmp_path: Path) -> None:
+    """CliRunner: missing proof is UNSUPPORTED_VERSION or IO, not MODIFIED."""
+    missing = tmp_path / "does_not_exist.proof.json"
+    result = runner.invoke(app, ["verify", str(missing)])
+    _assert_cli_verify_not_modified(result, label="missing")
+
+
+def test_cli_verify_truncated_json_is_not_modified(tmp_path: Path) -> None:
+    """CliRunner: truncated JSON is a format/IO failure, not hash tampering."""
+    bad = tmp_path / "truncated.proof.json"
+    bad.write_text("not json{", encoding="utf-8")
+    result = runner.invoke(app, ["verify", str(bad)])
+    _assert_cli_verify_not_modified(result, label="truncated")
+
+
+def test_cli_verify_proof_version_3_is_not_modified(tmp_path: Path) -> None:
+    """CliRunner: proof_version 3 is UNSUPPORTED_VERSION, not MODIFIED."""
+    path = _write_v3_proof(tmp_path)
+    result = runner.invoke(app, ["verify", str(path)])
+    _assert_cli_verify_not_modified(result, label="proof_version 3")
+    lower = result.output.lower()
+    assert "3" in result.output or "version" in lower, (
+        f"proof_version 3 must name the version; got: {result.output!r}"
+    )
+
+
+def test_cli_verify_hash_mismatch_is_the_only_modified_path(tmp_path: Path) -> None:
+    """Hash mismatch is the only sov verify path that emits kind=MODIFIED."""
+    proof = _make_proof_for_tamper()
+    proof["state"]["players"][0]["coins"] = 999
+    path = _write_proof(proof, tmp_path)
+    result = runner.invoke(app, ["verify", str(path)])
+    assert result.exit_code != 0, f"tampered proof must fail; output={result.output!r}"
+    assert _MODIFIED_HINT in result.output.lower(), (
+        f"hash mismatch is the MODIFIED path ({_MODIFIED_HINT!r}); got: {result.output!r}"
+    )
+    assert _ORPHAN_VERIFY_TX not in result.output
+
 
 # ---------------------------------------------------------------------------
 # JOB-010 — FINAL proof must rehash after final:true
@@ -475,6 +532,7 @@ def test_stamping_final_without_rehash_mismatches() -> None:
 def test_mark_final_proof_recomputes_envelope_hash() -> None:
     """game-end helper: final:true plus rehash verifies."""
     from sov_engine.hashing import mark_final_proof
+
     state, _ = new_game(42, ["Alice", "Bob"])
     proof = make_round_proof(state)
     before = proof["envelope_hash"]

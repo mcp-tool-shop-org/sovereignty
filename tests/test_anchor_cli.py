@@ -428,6 +428,86 @@ def test_anchor_failed_batch_keeps_pending_intact(
     assert pending_anchors_path(game_id).exists()
 
 
+def test_anchor_chunk2_failure_keeps_chunk1_prefix(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """F-ed3b37f0: succeed chunk 1, raise on chunk 2 — keep the prefix local.
+
+    Fake transport returns a txid for the first ``_MAX_MEMOS_PER_TX`` rounds
+    and raises on the remainder. After the first ``sov anchor``, chunk-1
+    keys must be in anchors.json and absent from pending; a second
+    ``sov anchor`` must submit only the leftover rounds.
+
+    If production still calls ``anchor_batch`` with the full pending list
+    and records only after the complete return, chunk 1 is on chain but
+    never written locally — this pin stays red.
+    """
+    from sov_cli.main import _read_anchors_entries
+    from sov_engine.io_utils import anchors_file, read_pending_anchors
+    from sov_transport.xrpl_internals import _MAX_MEMOS_PER_TX
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("XRPL_SEED", _TEST_SEED)
+    monkeypatch.delenv("SOV_XRPL_NETWORK", raising=False)
+    game_id = _seed_game(tmp_path, game_over=True)
+
+    n_total = _MAX_MEMOS_PER_TX + 2
+    chunk1_keys = [str(i) for i in range(1, _MAX_MEMOS_PER_TX + 1)]
+    leftover_keys = [str(i) for i in range(_MAX_MEMOS_PER_TX + 1, n_total + 1)]
+    chunk1_set = set(chunk1_keys)
+    leftover_set = set(leftover_keys)
+    for i in range(1, n_total + 1):
+        add_pending_anchor(game_id, str(i), f"{i:064x}")
+
+    submitted: list[list[str]] = []
+    leftover_attempts = 0
+
+    def fake_anchor_batch(rounds, seed=None, **_kw) -> list[str]:
+        nonlocal leftover_attempts
+        keys = [str(entry["round_key"]) for entry in rounds]
+        submitted.append(keys)
+        keyset = set(keys)
+        # Unfixed CLI: one call with the full pending list. Raise so the
+        # CLI never sees chunk-1's txid (the prefix-drop this pin forbids).
+        if len(keys) > _MAX_MEMOS_PER_TX or (keyset & chunk1_set and keyset & leftover_set):
+            raise RuntimeError("chunk 2 failed")
+        if keyset <= chunk1_set:
+            return ["TX-CHUNK-1"]
+        leftover_attempts += 1
+        if leftover_attempts == 1:
+            raise RuntimeError("chunk 2 failed")
+        return ["TX-CHUNK-2"]
+
+    factory = MagicMock()
+    transport = MagicMock()
+    transport.anchor_batch.side_effect = fake_anchor_batch
+    transport.explorer_tx_url.side_effect = lambda t: f"https://explorer.example/{t}"
+    factory.return_value = transport
+
+    with patch("sov_transport.xrpl.XRPLTransport", factory):
+        result = runner.invoke(app, ["anchor"])
+
+    assert result.exit_code != 0, f"chunk-2 failure must fail the invoke; output={result.output!r}"
+
+    anchors = _read_anchors_entries(anchors_file(game_id))
+    assert set(anchors) == chunk1_set, (
+        f"chunk-1 keys must be recorded after chunk-2 raise; got {sorted(anchors)!r}"
+    )
+    assert all(anchors[k] == "TX-CHUNK-1" for k in chunk1_keys)
+    pending = read_pending_anchors(game_id)
+    assert set(pending) == leftover_set, (
+        f"chunk-1 must be absent from pending; leftover={leftover_keys!r} got {sorted(pending)!r}"
+    )
+
+    n_before = len(submitted)
+    with patch("sov_transport.xrpl.XRPLTransport", factory):
+        runner.invoke(app, ["anchor"])
+    second = submitted[n_before:]
+    assert second, "second `sov anchor` must submit the leftover rounds"
+    assert set(second[0]) == leftover_set
+    assert set(second[0]).isdisjoint(chunk1_set)
+
+
 # ---------------------------------------------------------------------------
 # Wave-7 regressions
 # ---------------------------------------------------------------------------
