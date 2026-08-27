@@ -44,6 +44,7 @@ from sov_engine.io_utils import (
     list_saved_games,
     proofs_dir,
     read_pending_anchors,
+    save_root,
     state_file,
 )
 
@@ -720,6 +721,8 @@ async def flush_pending_anchors(
     pending = read_pending_anchors(game_id)
     if not pending:
         return {"txids": [], "rounds": [], "explorer_urls": []}
+    if not (seed or "").strip():
+        raise ConfigNoWalletError()
 
     network_enum = XRPLNetwork(network)
     rounds: list[BatchEntry] = []
@@ -826,6 +829,10 @@ async def _check_wallet_balance_or_raise(
         )
 
 
+class ConfigNoWalletError(Exception):
+    """No wallet seed available for an anchor that has pending rounds."""
+
+
 class MainnetUnderfundedError(Exception):
     """Mainnet wallet balance is below reserve+fee for the pending batch.
 
@@ -874,6 +881,13 @@ async def _do_anchor(
             network=state.network,
             seed=seed,
             ruleset=ruleset,
+        )
+    except ConfigNoWalletError:
+        from sov_cli.errors import no_wallet_error
+
+        return _sov_error_response(
+            no_wallet_error(state.seed_env or "XRPL_SEED"),
+            status_code=400,
         )
     except MainnetUnderfundedError as exc:
         # DAEMON-005: surface as MAINNET_UNDERFUNDED so the CLI / Tauri
@@ -1002,9 +1016,10 @@ def _record_anchors(game_id: str, round_to_txid: dict[str, str]) -> None:
 def _load_seed(state: Any) -> str | None:
     """Resolve the daemon's wallet seed at request time.
 
-    Order: ``signer_file`` (if set) → ``os.environ[seed_env]``. Returns
-    None if neither produces a non-empty string. Per spec §9, the seed
-    is held in memory only and never written to ``.sov/daemon.json``.
+    Order matches the CLI: ``signer_file`` (if set and non-empty) then
+    ``.sov/wallet_seed.txt`` then ``os.environ[seed_env]``. Returns None
+    if none produce a non-empty string. Per spec 9, the seed is held in
+    memory only and never written to ``.sov/daemon.json``.
     """
     import os
 
@@ -1015,8 +1030,16 @@ def _load_seed(state: Any) -> str | None:
         try:
             text = signer_file.read_text(encoding="utf-8").strip()
         except OSError:
-            return None
-        return text or None
+            text = ""
+        if text:
+            return text
+    wallet_file = save_root() / "wallet_seed.txt"
+    try:
+        text = wallet_file.read_text(encoding="utf-8").strip()
+    except OSError:
+        text = ""
+    if text:
+        return text
     if seed_env:
         value = os.environ.get(seed_env, "").strip()
         return value or None
