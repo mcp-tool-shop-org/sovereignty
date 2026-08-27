@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,8 +16,20 @@ vi.mock("../lib/invoke", () => ({
   getDaemonConfig: mocks.getDaemonConfig,
 }));
 
-import { DaemonProvider } from "../hooks/useDaemon";
+import { DaemonProvider, useDaemon } from "../hooks/useDaemon";
 import { DaemonDisconnectedBanner } from "./DaemonDisconnectedBanner";
+
+function StatusProbe() {
+  const { status, refresh } = useDaemon();
+  return (
+    <div>
+      <span data-testid="status">{status}</span>
+      <button type="button" data-testid="refresh" onClick={() => void refresh()}>
+        refresh
+      </button>
+    </div>
+  );
+}
 
 const cfg = {
   pid: 1,
@@ -108,4 +120,51 @@ describe("DaemonDisconnectedBanner (WEB-UI-C-004)", () => {
     // assert the className on the alert root references the banner class.
     expect(banner.className).toMatch(/banner/);
   });
+
+  it("stays visible when daemonConnectionLost fires while status is already running", async () => {
+    render(
+      <DaemonProvider>
+        <StatusProbe />
+        <DaemonDisconnectedBanner />
+      </DaemonProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("status").textContent).toBe("running");
+    });
+    act(() => {
+      window.dispatchEvent(new CustomEvent("daemonConnectionLost"));
+    });
+    expect(screen.getByRole("alert")).toBeTruthy();
+  });
+
+  it("WEB-UI-D-009: dismisses on flip-back to running after a loss, not while already running", async () => {
+    render(
+      <DaemonProvider>
+        <StatusProbe />
+        <DaemonDisconnectedBanner />
+      </DaemonProvider>,
+    );
+    await waitFor(() => {
+      expect(screen.getByTestId("status").textContent).toBe("running");
+    });
+    act(() => {
+      window.dispatchEvent(new CustomEvent("daemonConnectionLost"));
+    });
+    expect(screen.getByRole("alert")).toBeTruthy();
+
+    mocks.daemonStatus.mockResolvedValue({ state: "none" });
+    fireEvent.click(screen.getByTestId("refresh"));
+    await waitFor(() => {
+      expect(screen.getByTestId("status").textContent).toBe("none");
+    });
+    expect(screen.getByRole("alert")).toBeTruthy();
+
+    mocks.daemonStatus.mockResolvedValue({ state: "running", config: cfg, started_by_shell: true });
+    fireEvent.click(screen.getByTestId("refresh"));
+    await waitFor(() => {
+      expect(screen.getByTestId("status").textContent).toBe("running");
+    });
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
 });
