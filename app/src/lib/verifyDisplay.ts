@@ -49,15 +49,36 @@ export function verifyFailureDisplay(reason: VerifyFailureReason): VerifyDisplay
   }
 }
 
-/** Map an AnchorStatus to a short user-facing label.
- *  Used by the audit-status pill column. WEB-UI-C-005 mapping. */
+export type BrowseAnchorVariant = "success" | "warn" | "error";
+
+export interface BrowseAnchorVisual {
+  icon: string;
+  variant: BrowseAnchorVariant;
+}
+
+/** Map an AnchorStatus to local-index vocabulary for the Audit browse
+ *  column. `/anchor-status` never hits XRPL — reserve "Verified" /
+ *  "Not on chain" for `useVerifyFlow` results. F-7f7091d3. */
 export function anchorStatusDisplay(status: AnchorStatus): string {
   switch (status) {
     case "anchored":
-      return "Verified";
+      return "Anchored";
     case "pending":
-      return "Pending anchor";
+      return "Pending";
     case "missing":
-      return "Not on chain";
+      return "No local anchor";
+  }
+}
+
+/** Icon + pill variant for the browse Anchor column. Shared with the
+ *  wire-shape pin so Audit.tsx cannot drift back to a copied ternary. */
+export function browseAnchorVisual(status: AnchorStatus): BrowseAnchorVisual {
+  switch (status) {
+    case "anchored":
+      return { icon: "✓", variant: "success" };
+    case "pending":
+      return { icon: "⊘", variant: "warn" };
+    case "missing":
+      return { icon: "✗", variant: "error" };
   }
 }

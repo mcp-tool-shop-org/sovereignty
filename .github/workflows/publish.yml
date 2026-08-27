@@ -2,7 +2,9 @@
 # Asset naming convention (locked):
 #   sovereignty-<version>-<os>-<arch>[.exe]            (PyInstaller CLI)
 #   sovereignty-app-<version>-<target>.<dmg|msi|AppImage>  (Tauri desktop app, v2.1+)
-#   checksums-<version>.txt
+#   sovereignty-app-<version>-<target>.app.tar.gz[.sig]    (Tauri updater payloads)
+#   latest.json
+#   checksums-<version>.txt / checksums-app-<version>.txt
 #
 # v2.1 BRIDGE-A-bis-003 distribution context: PyInstaller CLI binaries ship the
 # Python ``sov`` command (already in place since v2.0). Wave 11 added the Tauri
@@ -13,6 +15,13 @@
 # (Apple Developer ID + Authenticode) ships in v2.2 (see docs/v2.2-backlog.md).
 # Users see first-launch OS warnings; supply-chain provenance is verifiable
 # via ``gh attestation verify``.
+#
+# Recovery (do not retag v2.3.0):
+#   CLI/PyPI and desktop are separate jobs. A Tauri/linuxdeploy failure must
+#   not skip PyPI or CLI GitHub Release assets. Re-run via Actions → Release
+#   → Run workflow on a v* tag, or dispatch from a workflow-fix ref with
+#   input tag=vX.Y.Z (GITHUB_REF_NAME / inputs.tag is the version tag).
+#   workflow_dispatch never creates or moves tags.
 
 name: Release
 
@@ -20,22 +29,35 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: >-
+          Existing v* GitHub Release tag to attach assets to (e.g. v2.3.0).
+          Required when the selected ref is not already a v* tag. Does not
+          create or move tags.
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # One-shot Trusted Publisher + attestations: never cancel an in-flight publish.
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && (inputs.tag || github.ref_name) || github.ref_name }}
 
 jobs:
   # --- PyPI publish (trusted publishing via OIDC) ---
-  # Locked spec adjustment #4: publish MUST depend on build-binaries success
-  # so a major-version PyPI release is never shipped without the binaries that
+  # Locked spec: publish MUST depend on build-binaries success so a
+  # major-version PyPI release is never shipped without the CLI binaries that
   # `npx @mcptoolshop/sovereignty` consumers resolve from the GitHub Release.
-  # Fail-closed on `release` events; allow workflow_dispatch publish-only runs
-  # for hotfix scenarios documented in BUILD.md.
+  # Desktop/Tauri is NOT on this path (F-bd71a354): linuxdeploy/Stage-artifact
+  # must not skip PyPI.
   publish:
-    if: github.event_name == 'release'
-    needs: [build-binaries, build-tauri-binaries]
+    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/v') || startsWith(inputs.tag, 'v'))) }}
+    needs: [build-binaries]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: pypi
     permissions:
       id-token: write
@@ -48,10 +70,9 @@ jobs:
           python-version: "3.12"
 
       - name: Verify version matches tag
-        if: github.event_name == 'release'
         run: |
           VERSION=$(python -c "import tomllib; print(tomllib.loads(open('pyproject.toml','rb').read().decode())['project']['version'])")
-          TAG="${GITHUB_REF_NAME#v}"
+          TAG="${RELEASE_TAG#v}"
           if [ "$VERSION" != "$TAG" ]; then
             echo "::error::pyproject.toml version $VERSION does not match git tag $TAG"
             exit 1
@@ -124,12 +145,14 @@ jobs:
 
   # --- Platform binaries (PyInstaller) ---
   build-binaries:
-    if: github.event_name == 'release'
+    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/v') || startsWith(inputs.tag, 'v'))) }}
     permissions:
       contents: read
       attestations: write
       id-token: write
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
@@ -160,7 +183,7 @@ jobs:
       - name: Build binary
         shell: bash
         run: |
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${RELEASE_TAG#v}
           uv run pyinstaller --onefile --name "sovereignty" --console \
             --collect-submodules rich \
             --collect-data xrpl \
@@ -189,11 +212,12 @@ jobs:
   # Authenticode) is v2.2 work that benefits sovereignty + GlyphStudio +
   # CommandUI together.
   build-tauri-binaries:
-    if: github.event_name == 'release'
+    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/v') || startsWith(inputs.tag, 'v'))) }}
     permissions:
       contents: read
       attestations: write
       id-token: write
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -203,39 +227,42 @@ jobs:
             rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
             tauri-args: "--target universal-apple-darwin"
             bundle-base: app/src-tauri/target/universal-apple-darwin/release/bundle
-            artifacts: |
-              dmg/Sovereignty_*_universal.dmg
+            artifacts: "dmg/Sovereignty_*_universal.dmg dmg/Sovereignty_*_universal.dmg.sig macos/Sovereignty.app.tar.gz macos/Sovereignty.app.tar.gz.sig"
           - os: windows-latest
             target: win-x64
             rust-targets: ""
             tauri-args: ""
             bundle-base: app/src-tauri/target/release/bundle
-            artifacts: |
-              msi/Sovereignty_*_x64_en-US.msi
+            artifacts: "msi/Sovereignty_*_x64_en-US.msi msi/Sovereignty_*_x64_en-US.msi.sig msi/Sovereignty_*_x64_en-US.msi.zip msi/Sovereignty_*_x64_en-US.msi.zip.sig nsis/Sovereignty_*_x64-setup.exe nsis/Sovereignty_*_x64-setup.exe.sig nsis/Sovereignty_*_x64-setup.nsis.zip nsis/Sovereignty_*_x64-setup.nsis.zip.sig"
           # Linux ships .deb AND AppImage. Keep the .deb glob so the
           # existing Debian/Ubuntu path is unchanged. AppImage is additive
           # (JOB-027). tauri-bundler 2.6+ extract-and-run means linuxdeploy
           # does not need FUSE. NO_STRIP=true avoids old strip vs .relr.dyn.
-          # Do not add OS-level signing here (JOB-028).
+          # Do not add OS-level signing here (JOB-028). Combined
+          # --bundles deb,appimage is the happy path; a linuxdeploy failure
+          # retries --bundles deb so the .deb is not discarded (F-eefbfd40).
           - os: ubuntu-latest
             target: linux-x64
             rust-targets: ""
             tauri-args: "--bundles deb,appimage"
             bundle-base: app/src-tauri/target/release/bundle
-            artifacts: deb/*_amd64.deb appimage/*_amd64.AppImage
+            artifacts: "deb/*_amd64.deb deb/*_amd64.deb.sig appimage/*_amd64.AppImage appimage/*_amd64.AppImage.sig appimage/*_amd64.AppImage.tar.gz appimage/*_amd64.AppImage.tar.gz.sig"
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      # Tauri 2 webview deps (Linux only). webkit2gtk-4.1 + libsoup-3.0
-      # are the v2 line; libssl-dev satisfies reqwest. .deb still uses
-      # dpkg-deb only. AppImage uses linuxdeploy extract-and-run (no
-      # libfuse2). Do not install FUSE just to bundle.
+      # Tauri 2 webview + linuxdeploy bundler deps (Linux only).
+      # webkit2gtk-4.1 + libsoup-3.0 are the v2 line; libssl-dev satisfies
+      # reqwest. file/patchelf/librsvg/appindicator are required by
+      # linuxdeploy; libfuse2t64 is the Ubuntu 24.04 package name.
       - name: Install Tauri Linux deps
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev \
+            file patchelf libayatana-appindicator3-dev librsvg2-dev
+          sudo apt-get install -y libfuse2t64 || sudo apt-get install -y libfuse2
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@b3b07ba8b418998c39fb20f53e8b695cdcc8de1b # stable @ 2025-01
@@ -262,32 +289,36 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          npm --prefix app run tauri build -- ${{ matrix.tauri-args }}
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            if ! npm --prefix app run tauri build -- ${{ matrix.tauri-args }} --verbose; then
+              echo "::warning::combined --bundles deb,appimage failed (likely linuxdeploy); rebuilding .deb only"
+              find app/src-tauri/target -type f \
+                \( -iname '*linuxdeploy*' -o -iname '*appimage*.log' \) \
+                -print -exec echo '===== {} =====' \; -exec cat {} \; || true
+              npm --prefix app run tauri build -- --bundles deb --verbose
+            fi
+          else
+            npm --prefix app run tauri build -- ${{ matrix.tauri-args }}
+          fi
 
       # Stage artifacts under a flat dist/ with the locked naming convention:
       # ``sovereignty-app-<version>-<target>.<ext>``. The ``-app-`` infix
       # disambiguates from the existing PyInstaller CLI binaries which use
-      # ``sovereignty-<version>-<target>``. Mac ships .dmg; updater
-      # signatures (``.sig``) are extra artifacts from createUpdaterArtifacts.
+      # ``sovereignty-<version>-<target>``. Mac ships .dmg for humans and
+      # .app.tar.gz for the updater; .sig files keep compound suffixes.
       # Apple/Authenticode OS signing stays gated skip (JOB-028 hold).
       - name: Stage artifact
         shell: bash
+        env:
+          ARTIFACT_GLOBS: ${{ matrix.artifacts }}
+          BUNDLE_BASE: ${{ matrix.bundle-base }}
+          TARGET: ${{ matrix.target }}
+          VERSION: ${{ env.RELEASE_TAG }}
         run: |
           set -euo pipefail
-          VERSION=${GITHUB_REF_NAME#v}
-          mkdir -p dist
-          shopt -s nullglob
-          # matrix.artifacts may list one or more relative globs (deb + AppImage).
-          for glob in ${{ matrix.artifacts }}; do
-            for src in ${{ matrix.bundle-base }}/$glob; do
-              ext="${src##*.}"
-              outname="sovereignty-app-${VERSION}-${{ matrix.target }}.${ext}"
-              cp "$src" "dist/${outname}"
-              echo "Staged: dist/${outname}"
-            done
-          done
-          ls -la dist/
-          [ "$(ls -A dist)" ] || { echo "::error::no Tauri artifacts staged"; exit 1; }
+          VERSION="${VERSION#v}"
+          export VERSION ARTIFACT_GLOBS BUNDLE_BASE TARGET
+          bash .github/scripts/stage-tauri-artifacts.sh
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
@@ -299,10 +330,13 @@ jobs:
           name: tauri-binary-${{ matrix.target }}
           path: dist/sovereignty-app-*
 
-  upload-binaries:
-    if: github.event_name == 'release'
-    needs: [build-binaries, build-tauri-binaries]
+  # CLI GitHub Release assets. Independent of Tauri so a desktop-matrix
+  # failure still attaches PyInstaller binaries (npx contract).
+  upload-cli-binaries:
+    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/v') || startsWith(inputs.tag, 'v'))) }}
+    needs: [build-binaries]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
       attestations: write
@@ -310,6 +344,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
+          pattern: binary-*
           path: artifacts
           merge-multiple: true
 
@@ -317,13 +352,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${RELEASE_TAG#v}
           cd artifacts
           sha256sum * > "checksums-${VERSION}.txt"
           cat "checksums-${VERSION}.txt"
 
-      # Attest the checksums file as well so downstream verifiers can prove
-      # the manifest itself came from this workflow (covers F-593530-019).
       - name: Attest checksum manifest
         uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
         with:
@@ -331,4 +364,55 @@ jobs:
 
       - uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
         with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          files: artifacts/*
+
+  # Desktop GitHub Release assets + Tauri updater latest.json.
+  # always() so a single matrix-leg failure still attaches the other OS
+  # artifacts that did upload.
+  upload-tauri-binaries:
+    if: ${{ always() && (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && (startsWith(github.ref, 'refs/tags/v') || startsWith(inputs.tag, 'v')))) && contains(fromJSON('["success", "failure"]'), needs.build-tauri-binaries.result) }}
+    needs: [build-tauri-binaries]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: tauri-binary-*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Generate latest.json
+        shell: bash
+        env:
+          VERSION: ${{ env.RELEASE_TAG }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          export VERSION="${VERSION#v}"
+          python3 .github/scripts/generate-latest-json.py artifacts
+
+      - name: Generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=${RELEASE_TAG#v}
+          cd artifacts
+          sha256sum * > "checksums-app-${VERSION}.txt"
+          cat "checksums-app-${VERSION}.txt"
+
+      - name: Attest checksum manifest
+        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1.4.4
+        with:
+          subject-path: artifacts/checksums-app-*.txt
+
+      - uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
           files: artifacts/*

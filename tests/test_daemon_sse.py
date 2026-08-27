@@ -70,7 +70,9 @@ def _seed_game(root: Path, game_id: str = "s42") -> Path:
         ),
         encoding="utf-8",
     )
-    (game_dir / "pending-anchors.json").write_text(json.dumps({"pending": []}), encoding="utf-8")
+    (game_dir / "pending-anchors.json").write_text(
+        json.dumps({"schema_version": 1, "entries": {}}), encoding="utf-8"
+    )
     return state_path
 
 

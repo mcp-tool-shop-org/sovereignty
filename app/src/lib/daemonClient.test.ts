@@ -158,11 +158,36 @@ describe("DaemonClient", () => {
   });
 
   it("pendingAnchors fetches the right path", async () => {
-    fetchMock.mockResolvedValue(jsonResponse({}));
+    fetchMock.mockResolvedValue(jsonResponse({ pending: [], entries: {} }));
     const c = new DaemonClient(cfg);
     const result = await c.pendingAnchors("s42");
     expect(result).toEqual({});
     expect(fetchMock.mock.calls[0]?.[0]).toBe("http://127.0.0.1:47823/games/s42/pending-anchors");
+  });
+
+  it("pendingAnchors unwraps {pending, entries} so empty index is zero keys", async () => {
+    // F-ae4241e2: live daemon empty index is always 2 wrapper keys. Object.keys
+    // on the raw body would keep Apply disabled forever.
+    fetchMock.mockResolvedValue(jsonResponse({ pending: [], entries: {} }));
+    const c = new DaemonClient(cfg);
+    const result = await c.pendingAnchors("s42");
+    expect(Object.keys(result)).toHaveLength(0);
+  });
+
+  it("pendingAnchors unwraps seeded entries from the daemon wrap", async () => {
+    fetchMock.mockResolvedValue(
+      jsonResponse({
+        pending: ["1", "2"],
+        entries: {
+          "1": { envelope_hash: "aa", added_iso: "2026-05-02T00:00:00Z" },
+          "2": { envelope_hash: "bb", added_iso: "2026-05-02T00:01:00Z" },
+        },
+      }),
+    );
+    const c = new DaemonClient(cfg);
+    const result = await c.pendingAnchors("s42");
+    expect(Object.keys(result).sort()).toEqual(["1", "2"]);
+    expect(result["1"].envelope_hash).toBe("aa");
   });
 
   it("verifyRound fetches /verify/{round} with bearer auth", async () => {

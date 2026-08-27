@@ -81,21 +81,22 @@ describe("App — panic-event consumer-listener pin (Mike's reinforcement)", () 
 
   it("PanicModal is mounted OUTSIDE the DaemonProvider (Mike's lock)", async () => {
     // Spec: PanicModal mount point must be the App root, OUTSIDE
-    // <DaemonProvider>. A shell panic that prevents DaemonProvider from
-    // initializing must still surface the modal — that's the whole point.
-    // We pin the position by asserting that the PanicModal's <dialog>
-    // appears as a sibling of (not a descendant of) any DaemonProvider
-    // tree. Mechanical: PanicModal's own <dialog> exists when the daemon
-    // call rejects (provider in error state).
-    mocks.daemonStatus.mockRejectedValueOnce(new Error("daemon down"));
+    // <DaemonProvider>. A dialog-exists check cannot distinguish inside vs
+    // outside because Provider always renders children (it emits no node of
+    // its own unless wrapped). Pin: <dialog> exists AND is not contained
+    // in the daemon-provider wrapper. F-6a56da09.
     const { container } = render(
       <MemoryRouter>
         <App />
       </MemoryRouter>,
     );
     await waitFor(() => {
-      // Native <dialog> from PanicModal must exist regardless of provider state.
       expect(container.querySelector("dialog")).not.toBeNull();
     });
+    const dialog = container.querySelector("dialog");
+    const provider = container.querySelector('[data-testid="daemon-provider"]');
+    expect(provider).not.toBeNull();
+    expect(dialog).not.toBeNull();
+    expect(provider?.contains(dialog)).toBe(false);
   });
 });

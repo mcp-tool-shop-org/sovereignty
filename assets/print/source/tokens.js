@@ -22,4 +22,5 @@ window.SovTokens = {
            #f4ead4`,
   footer: "Sovereignty: Campfire v1.0  ·  mcp-tool-shop-org/sovereignty",
   footerTreaty: "Sovereignty: Treaty Table v1.0  ·  mcp-tool-shop-org/sovereignty",
+  footerMarket: "Sovereignty: Town Hall v1.0  ·  mcp-tool-shop-org/sovereignty",
 };

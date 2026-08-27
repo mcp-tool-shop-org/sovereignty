@@ -94,7 +94,9 @@ function ATile({ tile }) {
           letterSpacing: 2,
         }}
       >
-        ❦
+        <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+          <path d="M8 1.5 C6.2 4.8 3.5 6 3.5 9.1 C3.5 11.6 5.4 13.4 8 14.5 C10.6 13.4 12.5 11.6 12.5 9.1 C12.5 6 9.8 4.8 8 1.5 Z" fill={A_PALETTE.gold} />
+        </svg>
       </div>
 
       <div style={{ marginTop: 30 }}>
@@ -203,7 +205,7 @@ function ACenter() {
       </svg>
 
       <img
-        src="assets/logo.png"
+        src="logo.png"
         alt=""
         style={{ width: 260, height: 260, objectFit: "contain", marginBottom: -10, marginTop: -10 }}
       />
@@ -344,7 +346,9 @@ function ABoardA() {
         {/* decorative double rule */}
         <div style={{ marginTop: 16, display: "flex", justifyContent: "center", alignItems: "center", gap: 16 }}>
           <div style={{ width: 240, height: 1, background: A_PALETTE.gold }} />
-          <span style={{ color: A_PALETTE.gold, fontSize: 18 }}>✦</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M8 1.2 L9.7 6.1 L15 6.2 L10.8 9.3 L12.5 14.4 L8 11.4 L3.5 14.4 L5.2 9.3 L1 6.2 L6.3 6.1 Z" fill={A_PALETTE.gold} />
+          </svg>
           <div style={{ width: 240, height: 1, background: A_PALETTE.gold }} />
         </div>
       </div>

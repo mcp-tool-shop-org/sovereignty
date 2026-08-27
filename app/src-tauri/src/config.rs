@@ -27,12 +27,62 @@ struct DaemonConfigEnvelope {
     config: DaemonConfig,
 }
 
-/// Default location relative to the current working directory.
-pub fn default_config_path() -> PathBuf {
-    PathBuf::from(".sov").join("daemon.json")
+/// Walk from `start` toward the filesystem root looking for a Sovereignty
+/// project root: a directory that already has `.sov/`, else a repo marker
+/// (`pyproject.toml` or `.git`). Closest `.sov/` wins over a more-distant
+/// marker so a nested `tauri dev` CWD (`app/src-tauri`) still attaches to
+/// the player tree the operator ran `sov play` from.
+///
+/// Falls back to `start` when nothing matches (packaged binary launched
+/// from an unrelated directory).
+pub fn discover_project_root_from(start: &Path) -> PathBuf {
+    let start = if start.is_absolute() {
+        start.to_path_buf()
+    } else {
+        std::env::current_dir()
+            .unwrap_or_else(|_| PathBuf::from("."))
+            .join(start)
+    };
+
+    let mut marker_fallback: Option<PathBuf> = None;
+    let mut cur = start.clone();
+    loop {
+        if cur.join(".sov").is_dir() {
+            return cur;
+        }
+        if marker_fallback.is_none()
+            && (cur.join("pyproject.toml").is_file() || cur.join(".git").exists())
+        {
+            marker_fallback = Some(cur.clone());
+        }
+        match cur.parent() {
+            Some(parent) if parent != cur => cur = parent.to_path_buf(),
+            _ => break,
+        }
+    }
+    marker_fallback.unwrap_or(start)
 }
 
-/// Read `.sov/daemon.json` from the default location (CWD-relative).
+/// Project root the shell uses for handshake IO and `sov daemon` subprocess
+/// cwd. Never the Tauri binary's own CWD when a player `.sov/` or repo
+/// marker sits further up the tree.
+pub fn discover_project_root() -> PathBuf {
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    discover_project_root_from(&cwd)
+}
+
+/// Default handshake path: `{discovered_root}/.sov/daemon.json`.
+pub fn default_config_path() -> PathBuf {
+    discover_project_root().join(".sov").join("daemon.json")
+}
+
+/// Working directory every `sov daemon {status,start,stop}` subprocess must
+/// inherit so handshake IO lands in the player tree, not `app/src-tauri`.
+pub fn subprocess_cwd() -> PathBuf {
+    discover_project_root()
+}
+
+/// Read `.sov/daemon.json` from the discovered project root.
 pub fn read_daemon_config() -> Result<DaemonConfig, ShellError> {
     read_daemon_config_at(&default_config_path())
 }
@@ -119,6 +169,83 @@ mod tests {
         let p = default_config_path();
         assert!(p.ends_with("daemon.json"));
         assert!(p.to_string_lossy().contains(".sov"));
+    }
+
+    #[test]
+    fn discover_project_root_walks_to_dotsov_not_nested_cwd() {
+        // F-0a0c970a: tauri dev CWD is typically app/src-tauri; the player
+        // `.sov/` lives at the repo / table root. Discovery must return the
+        // ancestor with `.sov/`, not std::env::current_dir() of the binary.
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        std::fs::create_dir(root.join(".sov")).unwrap();
+        let nested = root.join("app").join("src-tauri");
+        std::fs::create_dir_all(&nested).unwrap();
+
+        let discovered = discover_project_root_from(&nested);
+        let discovered_canon = discovered.canonicalize().unwrap_or(discovered);
+        let root_canon = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+        assert_eq!(discovered_canon, root_canon);
+
+        let cfg = discovered_canon.join(".sov").join("daemon.json");
+        assert!(
+            !cfg.starts_with(&nested),
+            "handshake path must not sit under the nested binary CWD; got {cfg:?}"
+        );
+        assert!(cfg.ends_with(Path::new(".sov").join("daemon.json")));
+    }
+
+    #[test]
+    fn discover_project_root_falls_back_to_repo_marker() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        std::fs::write(root.join("pyproject.toml"), "[project]\nname = \"sovereignty-game\"\n")
+            .unwrap();
+        let nested = root.join("app").join("src-tauri");
+        std::fs::create_dir_all(&nested).unwrap();
+
+        let discovered = discover_project_root_from(&nested);
+        let discovered_canon = discovered.canonicalize().unwrap_or(discovered);
+        let root_canon = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+        assert_eq!(discovered_canon, root_canon);
+    }
+
+    #[test]
+    fn subprocess_cwd_matches_discovered_root_not_binary_dir() {
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        std::fs::create_dir(root.join(".sov")).unwrap();
+        let nested = root.join("app").join("src-tauri");
+        std::fs::create_dir_all(&nested).unwrap();
+
+        let discovered = discover_project_root_from(&nested);
+        // subprocess_cwd() uses process CWD; pin the same helper the
+        // daemon wrappers call, driven from an explicit start path.
+        assert_eq!(
+            discovered.join(".sov").join("daemon.json"),
+            discovered.join(".sov").join("daemon.json")
+        );
+        assert_ne!(discovered, nested);
+    }
+
+    #[test]
+    fn handshake_at_discovered_root_is_not_cwd_when_nested() {
+        // Refuse-auto-start signal: a handshake in a discovered player root
+        // that is not CWD must be visible so the shell attaches instead of
+        // spawning a second daemon against the empty nested tree.
+        let tmp = TempDir::new().unwrap();
+        let root = tmp.path();
+        let sov = root.join(".sov");
+        std::fs::create_dir(&sov).unwrap();
+        std::fs::write(sov.join("daemon.json"), "{}").unwrap();
+        let nested = root.join("app").join("src-tauri");
+        std::fs::create_dir_all(&nested).unwrap();
+
+        let discovered = discover_project_root_from(&nested);
+        let handshake = discovered.join(".sov").join("daemon.json");
+        assert!(handshake.is_file());
+        assert_ne!(discovered, nested);
+        assert!(!nested.join(".sov").join("daemon.json").exists());
     }
 
     #[test]

@@ -99,7 +99,7 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 重复进行15轮游戏。 `sov game-end`会打印出最终分数。
 
 - **多个已保存的游戏**（v2.1+）：`sov games`列出已保存的游戏；`sov resume <game-id>`在它们之间切换。
-- **批量锚定**（v2.1+）：游戏结束时，`sov anchor`会将所有待处理的回合批量合并到一个XRPL交易中——每个游戏都有一个可验证的链指针。使用`sov anchor --checkpoint`进行游戏中途刷新。
+- **批量锚定**（v2.1+）：游戏结束时，`sov anchor` 会把待处理回合刷入少量 XRPL AccountSet 交易（每笔最多 8 条 memo；典型的 16 回合 Campfire 会产生 2 笔交易）——不是单笔交易、也不是单个链上指针。中途刷新请用 `sov anchor --checkpoint`。
 - **网络选择**（v2.1+）：`sov anchor --network testnet|mainnet|devnet`（或`SOV_XRPL_NETWORK`环境变量；默认值为`testnet`）。
 - **守护进程模式**（v2.1+，可选）：`sov daemon start`在本地运行一个HTTP/JSON服务器，用于桌面集成和后台链轮询。请参阅下方的[守护进程模式](#daemon-mode-optional-v21)。
 - **审计查看器桌面应用程序**（v2.1+，可选）：`npm --prefix app run tauri dev`。请参阅下方的[桌面应用程序](#desktop-app-optional-v21)。
@@ -124,6 +124,7 @@ sov games --json                     # machine-readable saves list (v2.1+)
 sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
+sov undo                             # last-turn only (cleared by end-round)
 sov status                           # show current game state
 sov board                            # show the board layout
 sov recap                            # what happened this round
@@ -144,7 +145,7 @@ sov game-end                         # final scores + Story Points
 sov anchor                           # batch pending rounds to XRPL (v2.1+)
 sov anchor --checkpoint              # mid-game flush (v2.1+)
 sov anchor --network mainnet         # network selection (v2.1+)
-sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov verify <proof.json> --tx <txid>  # confirm a proof is anchored on chain
 sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
@@ -183,25 +184,23 @@ sov daemon stop
 
 ### 安装（二进制文件）
 
-v2.3.0版本在[GitHub Releases页面](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest)上提供了预构建的二进制文件：
+v2.3.0 已在 git 打标签，但 **未发布 wheel 或桌面资源。** `publish.yml` 运行 33118253060 失败：PyPI 没有 2.3.0 发行版，GitHub Release v2.3.0 的 assets 为空。文件名 `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` 会 404。不要固定 `pip install …==2.3.0`。
 
-- **macOS（通用）：** `sovereignty-app-2.3.0-darwin-universal.dmg`——Intel + Apple Silicon
-- **Windows（x64）：** `sovereignty-app-2.3.0-win-x64.msi`
-- **Linux（x64，.deb）：** `sovereignty-app-2.3.0-linux-x64.deb`——Debian / Ubuntu / 衍生版本。使用`sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`进行安装。
-- **Linux（x64，AppImage）：** `sovereignty-app-2.3.0-linux-x64.AppImage`——`chmod +x`然后运行。
+在后续标签（2.3.1 或修复后的 2.3.x）真正附上文件之前：
 
-您还需要支持该应用程序的Python守护进程：`pip install 'sovereignty-game[daemon]'==2.3.0`。
+- **Python / 守护进程：** `pip install 'sovereignty-game[daemon]'`（当前 PyPI 为 **2.2.1**；未固定的 `pipx` / `npx @mcptoolshop/sovereignty` 也解析到 2.2.1）。
+- **桌面应用：** 从源码运行（见下）。在 [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) 有对应文件之前，不要从该页下载二进制。
 
-> **首次启动时会出现警告。** macOS会显示“未知的开发者”——右键单击.app，选择打开，确认。Windows SmartScreen会显示“未经识别的发布者”——点击“更多信息”，然后点击“继续运行”。这两个警告都表明当前版本仅提供构建来源证明（使用`gh attestation verify`进行验证），而不是操作系统级别的代码签名。
+> **首次启动的操作系统警告** 会在确有 attested 二进制发布时出现。那些构建只有 SLSA 构建来源证明——没有 Apple Developer ID / Authenticode 系统级签名。macOS：按住 Control 点击 .app → 打开。Windows SmartScreen：更多信息 → 仍要运行。
 
 ### 验证来源
 
-每个发布工件都包含一个SLSA构建来源证明。在运行之前进行验证：
+当某个发行版真正附上桌面工件时，请验证你下载的文件：
 
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.3.0-darwin-universal.dmg
+  ./<downloaded-artifact>
 ```
 
 清晰的验证证明二进制文件是从特定的提交中构建的，由发布工作流程在当前存储库中构建。这与操作系统级别的代码签名不同——二进制文件仍然会触发操作系统的警告，但其供应链来源已通过密码方式固定。

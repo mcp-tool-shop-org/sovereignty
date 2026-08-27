@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { anchorStatusDisplay, verifyFailureDisplay } from "./verifyDisplay";
 
-describe("anchorStatusDisplay (WEB-UI-C-005)", () => {
-  it("maps each AnchorStatus value to title-case display copy", () => {
-    expect(anchorStatusDisplay("anchored")).toBe("Verified");
-    expect(anchorStatusDisplay("pending")).toBe("Pending anchor");
-    expect(anchorStatusDisplay("missing")).toBe("Not on chain");
+describe("anchorStatusDisplay (WEB-UI-C-005 / F-7f7091d3)", () => {
+  it("maps each AnchorStatus value to local-index vocabulary", () => {
+    expect(anchorStatusDisplay("anchored")).toBe("Anchored");
+    expect(anchorStatusDisplay("pending")).toBe("Pending");
+    expect(anchorStatusDisplay("missing")).toBe("No local anchor");
   });
 });
 

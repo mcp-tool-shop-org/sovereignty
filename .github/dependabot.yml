@@ -1,7 +1,6 @@
 # Dependabot config: keep SHA-pinned third-party Actions and runtime/dev
-# dependencies fresh across all three ecosystems shipped by this repo
-# (W4CIDOCS-002). Without coverage on pip + npm we miss upstream security
-# fixes for xrpl-py, typer, rich, astro, starlight, etc.
+# dependencies fresh across pip, github-actions, site npm, app npm, and
+# the Tauri cargo crate (W4CIDOCS-002 / F-d7957259).
 version: 2
 updates:
   - package-ecosystem: "github-actions"
@@ -45,3 +44,28 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: "development"
+
+  # Desktop app (React 19 + Vite 6 + @tauri-apps/*) lives under /app.
+  - package-ecosystem: "npm"
+    directory: "/app"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps"
+    labels:
+      - "dependencies"
+      - "javascript"
+    groups:
+      dev-dependencies:
+        dependency-type: "development"
+
+  # Tauri shell crate at /app/src-tauri.
+  - package-ecosystem: "cargo"
+    directory: "/app/src-tauri"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "deps"
+    labels:
+      - "dependencies"
+      - "rust"

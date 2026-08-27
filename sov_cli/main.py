@@ -21,6 +21,7 @@ from sov_cli.errors import (
     anchor_error,
     anchor_mismatch_error,
     anchor_pending_error,
+    chain_lookup_failed_error,
     daemon_not_installed_error,
     daemon_not_running_error,
     daemon_stop_failed_error,
@@ -71,13 +72,19 @@ from sov_engine.io_utils import (
 )
 from sov_engine.models import (
     RESOURCE_NAMES,
+    ActiveDeal,
+    DealStatus,
+    Deck,
     GameState,
     MarketBoard,
     Stake,
     Treaty,
     TreatyStatus,
+    Voucher,
+    VoucherStatus,
     WinCondition,
 )
+from sov_engine.proof import _round_key_from_proof
 from sov_engine.rng import GameRng
 from sov_engine.rules.campfire import (
     CAMPFIRE_UPGRADE_HINT,
@@ -222,6 +229,11 @@ SUPPORTED_STATE_SCHEMA_VERSION = 1
 ANCHORS_SCHEMA_VERSION = 1
 SEASON_SCHEMA_VERSION = 1
 
+# Live RNG from the last `_load_game` / `sov new` so intervening saves
+# (promise, deal, etc.) persist the stream without every call site
+# threading GameRng through. Process-local; the CLI is single-threaded.
+_loaded_rng: GameRng | None = None
+
 
 def _validate_game_id_or_fail(game_id: str) -> None:
     """Reject a malformed ``game_id`` at the CLI boundary with a structured error.
@@ -297,7 +309,128 @@ def _has_any_saved_game() -> bool:
     return bool(list_saved_games())
 
 
-def _save_state(state: GameState, *, keep_undo: bool = False) -> None:
+def _bind_loaded_rng(rng: GameRng) -> GameRng:
+    """Remember ``rng`` as the process-local stream for later saves."""
+    global _loaded_rng
+    _loaded_rng = rng
+    return rng
+
+
+def _disk_snapshot(state: GameState, rng: GameRng | None = None) -> dict[str, Any]:
+    """On-disk snapshot: hashed game state plus RNG stream and deck piles.
+
+    ``rng_state`` / ``event_deck`` / ``deal_deck`` are optional fields (no
+    schema bump) written only to ``state.json`` / the undo checkpoint.
+    ``game_state_snapshot`` stays the hashed proof shape so envelope hashes
+    do not depend on stream position.
+    """
+    snapshot = game_state_snapshot(state)
+    live = rng if rng is not None else _loaded_rng
+    if live is not None:
+        snapshot["rng_state"] = live.getstate()
+    snapshot["event_deck"] = {
+        "discard": [c.id for c in state.event_deck.discard_pile],
+        "draw": [c.id for c in state.event_deck.draw_pile],
+    }
+    snapshot["deal_deck"] = {
+        "discard": [c.id for c in state.deal_deck.discard_pile],
+        "draw": [c.id for c in state.deal_deck.draw_pile],
+    }
+    return snapshot
+
+
+def _deck_from_ids(raw: object, catalog: dict[str, Any]) -> Deck | None:
+    if not isinstance(raw, dict):
+        return None
+    draw_ids = raw.get("draw", [])
+    discard_ids = raw.get("discard", [])
+    if not isinstance(draw_ids, list) or not isinstance(discard_ids, list):
+        return None
+    draw = [catalog[i] for i in draw_ids if isinstance(i, str) and i in catalog]
+    discard = [catalog[i] for i in discard_ids if isinstance(i, str) and i in catalog]
+    return Deck(draw_pile=draw, discard_pile=discard)
+
+
+def _restore_decks(state: GameState, data: dict[str, Any]) -> None:
+    """Overlay persisted draw/discard piles; skip if the save predates them."""
+    event_raw = data.get("event_deck")
+    deal_raw = data.get("deal_deck")
+    if not isinstance(event_raw, dict) and not isinstance(deal_raw, dict):
+        return
+    from sov_engine.content import card_catalog
+
+    catalog = card_catalog()
+    restored_events = _deck_from_ids(event_raw, catalog)
+    if restored_events is not None:
+        state.event_deck = restored_events
+    restored_deals = _deck_from_ids(deal_raw, catalog)
+    if restored_deals is not None:
+        state.deal_deck = restored_deals
+
+
+def _restore_vouchers_and_deals(state: GameState, players_data: list[Any]) -> None:
+    """Rebuild Voucher / ActiveDeal instances, sharing one object per id."""
+    voucher_registry: dict[str, Voucher] = {}
+    deal_registry: dict[str, ActiveDeal] = {}
+    for i, p_data in enumerate(players_data):
+        player = state.players[i]
+        player.vouchers_issued = []
+        player.vouchers_held = []
+        player.active_deals = []
+        if not isinstance(p_data, dict):
+            continue
+        issued = p_data.get("vouchers_issued", [])
+        held = p_data.get("vouchers_held", [])
+        deals = p_data.get("active_deals", [])
+        if not isinstance(issued, list):
+            issued = []
+        if not isinstance(held, list):
+            held = []
+        if not isinstance(deals, list):
+            deals = []
+        for v_data in list(issued) + list(held):
+            if not isinstance(v_data, dict):
+                continue
+            vid = v_data.get("voucher_id")
+            if not isinstance(vid, str) or vid in voucher_registry:
+                continue
+            voucher_registry[vid] = Voucher(
+                voucher_id=vid,
+                template_id=str(v_data.get("template_id", "")),
+                issuer=str(v_data.get("issuer", "")),
+                holder=str(v_data.get("holder", "")),
+                face_value=int(v_data.get("face_value", 0)),
+                deadline_round=int(v_data.get("deadline_round", 0)),
+                status=VoucherStatus(v_data.get("status", VoucherStatus.ACTIVE)),
+                penalty_rep=int(v_data.get("penalty_rep", 0)),
+            )
+        for v_data in issued:
+            if isinstance(v_data, dict) and v_data.get("voucher_id") in voucher_registry:
+                player.vouchers_issued.append(voucher_registry[str(v_data["voucher_id"])])
+        for v_data in held:
+            if isinstance(v_data, dict) and v_data.get("voucher_id") in voucher_registry:
+                player.vouchers_held.append(voucher_registry[str(v_data["voucher_id"])])
+        for d_data in deals:
+            if not isinstance(d_data, dict):
+                continue
+            did = d_data.get("deal_id")
+            if not isinstance(did, str):
+                continue
+            if did not in deal_registry:
+                deal_registry[did] = ActiveDeal(
+                    deal_id=did,
+                    template_id=str(d_data.get("template_id", "")),
+                    player=str(d_data.get("player", player.name)),
+                    deadline_round=int(d_data.get("deadline_round", 0)),
+                    status=DealStatus(d_data.get("status", DealStatus.ACTIVE)),
+                    reward_coins=int(d_data.get("reward_coins", 0)),
+                    reward_rep=int(d_data.get("reward_rep", 0)),
+                    penalty_rep=int(d_data.get("penalty_rep", 0)),
+                )
+            player.active_deals.append(deal_registry[did])
+
+
+def _save_state(state: GameState, rng: GameRng | None = None, *, keep_undo: bool = False) -> None:
     """Persist game state to disk atomically (per-game subtree).
 
     By default clears the last-turn undo checkpoint so intervening saves
@@ -307,19 +440,19 @@ def _save_state(state: GameState, *, keep_undo: bool = False) -> None:
     game_id = f"s{state.config.seed}"
     target = state_file(game_id)
     target.parent.mkdir(parents=True, exist_ok=True)
-    snapshot = game_state_snapshot(state)
+    snapshot = _disk_snapshot(state, rng)
     atomic_write_text(target, canonical_json(snapshot))
     logger.info("save_state path=%s round=%d", target, state.current_round)
     if not keep_undo:
         _clear_undo(game_id)
 
 
-def _checkpoint_undo(state: GameState) -> None:
+def _checkpoint_undo(state: GameState, rng: GameRng | None = None) -> None:
     """Write a last-turn undo checkpoint for the current loaded state."""
     game_id = f"s{state.config.seed}"
     target = undo_state_file(game_id)
     target.parent.mkdir(parents=True, exist_ok=True)
-    atomic_write_text(target, canonical_json(game_state_snapshot(state)))
+    atomic_write_text(target, canonical_json(_disk_snapshot(state, rng)))
     logger.info("undo_checkpoint path=%s round=%d", target, state.current_round)
 
 
@@ -434,8 +567,15 @@ def _load_game_inner(sf: Path, rf: Path) -> tuple[GameState, GameRng] | None:
     if schema_version != SUPPORTED_STATE_SCHEMA_VERSION:
         _fail(state_version_mismatch_error(schema_version))
 
-    # Reconstruct game from saved state
+    # Reconstruct board / config from saved state. new_*_game shuffles
+    # decks on a discarded sibling RNG — that shuffle is NOT the live
+    # stream (restored below from rng_state) and is overwritten by
+    # persisted draw/discard piles when present.
     rng = GameRng(seed)
+    rng_state = data.get("rng_state")
+    if rng_state is not None:
+        rng.setstate(rng_state)
+    _bind_loaded_rng(rng)
 
     wcs: dict[str, WinCondition] = {}
     names = []
@@ -490,6 +630,9 @@ def _load_game_inner(sf: Path, rf: Path) -> tuple[GameState, GameRng] | None:
                     created_round=t_data.get("created_round", 0),
                 )
             state.players[i].active_treaties.append(treaty_registry[tid])
+
+    _restore_vouchers_and_deals(state, data["players"])
+    _restore_decks(state, data)
 
     state.current_round = data["current_round"]
     state.current_player_index = data["current_player_index"]
@@ -985,10 +1128,10 @@ def _doctor_check_daemon_presence(checks: list[tuple[str, str, str]]) -> None:
         # [daemon] extra not installed — no diagnostic noise from this
         # check; CLI-B-009 owns the install-coherence signal.
         return
-    state = getattr(daemon_st, "state", None)
-    if state == "running":
-        port = getattr(daemon_st, "port", "?")
-        network = getattr(daemon_st, "network", "?")
+    state_val, info = _daemon_status_view(daemon_st)
+    if state_val == "running":
+        port = _daemon_field(info, "port", default="?")
+        network = _daemon_field(info, "network", default="?")
         checks.append(
             (
                 "ok",
@@ -996,8 +1139,8 @@ def _doctor_check_daemon_presence(checks: list[tuple[str, str, str]]) -> None:
                 "",
             )
         )
-    elif state == "stale":
-        pid = getattr(daemon_st, "pid", "?")
+    elif state_val == "stale":
+        pid = _daemon_field(info, "pid", default="?")
         checks.append(
             (
                 "warn",
@@ -1525,8 +1668,9 @@ def new(
     # Save the new game's per-game subtree, then mark it active.
     game_id = f"s{state.config.seed}"
     game_dir(game_id).mkdir(parents=True, exist_ok=True)
-    atomic_write_text(rng_seed_file(game_id), str(seed))
-    _save_state(state)
+    atomic_write_text(rng_seed_file(game_id), str(seed), mode=0o600)
+    _bind_loaded_rng(rng)
+    _save_state(state, rng)
     set_active_game_id(game_id)
 
     console.print(
@@ -1604,7 +1748,8 @@ def tutorial() -> None:
     migrate_v1_layout()
     demo_id = f"s{state.config.seed}"
     game_dir(demo_id).mkdir(parents=True, exist_ok=True)
-    atomic_write_text(rng_seed_file(demo_id), "1")
+    atomic_write_text(rng_seed_file(demo_id), "1", mode=0o600)
+    _bind_loaded_rng(rng)
     set_active_game_id(demo_id)
 
     console.print("\n  You and Friend sit down with 5 coins and 3 reputation each.")
@@ -1652,8 +1797,8 @@ def tutorial() -> None:
     console.print("  If anyone changes the score later, the hash won't match.[/dim]\n")
     sleep(1)
 
-    # Save the demo state
-    _save_state(state)
+    # Save the demo state (including the post-tutorial RNG stream).
+    _save_state(state, rng)
 
     console.print(
         Panel(
@@ -1724,7 +1869,7 @@ def turn() -> None:
         raise typer.Exit(0)
 
     # Last-turn undo only: snapshot pre-turn state before mutating.
-    _checkpoint_undo(state)
+    _checkpoint_undo(state, rng)
 
     player = state.current_player
     rnd = state.current_round
@@ -1763,7 +1908,7 @@ def turn() -> None:
     if winner:
         console.print(f"\n  [bold green]{winner} wins![/bold green]")
         console.print("  [dim]Record the season with `sov game-end`.[/dim]")
-        _save_state(state, keep_undo=True)
+        _save_state(state, rng, keep_undo=True)
         raise typer.Exit(0)
 
     # Advance to next player
@@ -1792,10 +1937,9 @@ def turn() -> None:
         if state.market_board:
             state.market_board.reset_shifts()
 
-    _save_state(state, keep_undo=True)
+    _save_state(state, rng, keep_undo=True)
     console.print()
     _print_brief_status(state)
-
 
 
 @app.command()
@@ -1931,8 +2075,14 @@ def verify(
                     console.print(f"  [dim]{memo}[/dim]")
                 explorer = transport.explorer_tx_url(tx)
                 console.print(f"  [dim]{explorer}[/dim]")
+            elif result is ChainLookupResult.LOOKUP_FAILED:
+                _fail(chain_lookup_failed_error())
             else:
                 _fail(anchor_mismatch_error())
+        except typer.Exit:
+            # ``_fail`` raises ``typer.Exit``; Click's Exit is a RuntimeError
+            # so it must not be wrapped as NET_ANCHOR "submission failed".
+            raise
         except RuntimeError as e:
             _fail(anchor_error(str(e)))
 
@@ -2049,13 +2199,18 @@ def anchor(
         rnd = proof_data["round"]
         seed_val = proof_data.get("rng_seed", "?")
         ruleset = proof_data.get("ruleset", "campfire_v1")
+        round_key = _round_key_from_proof(proof_data)
+        round_field = "FINAL" if round_key == "FINAL" else f"r{round_key}"
 
         # Build the memo. game_id mirrors the proof envelope so a third-party
         # verifier can join memo↔proof; sha256: is the wire-layer algorithm tag.
+        # Final proofs use the literal FINAL slot (no ``r`` prefix), matching
+        # the batch path and pending-anchors.json keys.
         game_id = proof_data.get("game_id", f"s{seed_val}")
-        memo = f"SOV|{ruleset}|{game_id}|r{rnd}|sha256:{envelope_hash}"
+        memo = f"SOV|{ruleset}|{game_id}|{round_field}|sha256:{envelope_hash}"
 
-        console.print(f"\n  Anchoring Round {rnd}...")
+        label = "FINAL" if round_key == "FINAL" else f"Round {rnd}"
+        console.print(f"\n  Anchoring {label}...")
         console.print(f"  [dim]{memo}[/dim]\n")
 
         try:
@@ -2066,7 +2221,8 @@ def anchor(
 
             # Persist txid so postcard / feedback can surface the explorer link
             # in future invocations (the anchor receipt was previously read-only).
-            _record_anchor(rnd, txid, game_id)
+            # Final proofs record/clear the ``FINAL`` key, not the numeric round.
+            _record_anchor(round_key, txid, game_id)
             # CLI-002: clear any pending entry for this round on the legacy
             # path. Without this, ``end-round`` queues round N into
             # ``pending-anchors.json``, the legacy single-round anchor
@@ -2074,13 +2230,13 @@ def anchor(
             # pending, and the next batch flush re-anchors round N as a
             # duplicate on chain. ``clear_pending_anchors`` is idempotent
             # on rounds that weren't pending so the write is cheap.
-            clear_pending_anchors(game_id, [str(rnd)])
-            logger.info("anchor.success round=%s txid=%s", rnd, txid)
+            clear_pending_anchors(game_id, [round_key])
+            logger.info("anchor.success round=%s txid=%s", round_key, txid)
 
             explorer = transport.explorer_tx_url(txid)
             console.print(
                 Panel(
-                    f"  Round {rnd} anchored on XRPL {resolved_network.value}.\n\n"
+                    f"  {label} anchored on XRPL {resolved_network.value}.\n\n"
                     f"  TX: [bold]{txid}[/bold]\n"
                     f"  Hash: [dim]{envelope_hash}[/dim]\n"
                     f"  Explorer: [dim]{explorer}[/dim]\n\n"
@@ -3604,8 +3760,6 @@ def upgrade(
 
 def _apply_recipe(state: GameState, recipe: str) -> str:
     """Filter event/deal decks to cards matching a recipe tag. Returns a note string."""
-    from sov_engine.models import Deck
-
     tag = recipe.lower()
     valid_tags = ("cozy", "spicy", "market", "promise")
     if tag not in valid_tags:
@@ -3841,6 +3995,29 @@ def _query_daemon_status() -> Any:
     return daemon_mod.daemon_status()
 
 
+def _daemon_status_view(status: Any) -> tuple[str, dict[str, Any]]:
+    """Return ``(state_value, handshake_info)`` for a DaemonStatus StrEnum.
+
+    Wave 10 CLI-D-bis-002 + Health A F-f6f33e98: ``daemon_status()`` is a
+    StrEnum (``.value``, not ``.state``). Handshake fields (port/pid/
+    network/readonly/started_iso) live on ``daemon_info()``.
+    """
+    if status is None:
+        return "none", {}
+    state_val = status.value if hasattr(status, "value") else str(status)
+    info: dict[str, Any] = {}
+    import importlib
+
+    try:
+        daemon_mod = importlib.import_module("sov_daemon")
+    except ImportError:
+        return str(state_val), info
+    raw = daemon_mod.daemon_info()
+    if isinstance(raw, dict):
+        info = raw
+    return str(state_val), info
+
+
 def _daemon_status_human_line(status: Any) -> str:
     """Render a daemon-status object for `sov status` human output.
 
@@ -3849,17 +4026,17 @@ def _daemon_status_human_line(status: Any) -> str:
         daemon: stale (last pid 12345 — run `sov daemon start` to start a fresh one)
         daemon: none
     """
-    state = getattr(status, "state", None)
-    if state == "running":
-        port = getattr(status, "port", "?")
-        network = getattr(status, "network", "?")
-        readonly = getattr(status, "readonly", False)
+    state_val, info = _daemon_status_view(status)
+    if state_val == "running":
+        port = _daemon_field(info, "port", default="?")
+        network = _daemon_field(info, "network", default="?")
+        readonly = _daemon_field(info, "readonly", default=False)
         return (
             f"daemon: running (port {port}, network={network}, "
             f"readonly={'true' if readonly else 'false'})"
         )
-    if state == "stale":
-        pid = getattr(status, "pid", "?")
+    if state_val == "stale":
+        pid = _daemon_field(info, "pid", default="?")
         return f"daemon: stale (last pid {pid} — run `sov daemon start` to start a fresh one)"
     return "daemon: none"
 
@@ -3868,10 +4045,10 @@ def _daemon_status_json_field(status: Any) -> dict[str, Any]:
     """Render a daemon-status object as the ``daemon`` field for `sov status --json`."""
     if status is None:
         return {"state": "none"}
-    state = getattr(status, "state", "none")
-    field: dict[str, Any] = {"state": state}
+    state_val, info = _daemon_status_view(status)
+    field: dict[str, Any] = {"state": state_val}
     for attr in ("port", "pid", "network", "readonly", "started_iso"):
-        val = getattr(status, attr, None)
+        val = _daemon_field(info, attr, default=None)
         if val is not None:
             field[attr] = val
     return field
@@ -3949,10 +4126,7 @@ def _status_json_payload(state: GameState) -> dict[str, Any]:
                 proof_data = json.loads(proof_path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 continue
-            rnd_value = proof_data.get("round")
-            if rnd_value is None:
-                continue
-            seen.add(str(rnd_value))
+            seen.add(_round_key_from_proof(proof_data))
     seen.update(anchored.keys())
     seen.update(pending.keys())
 

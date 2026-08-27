@@ -188,8 +188,9 @@ jobs:
       # behavior). CI-TOOLING-B-002.
       - name: Install cargo-audit
         # --locked respects cargo-audit's own Cargo.lock for reproducibility.
-        # Version pin avoids silent major-bump breakage; bump deliberately.
-        run: cargo install cargo-audit --locked --version "^0.21"
+        # 0.22.2 parses CVSS 4.0 + malformed advisory-db entries that 0.21
+        # fail-opened (F-062ee319). Pin exact; bump deliberately.
+        run: cargo install cargo-audit --locked --version "0.22.2"
 
       - name: Cache cargo advisory DB
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -200,18 +201,8 @@ jobs:
           key: cargo-advisory-db-${{ github.run_id }}
           restore-keys: cargo-advisory-db-
 
-      # Wave 11 hotfix 2026-05-02: cargo-audit fails to PARSE a malformed
-      # upstream advisory file (RUSTSEC-2026-0073.md, libcrux-poly1305).
-      # This is a RustSec advisory-db issue, not a vulnerability in our
-      # tree. Tracked at https://github.com/RustSec/advisory-db/issues —
-      # filed upstream. ``continue-on-error: true`` here to unblock the
-      # release pipeline; revert to fail-closed when upstream lands a
-      # parse-resilient cargo-audit (>=0.22?) or fixes the malformed
-      # entry. Tracked in docs/v2.2-backlog.md under
-      # "supply-chain hard-gate maintenance."
       - name: Cargo audit
         working-directory: app/src-tauri
-        continue-on-error: true
         run: cargo audit --deny warnings
 
       - name: Cargo clippy
@@ -252,9 +243,8 @@ jobs:
   # Supply-chain hard-gate scan. pip-audit promoted from advisory to fail-on-HIGH
   # in Stage B-2 (Wave 7-B) per Stage B target C lock. Allowlist mechanism via
   # .pip-audit-ignore at repo root (one PYSEC/GHSA/CVE id per line, # comments
-  # ok). Secret scan remains advisory at v2.1; promotion to hard gate deferred
-  # to v2.2 alongside the trufflehog-exclude / cargo-deny / deny.toml allowlist
-  # policy surface design pass.
+  # ok). Secret scan is fail-closed on --results=verified (dummy XRPL testnet
+  # seeds are not live credentials).
   security:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
@@ -290,10 +280,13 @@ jobs:
 
       # pip-audit HARD GATE — fails on any unfixed advisory. Allowlist via
       # .pip-audit-ignore (one PYSEC/GHSA/CVE id per line; # comments ok).
-      # CI-TOOLING-B-001.
+      # Pinned uvx install in a throwaway env so a later `uv sync --exact`
+      # cannot wipe the scanner, and PyPI latest cannot silently change
+      # the gate (F-aadca6ee). CI-TOOLING-B-001.
       - name: pip-audit (HIGH gate)
+        env:
+          PIP_AUDIT_VERSION: "2.10.1"
         run: |
-          uv pip install pip-audit
           # Build --ignore-vuln args from allowlist file if present.
           ALLOWLIST_ARGS=""
           if [ -f .pip-audit-ignore ]; then
@@ -306,10 +299,12 @@ jobs:
               ALLOWLIST_ARGS="$ALLOWLIST_ARGS --ignore-vuln $entry"
             done < .pip-audit-ignore
           fi
+          # Frozen lock → requirements.txt; uvx does not touch the project venv.
+          uv export --frozen --all-extras --no-hashes -o "${RUNNER_TEMP}/sov-reqs.txt"
           # pip-audit fails on any unfixed advisory by default; --strict is
           # for signature verification (different concern) and conflicts with
           # positional --ignore-vuln args. Allowlist is the failure-mode gate.
-          uv run pip-audit $ALLOWLIST_ARGS
+          uvx --from "pip-audit==${PIP_AUDIT_VERSION}" pip-audit -r "${RUNNER_TEMP}/sov-reqs.txt" $ALLOWLIST_ARGS
 
       # Secret scan. Replaced gitleaks/gitleaks-action (v3.0.0) — that action
       # requires a paid GITLEAKS_LICENSE for ORGANIZATION-owned repos like
@@ -319,13 +314,25 @@ jobs:
       # it's unaffected by the Node 20 -> 24 deprecation that drove this bump,
       # and --results=verified reports only live, confirmed credentials — so it
       # does NOT false-positive on the dummy XRPL testnet seeds in tests/
-      # (e.g. tests/test_daemon_amend_wave7.py). Stays advisory at v2.1 per the
-      # job comment above; promotion to a hard gate is the v2.2 policy pass.
-      - name: Secret scan with TruffleHog (advisory)
-        continue-on-error: true
+      # (e.g. tests/test_daemon_amend_wave7.py). Fail-closed on verified hits
+      # (F-617cf2ad).
+      - name: Secret scan with TruffleHog
         uses: trufflesecurity/trufflehog@d411fff7b8879a62509f3fa98c07f247ac089a51 # v3.95.5
         with:
           extra_args: --results=verified
+
+  # Static pin of publish.yml Stage artifact matrix. Cheap bash -n of every
+  # artifacts glob rendered into the Stage loop, plus updater/latest.json
+  # presence. Catches YAML `|` interpolation before a tag (F-04ad0b5c).
+  publish-yml-static:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: bash -n Stage artifact matrix
+        run: python3 .github/scripts/check-publish-yml.py
 
   # Canary CLI smoke. Runs on workflow_dispatch (manual) AND on a daily cron
   # so we catch upstream environmental drift even when no PRs are flowing
@@ -333,7 +340,7 @@ jobs:
   canary:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
-    # uv sync + 3 CLI invocations; healthy run ~2min (CI-TOOLING-B-004).
+    # uv sync + CLI smoke (help/self-check/doctor/daemon --help); healthy run ~2min (CI-TOOLING-B-004).
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -353,3 +360,4 @@ jobs:
           uv run sov --help
           uv run sov self-check
           uv run sov doctor
+          uv run sov daemon --help

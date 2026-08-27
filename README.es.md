@@ -99,7 +99,7 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 Repite durante 15 rondas. `sov game-end` imprime las puntuaciones finales.
 
 - **Múltiples juegos guardados** (v2.1+): `sov games` muestra los juegos guardados; `sov resume <game-id>` cambia entre ellos.
-- **Anclaje por lotes** (v2.1+): `sov anchor` al final del juego agrupa todas las rondas pendientes en una sola transacción XRPL: un puntero de cadena verificable por juego. Usa `sov anchor --checkpoint` para guardar los datos a la mitad del juego.
+- **Anclaje por lotes** (v2.1+): `sov anchor` al final del juego vacía las rondas pendientes en un número pequeño y constante de transacciones AccountSet de XRPL (≤8 memos cada una; una partida Campfire típica de 16 rondas → 2 txs), no una sola transacción ni un único puntero de cadena. Usa `sov anchor --checkpoint` para vaciar a mitad de partida.
 - **Selección de red** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (o variable de entorno `SOV_XRPL_NETWORK`; predeterminado `testnet`).
 - **Modo daemon** (v2.1+, opcional): `sov daemon start` ejecuta un servidor HTTP/JSON en localhost para la integración con el escritorio y la recopilación de datos de la cadena en segundo plano. Consulta [Modo daemon](#daemon-mode-optional-v21) a continuación.
 - **Aplicación de escritorio Audit Viewer** (v2.1+, opcional): `npm --prefix app run tauri dev`. Consulta [Aplicación de escritorio](#desktop-app-optional-v21) a continuación.
@@ -124,6 +124,7 @@ sov games --json                     # machine-readable saves list (v2.1+)
 sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
+sov undo                             # last-turn only (cleared by end-round)
 sov status                           # show current game state
 sov board                            # show the board layout
 sov recap                            # what happened this round
@@ -144,7 +145,7 @@ sov game-end                         # final scores + Story Points
 sov anchor                           # batch pending rounds to XRPL (v2.1+)
 sov anchor --checkpoint              # mid-game flush (v2.1+)
 sov anchor --network mainnet         # network selection (v2.1+)
-sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov verify <proof.json> --tx <txid>  # confirm a proof is anchored on chain
 sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
@@ -183,25 +184,23 @@ Audit Viewer es la aplicación de escritorio v2.1: una carcasa Tauri (Rust + web
 
 ### Instalar (archivos binarios)
 
-v2.3.0 incluye archivos binarios precompilados en la [página de lanzamientos de GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
+v2.3.0 está etiquetada en git pero **no publicó ruedas ni activos de escritorio.** La ejecución 33118253060 de `publish.yml` falló: PyPI no tiene la distribución 2.3.0, y GitHub Release v2.3.0 tiene activos vacíos. Los nombres `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` dan 404. No fijes `pip install …==2.3.0`.
 
-- **macOS (universal):** `sovereignty-app-2.3.0-darwin-universal.dmg`: Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.3.0-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.3.0-linux-x64.deb`: Debian / Ubuntu / derivados. Instalar con `sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`.
-- **Linux (x64, AppImage):** `sovereignty-app-2.3.0-linux-x64.AppImage`: `chmod +x` y luego ejecutar.
+Hasta que una etiqueta posterior (2.3.1 o un 2.3.x reparado) adjunte archivos:
 
-También necesitas el daemon de Python que respalda la aplicación: `pip install 'sovereignty-game[daemon]'==2.3.0`.
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (la línea viva de PyPI es **2.2.1**; `pipx` / `npx @mcptoolshop/sovereignty` sin pin también resuelven a 2.2.1).
+- **App de escritorio:** ejecuta desde el código fuente (abajo). No uses [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) para binarios hasta que esa página tenga archivos coincidentes.
 
-> **Se espera una advertencia al iniciar por primera vez.** macOS mostrará "desarrollador no identificado"; haz clic con el botón derecho en el archivo .app, elige Abrir y confirma. SmartScreen de Windows dirá "editor desconocido"; haz clic en "Más información" y luego en "Ejecutar de todos modos". Ambas advertencias reflejan que las versiones actuales se envían solo con la atestación de procedencia de la compilación (verificar con `gh attestation verify`), no con la firma de código a nivel del sistema operativo.
+> **Se espera una advertencia al iniciar por primera vez** cuando sí se publiquen binarios atestiguados. Esas compilaciones llevan solo atestación SLSA de procedencia — no firma Apple Developer ID / Authenticode. macOS: clic derecho en el .app → Abrir. Windows SmartScreen: Más información → Ejecutar de todos modos.
 
 ### Verificar la procedencia
 
-Cada artefacto de lanzamiento incluye una atestación de procedencia de la compilación SLSA. Verifica antes de ejecutar:
+Cuando una versión adjunte artefactos de escritorio, verifica el archivo descargado:
 
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.3.0-darwin-universal.dmg
+  ./<downloaded-artifact>
 ```
 
 Una verificación correcta demuestra que el archivo binario se creó a partir de un commit específico, mediante el flujo de trabajo de lanzamiento, en este repositorio. Es una capa de confianza diferente a la firma de código a nivel del sistema operativo; el archivo binario aún activa la advertencia del sistema operativo, pero su procedencia de la cadena de suministro está fijada criptográficamente.

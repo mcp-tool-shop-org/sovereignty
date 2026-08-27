@@ -56,8 +56,12 @@ Credential Manager, macOS Keychain, or libsecret). Store with
 Plaintext `.sov/wallet_seed.txt` remains for testnet/devnet only; do not use
 it as the primary mainnet store. CI/sandbox hosts without an OS secret store
 get `KEYRING_UNAVAILABLE` rather than a silent plaintext write.
-The optional `XRPL_SEED` environment variable can override the on-disk seed
-for ephemeral or CI-style use.
+
+Seed resolution precedence is `--signer-file` > OS keychain (mainnet) >
+`.sov/wallet_seed.txt` > `XRPL_SEED`. The env var is the last fallback; it
+does **not** override an on-disk wallet file or a keychain entry. Use
+`XRPL_SEED` only when those higher-precedence stores are empty (ephemeral
+or CI-style use).
 
 **Treat `XRPL_SEED` as equivalent to `wallet_seed.txt`:**
 
@@ -92,9 +96,11 @@ stay until those secrets exist.
 
 ## Game state files
 
-`.sov/game_state.json` contains player names and scores. It's local-only
-and not sensitive, but don't commit it to public repos with real names
-if privacy matters to your group.
+Game state lives at `.sov/games/<game-id>/state.json` (v2.1+ multi-save).
+It contains player names and scores. It's local-only and not sensitive,
+but don't commit it to public repos with real names if privacy matters
+to your group. The v1 path `.sov/game_state.json` is a migration source
+only — first v2.1+ invocation auto-migrates it.
 
 ## Proof envelope hash (v2)
 
@@ -127,8 +133,9 @@ truth for this field list — keep this section in sync with it.
 
 ## Proof files
 
-Round proofs (`.sov/proofs/*.json`) contain both the `envelope_hash` and the
-full game state snapshot used to compute it.
+Round proofs (`.sov/games/<game-id>/proofs/*.json`) contain both the
+`envelope_hash` and the full game state snapshot used to compute it.
+The v1 path `.sov/proofs/` is a migration source only.
 
 **Player names ARE included** in proofs (top-level `players` list and inside
 each player snapshot inside `state`). The hash alone is safe to share publicly;
@@ -137,9 +144,14 @@ your group. Anonymise names before sharing.
 
 ## Telemetry
 
-Sovereignty collects no telemetry, analytics, or usage data. The only
-network call is the optional XRPL Testnet anchoring (Diary Mode), which
-you explicitly trigger with `sov anchor`. The game works fully offline.
+Sovereignty collects no telemetry, analytics, or usage data. CLI tabletop
+play is fully offline. Optional network paths, all operator-triggered:
+
+- XRPL anchoring (`sov anchor`) — Testnet by default; Diary Mode can
+  target mainnet (real XRP).
+- The desktop updater plugin polls
+  `https://github.com/mcp-tool-shop-org/sovereignty/releases/latest/download/latest.json`
+  when the Tauri shell is running.
 
 ## Diagnostic output for incident response
 

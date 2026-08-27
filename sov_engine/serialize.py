@@ -6,6 +6,7 @@ import json
 from typing import Any
 
 from sov_engine.models import (
+    ActiveDeal,
     GameState,
     PlayerState,
     Stake,
@@ -37,13 +38,7 @@ def _player_snapshot(p: PlayerState) -> dict[str, Any]:
     """Canonical player state snapshot."""
     snapshot: dict[str, Any] = {
         "active_deals": [
-            {
-                "deal_id": d.deal_id,
-                "deadline_round": d.deadline_round,
-                "status": d.status.value,
-                "template_id": d.template_id,
-            }
-            for d in sorted(p.active_deals, key=lambda d: d.deal_id)
+            _deal_snapshot(d) for d in sorted(p.active_deals, key=lambda d: d.deal_id)
         ],
         "active_treaties": [
             _treaty_snapshot(t) for t in sorted(p.active_treaties, key=lambda t: t.treaty_id)
@@ -69,6 +64,20 @@ def _player_snapshot(p: PlayerState) -> dict[str, Any]:
     if p.resources:
         snapshot["resources"] = dict(sorted(p.resources.items()))
     return snapshot
+
+
+def _deal_snapshot(d: ActiveDeal) -> dict[str, Any]:
+    """Canonical ActiveDeal snapshot — rewards/penalty/player survive reload."""
+    return {
+        "deal_id": d.deal_id,
+        "deadline_round": d.deadline_round,
+        "penalty_rep": d.penalty_rep,
+        "player": d.player,
+        "reward_coins": d.reward_coins,
+        "reward_rep": d.reward_rep,
+        "status": d.status.value,
+        "template_id": d.template_id,
+    }
 
 
 def _voucher_snapshot(v: Voucher) -> dict[str, Any]:

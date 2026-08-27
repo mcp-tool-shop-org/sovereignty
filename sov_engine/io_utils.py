@@ -82,20 +82,68 @@ def atomic_write_text(path: Path, content: str, *, mode: int | None = None) -> N
     target file. Single-process write atomicity only — concurrent-writer
     locking is the caller's responsibility.
 
-    When ``mode`` is given (e.g. ``0o600``), the resulting file's permission
-    bits are set via ``os.chmod`` after the rename. On Windows ``os.chmod``
-    only honors the read-only bit and is treated as best-effort. When
-    ``mode`` is ``None`` the umask-default (typically ``0o644``) applies.
+    When ``mode`` is given (e.g. ``0o600``), the *temporary* inode is created
+    with that mode **before** ``os.replace``, so a world-readable window never
+    exists on POSIX (chmod-after-rename would leave the tmp + the post-replace
+    target at umask-default, typically 0644, for a local-observer window).
+    On Windows ``os.chmod`` only honors the read-only bit and is treated as
+    best-effort both on the tmp and on the replaced target. When ``mode`` is
+    ``None`` the umask-default (typically ``0o644``) applies.
     """
     tmp = path.with_suffix(path.suffix + ".tmp")
-    tmp.write_text(content, encoding="utf-8", newline="\n")
-    os.replace(tmp, path)
+    payload = content.encode("utf-8")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_BINARY"):
+        flags |= os.O_BINARY
+    # 0o666 lets umask produce the usual 0644/0664 default; 0o600 (when
+    # requested) is then chmod'd onto the tmp inode before replace so umask
+    # cannot leave a world-readable sibling.
+    create_mode = mode if mode is not None else 0o666
+    # Leftover crash tmp would make O_EXCL fail; drop it first. Single-process
+    # writers only — documented above.
+    with contextlib.suppress(FileNotFoundError):
+        tmp.unlink()
+    fd = -1
+    try:
+        fd = os.open(str(tmp), flags, create_mode)
+        view = memoryview(payload)
+        while view:
+            n = os.write(fd, view)
+            view = view[n:]
+        os.fsync(fd)
+        # Stamp the requested mode on the open inode before it is ever
+        # visible via replace. ``fchmod`` is POSIX; Windows falls through
+        # to ``os.chmod`` on the path below.
+        if mode is not None and hasattr(os, "fchmod"):
+            os.fchmod(fd, mode)
+    except Exception:
+        if fd >= 0:
+            os.close(fd)
+            fd = -1
+        with contextlib.suppress(OSError):
+            tmp.unlink()
+        raise
+    else:
+        os.close(fd)
+        fd = -1
     if mode is not None:
+        try:
+            os.chmod(tmp, mode)
+        except OSError as exc:
+            # Windows + best-effort: chmod may only honor the read-only bit.
+            logger.warning(
+                "atomic_write_text.chmod.failed path=%s mode=%o exc=%s detail=%s",
+                tmp,
+                mode,
+                type(exc).__name__,
+                exc,
+            )
+    os.replace(tmp, path)
+    # POSIX replace keeps the tmp inode's mode. Windows may not; re-apply.
+    if mode is not None and sys.platform == "win32":
         try:
             os.chmod(path, mode)
         except OSError as exc:
-            # Windows + best-effort: chmod may only honor the read-only bit.
-            # Not a fatal error — log and continue.
             logger.warning(
                 "atomic_write_text.chmod.failed path=%s mode=%o exc=%s detail=%s",
                 path,

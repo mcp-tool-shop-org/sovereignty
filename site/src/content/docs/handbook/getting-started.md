@@ -51,14 +51,15 @@ sov end-round
 
 ## Print and play
 
-For the physical version, print the cards and reference sheets from the `assets/print/` directory. You need:
+For the physical version, print the cards and reference sheets from `assets/print/` (the PDFs in `assets/print/pdf/`). You need:
 
-- 28 Event cards (20 core + 8 market-shift for Town Hall)
-- 22 Deal and Voucher cards (12 Deals + 10 Vouchers)
+- 20 Event cards
+- 10 Deal cards
+- 10 Voucher cards
 - A six-sided die
 - Coins (real or tokens)
 
-See the [full rules](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/docs/rules/campfire_v1.md) for details.
+The digital / Town Hall deck is larger (28 events + 12 deals); the extra 8 events and 2 deals are console-only. See [How to Play](/sovereignty/handbook/how-to-play/) and the [full rules](https://github.com/mcp-tool-shop-org/sovereignty/blob/main/docs/rules/campfire_v1.md).
 
 ## Multiple games at once (v2.1+)
 
@@ -77,7 +78,7 @@ The active-game pointer at `.sov/active-game` tracks which game `sov turn`, `sov
 The daemon is an optional HTTP/JSON server that backs the desktop app and external audit tools. Install with the `[daemon]` extra:
 
 ```bash
-pip install 'sovereignty-game[daemon]'==2.3.0
+pip install 'sovereignty-game[daemon]'   # live PyPI line is 2.2.1; do not pin ==2.3.0
 
 sov daemon start --readonly   # for the audit viewer
 sov daemon status             # check pid/port/network/readonly
@@ -94,30 +95,26 @@ The Audit Viewer visualizes XRPL-anchored proofs as collapsible per-game lists w
 - `/game` — passive real-time state display for the active game
 - `/settings` — daemon config + network switcher (testnet / mainnet / devnet) with mainnet-confirmation guardrail
 
-Install the desktop binary from the [GitHub Releases page](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest). Three platforms:
+v2.3.0 is tagged in git but **did not publish wheels or desktop assets.** `publish.yml` run 33118253060 failed: PyPI has no 2.3.0 distribution, and GitHub Release v2.3.0 has empty assets. The filenames `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` 404.
 
-- macOS universal (Intel + Apple Silicon): `sovereignty-app-2.3.0-darwin-universal.dmg`
-- Windows x64: `sovereignty-app-2.3.0-win-x64.msi`
-- Linux x64 (Debian/Ubuntu): `sovereignty-app-2.3.0-linux-x64.deb` — install with `sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`.
-- Linux x64 (AppImage): `sovereignty-app-2.3.0-linux-x64.AppImage` — `chmod +x` then run.
+Until a follow-up tag actually attaches files, run the desktop app from source (`npm --prefix app run tauri dev`). Do not use [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) for binaries until that page has matching files. Python/daemon: `pip install 'sovereignty-game[daemon]'` (live line is 2.2.1).
 
 ### First-launch warning is expected
 
-Current releases ship with build-provenance attestation only — not OS-level code signing.
+When attested binaries do ship, they carry build-provenance attestation only — not OS-level Apple Developer ID / Authenticode signing.
 
 - **macOS**: control-click the .app → Open → "Are you sure?" → Open
 - **Windows**: SmartScreen says "unrecognized publisher" → "More info" → "Run anyway"
-- **Linux (.deb)**: `sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`, then launch from your app menu
-- **Linux (AppImage)**: `chmod +x sovereignty-app-2.3.0-linux-x64.AppImage`, then run
+- **Linux (.deb / AppImage)**: install or `chmod +x` the attached artifact, then launch
 
 ### Verify supply-chain provenance
 
-Every release artifact carries a SLSA build-provenance attestation:
+When a release actually attaches desktop artifacts, every artifact carries a SLSA build-provenance attestation:
 
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.3.0-darwin-universal.dmg
+  ./<downloaded-artifact>
 ```
 
 A clean verification proves the binary was built from a specific commit, by the release workflow, in this repo. Different layer of trust than OS-level code signing — the binary still triggers the OS warning, but its supply-chain provenance is cryptographically pinned.

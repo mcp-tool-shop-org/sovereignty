@@ -53,38 +53,24 @@ export function useGameState(): UseGameStateResult {
     if (!client) return;
     try {
       const games = await client.games();
-      // Filter to non-game-over: GameState shape from /games/{id} carries game_over,
-      // but the listing endpoint returns only summaries. Fetch active candidate then.
-      const candidateId = pickActiveGame(games);
-      setActiveGameId(candidateId);
-      if (candidateId) {
-        const s = await client.game(candidateId);
-        // If the candidate's game_over is true, fall through to "no active game."
-        if (s.game_over) {
-          // Find next non-over game.
-          const nonOverIds: string[] = [];
-          for (const g of games) {
-            if (g.game_id === candidateId) continue;
-            nonOverIds.push(g.game_id);
-          }
-          let resolvedState: GameState | null = null;
-          let resolvedId: string | null = null;
-          for (const id of nonOverIds) {
-            const candidate = await client.game(id);
-            if (!candidate.game_over) {
-              resolvedState = candidate;
-              resolvedId = id;
-              break;
-            }
-          }
-          setActiveGameId(resolvedId);
-          setState(resolvedState);
-        } else {
-          setState(s);
+      // Walk last_modified_iso descending and skip game_over. Listing order
+      // is not recency; the previous fallback used the unsorted remainder
+      // and could pick an older in-progress game. F-1098ef9e.
+      const sorted = [...games].sort((a, b) =>
+        b.last_modified_iso.localeCompare(a.last_modified_iso),
+      );
+      let resolvedId: string | null = null;
+      let resolvedState: GameState | null = null;
+      for (const g of sorted) {
+        const s = await client.game(g.game_id);
+        if (!s.game_over) {
+          resolvedId = g.game_id;
+          resolvedState = s;
+          break;
         }
-      } else {
-        setState(null);
       }
+      setActiveGameId(resolvedId);
+      setState(resolvedState);
       setError(null);
     } catch (e) {
       setError(String(e));

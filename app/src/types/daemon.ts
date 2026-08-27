@@ -130,13 +130,13 @@ export type ShellErrorCode =
 // Tagged-union shape of the Tauri shell's serialized ShellError. Variant
 // fields follow each Rust struct definition; `code` is always present.
 export type ShellError =
-  | { code: "DaemonNotRunning" }
-  | { code: "DaemonStartFailed"; stderr: string }
-  | { code: "DaemonNotInstalled" }
-  | { code: "ConfigFileMissing" }
-  | { code: "ConfigFileMalformed"; detail: string }
-  | { code: "ConfigSchemaUnsupported"; found: number; expected: number }
-  | { code: "SubprocessFailed"; exit_code: number; stderr: string }
+  | { code: "DaemonNotRunning"; message?: string }
+  | { code: "DaemonStartFailed"; stderr: string; message?: string }
+  | { code: "DaemonNotInstalled"; message?: string }
+  | { code: "ConfigFileMissing"; message?: string }
+  | { code: "ConfigFileMalformed"; detail: string; message?: string }
+  | { code: "ConfigSchemaUnsupported"; found: number; expected: number; message?: string }
+  | { code: "SubprocessFailed"; exit_code: number; stderr: string; message?: string }
   | { code: "Panic"; message: string; location: string; timestamp_iso: string };
 
 // Mirrors Rust `PanicPayload` emitted on the `shell-panic` Tauri event from
@@ -183,7 +183,8 @@ export interface PendingEntry {
 // `path` is daemon-internal (file-watch correlation) and SHOULD NOT be
 // rendered. Future v2.2 may drop it; for now consumers just don't surface it.
 export interface ProofMeta {
-  round: string;
+  /** Daemon emits int for numbered rounds and the string "FINAL". */
+  round: string | number;
   envelope_hash: string;
   final: boolean;
   path: string;

@@ -1,6 +1,6 @@
 # Sovereignty — Repo Instructions
 
-Strategy game about governance, trust, and trade. Offline tabletop play (Python CLI) + XRPL online verification of round proofs. **Currently v2.3.0.** Distribution: `pip install sovereignty-game` or `pip install sovereignty-game==2.3.0` and `npx @mcptoolshop/sovereignty`.
+Strategy game about governance, trust, and trade. Offline tabletop play (Python CLI) + XRPL online verification of round proofs. **Currently v2.3.0 in git.** Distribution: `pip install sovereignty-game` (PyPI latest is **2.2.1** — v2.3.0 wheels did not publish; do not pin `==2.3.0`) and `npx @mcptoolshop/sovereignty`. Desktop binaries: run from source until a follow-up tag attaches GH assets.
 
 Global instructions in `~/.claude/CLAUDE.md` always apply. This file holds sovereignty-specific context that isn't discoverable from code or git history.
 

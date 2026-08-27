@@ -38,7 +38,6 @@ from sov_engine.io_utils import (
     add_pending_anchor as engine_add_pending_anchor,
 )
 from sov_engine.io_utils import (
-    anchors_file,
     clear_pending_anchors,
     game_dir,
     list_saved_games,
@@ -227,6 +226,52 @@ def _read_anchors(game_id: str) -> dict[str, str]:
     from sov_engine.proof import _read_anchors as engine_read_anchors
 
     return engine_read_anchors(game_id)
+
+
+def _recorded_txid(anchors: dict[str, str], round_key: str) -> str | None:
+    """Return a non-empty recorded txid for ``round_key``, or None."""
+    txid = anchors.get(round_key)
+    if isinstance(txid, str) and txid.strip():
+        return txid
+    return None
+
+
+def _heal_stale_pending_against_anchors(
+    game_id: str,
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Drop pending rows that already have a txid in ``anchors.json``.
+
+    ``flush_pending_anchors`` writes anchors then clears pending. A crash
+    between those atomic writes leaves the round in both indexes. txid
+    presence means submit already succeeded — keep the recorded txid and
+    drop the stale pending row so status/verify/retry cannot lie.
+    """
+    pending = read_pending_anchors(game_id)
+    anchors = _read_anchors(game_id)
+    stale = [key for key in list(pending) if _recorded_txid(anchors, key) is not None]
+    if stale:
+        with contextlib.suppress(OSError, ValueError, TypeError):
+            clear_pending_anchors(game_id, stale)
+        for key in stale:
+            pending.pop(key, None)
+    return pending, anchors
+
+
+def _local_anchor_verdict(
+    round_key: str,
+    pending: dict[str, Any],
+    anchors: dict[str, str],
+) -> tuple[str, str | None]:
+    """Return ``(anchor_status, txid)`` for the local 3-state index.
+
+    A recorded txid wins over a pending row: submit already succeeded.
+    """
+    txid = _recorded_txid(anchors, round_key)
+    if txid is not None:
+        return "anchored", txid
+    if round_key in pending:
+        return "pending", None
+    return "missing", None
 
 
 def _resolve_round_key(round_key: str) -> str:
@@ -491,6 +536,8 @@ async def proofs_list_handler(request: Request) -> JSONResponse:
 
     entries: list[dict[str, Any]] = []
     for path in sorted(pdir.glob("*.json")):
+        if path.name == "anchors.json":
+            continue
         try:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
@@ -574,18 +621,8 @@ async def anchor_status_handler(request: Request) -> JSONResponse:
         proof_data = {}
     envelope_hash = proof_data.get("envelope_hash") if isinstance(proof_data, dict) else None
 
-    pending = read_pending_anchors(game_id)
-    anchors = _read_anchors(game_id)
-
-    if round_key in pending:
-        anchor_status = "pending"
-        txid: str | None = None
-    elif round_key in anchors:
-        anchor_status = "anchored"
-        txid = anchors[round_key]
-    else:
-        anchor_status = "missing"
-        txid = None
+    pending, anchors = _heal_stale_pending_against_anchors(game_id)
+    anchor_status, txid = _local_anchor_verdict(round_key, pending, anchors)
 
     payload: dict[str, Any] = {
         "round": round_key,
@@ -639,18 +676,8 @@ async def verify_round_handler(request: Request) -> JSONResponse:
         proof_data = {}
     envelope_hash = proof_data.get("envelope_hash") if isinstance(proof_data, dict) else None
 
-    pending = read_pending_anchors(game_id)
-    anchors = _read_anchors(game_id)
-
-    if round_key in pending:
-        anchor_status = "pending"
-        txid: str | None = None
-    elif round_key in anchors:
-        anchor_status = "anchored"
-        txid = anchors[round_key]
-    else:
-        anchor_status = "missing"
-        txid = None
+    pending, anchors = _heal_stale_pending_against_anchors(game_id)
+    anchor_status, txid = _local_anchor_verdict(round_key, pending, anchors)
 
     payload: dict[str, Any] = {
         "round": round_key,
@@ -708,7 +735,7 @@ async def pending_anchors_handler(request: Request) -> JSONResponse:
         from sov_cli.errors import daemon_game_not_found_error
 
         return _sov_error_response(daemon_game_not_found_error(game_id), status_code=404)
-    pending = read_pending_anchors(game_id)
+    pending, _anchors = _heal_stale_pending_against_anchors(game_id)
     payload = {
         "pending": sorted(pending.keys(), key=_round_sort_key),
         "entries": pending,
@@ -795,7 +822,7 @@ async def flush_pending_anchors(
     from sov_transport.xrpl_async import AsyncXRPLTransport
     from sov_transport.xrpl_internals import _MAX_MEMOS_PER_TX, XRPLNetwork
 
-    pending = read_pending_anchors(game_id)
+    pending, _anchors = _heal_stale_pending_against_anchors(game_id)
     if not pending:
         return {"txids": [], "rounds": [], "explorer_urls": []}
     if not (seed or "").strip():
@@ -823,14 +850,10 @@ async def flush_pending_anchors(
     # failed submit. Testnet/devnet skip — faucets keep them topped, and a
     # zero-balance failure there is a recoverable test path.
     if network_enum is XRPLNetwork.MAINNET and seed:
-        # Reserve floor: base reserve (10 XRP = 10_000_000 drops) is the
-        # XRPL minimum; per-tx fee is 12 drops × number of memos. Match
-        # this against ``mainnet_underfunded_error``'s reporting shape.
-        required_drops = 10_000_000 + 12 * max(1, len(rounds))
         await _check_wallet_balance_or_raise(
             transport,
             seed=seed,
-            required_drops=required_drops,
+            n_memos=len(rounds),
         )
 
     # Wave 10 BRIDGE-A-bis-003: ``anchor_batch`` returns ``list[str]``;
@@ -855,41 +878,116 @@ async def flush_pending_anchors(
     }
 
 
+# Mainnet base reserve has been 1 XRP since the December 2024 reduction
+# (xrpl.org reserves docs: 1 XRP base / 0.2 XRP owner). Used when
+# ``server_state`` omits ``reserve_base``; RPC failures do not fall back
+# here — those propagate as ANCHOR_FAILED.
+_MAINNET_RESERVE_BASE_DROPS_FALLBACK = 1_000_000
+_ACCOUNTSET_FEE_DROPS = 12
+_XRPL_ACCOUNT_NOT_FOUND = "actNotFound"
+
+
+def _required_drops_for_batch(n_memos: int, reserve_base_drops: int) -> int:
+    """Minimum total balance (drops) to submit an n-memo AccountSet batch."""
+    return int(reserve_base_drops) + _ACCOUNTSET_FEE_DROPS * max(1, n_memos)
+
+
+def _reserve_base_drops_from_server_state(result: Any) -> int | None:
+    """Parse ``validated_ledger.reserve_base`` (drops) from a server_state result."""
+    if not isinstance(result, dict):
+        return None
+    state = result.get("state")
+    if not isinstance(state, dict):
+        return None
+    for ledger_key in ("validated_ledger", "closed_ledger"):
+        ledger = state.get(ledger_key)
+        if not isinstance(ledger, dict):
+            continue
+        raw = ledger.get("reserve_base")
+        if raw is None:
+            continue
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if value > 0:
+            return value
+    return None
+
+
+def _async_xrpl_client(transport: Any) -> Any:
+    """Build an ``AsyncJsonRpcClient`` from a transport's JSON-RPC URL."""
+    if hasattr(transport, "_client"):
+        client = transport._client()
+        if client is not None:
+            return client
+    from xrpl.asyncio.clients import AsyncJsonRpcClient
+
+    url = getattr(transport, "url", None) or getattr(transport, "json_rpc_url", None)
+    if not url:
+        raise RuntimeError("XRPL transport has no JSON-RPC URL")
+    return AsyncJsonRpcClient(url)
+
+
+async def _fetch_reserve_base_drops(transport: Any) -> int:
+    """Read live ``reserve_base`` (drops) from ``server_state``.
+
+    RPC / transport failures propagate so a network blip is not treated
+    as insolvency. A successful response missing the field falls back to
+    1 XRP (the post-2024 mainnet floor).
+    """
+    from xrpl.models.requests import ServerState
+
+    client = _async_xrpl_client(transport)
+    response = await client.request(ServerState())
+    if hasattr(response, "is_successful") and not response.is_successful():
+        raise RuntimeError("server_state lookup failed")
+    result = getattr(response, "result", None)
+    parsed = _reserve_base_drops_from_server_state(result)
+    if parsed is None:
+        return _MAINNET_RESERVE_BASE_DROPS_FALLBACK
+    return parsed
+
+
 async def _check_wallet_balance_or_raise(
     transport: Any,
     *,
     seed: str,
-    required_drops: int,
+    required_drops: int | None = None,
+    n_memos: int = 1,
+    reserve_base_drops: int | None = None,
 ) -> None:
     """DAEMON-005: refuse mainnet anchor when wallet balance is below reserve+fee.
 
     Queries the wallet's ``account_info`` via xrpl-py and compares the
-    available drops (balance minus the base reserve) against ``required_drops``.
-    Raises ``MainnetUnderfundedError`` carrying the structured-error code
+    reported drops against ``required_drops``. Raises
+    ``MainnetUnderfundedError`` carrying the structured-error code
     ``MAINNET_UNDERFUNDED`` so ``_do_anchor`` can translate it to the
     ``sov_cli.errors.mainnet_underfunded_error`` factory shape on the wire.
 
-    Network errors (xrpl-py timeouts, account-not-found for an unfunded
-    new wallet) propagate as ``MainnetUnderfundedError`` with a balance of
-    zero — operator's next step is the same in both cases (top up the
-    wallet or switch to testnet).
+    Account-not-found (``actNotFound``) and a true zero/low balance are
+    insolvency. Timeouts, RPC 5xx, client-construct failures, and other
+    transport errors propagate so ``_do_anchor`` surfaces ``ANCHOR_FAILED``
+    (HTTP 502, retryable) rather than lying that the wallet is empty.
     """
     from xrpl.asyncio.account import get_balance
+    from xrpl.asyncio.clients import XRPLRequestFailureException
     from xrpl.wallet import Wallet
+
+    if required_drops is None:
+        base = (
+            reserve_base_drops
+            if reserve_base_drops is not None
+            else await _fetch_reserve_base_drops(transport)
+        )
+        required_drops = _required_drops_for_batch(n_memos, base)
 
     try:
         wallet = Wallet.from_seed(seed)
-        client = transport._client() if hasattr(transport, "_client") else None
-        if client is None:
-            from xrpl.asyncio.clients import AsyncJsonRpcClient
-
-            client = AsyncJsonRpcClient(transport.json_rpc_url)
+        client = _async_xrpl_client(transport)
         balance_drops = int(await get_balance(wallet.address, client))
-    except Exception as exc:  # noqa: BLE001
-        # Account-not-found / unfunded / network blip: treat as zero
-        # balance and surface the underfunded error so the operator gets
-        # an actionable message. DAEMON-B-013: structured fields via
-        # ``extra=`` so the JSON log formatter can emit them.
+    except XRPLRequestFailureException as exc:
+        error_code = getattr(exc, "error", None)
         logger.warning(
             "anchor.balance_preflight.failed",
             extra={
@@ -897,7 +995,21 @@ async def _check_wallet_balance_or_raise(
                 "exception_detail": str(exc),
             },
         )
-        balance_drops = 0
+        if error_code == _XRPL_ACCOUNT_NOT_FOUND:
+            raise MainnetUnderfundedError(
+                balance_drops=0,
+                required_drops=required_drops,
+            ) from exc
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "anchor.balance_preflight.failed",
+            extra={
+                "exception_type": type(exc).__name__,
+                "exception_detail": str(exc),
+            },
+        )
+        raise
 
     if balance_drops < required_drops:
         raise MainnetUnderfundedError(

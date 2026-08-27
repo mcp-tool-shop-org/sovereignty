@@ -1,0 +1,78 @@
+/* Local OFL faces — Latin static TTF. Inlined to data URIs by inline-fonts.py. */
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("fonts/cormorant-garamond-400-normal.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("fonts/cormorant-garamond-500-normal.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 600;
+  font-display: block;
+  src: url("fonts/cormorant-garamond-600-normal.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: normal;
+  font-weight: 700;
+  font-display: block;
+  src: url("fonts/cormorant-garamond-700-normal.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+  src: url("fonts/cormorant-garamond-400-italic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 500;
+  font-display: block;
+  src: url("fonts/cormorant-garamond-500-italic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  font-style: italic;
+  font-weight: 600;
+  font-display: block;
+  src: url("fonts/cormorant-garamond-600-italic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "IM Fell English";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("fonts/im-fell-english-400-normal.ttf") format("truetype");
+}
+@font-face {
+  font-family: "IM Fell English";
+  font-style: italic;
+  font-weight: 400;
+  font-display: block;
+  src: url("fonts/im-fell-english-400-italic.ttf") format("truetype");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("fonts/jetbrains-mono-400-normal.ttf") format("truetype");
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 500;
+  font-display: block;
+  src: url("fonts/jetbrains-mono-500-normal.ttf") format("truetype");
+}

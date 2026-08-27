@@ -99,7 +99,7 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 Répétez l’opération pendant 15 tours. `sov game-end` affiche les scores finaux.
 
 - **Plusieurs parties sauvegardées** (v2.1 et versions ultérieures) : `sov games` liste les parties sauvegardées ; `sov resume <game-id>` permet de passer d’une partie à l’autre.
-- **Ancrage par lots** (v2.1 et versions ultérieures) : `sov anchor`, à la fin du jeu, regroupe tous les tours en attente dans une seule transaction XRPL — un pointeur de chaîne vérifiable par partie. Utilisez `sov anchor --checkpoint` pour effectuer une sauvegarde au milieu du jeu.
+- **Ancrage par lots** (v2.1 et versions ultérieures) : `sov anchor`, à la fin de la partie, vide les tours en attente dans un petit nombre constant de transactions AccountSet XRPL (≤8 mémos chacune ; une partie Campfire typique de 16 tours → 2 txs) — pas une seule transaction / un seul pointeur de chaîne. Utilisez `sov anchor --checkpoint` pour un flush en cours de partie.
 - **Sélection du réseau** (v2.1 et versions ultérieures) : `sov anchor --network testnet|mainnet|devnet` (ou variable d’environnement `SOV_XRPL_NETWORK` ; valeur par défaut : `testnet`).
 - **Mode démon** (v2.1 et versions ultérieures, facultatif) : `sov daemon start` exécute un serveur HTTP/JSON sur localhost pour l’intégration avec le bureau et la surveillance de la chaîne en arrière-plan. Voir [Mode démon](#mode-demon-facultatif-v21) ci-dessous.
 - **Application de bureau Audit Viewer** (v2.1 et versions ultérieures, facultative) : `npm --prefix app run tauri dev`. Voir [Application de bureau](#application-de-bureau-facultative-v21) ci-dessous.
@@ -124,6 +124,7 @@ sov games --json                     # machine-readable saves list (v2.1+)
 sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
+sov undo                             # last-turn only (cleared by end-round)
 sov status                           # show current game state
 sov board                            # show the board layout
 sov recap                            # what happened this round
@@ -144,7 +145,7 @@ sov game-end                         # final scores + Story Points
 sov anchor                           # batch pending rounds to XRPL (v2.1+)
 sov anchor --checkpoint              # mid-game flush (v2.1+)
 sov anchor --network mainnet         # network selection (v2.1+)
-sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov verify <proof.json> --tx <txid>  # confirm a proof is anchored on chain
 sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
@@ -183,25 +184,23 @@ Audit Viewer est l’application de bureau v2.1 : un Tauri shell (Rust + webview
 
 ### Installation (fichiers binaires)
 
-La version 2.3.0 est livrée avec des fichiers binaires précompilés sur la [page des versions GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) :
+La version 2.3.0 est étiquetée dans git mais **n’a publié ni roues PyPI ni binaires de bureau.** L’exécution 33118253060 de `publish.yml` a échoué : PyPI n’a pas de distribution 2.3.0, et GitHub Release v2.3.0 a des assets vides. Les noms `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` renvoient 404. Ne pas épingler `pip install …==2.3.0`.
 
-- **macOS (universel) :** `sovereignty-app-2.3.0-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64) :** `sovereignty-app-2.3.0-win-x64.msi`
-- **Linux (x64, .deb) :** `sovereignty-app-2.3.0-linux-x64.deb` — Debian / Ubuntu / dérivés. Installez avec `sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`.
-- **Linux (x64, AppImage) :** `sovereignty-app-2.3.0-linux-x64.AppImage` — `chmod +x` puis exécutez.
+Jusqu’à ce qu’une étiquette suivante (2.3.1 ou un 2.3.x réparé) joigne des fichiers :
 
-Vous avez également besoin du démon Python qui prend en charge l’application : `pip install 'sovereignty-game[daemon]'==2.3.0`.
+- **Python / démon :** `pip install 'sovereignty-game[daemon]'` (la ligne PyPI actuelle est **2.2.1** ; `pipx` / `npx @mcptoolshop/sovereignty` sans pin résolvent aussi vers 2.2.1).
+- **Application de bureau :** exécutez depuis les sources (ci-dessous). N’utilisez pas [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) pour les binaires tant que cette page n’a pas de fichiers correspondants.
 
-> **L’avertissement au premier lancement est normal.** macOS affichera « développeur non identifié » — cliquez avec le bouton droit sur le fichier .app, choisissez Ouvrir, confirmez. SmartScreen de Windows indiquera « éditeur non reconnu » — cliquez sur « Plus d’informations », puis sur « Exécuter quand même ». Ces deux avertissements indiquent que les versions actuelles sont livrées avec une simple attestation de provenance de la build (à vérifier à l’aide de `gh attestation verify`), et non avec une signature de code au niveau du système d’exploitation.
+> **L’avertissement au premier lancement est normal** lorsque des binaires attestés seront réellement publiés. Ces builds portent uniquement une attestation SLSA de provenance — pas de signature Apple Developer ID / Authenticode. macOS : clic droit sur le .app → Ouvrir. Windows SmartScreen : Plus d’informations → Exécuter quand même.
 
 ### Vérifier la provenance
 
-Chaque artefact de version contient une attestation de provenance de la build SLSA. Vérifiez avant d’exécuter :
+Lorsqu’une version joint réellement des artefacts de bureau, vérifiez le fichier téléchargé :
 
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.3.0-darwin-universal.dmg
+  ./<downloaded-artifact>
 ```
 
 Une vérification réussie prouve que le fichier binaire a été créé à partir d’un commit spécifique, par le workflow de publication, dans ce dépôt. Il s’agit d’une couche de confiance différente de la signature de code au niveau du système d’exploitation ; le fichier binaire déclenche toujours l’avertissement du système d’exploitation, mais sa provenance de chaîne d’approvisionnement est cryptographiquement verrouillée.

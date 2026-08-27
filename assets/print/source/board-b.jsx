@@ -269,7 +269,7 @@ function BCenter() {
       </svg>
 
       <img
-        src="assets/logo.png"
+        src="logo.png"
         alt=""
         style={{ width: 270, height: 270, objectFit: "contain", marginTop: -8, marginBottom: -10 }}
       />

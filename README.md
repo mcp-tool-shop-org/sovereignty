@@ -99,7 +99,7 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 Repeat for 15 rounds. `sov game-end` prints the final scores.
 
 - **Multiple saved games** (v2.1+): `sov games` lists saves; `sov resume <game-id>` switches between them.
-- **Batched anchoring** (v2.1+): `sov anchor` at game-end batches all pending rounds into a single XRPL transaction — one verifiable chain pointer per game. Use `sov anchor --checkpoint` for mid-game flush.
+- **Batched anchoring** (v2.1+): `sov anchor` at game-end flushes pending rounds into a small constant of XRPL AccountSet transactions (≤8 memos each; a typical 16-round Campfire game → 2 txs) — not a single transaction / single chain pointer. Use `sov anchor --checkpoint` for mid-game flush.
 - **Network selection** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (or `SOV_XRPL_NETWORK` env var; default `testnet`).
 - **Daemon mode** (v2.1+, optional): `sov daemon start` runs a localhost HTTP/JSON server for desktop integration and background chain polling. See [Daemon mode](#daemon-mode-optional-v21) below.
 - **Audit Viewer desktop app** (v2.1+, optional): `npm --prefix app run tauri dev`. See [Desktop app](#desktop-app-optional-v21) below.
@@ -125,6 +125,7 @@ sov games --json                     # machine-readable saves list (v2.1+)
 sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
+sov undo                             # last-turn only (cleared by end-round)
 sov status                           # show current game state
 sov board                            # show the board layout
 sov recap                            # what happened this round
@@ -145,7 +146,7 @@ sov game-end                         # final scores + Story Points
 sov anchor                           # batch pending rounds to XRPL (v2.1+)
 sov anchor --checkpoint              # mid-game flush (v2.1+)
 sov anchor --network mainnet         # network selection (v2.1+)
-sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov verify <proof.json> --tx <txid>  # confirm a proof is anchored on chain
 sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
@@ -184,25 +185,23 @@ The Audit Viewer is the v2.1 desktop app — a Tauri shell (Rust + webview) that
 
 ### Install (binaries)
 
-v2.3.0 ships pre-built binaries on the [GitHub Releases page](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest):
+v2.3.0 is tagged in git but **did not publish wheels or desktop assets.** `publish.yml` run 33118253060 failed: PyPI has no 2.3.0 distribution, and GitHub Release v2.3.0 has empty assets. The filenames `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` 404. Do not pin `pip install …==2.3.0`.
 
-- **macOS (universal):** `sovereignty-app-2.3.0-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows (x64):** `sovereignty-app-2.3.0-win-x64.msi`
-- **Linux (x64, .deb):** `sovereignty-app-2.3.0-linux-x64.deb` — Debian / Ubuntu / derivatives. Install with `sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`.
-- **Linux (x64, AppImage):** `sovereignty-app-2.3.0-linux-x64.AppImage` — `chmod +x` then run.
+Until a follow-up tag (2.3.1 or a repaired 2.3.x) actually attaches files:
 
-You also need the Python daemon backing the app: `pip install 'sovereignty-game[daemon]'==2.3.0`.
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (live PyPI line is **2.2.1**; unpinned `pipx` / `npx @mcptoolshop/sovereignty` also resolve to 2.2.1).
+- **Desktop app:** run from source (below). Do not use [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) for binaries until that page has matching files.
 
-> **First-launch warning is expected.** macOS will say "unidentified developer" — control-click the .app, choose Open, confirm. Windows SmartScreen will say "unrecognized publisher" — click "More info" then "Run anyway." Both warnings reflect that current releases ship with build-provenance attestation only (verify with `gh attestation verify`), not OS-level code signing.
+> **First-launch OS warning is expected** when attested binaries do ship. Those builds carry SLSA build-provenance attestation only — not OS-level Apple Developer ID / Authenticode signing. macOS: control-click the .app → Open. Windows SmartScreen: More info → Run anyway.
 
 ### Verify provenance
 
-Every release artifact carries a SLSA build-provenance attestation. Verify before running:
+When a release actually attaches desktop artifacts, verify the file you downloaded:
 
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.3.0-darwin-universal.dmg
+  ./<downloaded-artifact>
 ```
 
 A clean verification proves the binary was built from a specific commit, by the release workflow, in this repo. Different layer of trust than OS-level code signing — the binary still triggers the OS warning, but its supply-chain provenance is cryptographically pinned.

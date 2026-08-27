@@ -107,9 +107,7 @@ def test_record_anchors_merges_without_dropping_prior_rounds(
     }
 
 
-def test_daemon_read_sees_cli_entries(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
+def test_daemon_read_sees_cli_entries(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     pytest.importorskip("starlette", reason="daemon extra not installed")
     monkeypatch.chdir(tmp_path)
     _ensure_game_dir("s42")
@@ -140,6 +138,7 @@ def test_daemon_record_does_not_erase_cli_txids_or_write_bare_map(
     assert "anchors" not in raw
     assert raw["entries"] == {"1": _TX_CLI, "2": _TX_DAEMON}
 
+
 _FIXED_TOKEN = "test-token-fixed-for-tests"
 _AUTH = {"Authorization": f"Bearer {_FIXED_TOKEN}"}
 
@@ -161,7 +160,7 @@ def _seed_daemon_game(root: Path, game_id: str = "s42") -> None:
         ),
         encoding="utf-8",
     )
-    (proofs / "round-1.json").write_text(
+    (proofs / "round_001.proof.json").write_text(
         json.dumps(
             {
                 "proof_version": 2,
@@ -173,7 +172,7 @@ def _seed_daemon_game(root: Path, game_id: str = "s42") -> None:
         encoding="utf-8",
     )
     (game_dir_path / "pending-anchors.json").write_text(
-        json.dumps({"pending": []}), encoding="utf-8"
+        json.dumps({"schema_version": 1, "entries": {}}), encoding="utf-8"
     )
 
 

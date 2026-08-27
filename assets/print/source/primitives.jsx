@@ -73,7 +73,7 @@ function PageHeader({ eyebrow, title, subtitle }) {
         gap: 16,
       }}>
         <div style={{ width: 220, height: 1, background: T.gold }} />
-        <span style={{ color: T.gold, fontSize: 18 }}>✦</span>
+        <StarMark size={16} />
         <div style={{ width: 220, height: 1, background: T.gold }} />
       </div>
     </div>
@@ -93,17 +93,37 @@ function Roundel({ n, accent, size = 30 }) {
   );
 }
 
-// Small ornament
-function Fleuron({ color, size = 16 }) {
-  return <span style={{ color: color || T.gold, fontSize: size, fontFamily: T.fontDisplay }}>❦</span>;
+// Vector ornaments — latin TTF subsets do not include U+2726/U+2766, and
+// Chrome on Windows would otherwise embed Segoe UI Symbol (or Type3 paths).
+function StarMark({ size = 16, color }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true"
+      style={{ display: "inline-block", verticalAlign: "middle", flex: "0 0 auto" }}>
+      <path
+        d="M8 1.2 L9.7 6.1 L15 6.2 L10.8 9.3 L12.5 14.4 L8 11.4 L3.5 14.4 L5.2 9.3 L1 6.2 L6.3 6.1 Z"
+        fill={color || T.gold}
+      />
+    </svg>
+  );
 }
 
-// Hairline section divider with center ornament
-function Divider({ width = 200, ornament = "✦" }) {
+function Fleuron({ color, size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" aria-hidden="true"
+      style={{ display: "inline-block", verticalAlign: "middle", flex: "0 0 auto" }}>
+      <path
+        d="M8 1.5 C6.2 4.8 3.5 6 3.5 9.1 C3.5 11.6 5.4 13.4 8 14.5 C10.6 13.4 12.5 11.6 12.5 9.1 C12.5 6 9.8 4.8 8 1.5 Z"
+        fill={color || T.gold}
+      />
+    </svg>
+  );
+}
+
+function Divider({ width = 200 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
       <div style={{ width, height: 1, background: T.gold, opacity: 0.7 }} />
-      <span style={{ color: T.gold, fontSize: 14 }}>{ornament}</span>
+      <StarMark size={12} />
       <div style={{ width, height: 1, background: T.gold, opacity: 0.7 }} />
     </div>
   );
@@ -123,4 +143,4 @@ function CoinSlot({ size = 32, label, marked }) {
   );
 }
 
-window.SovPrim = { PrintPage, PageHeader, Roundel, Fleuron, Divider, CoinSlot, T };
+window.SovPrim = { PrintPage, PageHeader, Roundel, Fleuron, StarMark, Divider, CoinSlot, T };

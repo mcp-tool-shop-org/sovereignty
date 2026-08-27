@@ -10,6 +10,7 @@ import { LoadingSpinner } from "../components/LoadingSpinner";
 import { Pill } from "../components/Pill";
 import { useDaemon } from "../hooks/useDaemon";
 import { DaemonClient } from "../lib/daemonClient";
+import { formatError } from "../lib/errorFormat";
 import type { GameSummary } from "../types/daemon";
 import styles from "./Index.module.css";
 
@@ -22,6 +23,7 @@ const APP_VERSION = pkg.version;
 export default function Index() {
   const { status, config, error } = useDaemon();
   const [games, setGames] = useState<GameSummary[] | null>(null);
+  const [gamesError, setGamesError] = useState<string | null>(null);
 
   useEffect(() => {
     if (status !== "running" || !config) return;
@@ -30,10 +32,17 @@ export default function Index() {
     void client
       .games()
       .then((g) => {
-        if (!cancelled) setGames(g);
+        if (!cancelled) {
+          setGames(g);
+          setGamesError(null);
+        }
       })
-      .catch(() => {
-        if (!cancelled) setGames([]);
+      .catch((e) => {
+        // F-4d7467be: a 401/500/network error is not "zero games / Welcome".
+        if (!cancelled) {
+          const { message, hint } = formatError(e);
+          setGamesError(hint ? `${message} — ${hint}` : message);
+        }
       });
     return () => {
       cancelled = true;
@@ -65,7 +74,19 @@ export default function Index() {
       ) : null}
       {status === "loading" ? <LoadingSpinner label="Connecting to daemon" /> : null}
 
-      {games !== null && games.length === 0 ? (
+      {gamesError ? (
+        <EmptyState
+          glyph={<EmptyBoxGlyph />}
+          title="Could not load games"
+          body={
+            <>
+              {gamesError} Run <code>sov daemon status --json</code> to inspect.
+            </>
+          }
+        />
+      ) : null}
+
+      {games !== null && games.length === 0 && !gamesError ? (
         <EmptyState
           glyph={<EmptyBoxGlyph />}
           title="Welcome"

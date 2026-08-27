@@ -20,6 +20,7 @@ import { Pill } from "../components/Pill";
 import { useDaemon } from "../hooks/useDaemon";
 import type { DaemonUiStatus } from "../hooks/useDaemon";
 import { DaemonClient } from "../lib/daemonClient";
+import { formatError } from "../lib/errorFormat";
 import { daemonStatus } from "../lib/invoke";
 import type { GameSummary, XRPLNetwork } from "../types/daemon";
 import styles from "./Settings.module.css";
@@ -58,7 +59,9 @@ export default function Settings() {
   const { status, config, error, stopDaemon, startDaemon } = useDaemon();
   const [busy, setBusy] = useState(false);
   const [targetNetwork, setTargetNetwork] = useState<XRPLNetwork | null>(null);
-  const [pendingByGame, setPendingByGame] = useState<Map<string, number>>(new Map());
+  // null = not yet probed. Empty Map is a successful probe with zero pending.
+  const [pendingByGame, setPendingByGame] = useState<Map<string, number> | null>(null);
+  const [pendingProbeError, setPendingProbeError] = useState<string | null>(null);
   // null = not yet probed; once probed we have a definite boolean. Field-
   // missing on the wire is normalized to `false` (fail-closed) below.
   const [startedByShell, setStartedByShell] = useState<boolean | null>(null);
@@ -94,6 +97,8 @@ export default function Settings() {
 
   // Probe pending-anchors for each game. Re-runs after restart (busy) so the
   // freshly-restarted daemon's pending state is reflected.
+  // Fail closed: unknown (null) and any /games or pending-anchors error
+  // leave Apply disabled. F-695769d8.
   // biome-ignore lint/correctness/useExhaustiveDependencies: busy is intentional reload trigger
   useEffect(() => {
     if (status !== "running" || !config) return;
@@ -104,17 +109,20 @@ export default function Settings() {
         const games: GameSummary[] = await client.games();
         const out = new Map<string, number>();
         for (const g of games) {
-          try {
-            const pending = await client.pendingAnchors(g.game_id);
-            const count = Object.keys(pending).length;
-            if (count > 0) out.set(g.game_id, count);
-          } catch {
-            // ignore — empty implies 0
-          }
+          const pending = await client.pendingAnchors(g.game_id);
+          const count = Object.keys(pending).length;
+          if (count > 0) out.set(g.game_id, count);
         }
-        if (!cancelled) setPendingByGame(out);
-      } catch {
-        if (!cancelled) setPendingByGame(new Map());
+        if (!cancelled) {
+          setPendingByGame(out);
+          setPendingProbeError(null);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          const { message, hint } = formatError(e);
+          setPendingByGame(null);
+          setPendingProbeError(hint ? `${message} — ${hint}` : message);
+        }
       }
     })();
     return () => {
@@ -122,30 +130,41 @@ export default function Settings() {
     };
   }, [status, config, busy]);
 
-  const totalPending = Array.from(pendingByGame.values()).reduce((a, b) => a + b, 0);
+  const pendingKnown = pendingByGame !== null && pendingProbeError === null;
+  const totalPending =
+    pendingByGame !== null && pendingProbeError === null
+      ? Array.from(pendingByGame.values()).reduce((a, b) => a + b, 0)
+      : 0;
+  const probesReady = startedByShell !== null && pendingKnown;
   const externallyStarted = startedByShell === false;
 
   // Guardrails 1 + 2 — disable Apply on either switcher. Copy refresh per
   // WEB-UI-C-008 (lead with situation, name recovery, drop "shell" ambiguity)
   // and WEB-UI-C-009 (name the consequence — orphaned anchors — first).
-  const guardrailMessage = externallyStarted
-    ? "This daemon was started outside the desktop app. Run `sov daemon stop` to stop it; the desktop app will auto-start a shell-managed daemon on next launch."
-    : totalPending > 0
-      ? "Switching networks would orphan the pending anchors targeted at the current network. Run `sov anchor` to flush them first."
-      : null;
+  const guardrailMessage = !probesReady
+    ? pendingProbeError
+      ? `${pendingProbeError} Run \`sov daemon status --json\` to inspect.`
+      : null
+    : externallyStarted
+      ? "This daemon was started outside the desktop app. Run `sov daemon stop` to stop it; the desktop app will auto-start a shell-managed daemon on next launch."
+      : totalPending > 0
+        ? "Switching networks would orphan the pending anchors targeted at the current network. Run `sov anchor` to flush them first."
+        : null;
 
   const canApplyNetwork =
+    probesReady &&
     !!targetNetwork &&
     !!config &&
     targetNetwork !== config.network &&
-    !externallyStarted &&
+    startedByShell === true &&
     totalPending === 0 &&
     !busy;
 
   // Mode switcher — same guardrails 1 + 2 (mainnet confirm doesn't apply since
   // mode toggle doesn't change network).
   const targetReadonly = config ? !config.readonly : false;
-  const canApplyMode = !!config && !externallyStarted && totalPending === 0 && !busy;
+  const canApplyMode =
+    probesReady && !!config && startedByShell === true && totalPending === 0 && !busy;
 
   // Guardrail 3 — mainnet boundary needs confirm.
   const requiresMainnetConfirm =
@@ -171,7 +190,8 @@ export default function Settings() {
         }
         await startDaemon(readonly, network);
       } catch (e) {
-        setRestartError(String(e));
+        const { message, hint } = formatError(e);
+        setRestartError(hint ? `${message} — ${hint}` : message);
       } finally {
         setBusy(false);
       }
@@ -315,7 +335,7 @@ export default function Settings() {
               {guardrailMessage}
             </p>
           ) : null}
-          {totalPending > 0 ? (
+          {pendingByGame !== null && totalPending > 0 ? (
             <p className={styles.muted}>
               Pending anchors:{" "}
               {Array.from(pendingByGame.entries())

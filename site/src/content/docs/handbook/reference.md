@@ -21,6 +21,7 @@ sidebar:
 | Command | Description |
 |---------|-------------|
 | `sov turn` | Roll, move, and resolve your space |
+| `sov undo` | Reverse the last `sov turn` only. Cleared by `sov end-round`. Not a full history journal. |
 | `sov status` | Show current game state for all players |
 | `sov status --brief` | One-line per-player summary (between-turn glance) |
 | `sov board` | Show the board layout and player positions |

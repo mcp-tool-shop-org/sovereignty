@@ -88,7 +88,8 @@ export class DaemonClient {
       headers: this.headers(),
     });
     if (!r.ok) throw new Error(`pending-anchors ${gameId}: ${r.status}`);
-    return (await r.json()) as Record<string, PendingEntry>;
+    const body: unknown = await r.json();
+    return unwrapPendingAnchors(body);
   }
 
   async anchorStatus(
@@ -118,4 +119,26 @@ export class DaemonClient {
     if (!r.ok) throw new Error(`verify ${gameId}/${round}: ${r.status}`);
     return (await r.json()) as VerifyRoundResponse;
   }
+}
+
+/** Daemon GET /pending-anchors emits `{ pending: string[], entries: {round: PendingEntry} }`.
+ *  Consumers count entries, never Object.keys(wrapper). Empty index is
+ *  `{ pending: [], entries: {} }` — two wrapper keys, zero pending rounds.
+ *  F-ae4241e2. */
+export function unwrapPendingAnchors(body: unknown): Record<string, PendingEntry> {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return {};
+  }
+  const rec = body as Record<string, unknown>;
+  if (rec.entries !== undefined) {
+    if (rec.entries !== null && typeof rec.entries === "object" && !Array.isArray(rec.entries)) {
+      return rec.entries as Record<string, PendingEntry>;
+    }
+    return {};
+  }
+  // Legacy flat map (no wrap). Reject the wrap's `pending` array key as entries.
+  if ("pending" in rec && Array.isArray(rec.pending)) {
+    return {};
+  }
+  return rec as Record<string, PendingEntry>;
 }

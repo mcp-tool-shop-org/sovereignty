@@ -99,7 +99,7 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 15 राउंड तक दोहराएं। `sov game-end` अंतिम स्कोर प्रिंट करता है।
 
 - **कई सहेजे गए गेम** (v2.1+): `sov games` सहेजता सूचीबद्ध करता है; `sov resume <game-id>` उनके बीच स्विच करता है।
-- **बैच एंकरिंग** (v2.1+): `sov anchor` गेम के अंत में सभी लंबित राउंड को एक ही एक्सआरपीएल लेनदेन में बैच करता है - प्रति गेम एक सत्यापन योग्य श्रृंखला पॉइंटर। मध्य-गेम फ्लश के लिए `sov anchor --checkpoint` का उपयोग करें।
+- **बैच एंकरिंग** (v2.1+): `sov anchor` गेम के अंत में लंबित राउंड को XRPL AccountSet लेनदेन की एक छोटी नियत संख्या में फ्लश करता है (प्रत्येक में ≤8 मेमो; सामान्य 16-राउंड Campfire गेम → 2 txs) — एक अकेली ट्रांज़ैक्शन / एक अकेला चेन पॉइंटर नहीं। मध्य-गेम फ्लश के लिए `sov anchor --checkpoint` का उपयोग करें।
 - **नेटवर्क चयन** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (या `SOV_XRPL_NETWORK` पर्यावरण चर; डिफ़ॉल्ट `testnet`)।
 - **डेमॉन मोड** (v2.1+, वैकल्पिक): `sov daemon start` डेस्कटॉप एकीकरण और पृष्ठभूमि श्रृंखला पोलिंग के लिए एक लोकलहोस्ट HTTP/JSON सर्वर चलाता है। नीचे [डेमॉन मोड](#daemon-mode-optional-v21) देखें।
 - **ऑडिट व्यूअर डेस्कटॉप ऐप** (v2.1+, वैकल्पिक): `npm --prefix app run tauri dev`। नीचे [डेस्कटॉप ऐप](#desktop-app-optional-v21) देखें।
@@ -125,6 +125,7 @@ sov games --json                     # machine-readable saves list (v2.1+)
 sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
+sov undo                             # last-turn only (cleared by end-round)
 sov status                           # show current game state
 sov board                            # show the board layout
 sov recap                            # what happened this round
@@ -145,7 +146,7 @@ sov game-end                         # final scores + Story Points
 sov anchor                           # batch pending rounds to XRPL (v2.1+)
 sov anchor --checkpoint              # mid-game flush (v2.1+)
 sov anchor --network mainnet         # network selection (v2.1+)
-sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov verify <proof.json> --tx <txid>  # confirm a proof is anchored on chain
 sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
@@ -184,25 +185,23 @@ sov daemon stop
 
 ### स्थापित करें (बाइनरी)
 
-v2.3.0 [गिटहब रिलीज़ पेज](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) पर पूर्व-निर्मित बाइनरी के साथ आता है:
+v2.3.0 git में टैग है, लेकिन **व्हील या डेस्कटॉप एसेट प्रकाशित नहीं हुए।** `publish.yml` रन 33118253060 विफल रहा: PyPI पर 2.3.0 वितरण नहीं है, और GitHub Release v2.3.0 के एसेट खाली हैं। फ़ाइलनाम `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` 404 देते हैं। `pip install …==2.3.0` पिन न करें।
 
-- **macOS (यूनिवर्सल):** `sovereignty-app-2.3.0-darwin-universal.dmg` — इंटेल + एप्पल सिलिकॉन
-- **विंडोज (x64):** `sovereignty-app-2.3.0-win-x64.msi`
-- **लिनक्स (x64, .deb):** `sovereignty-app-2.3.0-linux-x64.deb` — डेबियन / उबंटू / डेरिवेटिव। `sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb` के साथ स्थापित करें।
-- **लिनक्स (x64, AppImage):** `sovereignty-app-2.3.0-linux-x64.AppImage` — `chmod +x` फिर चलाएं।
+जब तक कोई फॉलो-अप टैग (2.3.1 या मरम्मत किया 2.3.x) फ़ाइलें संलग्न न करे:
 
-आपको ऐप का समर्थन करने वाले पायथन डेमॉन की भी आवश्यकता है: `pip install 'sovereignty-game[daemon]'==2.3.0`।
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (लाइव PyPI लाइन **2.2.1** है; अनपिन `pipx` / `npx @mcptoolshop/sovereignty` भी 2.2.1 पर जाते हैं)।
+- **डेस्कटॉप ऐप:** स्रोत से चलाएँ (नीचे)। [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) का उपयोग बाइनरी के लिए न करें जब तक उस पेज पर मेल खाती फ़ाइलें न हों।
 
-> **पहली लॉन्च चेतावनी अपेक्षित है।** macOS "अज्ञात डेवलपर" कहेगा - .app पर नियंत्रण-क्लिक करें, खोलें चुनें, पुष्टि करें। विंडोज स्मार्टस्क्रीन कहेगा "अपरिचित प्रकाशक" — "अधिक जानकारी" पर क्लिक करें फिर "फिर भी चलाएं"। दोनों चेतावनियां दर्शाती हैं कि वर्तमान रिलीज़ केवल बिल्ड-प्रोवेनैंस एटेस्टेशन के साथ शिप होती हैं (`gh attestation verify` से सत्यापित करें), न कि ओएस-स्तरीय कोड साइनिंग।
+> **पहली लॉन्च चेतावनी अपेक्षित है** जब अटेस्टेड बाइनरी वास्तव में शिप हों। वे बिल्ड केवल SLSA बिल्ड-प्रोवेनैंस एटेस्टेशन रखते हैं — OS-स्तरीय Apple Developer ID / Authenticode साइनिंग नहीं। macOS: .app पर कंट्रोल-क्लिक → खोलें। Windows SmartScreen: अधिक जानकारी → फिर भी चलाएँ।
 
 ### उत्पत्ति को सत्यापित करें
 
-प्रत्येक रिलीज़ कलाकृति में एक SLSA बिल्ड-प्रोवेनैंस एटेस्टेशन होता है। चलाने से पहले सत्यापित करें:
+जब कोई रिलीज़ वास्तव में डेस्कटॉप आर्टिफ़ैक्ट संलग्न करे, डाउनलोड की गई फ़ाइल सत्यापित करें:
 
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.3.0-darwin-universal.dmg
+  ./<downloaded-artifact>
 ```
 
 एक स्वच्छ सत्यापन साबित करता है कि बाइनरी को इस रिपो में, रिलीज़ वर्कफ़्लो द्वारा, एक विशिष्ट कमिट से बनाया गया था। ओएस-स्तरीय कोड साइनिंग की तुलना में विश्वास का एक अलग स्तर - बाइनरी अभी भी ओएस चेतावनी को ट्रिगर करती है, लेकिन इसकी आपूर्ति-श्रृंखला उत्पत्ति क्रिप्टोग्राफिक रूप से पिन की जाती है।

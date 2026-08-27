@@ -57,12 +57,17 @@ function makeFetchMock(opts: { pendingByGame?: Record<string, number> } = {}) {
       const m = url.match(/\/games\/([^/]+)\/pending-anchors/);
       const gid = m?.[1] ?? "";
       const count = opts.pendingByGame?.[gid] ?? 0;
-      const body: Record<string, unknown> = {};
+      // Daemon wire: `{ pending: string[], entries: {round: PendingEntry} }`.
+      // Empty index is two wrapper keys, zero entries. F-ae4241e2.
+      const entries: Record<string, unknown> = {};
+      const pending: string[] = [];
       for (let i = 0; i < count; i++) {
-        body[String(i)] = { envelope_hash: "deadbeef", added_iso: "2026-05-02T00:00:00Z" };
+        const key = String(i);
+        pending.push(key);
+        entries[key] = { envelope_hash: "deadbeef", added_iso: "2026-05-02T00:00:00Z" };
       }
       return Promise.resolve(
-        new Response(JSON.stringify(body), {
+        new Response(JSON.stringify({ pending, entries }), {
           status: 200,
           headers: { "content-type": "application/json" },
         }),
@@ -184,7 +189,9 @@ describe("Settings — network switcher guardrails (spec §4)", () => {
     fireEvent.change(select, { target: { value: "mainnet" } });
     // WEB-UI-C-018: button copy is "Switch network" (was "Apply (restarts daemon)").
     const apply = screen.getByRole("button", { name: /Switch network/i }) as HTMLButtonElement;
-    expect(apply.disabled).toBe(false);
+    await waitFor(() => {
+      expect(apply.disabled).toBe(false);
+    });
     fireEvent.click(apply);
 
     await waitFor(() => {
@@ -228,5 +235,106 @@ describe("Settings — network switcher guardrails (spec §4)", () => {
     // No modal should open for testnet→devnet.
     expect(showModalSpy).not.toHaveBeenCalled();
     showModalSpy.mockRestore();
+  });
+
+  it("disables Apply before probes resolve (F-695769d8)", async () => {
+    mocks.daemonStatus.mockResolvedValue({
+      state: "running",
+      config: runningConfig,
+      started_by_shell: true,
+    });
+    mocks.getDaemonConfig.mockResolvedValue(runningConfig);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (typeof url === "string" && url.endsWith("/games")) {
+          return new Promise(() => {});
+        }
+        return Promise.reject(new Error(`unhandled ${url}`));
+      }),
+    );
+
+    renderSettings();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Switch to full mode/i })).toBeTruthy();
+    });
+    const modeApply = screen.getByRole("button", {
+      name: /Switch to full mode/i,
+    }) as HTMLButtonElement;
+    expect(modeApply.disabled).toBe(true);
+    fireEvent.click(modeApply);
+    expect(mocks.daemonStop).not.toHaveBeenCalled();
+  });
+
+  it("pending-anchors 500 leaves Apply disabled with an error (F-695769d8)", async () => {
+    mocks.daemonStatus.mockResolvedValue({
+      state: "running",
+      config: runningConfig,
+      started_by_shell: true,
+    });
+    mocks.getDaemonConfig.mockResolvedValue(runningConfig);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((url: string) => {
+        if (typeof url === "string" && url.endsWith("/games")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify([
+                {
+                  game_id: "s42",
+                  ruleset: "campfire_v1",
+                  current_round: 3,
+                  max_rounds: 15,
+                  players: [],
+                  last_modified_iso: "2026-05-02T00:00:00Z",
+                },
+              ]),
+              { status: 200, headers: { "content-type": "application/json" } },
+            ),
+          );
+        }
+        if (typeof url === "string" && url.includes("/pending-anchors")) {
+          return Promise.resolve(new Response("nope", { status: 500 }));
+        }
+        return Promise.reject(new Error(`unhandled ${url}`));
+      }),
+    );
+
+    renderSettings();
+    await waitFor(() => {
+      expect(screen.getByText(/sov daemon status --json/)).toBeTruthy();
+    });
+    const modeApply = screen.getByRole("button", {
+      name: /Switch to full mode/i,
+    }) as HTMLButtonElement;
+    expect(modeApply.disabled).toBe(true);
+  });
+
+  it("started_by_shell still null cannot stop an external daemon (F-695769d8)", async () => {
+    mocks.daemonStatus
+      .mockResolvedValueOnce({
+        state: "running",
+        config: runningConfig,
+        started_by_shell: true,
+      })
+      .mockResolvedValueOnce({
+        state: "running",
+        config: runningConfig,
+        started_by_shell: true,
+      })
+      .mockImplementation(() => new Promise(() => {}));
+    mocks.getDaemonConfig.mockResolvedValue(runningConfig);
+    vi.stubGlobal("fetch", makeFetchMock());
+
+    renderSettings();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /Switch to full mode/i })).toBeTruthy();
+    });
+    const modeApply = screen.getByRole("button", {
+      name: /Switch to full mode/i,
+    }) as HTMLButtonElement;
+    expect(modeApply.disabled).toBe(true);
+    fireEvent.click(modeApply);
+    expect(mocks.daemonStop).not.toHaveBeenCalled();
   });
 });

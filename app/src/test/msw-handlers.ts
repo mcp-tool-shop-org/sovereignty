@@ -126,7 +126,9 @@ export const defaultHandlers = [
     }),
   ),
 
-  http.get(`${BASE}/games/s42/pending-anchors`, () => HttpResponse.json({})),
+  http.get(`${BASE}/games/s42/pending-anchors`, () =>
+    HttpResponse.json({ pending: [], entries: {} }),
+  ),
 
   // GET /games/{id}/verify/{round} — additive chain lookup (JOB-026).
   http.get(`${BASE}/games/s42/verify/:round`, ({ params }) =>

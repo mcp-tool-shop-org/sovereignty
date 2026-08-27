@@ -122,4 +122,52 @@ _"What's this?"_
 
 ---
 
-_Sovereignty: Campfire v1.0 — 20 Event cards_
+**BUMPER HARVEST** | Event
+Food floods the market. Food price -1 this round.
+_"More tomatoes than anyone knows what to do with."_
+
+---
+
+**LOGGING BAN** | Event
+Wood gets scarce. Wood price +1 this round.
+_"The council says: no more chopping until spring."_
+
+---
+
+**TINKER'S ARRIVAL** | Event
+A traveling tinker sells cheap. Tools price -1 this round.
+_"Step right up! Everything must go!"_
+
+---
+
+**TRADE CARAVAN** | Event
+The caravan restocks. +2 to each supply pool.
+_"Fresh goods from the valley."_
+
+---
+
+**WAREHOUSE FIRE** | Event
+Lose 2 from each supply pool. Prices don't change.
+_"Somebody left a lantern burning."_
+
+---
+
+**FEAST DAY** | Event
+Everyone eats! Remove 1 Food from each player who has it.
+_"The whole town gathers. Bring what you've got."_
+
+---
+
+**TOOL SHORTAGE** | Event
+Tools price +1 this round. Upgrades cost +1 coin.
+_"Everything's breaking and nobody can fix it."_
+
+---
+
+**GOOD RAINS** | Event
+All prices -1 this round. The land provides.
+_"The rivers are full and the fields are green."_
+
+---
+
+_Sovereignty: Campfire v1.0 — 28 Event cards (20 Campfire + 8 market-shift)_

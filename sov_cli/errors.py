@@ -131,10 +131,11 @@ def no_proof_error() -> SovError:
     """No proof files found."""
     return SovError(
         code="STATE_NO_PROOF",
-        message="No proof files found in .sov/proofs/.",
+        message="No proof files found in .sov/games/<id>/proofs/.",
         hint=(
             "Generate one with `sov end-round` "
-            "(closes the current round and writes a `round_NNN.proof.json`)."
+            "(writes `round_NNN.proof.json` under `.sov/games/<id>/proofs/`). "
+            "List proofs with `ls .sov/games/<id>/proofs/`."
         ),
     )
 
@@ -145,8 +146,9 @@ def proof_file_error(path: str) -> SovError:
         code="IO_PROOF",
         message=f"Proof file not found: {path}",
         hint=(
-            "Double-check the path. List available proofs with `ls .sov/proofs/` "
-            "(or omit the path to use the latest)."
+            "Double-check the path. List available proofs with "
+            "`ls .sov/games/<id>/proofs/` (or omit the path to use the latest). "
+            "Game ids are listed by `sov games --json`."
         ),
     )
 
@@ -190,26 +192,44 @@ def proof_invalid_error(
     )
 
 
+def _v1_layout_note() -> str:
+    """One-line leftover-v1 note, or empty. Not the primary recovery path."""
+    try:
+        from sov_engine.io_utils import save_root
+
+        if (save_root() / "game_state.json").exists():
+            return (
+                "\n  Note: a leftover v1 `.sov/game_state.json` still exists; "
+                "the live save is under `.sov/games/<id>/` — do not delete the "
+                "retired root files as the primary fix."
+            )
+    except (OSError, ImportError, TypeError):
+        pass
+    return ""
+
+
 def state_corrupt_error(detail: str) -> SovError:
     """On-disk game state could not be parsed (corrupted save).
 
     ``detail`` should already include the underlying exception class and
     message so the operator has something concrete to grep / report.
+    Recovery points at the v2.1 multi-save path
+    (``.sov/games/<id>/state.json``), not the retired v1 root files.
     """
     return SovError(
         code="STATE_CORRUPT",
         message=(
             f"Saved game state is unreadable.\n"
             f"  Underlying error: {detail}\n"
-            "  To recover, delete the corrupted save and start a new game:\n"
-            "    rm .sov/game_state.json .sov/rng_seed.txt\n"
-            "    sov new -p Alice -p Bob   # use your actual player names\n"
-            "  If you need to preserve the file for debugging, move it instead:\n"
-            "    mv .sov/game_state.json .sov/game_state.json.bak"
+            "  To recover, archive the corrupted save and start a new game:\n"
+            "    mv .sov/games/<id>/state.json .sov/games/<id>/state.json.bak\n"
+            "    mv .sov/games/<id>/rng_seed.txt .sov/games/<id>/rng_seed.txt.bak\n"
+            "    sov new -p Alice -p Bob   # use your actual player names"
+            f"{_v1_layout_note()}"
         ),
         hint=(
-            "Run `sov support-bundle` first if you plan to file a bug — "
-            "it captures the diagnostic context maintainers need."
+            "List saves with `sov games --json`, then archive "
+            "`.sov/games/<id>/state.json` before `sov new`."
         ),
     )
 
@@ -235,13 +255,14 @@ def state_version_mismatch_error(found: object) -> SovError:
             "  To recover, either:\n"
             "    1) Re-install the sovereignty version that wrote this save, OR\n"
             "    2) Archive the old save and start fresh:\n"
-            "         mv .sov/game_state.json .sov/game_state.json.bak\n"
+            "         mv .sov/games/<id>/state.json .sov/games/<id>/state.json.bak\n"
             "         sov new -p Alice -p Bob   # use your actual player names"
+            f"{_v1_layout_note()}"
         ),
         hint=(
             "If you needed that save, downgrade sovereignty with "
-            "`pipx install 'sovereignty-game<2.0.0'` before deleting — "
-            "this binary cannot read it."
+            "`pipx install 'sovereignty-game<2.0.0'` before deleting "
+            "`.sov/games/<id>/state.json` — this binary cannot read it."
         ),
     )
 
@@ -256,6 +277,25 @@ def anchor_mismatch_error() -> SovError:
             "or the proof file changed after it was anchored. "
             "If you re-ran `sov end-round` after anchoring, the new hash won't match."
         ),
+    )
+
+
+def chain_lookup_failed_error(detail: str = "") -> SovError:
+    """On-chain lookup itself failed (RPC down / 5xx / malformed envelope).
+
+    Distinct from ``NET_ANCHOR_MISMATCH``: a network blip is not a
+    cryptographic verdict that the memo doesn't match.
+    """
+    extra = f" {detail}" if detail else ""
+    return SovError(
+        code="NET_ANCHOR",
+        message=(f"Chain lookup failed — could not reach the ledger to verify this anchor.{extra}"),
+        hint=(
+            "This is a transport/RPC failure, not a hash mismatch. "
+            "Retry with `sov verify <proof> --tx <txid>` "
+            "(XRPL Testnet can be flaky), or inspect `sov doctor --json`."
+        ),
+        retryable=True,
     )
 
 
@@ -891,6 +931,7 @@ def daemon_anchor_failed_error(exc_type: str, detail: str) -> SovError:
         ),
     )
 
+
 def nothing_to_undo_error() -> SovError:
     """No last-turn checkpoint available to restore."""
     return SovError(
@@ -901,4 +942,3 @@ def nothing_to_undo_error() -> SovError:
             "`sov turn` (not `sov end-round` or other commands)."
         ),
     )
-

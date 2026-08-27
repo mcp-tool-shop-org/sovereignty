@@ -1,5 +1,5 @@
 /* global React, SovTokens, SovPrim */
-const { PrintPage, PageHeader } = window.SovPrim;
+const { PrintPage, PageHeader, StarMark, Fleuron } = window.SovPrim;
 const T = window.SovTokens;
 
 // ============================================================================
@@ -12,10 +12,12 @@ const CARD_W = 500;
 const CARD_H = 700;
 const GRID_COLS = 3;
 const GRID_ROWS = 3;
-// Available area on page: 1700x2200 with 50px safe margin = 1600x2100. 3*500 = 1500 fits.
-// Vertical: 3*700 = 2100 = exactly fills; tighten to fit with header.
-// Strategy: scale cards down slightly to leave a header band.
-const CARD_SCALE = 0.95;
+// PrintPage is 1700x2200 with overflow:hidden. Footer sits at bottom:50.
+// Grid is placed at top:240. Fit constraint:
+//   3 * (CARD_H * CARD_SCALE) + 2 * gap + 240  <  ~2090
+// At 0.95 that is 2275 and the third row clips. 0.85 → 2065, room for the footer.
+const CARD_SCALE = 0.85;
+const GRID_GAP = 20;
 
 function CardFrame({ children, accent, type, ground, topAccent }) {
   return (
@@ -44,9 +46,9 @@ function CardFrame({ children, accent, type, ground, topAccent }) {
 
 function TypePill({ kind }) {
   const styles = {
-    Event:   { color: T.gold,     border: "none", letter: 4, ornament: "✦" },
+    Event:   { color: T.gold,     border: "none", letter: 4, ornament: "star" },
     Deal:    { color: T.ember,    border: `1px solid ${T.ember}`, letter: 3, ornament: null },
-    Voucher: { color: T.goldDeep, border: "none", underline: true, letter: 3, ornament: "❦" },
+    Voucher: { color: T.goldDeep, border: "none", underline: true, letter: 3, ornament: "fleuron" },
   }[kind];
   return (
     <div style={{
@@ -61,7 +63,8 @@ function TypePill({ kind }) {
       padding: styles.border ? "3px 9px" : (styles.underline ? "0 0 2px 0" : 0),
       fontWeight: 500,
     }}>
-      {styles.ornament ? <span style={{ fontSize: 10 }}>{styles.ornament}</span> : null}
+      {styles.ornament === "star" ? <StarMark size={10} color={styles.color} /> : null}
+      {styles.ornament === "fleuron" ? <Fleuron size={10} color={styles.color} /> : null}
       <span>{kind}</span>
     </div>
   );
@@ -232,6 +235,14 @@ const EVENTS = [
   { name: "Harvest Moon", effect: "The player with the fewest coins gains 2 coins.", flavor: "The land provides for those who need it most." },
   { name: "Tall Tale",    effect: "Gain 1 Rep. But if you’re already above 7, lose 1 instead.", flavor: "Some stories are too good to be true." },
   { name: "Lucky Find",   effect: "Draw another Event immediately.",     flavor: "What’s this?" },
+  { name: "Bumper Harvest", effect: "Food floods the market. Food price -1 this round.", flavor: "More tomatoes than anyone knows what to do with." },
+  { name: "Logging Ban",  effect: "Wood gets scarce. Wood price +1 this round.", flavor: "The council says: no more chopping until spring." },
+  { name: "Tinker's Arrival", effect: "A traveling tinker sells cheap. Tools price -1 this round.", flavor: "Step right up! Everything must go!" },
+  { name: "Trade Caravan", effect: "The caravan restocks. +2 to each supply pool.", flavor: "Fresh goods from the valley." },
+  { name: "Warehouse Fire", effect: "Lose 2 from each supply pool. Prices don't change.", flavor: "Somebody left a lantern burning." },
+  { name: "Feast Day",    effect: "Everyone eats! Remove 1 Food from each player who has it.", flavor: "The whole town gathers. Bring what you've got." },
+  { name: "Tool Shortage", effect: "Tools price +1 this round. Upgrades cost +1 coin.", flavor: "Everything's breaking and nobody can fix it." },
+  { name: "Good Rains",   effect: "All prices -1 this round. The land provides.", flavor: "The rivers are full and the fields are green." },
 ];
 
 const DEALS = [
@@ -245,6 +256,8 @@ const DEALS = [
   { name: "Mutual Aid Pact",    action: "Pick a partner. Next Trouble, the other helps for free.", reward: "+2 Rep", penalty: "-2 Rep", flavor: "I’ve got your back if you’ve got mine." },
   { name: "Reputation for Hire", action: "Give 1 coin to a player. They give you +1 Rep at Help Desk.", reward: "+1 Rep", penalty: "-1 Rep", flavor: "Put in a good word for me?" },
   { name: "The Long Game",      action: "Don’t spend any coins for 2 full rounds.", reward: "+4 coins, +1 Rep", penalty: "-1 Rep", flavor: "Patience pays. Eventually." },
+  { name: "Soup Kitchen",       action: "Donate 1 Food to any player. +1 Rep for you.", reward: "+1 Rep", flavor: "Nobody goes hungry on my watch." },
+  { name: "Lend Me Your Hammer", action: "Loan 1 Tools for a round. Returned = +1 Rep. Kept = they lose 2 Rep.", reward: "+1 Rep", penalty: "-2 Rep if kept", flavor: "I just need it for the afternoon." },
 ];
 
 const VOUCHERS = [
@@ -269,11 +282,11 @@ function CardSheet({ title, eyebrow, subtitle, footerNote, cards, renderCard }) 
       <PageHeader eyebrow={eyebrow} title={title} subtitle={subtitle} />
       <div style={{
         position: "absolute",
-        top: 240, left: (T.page.w - GRID_COLS * CARD_W * CARD_SCALE - (GRID_COLS - 1) * 20) / 2,
+        top: 240, left: (T.page.w - GRID_COLS * CARD_W * CARD_SCALE - (GRID_COLS - 1) * GRID_GAP) / 2,
         display: "grid",
         gridTemplateColumns: `repeat(${GRID_COLS}, ${CARD_W * CARD_SCALE}px)`,
         gridTemplateRows: `repeat(${GRID_ROWS}, ${CARD_H * CARD_SCALE}px)`,
-        gap: 20,
+        gap: GRID_GAP,
       }}>
         {cards.map((c, i) => <div key={i}>{renderCard(c)}</div>)}
       </div>
@@ -288,10 +301,10 @@ function chunk(arr, size) {
 }
 
 function EventCardPages() {
-  const pages = chunk(EVENTS, 9);  // 20 -> [9, 9, 2]
+  const pages = chunk(EVENTS, 9);  // 28 -> [9, 9, 9, 1]
   return pages.map((batch, i) => (
     <CardSheet key={i}
-      eyebrow="Sovereignty · Campfire"
+      eyebrow="Sovereignty · Campfire + Town Hall"
       title="Event Cards"
       subtitle={`Sheet ${i+1} of ${pages.length}  ·  shuffle face-down · cut along the lines`}
       footerNote={`Events ${i*9+1}–${Math.min((i+1)*9, EVENTS.length)} of ${EVENTS.length}`}
@@ -305,7 +318,7 @@ function DealCardPages() {
   const pages = chunk(DEALS, 9);
   return pages.map((batch, i) => (
     <CardSheet key={i}
-      eyebrow="Sovereignty · Campfire"
+      eyebrow="Sovereignty · Campfire + Town Hall"
       title="Deal Cards"
       subtitle={`Sheet ${i+1} of ${pages.length}  ·  drawn at Crossroads · accept or pass`}
       footerNote={`Deals ${i*9+1}–${Math.min((i+1)*9, DEALS.length)} of ${DEALS.length}`}
@@ -332,3 +345,4 @@ function VoucherCardPages() {
 window.SovEventPages = EventCardPages;
 window.SovDealPages = DealCardPages;
 window.SovVoucherPages = VoucherCardPages;
+window.SovPrintDecks = { EVENTS, DEALS, VOUCHERS };

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+Health A amend from `swarm-1787866749-d85e` wave 2. Do not retag `v2.3.0`; next publish is `2.3.1` after this swarm lands and CI is green.
+
+### Fixed
+
+- `publish.yml` Stage-artifact glob (invalid YAML `|` / `for glob in ...;`) and PyPI `needs` Tauri. CLI wheels can publish when linuxdeploy or mac/win staging fails.
+- Daemon handshake/health readiness, Windows pid liveness, readonly spawn (no seed write), proofs list skips `anchors.json`.
+- Engine RNG stream persists across `sov` process resume.
+- Print pack: 9-up card clipping, 28/12/10 deck parity, Market Board PDF.
+- Docs no longer claim v2.3.0 binaries shipped.
+
 ## [2.3.0] - 2026-08-27
 
 ### Added
@@ -14,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - `sov undo` — reverse the last turn on the active game (proof + pending-anchor index stay consistent).
 - Mainnet wallet seed prefers the OS credential store via PyPI `keyring` (Windows Credential Manager / macOS Keychain / libsecret). Tests use a fake backend only. Seed is never logged.
 - Additive daemon route `GET /games/{id}/verify/{round}` returns chain lookup `found` / `not_found` / `lookup_failed`. Browse `GET /anchor-status/{round}` stays local-index (no per-row XRPL hit). Audit "Verify all rounds" uses the new route.
-- Linux AppImage alongside the existing `.deb` (`publish.yml` `--bundles deb,appimage`).
+- Linux AppImage bundle wiring alongside the existing `.deb` (`publish.yml` `--bundles deb,appimage`). **Not attached to GitHub Release v2.3.0** — see Notes.
 - Tauri updater plugin: public minisign key in `tauri.conf.json`; CI injects `TAURI_SIGNING_PRIVATE_KEY` and `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` from GitHub Actions secrets by name.
 
 ### Security
@@ -24,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Notes
 
+- **`sovereignty-game==2.3.0` is not on PyPI.** GitHub Release v2.3.0 has empty assets (`assets: []`). `publish.yml` run 33118253060 failed (no PyPI wheel, empty GH assets). PyPI and npm `@mcptoolshop/sovereignty` latest remain **2.2.1**. Operators should `pip install sovereignty-game` (unpinned, currently 2.2.1) or `==2.2.1` until a follow-up tag publishes wheels and GH assets. Desktop: run from source (`npm --prefix app run tauri dev`). Same class of miss as v2.0.0 / v2.0.1.
 - OS-level Apple Developer ID / Authenticode signing is still deferred (first-launch OS warnings remain). Do not ship a fake signer.
 - `ipc_version` stays 1 (additive verify route).
 

@@ -60,7 +60,7 @@ def _seed_game(root: Path, game_id: str = "s42") -> None:
         ),
         encoding="utf-8",
     )
-    (proofs_dir / "round-1.json").write_text(
+    (proofs_dir / "round_001.proof.json").write_text(
         json.dumps(
             {
                 "proof_version": 2,
@@ -69,6 +69,10 @@ def _seed_game(root: Path, game_id: str = "s42") -> None:
                 "envelope_hash": _HASH,
             }
         ),
+        encoding="utf-8",
+    )
+    (game_dir / "pending-anchors.json").write_text(
+        json.dumps({"schema_version": 1, "entries": {}}),
         encoding="utf-8",
     )
 

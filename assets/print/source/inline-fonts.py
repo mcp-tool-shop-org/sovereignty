@@ -1,80 +1,129 @@
 #!/usr/bin/env python3
 """
-inline-fonts.py — fetch Google Fonts CSS + inline woff2 as base64 data URIs.
+inline-fonts.py — inline local @font-face files as base64 data URIs.
 
-Used to produce a self-contained render copy of "Sovereignty Print Pack - print.html"
-that has zero network dependencies at print time. This eliminates the font-load
-race condition where headless Chromium prints before Google Fonts arrive.
+Produces a self-contained render copy of the print HTML with zero network
+dependencies at print time (fonts + already-vendored React + precompiled
+bundle). Google Fonts is no longer fetched; faces live in source/fonts/.
 
 Usage:
     python3 inline-fonts.py "Sovereignty Print Pack - print.html"
     # writes "Sovereignty Print Pack - print.RENDER.html" alongside
 
-The generated *.RENDER.html should NOT be committed — it's ~1.5MB of base64 fonts.
-Re-run any time the source HTML's <link href="...fonts.googleapis.com..."> changes.
+The generated *.RENDER.html should NOT be committed — it is large because of
+base64 fonts. Re-run any time fonts.css or the HTML font <link> changes.
 """
+
+from __future__ import annotations
 
 import base64
 import re
 import sys
-import urllib.request
 from pathlib import Path
 
-UA = (
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"
-)
+MIME = {
+    ".ttf": "font/ttf",
+    ".otf": "font/otf",
+    ".woff": "font/woff",
+    ".woff2": "font/woff2",
+}
+
+
+def _inline_url(raw: str, base: Path) -> str | None:
+    if raw.startswith("data:"):
+        return None
+    cleaned = raw.strip().strip("\"'")
+    path = Path(cleaned)
+    if not path.is_absolute():
+        path = (base / path).resolve()
+    if not path.is_file():
+        return None
+    data = path.read_bytes()
+    b64 = base64.b64encode(data).decode("ascii")
+    mime = MIME.get(path.suffix.lower(), "application/octet-stream")
+    return f"url(data:{mime};base64,{b64})"
+
+
+def inline_local_urls(text: str, base: Path) -> tuple[str, int]:
+    count = 0
+
+    def repl(match: re.Match[str]) -> str:
+        nonlocal count
+        replacement = _inline_url(match.group(1), base)
+        if replacement is None:
+            return match.group(0)
+        count += 1
+        return replacement
+
+    patched = re.sub(r"url\(\s*([^)]+?)\s*\)", repl, text)
+    return patched, count
+
+
+def inline_local_images(html: str, base: Path) -> str:
+    """Replace relative img src=logo.png with a data URI so the RENDER copy is self-contained."""
+
+    def repl(match: re.Match[str]) -> str:
+        prefix, src, suffix = match.group(1), match.group(2), match.group(3)
+        if src.startswith("data:") or src.startswith("http"):
+            return match.group(0)
+        path = (base / src).resolve()
+        if not path.is_file():
+            return match.group(0)
+        mime = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".svg": "image/svg+xml"}.get(
+            path.suffix.lower(), "application/octet-stream"
+        )
+        b64 = base64.b64encode(path.read_bytes()).decode("ascii")
+        print(f"inlined image {src} ({path.stat().st_size} bytes)", file=sys.stderr)
+        return f'{prefix}data:{mime};base64,{b64}{suffix}'
+
+    return re.sub(r'(<img\b[^>]*\bsrc=")([^"]+)(")', repl, html)
+
+
+def inline_linked_stylesheets(html: str, base: Path) -> str:
+    """Replace <link rel=stylesheet href="fonts.css"> with inlined <style>."""
+
+    def repl(match: re.Match[str]) -> str:
+        href = match.group(1)
+        sheet = (base / href).resolve()
+        if not sheet.is_file():
+            return match.group(0)
+        css = sheet.read_text(encoding="utf-8")
+        css, n = inline_local_urls(css, sheet.parent)
+        print(f"inlined {n} font url(s) from {href}", file=sys.stderr)
+        return f"<style>\n{css}\n</style>"
+
+    return re.sub(
+        r'<link\s+rel="stylesheet"\s+href="([^"]+\.css)"\s*/?>',
+        repl,
+        html,
+        count=1,
+    )
 
 
 def main(html_path: str) -> None:
     src = Path(html_path)
-    html = src.read_text()
-
-    url_match = re.search(r'(https://fonts\.googleapis\.com/css2\?[^"]+)', html)
-    if not url_match:
-        print(f"ERROR: no fonts.googleapis.com URL in {src}", file=sys.stderr)
+    html = src.read_text(encoding="utf-8")
+    patched = inline_linked_stylesheets(html, src.parent)
+    patched = inline_local_images(patched, src.parent)
+    patched, leftover = inline_local_urls(patched, src.parent)
+    if leftover:
+        print(f"inlined {leftover} additional local url(s)", file=sys.stderr)
+    if "fonts.googleapis.com" in patched or "fonts.gstatic.com" in patched:
+        print(
+            "ERROR: Google Fonts URL still present — print HTML must use local fonts.css",
+            file=sys.stderr,
+        )
         sys.exit(1)
-    fonts_css_url = url_match.group(1)
-    print(f"fetching {fonts_css_url}", file=sys.stderr)
-
-    req = urllib.request.Request(fonts_css_url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(req, timeout=30) as r:
-        css_text = r.read().decode("utf-8")
-
-    woff2 = list(dict.fromkeys(re.findall(r"url\((https://[^)]+\.woff2)\)", css_text)))
-    print(f"unique woff2 files: {len(woff2)}", file=sys.stderr)
-
-    inlined = css_text
-    for u in woff2:
-        fr = urllib.request.Request(u, headers={"User-Agent": UA})
-        with urllib.request.urlopen(fr, timeout=30) as r:
-            data = r.read()
-        b64 = base64.b64encode(data).decode("ascii")
-        inlined = inlined.replace(u, f"data:font/woff2;base64,{b64}")
-
-    # Replace the <link> + adjacent preconnects with an inline <style>.
-    patched = re.sub(
-        r'<link rel="preconnect" href="https://fonts\.googleapis\.com">\s*'
-        r'<link rel="preconnect" href="https://fonts\.gstatic\.com" crossorigin>\s*'
-        r'<link href="https://fonts\.googleapis\.com/css2[^"]*" rel="stylesheet">'
-        r'|<link href="https://fonts\.googleapis\.com/css2[^"]*" rel="stylesheet">',
-        f"<style>\n{inlined}\n</style>",
-        html,
-        count=1,
+    if "unpkg.com" in patched:
+        print(
+            "ERROR: unpkg URL still present — print HTML must use vendor/ React",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    out = src.with_name(src.stem + ".RENDER.html") if src.name.endswith(".html") else Path(
+        str(src) + ".RENDER.html"
     )
-    if patched == html:
-        msg = "ERROR: failed to patch HTML — preconnect/stylesheet pattern not found"
-        print(msg, file=sys.stderr)
-        sys.exit(2)
-
-    if src.suffix == ".html":
-        out = src.with_suffix(".RENDER.html")
-    else:
-        out = Path(str(src) + ".RENDER.html")
-    # If src has spaces / no nice .html replace, place RENDER before extension
-    if src.name.endswith(".html"):
-        out = src.with_name(src.stem + ".RENDER.html")
-    out.write_text(patched)
+    out.write_text(patched, encoding="utf-8")
     print(f"wrote {out} ({len(html):,} -> {len(patched):,} bytes)", file=sys.stderr)
 
 

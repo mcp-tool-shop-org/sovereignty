@@ -23,6 +23,7 @@ export type RoundVerifyState =
   | { kind: "idle" }
   | { kind: "verifying" }
   | { kind: "verified" }
+  | { kind: "pending" }
   | {
       kind: "failed";
       reason: "envelope_mismatch" | "not_on_chain" | "daemon_unreachable" | "chain_unreachable";
@@ -229,9 +230,14 @@ export function useVerifyFlow(): UseVerifyFlow {
                 kind: "failed",
                 reason: "chain_unreachable",
               });
-            } else {
-              // not_found, or omitted (pending / no txid)
+            } else if (status.chain_lookup === "not_found" && status.txid) {
+              // Recorded txid, chain says not_found — the only honest
+              // not_on_chain. Pending / omitted-without-txid must not
+              // use this reason. F-f69da9d4.
               setRoundState(round, { kind: "failed", reason: "not_on_chain" });
+            } else {
+              // pending, missing, or omitted chain_lookup without a txid
+              setRoundState(round, { kind: "pending" });
             }
           } catch (e) {
             if (cancelledRef.current) break;

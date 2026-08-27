@@ -549,3 +549,18 @@ def build_deal_deck() -> list[Card]:
         ),
     ]
     return deals + vouchers
+
+
+def card_catalog() -> dict[str, Card]:
+    """Map card id → template for save/load deck restore.
+
+    Fresh instances from ``build_event_deck`` / ``build_deal_deck``. Used by
+    the CLI loader so a reload does not re-shuffle ``new_game``'s discarded
+    sibling RNG as a stand-in for the persisted draw/discard piles.
+    """
+    catalog: dict[str, Card] = {}
+    for card in build_event_deck():
+        catalog[card.id] = card
+    for card in build_deal_deck():
+        catalog[card.id] = card
+    return catalog

@@ -1,5 +1,5 @@
 /* global React, SovTokens, SovPrim */
-const { PrintPage, PageHeader, Divider, CoinSlot } = window.SovPrim;
+const { PrintPage, PageHeader, Divider, CoinSlot, StarMark } = window.SovPrim;
 const T = window.SovTokens;
 
 // ============================================================================
@@ -35,7 +35,7 @@ function RepTrack() {
             display: "flex", alignItems: "center", justifyContent: "center",
             fontFamily: T.fontDisplay, fontSize: 16, fontWeight: 600,
             borderRadius: i === 3 ? "50%" : 2,
-          }}>{i === 3 ? "✦" : ""}</div>
+          }}>{i === 3 ? <StarMark size={14} color={T.gold} /> : ""}</div>
           <div style={{
             fontFamily: T.fontDisplay, fontSize: 14, color: T.inkSoft, fontWeight: 500,
           }}>{i}</div>
@@ -188,7 +188,7 @@ function PlayerMatPage() {
             <FieldLabel>Rep gates</FieldLabel>
             <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 16, rowGap: 7,
                           fontFamily: T.fontItalic, fontSize: 14, color: T.inkSoft }}>
-              <div style={{ color: T.ember, fontStyle: "italic" }}>Rep &lt; 2</div><div>Can’t issue Vouchers</div>
+              <div style={{ color: T.ember, fontStyle: "italic" }}>Rep &lt; 2</div><div>Can't issue Vouchers</div>
               <div style={{ color: T.gold, fontStyle: "italic" }}>Rep &gt;= 3</div><div>Can use Builder space</div>
               <div style={{ color: T.gold, fontStyle: "italic" }}>Rep &gt;= 5</div><div>Vouchers worth +1 (trusted)</div>
               <div style={{ color: T.gold, fontStyle: "italic" }}>Rep &gt;= 8</div><div>Trade with 2 players per turn</div>

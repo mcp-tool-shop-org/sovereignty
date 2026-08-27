@@ -67,8 +67,7 @@ pub struct DaemonStatus {
 /// surface. Internal logging may keep Rust-internal vocabulary; user copy
 /// uses "the daemon" / "the config file" / "the command", not "subprocess"
 /// or "stderr".
-#[derive(Debug, thiserror::Error, Serialize)]
-#[serde(tag = "code")]
+#[derive(Debug, thiserror::Error)]
 pub enum ShellError {
     #[error("Daemon is not running. Start it with `sov daemon start`.")]
     DaemonNotRunning,
@@ -98,6 +97,129 @@ pub enum ShellError {
     /// the frontend's `ShellError` discriminator covers it (web-ui owns).
     #[error("The Sovereignty shell crashed at {location}: {message}. Restart the app and run `sov doctor` for diagnostics.")]
     Panic { message: String, location: String },
+}
+
+/// Wire shape: `{ code, message, ...variant fields }`.
+///
+/// `message` is `Display` (`to_string()`) so the frontend can render the
+/// recovery command without re-implementing every variant. Panic keeps its
+/// payload `message` (the panic text) — Display recovery lives in `hint`
+/// via the frontend mapper using `location`.
+impl Serialize for ShellError {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        match self {
+            ShellError::DaemonNotRunning => {
+                #[derive(Serialize)]
+                struct V<'a> {
+                    code: &'a str,
+                    message: String,
+                }
+                V {
+                    code: "DaemonNotRunning",
+                    message: self.to_string(),
+                }
+                .serialize(serializer)
+            }
+            ShellError::DaemonStartFailed { stderr } => {
+                #[derive(Serialize)]
+                struct V<'a> {
+                    code: &'a str,
+                    message: String,
+                    stderr: &'a str,
+                }
+                V {
+                    code: "DaemonStartFailed",
+                    message: self.to_string(),
+                    stderr,
+                }
+                .serialize(serializer)
+            }
+            ShellError::DaemonNotInstalled => {
+                #[derive(Serialize)]
+                struct V<'a> {
+                    code: &'a str,
+                    message: String,
+                }
+                V {
+                    code: "DaemonNotInstalled",
+                    message: self.to_string(),
+                }
+                .serialize(serializer)
+            }
+            ShellError::ConfigFileMissing => {
+                #[derive(Serialize)]
+                struct V<'a> {
+                    code: &'a str,
+                    message: String,
+                }
+                V {
+                    code: "ConfigFileMissing",
+                    message: self.to_string(),
+                }
+                .serialize(serializer)
+            }
+            ShellError::ConfigFileMalformed { detail } => {
+                #[derive(Serialize)]
+                struct V<'a> {
+                    code: &'a str,
+                    message: String,
+                    detail: &'a str,
+                }
+                V {
+                    code: "ConfigFileMalformed",
+                    message: self.to_string(),
+                    detail,
+                }
+                .serialize(serializer)
+            }
+            ShellError::ConfigSchemaUnsupported { found, expected } => {
+                #[derive(Serialize)]
+                struct V<'a> {
+                    code: &'a str,
+                    message: String,
+                    found: u32,
+                    expected: u32,
+                }
+                V {
+                    code: "ConfigSchemaUnsupported",
+                    message: self.to_string(),
+                    found: *found,
+                    expected: *expected,
+                }
+                .serialize(serializer)
+            }
+            ShellError::SubprocessFailed { exit_code, stderr } => {
+                #[derive(Serialize)]
+                struct V<'a> {
+                    code: &'a str,
+                    message: String,
+                    exit_code: i32,
+                    stderr: &'a str,
+                }
+                V {
+                    code: "SubprocessFailed",
+                    message: self.to_string(),
+                    exit_code: *exit_code,
+                    stderr,
+                }
+                .serialize(serializer)
+            }
+            ShellError::Panic { message, location } => {
+                #[derive(Serialize)]
+                struct V<'a> {
+                    code: &'a str,
+                    message: &'a str,
+                    location: &'a str,
+                }
+                V {
+                    code: "Panic",
+                    message,
+                    location,
+                }
+                .serialize(serializer)
+            }
+        }
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────
@@ -257,6 +379,31 @@ mod tests {
         let json = serde_json::to_string(&err).unwrap();
         assert!(json.contains("\"code\""), "got {json}");
         assert!(json.contains("\"DaemonNotRunning\""), "got {json}");
+    }
+
+    #[test]
+    fn shell_error_serializes_display_as_message() {
+        // F-4cf7bf68: recovery copy lives in Display; the wire must carry
+        // it as `message` so formatError does not render the code token
+        // alone. Variant fields (stderr/detail) stay alongside.
+        let err = ShellError::DaemonStartFailed {
+            stderr: "port busy".to_string(),
+        };
+        let v: serde_json::Value = serde_json::to_value(&err).unwrap();
+        assert_eq!(v["code"], "DaemonStartFailed");
+        let message = v["message"].as_str().expect("message field");
+        assert!(message.contains("`sov doctor`"), "got {message}");
+        assert_eq!(v["stderr"], "port busy");
+
+        let err = ShellError::SubprocessFailed {
+            exit_code: -1,
+            stderr: "timed out".to_string(),
+        };
+        let v: serde_json::Value = serde_json::to_value(&err).unwrap();
+        assert_eq!(v["code"], "SubprocessFailed");
+        assert!(v["message"].as_str().unwrap().contains("-1"));
+        assert_eq!(v["stderr"], "timed out");
+        assert_eq!(v["exit_code"], -1);
     }
 
     #[test]

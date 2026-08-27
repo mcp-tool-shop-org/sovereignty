@@ -10,7 +10,7 @@
 //! daemon must NOT freeze the webview's polling spinner. On timeout the helper
 //! returns `ShellError::SubprocessFailed { exit_code: -1, stderr: "timeout" }`.
 
-use std::process::Output;
+use std::process::{Output, Stdio};
 use std::time::Duration;
 
 use tokio::process::Command;
@@ -30,35 +30,149 @@ pub const SOV_BIN: &str = "sov";
 /// and short enough that a hung CLI doesn't strand the webview indefinitely.
 pub const SUBPROCESS_TIMEOUT: Duration = Duration::from_secs(10);
 
-/// Wrap a `tokio::process::Command::output()` future with a timeout. On
-/// elapsed timeout, returns `ShellError::SubprocessFailed { exit_code: -1,
-/// stderr: <recovery sentence naming the duration> }`. `exit_code == -1`
-/// remains the machine-readable timeout discriminator the frontend can dispatch
-/// on (TAURI-SHELL-C-006).
+/// Apply the portable subprocess envelope: `kill_on_drop`, a new process
+/// group (so timeout can reap grandchildren), piped stdio, and cwd pinned
+/// to the discovered player root rather than the Tauri binary CWD.
+fn configure_daemon_command(cmd: &mut Command) {
+    cmd.kill_on_drop(true);
+    cmd.stdout(Stdio::piped());
+    cmd.stderr(Stdio::piped());
+    cmd.current_dir(config::subprocess_cwd());
+    #[cfg(unix)]
+    {
+        cmd.process_group(0);
+    }
+    #[cfg(windows)]
+    {
+        // CREATE_NEW_PROCESS_GROUP so timeout can taskkill /T the tree.
+        const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+        cmd.creation_flags(CREATE_NEW_PROCESS_GROUP);
+    }
+}
+
+/// Kill a spawned `sov daemon` child and its process group. `start_kill`
+/// covers the direct child; the group/tree kill covers grandchildren the
+/// CLI may have spawned before we timed out.
+fn kill_process_tree(pid: u32) {
+    #[cfg(unix)]
+    {
+        let _ = std::process::Command::new("kill")
+            .args(["-KILL", &format!("-{pid}")])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+    #[cfg(windows)]
+    {
+        let _ = std::process::Command::new("taskkill")
+            .args(["/PID", &pid.to_string(), "/T", "/F"])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+}
+
+/// Best-effort liveness probe used by the timeout-kill regression.
+#[cfg(test)]
+fn pid_is_alive(pid: u32) -> bool {
+    #[cfg(windows)]
+    {
+        let output = std::process::Command::new("tasklist")
+            .args(["/FI", &format!("PID eq {pid}"), "/NH"])
+            .output();
+        match output {
+            Ok(o) => {
+                let text = String::from_utf8_lossy(&o.stdout);
+                text.contains(&pid.to_string())
+            }
+            Err(_) => false,
+        }
+    }
+    #[cfg(unix)]
+    {
+        std::process::Command::new("kill")
+            .args(["-0", &pid.to_string()])
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
+    }
+}
+
+/// Wrap a `tokio::process::Command` spawn with a timeout. On elapsed
+/// timeout, kills the child (and process group) then returns
+/// `ShellError::SubprocessFailed { exit_code: -1, stderr: <recovery> }`.
+/// `exit_code == -1` remains the machine-readable timeout discriminator
+/// the frontend can dispatch on (TAURI-SHELL-C-006).
 async fn run_with_timeout(cmd: &mut Command) -> Result<Output, ShellError> {
-    run_with_timeout_inner(cmd, SUBPROCESS_TIMEOUT).await
+    run_with_timeout_inner(cmd, SUBPROCESS_TIMEOUT)
+        .await
+        .0
 }
 
 /// Inner seam — accepts an explicit duration so tests can drive timeouts on a
 /// budget shorter than `SUBPROCESS_TIMEOUT`. Production callers go through
 /// [`run_with_timeout`].
 ///
+/// Returns the child pid alongside the result so tests can assert the
+/// process was actually reaped after a timeout, not just that the error
+/// shape contains `exit_code == -1`.
+///
 /// On elapsed timeout the `stderr` field carries a full sentence naming the
 /// elapsed bound and the recovery commands (`sov daemon stop` + `sov doctor`).
-/// The frontend renders the resulting `SubprocessFailed.stderr` directly when
-/// no per-code translation exists, so the recovery text MUST live in the
-/// stderr payload, not in caller-side dispatch.
-async fn run_with_timeout_inner(cmd: &mut Command, bound: Duration) -> Result<Output, ShellError> {
-    let fut = cmd.output();
-    match timeout(bound, fut).await {
-        Ok(result) => result.map_err(map_spawn_error),
-        Err(_elapsed) => Err(ShellError::SubprocessFailed {
-            exit_code: -1,
-            stderr: format!(
-                "the `sov daemon` command did not respond within {}s. Run `sov daemon stop` then retry, or run `sov doctor` for diagnostics.",
-                bound.as_secs()
-            ),
-        }),
+async fn run_with_timeout_inner(
+    cmd: &mut Command,
+    bound: Duration,
+) -> (Result<Output, ShellError>, Option<u32>) {
+    use tokio::io::AsyncReadExt;
+
+    configure_daemon_command(cmd);
+    let mut child = match cmd.spawn() {
+        Ok(c) => c,
+        Err(err) => return (Err(map_spawn_error(err)), None),
+    };
+    let pid = child.id();
+    match timeout(bound, child.wait()).await {
+        Ok(result) => {
+            let status = match result {
+                Ok(s) => s,
+                Err(err) => return (Err(map_spawn_error(err)), pid),
+            };
+            let mut stdout = Vec::new();
+            let mut stderr = Vec::new();
+            if let Some(mut pipe) = child.stdout.take() {
+                let _ = pipe.read_to_end(&mut stdout).await;
+            }
+            if let Some(mut pipe) = child.stderr.take() {
+                let _ = pipe.read_to_end(&mut stderr).await;
+            }
+            (
+                Ok(Output {
+                    status,
+                    stdout,
+                    stderr,
+                }),
+                pid,
+            )
+        }
+        Err(_elapsed) => {
+            let _ = child.start_kill();
+            if let Some(pid) = pid {
+                kill_process_tree(pid);
+            }
+            let _ = timeout(Duration::from_secs(2), child.wait()).await;
+            (
+                Err(ShellError::SubprocessFailed {
+                    exit_code: -1,
+                    stderr: format!(
+                        "the `sov daemon` command did not respond within {}s. Run `sov daemon stop` then retry, or run `sov doctor` for diagnostics.",
+                        bound.as_secs()
+                    ),
+                }),
+                pid,
+            )
+        }
     }
 }
 
@@ -72,6 +186,11 @@ pub async fn daemon_status_subprocess() -> Result<DaemonStatus, ShellError> {
 
 /// Run `sov daemon start [--readonly] [--network X]` and return the resulting
 /// [`DaemonConfig`] read from `.sov/daemon.json`.
+///
+/// CWD is the discovered player root. If a handshake already exists there
+/// (CLI daemon the operator started from the table) we still invoke `sov
+/// daemon start`, which refuses with DAEMON_PORT_BUSY rather than spawning
+/// a second daemon against the Tauri binary CWD.
 pub async fn daemon_start_subprocess(
     readonly: bool,
     network: Option<&str>,
@@ -266,14 +385,54 @@ fn extract_config(value: &serde_json::Value) -> Result<DaemonConfig, ShellError>
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::os::unix::process::ExitStatusExt;
     use std::process::ExitStatus;
 
     fn make_output(code: i32, stdout: &str, stderr: &str) -> Output {
         Output {
-            status: ExitStatus::from_raw(code << 8),
+            status: exit_status_from_code(code),
             stdout: stdout.as_bytes().to_vec(),
             stderr: stderr.as_bytes().to_vec(),
+        }
+    }
+
+    fn exit_status_from_code(code: i32) -> ExitStatus {
+        #[cfg(unix)]
+        {
+            use std::os::unix::process::ExitStatusExt;
+            ExitStatus::from_raw(code << 8)
+        }
+        #[cfg(windows)]
+        {
+            use std::os::windows::process::ExitStatusExt;
+            ExitStatus::from_raw(code as u32)
+        }
+    }
+
+    fn hanging_command() -> Command {
+        #[cfg(windows)]
+        {
+            let mut cmd = Command::new("cmd");
+            cmd.args(["/C", "ping", "-n", "30", "127.0.0.1"]);
+            cmd
+        }
+        #[cfg(unix)]
+        {
+            let mut cmd = Command::new("sleep");
+            cmd.arg("30");
+            cmd
+        }
+    }
+
+    fn quick_ok_command() -> Command {
+        #[cfg(windows)]
+        {
+            let mut cmd = Command::new("cmd");
+            cmd.args(["/C", "exit", "0"]);
+            cmd
+        }
+        #[cfg(unix)]
+        {
+            Command::new("true")
         }
     }
 
@@ -376,24 +535,19 @@ mod tests {
 
     #[test]
     fn subprocess_timeout_fires_before_child_exits() {
-        // TAURI-SHELL-B-007 + TAURI-SHELL-C-006: spawn `sleep 30` with a
-        // 250ms wall-clock cap and assert the timeout returns
+        // TAURI-SHELL-B-007 + TAURI-SHELL-C-006: spawn a long-running child
+        // with a 250ms wall-clock cap and assert the timeout returns
         // `SubprocessFailed { exit_code: -1, stderr: <recovery sentence> }`
-        // well before the sleep would naturally finish. The whole test must
-        // complete in under ~2s; production callers use a 10s cap, but the
-        // inner seam takes an explicit Duration so we don't burn 10s of CI
-        // wall-clock to prove the timeout path. The stderr payload now
-        // carries a full recovery sentence naming the elapsed bound — keep
-        // `exit_code == -1` as the machine-readable timeout discriminator.
+        // well before the child would naturally finish. Cross-platform
+        // (F-e8184f29): sleep/true are Unix-only; Windows uses ping/cmd.
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
         let start = std::time::Instant::now();
         let bound = Duration::from_millis(250);
-        let result = runtime.block_on(async {
-            let mut cmd = Command::new("sleep");
-            cmd.arg("30");
+        let (result, _pid) = runtime.block_on(async {
+            let mut cmd = hanging_command();
             run_with_timeout_inner(&mut cmd, bound).await
         });
         let elapsed = start.elapsed();
@@ -412,9 +566,6 @@ mod tests {
                     stderr.contains("`sov daemon stop`"),
                     "stderr should name `sov daemon stop` recovery; got: {stderr:?}"
                 );
-                // Bound is 250ms which truncates to 0s when expressed via
-                // `as_secs()`. Production callers use a whole-second bound
-                // (10s) so the human-readable form is correct in normal use.
                 let expected_secs = bound.as_secs();
                 assert!(
                     stderr.contains(&format!("{expected_secs}s")),
@@ -423,9 +574,6 @@ mod tests {
             }
             other => panic!("expected SubprocessFailed timeout, got {other:?}"),
         }
-        // Wide upper bound: 7s gives CI headroom but is far below the 30s
-        // sleep, proving the wrapper actually timed out rather than waiting
-        // for the child.
         assert!(
             elapsed < Duration::from_secs(7),
             "timeout took too long: {elapsed:?}"
@@ -433,25 +581,55 @@ mod tests {
     }
 
     #[test]
+    fn subprocess_timeout_kills_the_child() {
+        // F-a0203bc4: the timeout seam must actually terminate the child,
+        // not just return exit_code == -1 while leaving `sov daemon start`
+        // running. Drive the real seam, then assert the captured pid is dead.
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        let (result, pid) = runtime.block_on(async {
+            let mut cmd = hanging_command();
+            run_with_timeout_inner(&mut cmd, Duration::from_millis(200)).await
+        });
+        match result {
+            Err(ShellError::SubprocessFailed { exit_code, .. }) => {
+                assert_eq!(exit_code, -1);
+            }
+            other => panic!("expected timeout SubprocessFailed, got {other:?}"),
+        }
+        let pid = pid.expect("timeout path must report the child pid");
+        // Reap window: start_kill + process-tree kill + wait(2s) already ran
+        // inside the seam. Poll briefly in case the OS is slow to drop the
+        // tasklist/kill-0 view.
+        let deadline = std::time::Instant::now() + Duration::from_secs(3);
+        while std::time::Instant::now() < deadline && pid_is_alive(pid) {
+            std::thread::sleep(Duration::from_millis(50));
+        }
+        assert!(
+            !pid_is_alive(pid),
+            "child pid {pid} must be dead after timeout kill"
+        );
+    }
+
+    #[test]
     fn subprocess_timeout_message_format_pins_recovery_sentence() {
         // TAURI-SHELL-C-006: pin the recovery-sentence shape independently of
         // the integration test so a future regression that drops the sentence
-        // back to a bare token fails here even if `sleep 30` is unavailable.
+        // back to a bare token fails here even if the hang binary is missing.
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
         let bound = Duration::from_secs(10);
-        let result = runtime.block_on(async {
-            let mut cmd = Command::new("sleep");
-            cmd.arg("30");
+        let (result, _pid) = runtime.block_on(async {
+            let mut cmd = hanging_command();
             run_with_timeout_inner(&mut cmd, Duration::from_millis(50)).await
         });
         match result {
             Err(ShellError::SubprocessFailed { stderr, .. }) => {
-                // The bound used in this test is 50ms, but the human-readable
-                // form is `0s`. Pin the production-bound form separately.
-                let _ = bound; // production bound (referenced by the format!())
+                let _ = bound;
                 assert!(
                     stderr.contains("retry"),
                     "stderr should suggest retry; got: {stderr:?}"
@@ -463,18 +641,27 @@ mod tests {
 
     #[test]
     fn subprocess_returns_output_when_under_budget() {
-        // Sanity check: a fast command (`true`, exits 0 immediately) returns
-        // its `Output` cleanly through the wrapper. Pins that the timeout
-        // seam doesn't accidentally truncate fast happy-path completions.
+        // Sanity check: a fast command (exits 0 immediately) returns its
+        // `Output` cleanly through the wrapper. Pins that the timeout seam
+        // doesn't accidentally truncate fast happy-path completions.
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
             .unwrap();
-        let result = runtime.block_on(async {
-            let mut cmd = Command::new("true");
+        let (result, _pid) = runtime.block_on(async {
+            let mut cmd = quick_ok_command();
             run_with_timeout_inner(&mut cmd, Duration::from_secs(5)).await
         });
-        let output = result.expect("`true` should succeed under 5s budget");
+        let output = result.expect("quick command should succeed under 5s budget");
         assert!(output.status.success());
+    }
+
+    #[test]
+    fn subprocess_cwd_is_discovered_project_root() {
+        // F-0a0c970a: daemon subprocesses inherit the discovered player
+        // root, not the Tauri binary CWD.
+        let cwd = config::subprocess_cwd();
+        let handshake = config::default_config_path();
+        assert_eq!(handshake, cwd.join(".sov").join("daemon.json"));
     }
 }

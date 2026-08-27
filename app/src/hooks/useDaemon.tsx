@@ -107,7 +107,11 @@ export function DaemonProvider({ children, autoStart = true }: DaemonProviderPro
 
   return (
     <DaemonContext.Provider value={{ status, config, error, startDaemon, stopDaemon, refresh }}>
-      {children}
+      {/* Real DOM node so App.test can assert PanicModal is not a descendant.
+          display:contents keeps layout identical to a fragment. F-6a56da09. */}
+      <div data-testid="daemon-provider" style={{ display: "contents" }}>
+        {children}
+      </div>
     </DaemonContext.Provider>
   );
 }

@@ -63,6 +63,23 @@ describe("Index /", () => {
     vi.clearAllMocks();
   });
 
+  it("does not coerce a /games 500 into the Welcome empty state (F-4d7467be)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url.endsWith("/games")) return new Response("nope", { status: 500 });
+        return new Response(null, { status: 200 });
+      }),
+    );
+    renderIndex();
+    await waitFor(() => {
+      expect(screen.getByText(/Could not load games/i)).toBeTruthy();
+    });
+    expect(screen.getByText("sov daemon status --json")).toBeTruthy();
+    expect(screen.queryByText("Welcome")).toBeNull();
+  });
+
   it("renders welcome empty state when no games", async () => {
     vi.stubGlobal("fetch", makeFetch([]));
     renderIndex();

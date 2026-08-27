@@ -166,6 +166,66 @@ describe("Audit /audit route", () => {
     expect(screen.getByText("sov daemon start")).toBeTruthy();
   });
 
+  it("does not coerce a /games 500 into the empty-games state (F-4d7467be)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url.endsWith("/games")) return new Response("nope", { status: 500 });
+        return new Response(null, { status: 200 });
+      }),
+    );
+    renderAudit();
+    await waitFor(() => {
+      expect(screen.getByText(/Could not load games/i)).toBeTruthy();
+    });
+    expect(screen.getByText("sov daemon status --json")).toBeTruthy();
+    expect(screen.queryByText(/No games yet/i)).toBeNull();
+  });
+
+  it("anchor-status 500 is unreachable, not Not-on-chain (F-39ed55c9)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = typeof input === "string" ? input : input.toString();
+        if (url.endsWith("/games")) {
+          return jsonResponse([
+            {
+              game_id: "s42",
+              ruleset: "campfire_v1",
+              current_round: 1,
+              max_rounds: 15,
+              players: [],
+              last_modified_iso: "2026-05-02T00:00:00Z",
+            },
+          ]);
+        }
+        if (url.endsWith("/games/s42/proofs")) {
+          return jsonResponse([
+            { round: 1, envelope_hash: "a".repeat(64), final: false, path: "/tmp/r1.json" },
+          ]);
+        }
+        if (url.includes("/anchor-status/")) {
+          return new Response("nope", { status: 500 });
+        }
+        return new Response("not found", { status: 404 });
+      }),
+    );
+    const { container } = renderAudit();
+    await waitFor(() => {
+      expect(screen.getByText("s42")).toBeTruthy();
+    });
+    const details = container.querySelector("details") as HTMLDetailsElement;
+    details.open = true;
+    fireEvent(details, new Event("toggle"));
+    await waitFor(() => {
+      expect(screen.getByLabelText("anchor status: unreachable")).toBeTruthy();
+    });
+    expect(screen.queryByText(/Not on chain/i)).toBeNull();
+    expect(screen.queryByText(/No local anchor/i)).toBeNull();
+    expect(screen.getByRole("button", { name: /Retry/i })).toBeTruthy();
+  });
+
   it("expanding a row fetches proofs + statuses (rounds table)", async () => {
     vi.stubGlobal(
       "fetch",

@@ -14,7 +14,8 @@ Contracts pinned by Wave 3 tests:
   so CLI clients can read it. The seed (``XRPL_SEED`` / ``--signer-file``)
   is **never** written to disk — pinned by ``test_daemon_seed_leak.py``.
 * ``run_foreground`` runs uvicorn in the current process; SIGINT (Ctrl-C)
-  exits cleanly. Same write-on-start / remove-on-exit handshake.
+  exits cleanly. Handshake is written after bind / ``server.started``
+  and removed on exit.
 * ``stop_daemon`` reads the handshake, sends SIGTERM (``terminate()`` on
   Windows), polls ``os.kill(pid, 0)`` until exit (max 10s), removes the
   handshake on success.
@@ -53,12 +54,13 @@ DAEMON_FILE_NAME = "daemon.json"
 DAEMON_SCHEMA_VERSION = 1
 IPC_VERSION = 1
 
-# How long ``start_daemon`` waits for the spawned subprocess to write its
-# handshake file (and thus be ready to serve). 5s comfortably covers Python
-# import + uvicorn boot on a fresh interpreter; any longer suggests the
-# subprocess died, in which case we surface the failure rather than hang.
-_START_HANDSHAKE_TIMEOUT_SECONDS = 5.0
+# How long ``start_daemon`` waits for the spawned subprocess to become
+# ready: handshake written AND ``GET /health`` 200. Covers Python import +
+# uvicorn bind + signal-handler install on a fresh interpreter. Any longer
+# suggests the subprocess died; surface that rather than hang.
+_START_HANDSHAKE_TIMEOUT_SECONDS = 10.0
 _START_HANDSHAKE_POLL_INTERVAL_SECONDS = 0.05
+_START_HEALTH_PROBE_TIMEOUT_SECONDS = 0.25
 
 # How long ``stop_daemon`` polls for pid exit before raising. SIGTERM on a
 # uvicorn process typically completes in <100ms; 10s is the safety cap so
@@ -342,12 +344,19 @@ def _build_subprocess_env(
     env from a minimal allowlist plus the explicit ``SOV_DAEMON_*`` keys.
     The named seed var is forwarded only when ``seed_env`` is set — a
     ``--signer-file`` daemon never carries the env seed at all.
+
+    Spec §9: ``readonly=True`` skips seed load. Do not set
+    ``SOV_DAEMON_SEED_ENV``, do not forward ``XRPL_SEED`` / ``seed_env``,
+    and do not set ``SOV_DAEMON_SIGNER_FILE``. The default Tauri spawn is
+    readonly; the child environ must not hold signing material.
     """
     env = {k: v for k, v in os.environ.items() if k in _SUBPROCESS_ENV_ALLOWLIST}
     env["SOV_DAEMON_PORT"] = str(port)
     env["SOV_DAEMON_TOKEN"] = token
     env["SOV_DAEMON_NETWORK"] = network
     env["SOV_DAEMON_READONLY"] = "1" if readonly else "0"
+    if readonly:
+        return env
     if seed_env:
         env["SOV_DAEMON_SEED_ENV"] = seed_env
         # Forward only the named seed var, nothing else from the parent shell.
@@ -413,14 +422,42 @@ def _spawn_detached(env: dict[str, str]) -> int:
     return int(proc.pid)
 
 
+def _health_endpoint_ok(port: int, token: str) -> bool:
+    """Return True if ``GET http://127.0.0.1:<port>/health`` is 200.
+
+    Used by ``_wait_for_handshake`` so ``start_daemon`` does not return
+    until the listening socket is bound and signal handlers are
+    installed. Bypasses HTTP proxies so a shell ``HTTP_PROXY`` cannot
+    intercept the localhost probe.
+    """
+    import urllib.error
+    import urllib.request
+
+    url = f"http://127.0.0.1:{int(port)}/health"
+    request = urllib.request.Request(
+        url,
+        headers={"Authorization": f"Bearer {token}"},
+        method="GET",
+    )
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+    try:
+        with opener.open(request, timeout=_START_HEALTH_PROBE_TIMEOUT_SECONDS) as resp:
+            return int(getattr(resp, "status", 0) or 0) == 200
+    except (urllib.error.URLError, TimeoutError, ConnectionError, OSError, ValueError):
+        return False
+
+
 def _wait_for_handshake() -> dict[str, Any]:
-    """Poll ``.sov/daemon.json`` until the spawned daemon writes it.
+    """Poll until handshake exists AND ``GET /health`` returns 200.
 
     Returns the parsed handshake dict on success. The dict's ``pid``
     field names the actual running daemon (post-fork on POSIX, the
-    Popen pid on Windows).
+    Popen pid on Windows). Handshake-on-disk is not readiness: uvicorn
+    writes the file from ``startup()`` after bind, and this wait also
+    requires a successful health probe so ``start_daemon`` return
+    implies the process can accept connections.
 
-    Raises ``RuntimeError`` if the file is not written within
+    Raises ``RuntimeError`` if ready-state is not reached within
     ``_START_HANDSHAKE_TIMEOUT_SECONDS``. Caller is responsible for
     distinguishing "subprocess died" from "handshake-write timeout"
     by checking ``_pid_alive(info['pid'])`` after the call returns.
@@ -432,10 +469,18 @@ def _wait_for_handshake() -> dict[str, Any]:
         # writes it, so the pid we'd compare against here isn't known
         # ahead of time on POSIX.
         if info is not None and isinstance(info.get("pid"), int):
-            return info
+            port = info.get("port")
+            token = info.get("token")
+            if (
+                isinstance(port, int)
+                and isinstance(token, str)
+                and token
+                and _health_endpoint_ok(port, token)
+            ):
+                return info
         time.sleep(_START_HANDSHAKE_POLL_INTERVAL_SECONDS)
     raise RuntimeError(
-        f"daemon did not write .sov/daemon.json within "
+        f"daemon did not become ready (handshake + GET /health) within "
         f"{_START_HANDSHAKE_TIMEOUT_SECONDS:.0f}s. "
         "Check the `python -m sov_daemon` import path is reachable; "
         "run `sov daemon status` to inspect any partial state."
@@ -572,6 +617,127 @@ def stop_daemon() -> bool:
     )
 
 
+def _identity_mentions_sov_daemon(image: str | None, cmdline: str | None) -> bool:
+    """Return True if image path or command line names ``sov_daemon``.
+
+    Fail-closed on mismatch: a live python.exe whose command line is
+    ``python -c "import time; time.sleep(60)"`` is not a sovereignty
+    daemon. The spawn path is ``python -m sov_daemon``, so the marker
+    is the module name, not the interpreter image.
+    """
+    blob = f"{image or ''} {cmdline or ''}".lower()
+    return "sov_daemon" in blob
+
+
+def _windows_process_image_name(pid: int) -> str | None:
+    """Return the Win32 image path via ``QueryFullProcessImageNameW``."""
+    try:
+        import ctypes
+        from ctypes import wintypes
+    except ImportError:
+        return None
+
+    process_query_limited_information = 0x1000
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    handle = kernel32.OpenProcess(process_query_limited_information, False, int(pid))
+    if not handle:
+        return None
+    try:
+        query = kernel32.QueryFullProcessImageNameW
+        query.restype = wintypes.BOOL
+        query.argtypes = [
+            wintypes.HANDLE,
+            wintypes.DWORD,
+            wintypes.LPWSTR,
+            ctypes.POINTER(wintypes.DWORD),
+        ]
+        size = wintypes.DWORD(32768)
+        buf = ctypes.create_unicode_buffer(size.value)
+        ok = query(handle, 0, buf, ctypes.byref(size))
+        if not ok:
+            return None
+        name = buf.value
+        return name or None
+    except (OSError, ValueError, AttributeError):
+        return None
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def _windows_process_command_line(pid: int) -> str | None:
+    """Return the process command line via ``NtQueryInformationProcess``.
+
+    ``ProcessCommandLineInformation`` (class 60) is available on Windows
+    10+. Fail-closed (None) when the probe cannot run — ``stop_daemon``
+    then refuses to signal the pid.
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+    except ImportError:
+        return None
+
+    class _UnicodeString(ctypes.Structure):
+        _fields_ = [
+            ("Length", wintypes.USHORT),
+            ("MaximumLength", wintypes.USHORT),
+            ("Buffer", wintypes.LPWSTR),
+        ]
+
+    process_query_limited_information = 0x1000
+    process_command_line_information = 60
+    status_success = 0x0
+
+    ntdll = ctypes.WinDLL("ntdll", use_last_error=True)
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    nt_query = ntdll.NtQueryInformationProcess
+    nt_query.restype = ctypes.c_long
+    nt_query.argtypes = [
+        wintypes.HANDLE,
+        ctypes.c_ulong,
+        ctypes.c_void_p,
+        ctypes.c_ulong,
+        ctypes.POINTER(ctypes.c_ulong),
+    ]
+
+    handle = kernel32.OpenProcess(process_query_limited_information, False, int(pid))
+    if not handle:
+        return None
+    try:
+        size = ctypes.c_ulong(0)
+        nt_query(handle, process_command_line_information, None, 0, ctypes.byref(size))
+        if size.value == 0:
+            return None
+        buf = ctypes.create_string_buffer(size.value)
+        status = nt_query(
+            handle,
+            process_command_line_information,
+            buf,
+            size,
+            ctypes.byref(size),
+        )
+        if (status & 0xFFFFFFFF) != status_success:
+            return None
+        unicode_s = _UnicodeString.from_buffer_copy(buf)
+        if not unicode_s.Buffer or unicode_s.Length == 0:
+            return None
+        text = ctypes.wstring_at(unicode_s.Buffer, unicode_s.Length // 2)
+        return text or None
+    except (OSError, ValueError, AttributeError, TypeError):
+        return None
+    finally:
+        kernel32.CloseHandle(handle)
+
+
+def _is_sov_daemon_pid_windows(pid: int) -> bool:
+    """Windows DAEMON-004: image or command line must contain ``sov_daemon``."""
+    image = _windows_process_image_name(pid)
+    cmdline = _windows_process_command_line(pid)
+    if image is None and cmdline is None:
+        return False
+    return _identity_mentions_sov_daemon(image, cmdline)
+
+
 def _is_sov_daemon_pid(pid: int) -> bool:
     """DAEMON-004: soft check the pid still names a sov_daemon process.
 
@@ -584,16 +750,15 @@ def _is_sov_daemon_pid(pid: int) -> bool:
     We don't try to be perfectly safe — that would require holding a
     handle to the daemon process across the whole CLI lifetime, which is
     out of scope. Instead we read the process's command line via
-    ``/proc/<pid>/cmdline`` (Linux) or ``ps -p <pid> -o command=`` (Mac)
-    and verify it contains ``sov`` before signalling. ``False`` means
-    "definitely not the daemon — refuse to signal." Errors / unknown
-    platforms fail-OPEN (return True) so a missing /proc or ps doesn't
-    block legitimate stops on niche platforms.
+    ``/proc/<pid>/cmdline`` (Linux), ``QueryFullProcessImageNameW`` +
+    ``NtQueryInformationProcess`` (Windows), or ``ps -p <pid> -o
+    command=`` (Mac) and verify it names the daemon before signalling.
+    ``False`` means "definitely not the daemon — refuse to signal."
 
-    Windows is skipped — pid recycling is rarer in practice (the kernel
-    keeps recycled pids out of immediate reuse) and we'd need a different
-    probe (``QueryFullProcessImageName``). TODO: Windows soft-check via
-    ctypes.
+    Linux fail-closed on ``/proc`` OSError. Windows fail-closed when the
+    image/command-line probe fails or the identity does not contain
+    ``sov_daemon``. Mac / other POSIX fail-open if ``ps`` is missing so a
+    missing utility doesn't block legitimate stops.
     """
     if sys.platform == "linux":
         try:
@@ -602,8 +767,7 @@ def _is_sov_daemon_pid(pid: int) -> bool:
             return False
         return b"sov" in cmdline.lower()
     if sys.platform == "win32":
-        # TODO: Windows soft-check via QueryFullProcessImageName.
-        return True
+        return _is_sov_daemon_pid_windows(pid)
     # Mac / BSD / other POSIX: ps is the cross-platform fallback.
     try:
         out = subprocess.check_output(
@@ -649,13 +813,17 @@ def run_foreground(
 ) -> None:
     """Run uvicorn in the current process. Blocks until SIGINT / SIGTERM.
 
-    Writes ``.sov/daemon.json`` on start and removes it on exit (clean
-    shutdown via SIGINT, SIGTERM, or uvicorn lifespan completion).
+    Writes ``.sov/daemon.json`` after the listening socket is bound
+    (uvicorn ``startup()``, ``server.started``) and removes it on exit
+    (clean shutdown via SIGINT, SIGTERM, or uvicorn lifespan completion).
 
     ``port`` and ``token`` may be supplied (the detached spawn passes
     them via env vars and re-uses the parent-claimed port); when None,
     a free port is claimed and a fresh token is generated. This is the
     sole entry point reachable from ``python -m sov_daemon``.
+
+    ``readonly=True`` drops seed sources so a readonly audit daemon
+    never holds signing material (spec §9).
 
     ``log_format`` selects the daemon's stderr log format:
     - ``"human"`` (default) keeps the legacy human-readable form.
@@ -684,6 +852,10 @@ def run_foreground(
             f"invalid SOV_DAEMON_NETWORK / --network: {network!r}; valid: {valid}"
         ) from exc
 
+    if readonly:
+        seed_env = None
+        signer_file = None
+
     if port is None:
         port = _claim_free_port()
     if token is None:
@@ -700,7 +872,6 @@ def run_foreground(
         "ipc_version": IPC_VERSION,
         "started_iso": started_iso,
     }
-    _write_handshake(info)
 
     started_monotonic = time.monotonic()
 
@@ -760,6 +931,20 @@ def run_foreground(
         h11_max_incomplete_event_size=16384,
     )
     server = uvicorn.Server(config)
+    # Handshake after bind: uvicorn installs signal handlers in
+    # ``capture_signals()`` wrapping ``serve()``, then ``startup()`` binds
+    # the socket and sets ``server.started``. Writing earlier made
+    # ``daemon_status`` report running while ``GET /health`` still
+    # ECONNREFUSED, and SIGTERM in that window skipped lifespan cleanup.
+    orig_startup = getattr(server, "startup", None)
+    if orig_startup is not None:
+
+        async def _startup_then_handshake(sockets: Any = None) -> None:
+            await orig_startup(sockets=sockets)
+            if getattr(server, "started", False):
+                _write_handshake(info)
+
+        server.startup = _startup_then_handshake  # type: ignore[method-assign]
     try:
         server.run()
     finally:
@@ -780,13 +965,20 @@ def run_foreground_from_env() -> None:
     token_env = os.environ.get("SOV_DAEMON_TOKEN")
     network = os.environ.get("SOV_DAEMON_NETWORK", "testnet")
     readonly = os.environ.get("SOV_DAEMON_READONLY", "0") == "1"
-    seed_env = os.environ.get("SOV_DAEMON_SEED_ENV", "XRPL_SEED")
-    signer_file_env = os.environ.get("SOV_DAEMON_SIGNER_FILE")
     log_format = os.environ.get("SOV_DAEMON_LOG_FORMAT", "human").lower()
 
     port = int(port_env) if port_env else None
     token = token_env if token_env else None
-    signer_file = Path(signer_file_env) if signer_file_env else None
+    if readonly:
+        # Spec §9: readonly skips seed load. Do not default
+        # SOV_DAEMON_SEED_ENV to XRPL_SEED — that would re-bind the
+        # child's seed source even when the parent omitted it.
+        seed_env = None
+        signer_file = None
+    else:
+        seed_env = os.environ.get("SOV_DAEMON_SEED_ENV", "XRPL_SEED")
+        signer_file_env = os.environ.get("SOV_DAEMON_SIGNER_FILE")
+        signer_file = Path(signer_file_env) if signer_file_env else None
 
     run_foreground(
         network=network,

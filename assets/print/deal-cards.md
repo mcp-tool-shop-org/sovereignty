@@ -69,6 +69,20 @@ _"Patience pays. Eventually."_
 
 ---
 
+**SOUP KITCHEN** | Deal
+Donate 1 Food to any player. +1 Rep for you.
+Reward: +1 Rep
+_"Nobody goes hungry on my watch."_
+
+---
+
+**LEND ME YOUR HAMMER** | Deal
+Loan 1 Tools for a round. Returned = +1 Rep. Kept = they lose 2 Rep.
+Reward: +1 Rep | Penalty: -2 Rep if kept
+_"I just need it for the afternoon."_
+
+---
+
 ## VOUCHERS (IOUs between players)
 
 ---
@@ -133,4 +147,4 @@ Default: Negotiated
 
 ---
 
-_Sovereignty: Campfire v1.0 — 10 Deal cards, 10 Voucher cards_
+_Sovereignty: Campfire v1.0 — 12 Deal cards, 10 Voucher cards_

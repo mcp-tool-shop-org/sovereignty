@@ -18,19 +18,37 @@ import { useDaemon } from "../hooks/useDaemon";
 import { useDaemonEvents } from "../hooks/useDaemonEvents";
 import { type RoundVerifyState, useVerifyFlow } from "../hooks/useVerifyFlow";
 import { DaemonClient } from "../lib/daemonClient";
+import { formatError } from "../lib/errorFormat";
 import { isSafeExplorerUrl } from "../lib/url";
-import { anchorStatusDisplay, verifyFailureDisplay } from "../lib/verifyDisplay";
+import {
+  anchorStatusDisplay,
+  browseAnchorVisual,
+  verifyFailureDisplay,
+} from "../lib/verifyDisplay";
 import type { AnchorStatusResponse, GameSummary, SSEEvent } from "../types/daemon";
 import styles from "./Audit.module.css";
 
 interface RoundRow {
   round: string;
-  status: AnchorStatusResponse;
+  status: AnchorStatusResponse | null;
+  /** Set when /anchor-status failed — not a local-index miss. F-39ed55c9. */
+  loadError?: string;
   // Explorer URL is NOT part of AnchorStatusResponse — daemon's
   // /anchor-status/{round} endpoint never emits it. SSE
   // `anchor.batch_complete` payload carries `explorer_url`; we store it on
   // the row when the event arrives. Stage 7-B WEB-UI-B-003.
   explorerUrl?: string;
+}
+
+/** Browse-column presentation driven off AnchorStatusResponse.anchor_status
+ *  (not a copied ternary). Imported by the wire-shape pin. */
+export function auditBrowseAnchorParts(status: AnchorStatusResponse): {
+  icon: string;
+  variant: "success" | "warn" | "error";
+  label: string;
+} {
+  const visual = browseAnchorVisual(status.anchor_status);
+  return { ...visual, label: anchorStatusDisplay(status.anchor_status) };
 }
 
 interface GameSection {
@@ -42,6 +60,7 @@ interface GameSection {
 export default function Audit() {
   const { status, config, error: daemonError } = useDaemon();
   const [games, setGames] = useState<GameSection[] | null>(null);
+  const [gamesError, setGamesError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [eventsForGame, setEventsForGame] = useState<Map<string, FeedEntry[]>>(new Map());
   const clientRef = useRef<DaemonClient | null>(null);
@@ -62,8 +81,11 @@ export default function Audit() {
         b.last_modified_iso.localeCompare(a.last_modified_iso),
       );
       setGames(sorted.map((g) => ({ summary: g, rounds: null, loading: false })));
-    } catch {
-      setGames([]);
+      setGamesError(null);
+    } catch (e) {
+      // F-4d7467be: a 401/500/network error is not "no games yet".
+      const { message, hint } = formatError(e);
+      setGamesError(hint ? `${message} — ${hint}` : message);
     }
   }, []);
 
@@ -99,14 +121,14 @@ export default function Audit() {
         try {
           const status = await client.anchorStatus(gameId, round);
           rounds.push({ round, status });
-        } catch {
+        } catch (e) {
+          // F-39ed55c9: do not write missing — a 5xx/401/timeout is not a
+          // local-index miss.
+          const { message } = formatError(e);
           rounds.push({
             round,
-            status: {
-              round,
-              anchor_status: "missing",
-              envelope_hash: meta.envelope_hash ?? null,
-            },
+            status: null,
+            loadError: message,
           });
         }
       }
@@ -121,6 +143,38 @@ export default function Audit() {
           prev?.map((g) =>
             g.summary.game_id === gameId ? { ...g, rounds: [], loading: false } : g,
           ) ?? null,
+      );
+    }
+  }, []);
+
+  const retryRound = useCallback(async (gameId: string, round: string) => {
+    const client = clientRef.current;
+    if (!client) return;
+    try {
+      const status = await client.anchorStatus(gameId, round);
+      setGames(
+        (prev) =>
+          prev?.map((g) => {
+            if (g.summary.game_id !== gameId || !g.rounds) return g;
+            return {
+              ...g,
+              rounds: g.rounds.map((r) => (r.round === round ? { round, status } : r)),
+            };
+          }) ?? null,
+      );
+    } catch (e) {
+      const { message } = formatError(e);
+      setGames(
+        (prev) =>
+          prev?.map((g) => {
+            if (g.summary.game_id !== gameId || !g.rounds) return g;
+            return {
+              ...g,
+              rounds: g.rounds.map((r) =>
+                r.round === round ? { round, status: null, loadError: message } : r,
+              ),
+            };
+          }) ?? null,
       );
     }
   }, []);
@@ -147,8 +201,11 @@ export default function Audit() {
                 rounds.includes(r.round)
                   ? {
                       ...r,
+                      loadError: undefined,
                       status: {
-                        ...r.status,
+                        round: r.round,
+                        envelope_hash: r.status?.envelope_hash ?? null,
+                        ...(r.status ?? {}),
                         anchor_status: "anchored" as const,
                         txid,
                       },
@@ -245,6 +302,23 @@ export default function Audit() {
     );
   }
 
+  if (gamesError) {
+    return (
+      <main className={styles.main}>
+        <Nav />
+        <EmptyState
+          glyph={<DisconnectedPlugGlyph />}
+          title="Could not load games"
+          body={
+            <>
+              {gamesError} Run <code>sov daemon status --json</code> to inspect.
+            </>
+          }
+        />
+      </main>
+    );
+  }
+
   if (games === null) {
     return (
       <main className={styles.main}>
@@ -288,6 +362,7 @@ export default function Audit() {
               game={g}
               events={eventsForGame.get(g.summary.game_id) ?? []}
               onToggle={onToggleGame}
+              onRetryRound={retryRound}
             />
           ))}
         </div>
@@ -313,9 +388,10 @@ interface GameRowProps {
   game: GameSection;
   events: FeedEntry[];
   onToggle: (gameId: string, open: boolean) => void | Promise<void>;
+  onRetryRound: (gameId: string, round: string) => void | Promise<void>;
 }
 
-function GameRow({ game, events, onToggle }: GameRowProps) {
+function GameRow({ game, events, onToggle, onRetryRound }: GameRowProps) {
   const verify = useVerifyFlow();
   const gameId = game.summary.game_id;
 
@@ -331,8 +407,10 @@ function GameRow({ game, events, onToggle }: GameRowProps) {
       return `${game.summary.current_round} round${game.summary.current_round === 1 ? "" : "s"}`;
     }
     const total = game.rounds.length;
-    const pending = game.rounds.filter((r) => r.status.anchor_status === "pending").length;
-    const missing = game.rounds.filter((r) => r.status.anchor_status === "missing").length;
+    const unreachable = game.rounds.filter((r) => r.loadError).length;
+    const pending = game.rounds.filter((r) => r.status?.anchor_status === "pending").length;
+    const missing = game.rounds.filter((r) => r.status?.anchor_status === "missing").length;
+    if (unreachable > 0) return `${total} rounds · ${unreachable} unreachable`;
     if (missing > 0) return `${total} rounds · ${missing} missing`;
     if (pending > 0) return `${total} rounds · ${pending} pending`;
     return `${total} rounds · all anchored`;
@@ -374,6 +452,9 @@ function GameRow({ game, events, onToggle }: GameRowProps) {
                   key={r.round}
                   row={r}
                   verifyState={verify.perRound.get(r.round) ?? { kind: "idle" }}
+                  onRetry={() => {
+                    void onRetryRound(gameId, r.round);
+                  }}
                 />
               ))}
             </tbody>
@@ -418,20 +499,20 @@ function GameRow({ game, events, onToggle }: GameRowProps) {
   );
 }
 
-function RoundRowView({ row, verifyState }: { row: RoundRow; verifyState: RoundVerifyState }) {
+function RoundRowView({
+  row,
+  verifyState,
+  onRetry,
+}: {
+  row: RoundRow;
+  verifyState: RoundVerifyState;
+  onRetry: () => void;
+}) {
   const status = row.status;
-  const txid = status.txid ?? "";
+  const txid = status?.txid ?? "";
   // WEB-UI-D-022: txid truncation symmetric (6/4) for higher copy/paste
   // recognition. XRPL hashes are 64-char hex; 4/2 dropped too much suffix.
   const txidShort = txid.length > 10 ? `${txid.slice(0, 6)}…${txid.slice(-4)}` : txid || "—";
-  const anchorIcon =
-    status.anchor_status === "anchored" ? "✓" : status.anchor_status === "pending" ? "⊘" : "✗";
-  const anchorVariant =
-    status.anchor_status === "anchored"
-      ? "success"
-      : status.anchor_status === "pending"
-        ? "warn"
-        : "error";
 
   let verifyCell: React.ReactNode = "—";
   if (verifyState.kind === "verifying") {
@@ -440,6 +521,12 @@ function RoundRowView({ row, verifyState }: { row: RoundRow; verifyState: RoundV
     verifyCell = (
       <Pill variant="success" title="verified">
         ✓
+      </Pill>
+    );
+  } else if (verifyState.kind === "pending") {
+    verifyCell = (
+      <Pill variant="warn" title="Pending — not yet submitted to the chain">
+        ⊘ Pending
       </Pill>
     );
   } else if (verifyState.kind === "failed") {
@@ -453,16 +540,36 @@ function RoundRowView({ row, verifyState }: { row: RoundRow; verifyState: RoundV
     );
   }
 
-  // WEB-UI-C-005: title-case display copy for the anchor pill (was raw enum).
-  const anchorLabel = anchorStatusDisplay(status.anchor_status);
+  if (row.loadError || !status) {
+    const unreachable = verifyFailureDisplay("daemon_unreachable");
+    return (
+      <tr>
+        <td>{row.round}</td>
+        <td>
+          <Pill variant="warn" title={row.loadError ?? unreachable.detail}>
+            <span aria-label="anchor status: unreachable">⊘ unreachable</span>
+          </Pill>{" "}
+          <button type="button" onClick={onRetry}>
+            Retry
+          </button>
+        </td>
+        <td>
+          <span className={styles.muted}>—</span>
+        </td>
+        <td>{verifyCell}</td>
+      </tr>
+    );
+  }
+
+  const parts = auditBrowseAnchorParts(status);
 
   return (
     <tr>
       <td>{row.round}</td>
       <td>
-        <Pill variant={anchorVariant} title={anchorLabel}>
-          <span aria-label={`anchor status: ${anchorLabel}`}>
-            {anchorIcon} {anchorLabel}
+        <Pill variant={parts.variant} title={parts.label}>
+          <span aria-label={`anchor status: ${parts.label}`}>
+            {parts.icon} {parts.label}
           </span>
         </Pill>
       </td>

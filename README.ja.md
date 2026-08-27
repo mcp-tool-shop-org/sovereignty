@@ -99,7 +99,7 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 これを15ラウンド繰り返します。`sov game-end`が最終スコアを印刷します。
 
 - **複数の保存ゲーム**（v2.1以降）：`sov games`で保存されたゲームの一覧が表示され、`sov resume <game-id>`で切り替えることができます。
-- **バッチアンカー処理**（v2.1以降）：ゲーム終了時に`sov anchor`を使用すると、保留中のすべてのラウンドが単一のXRPLトランザクションにまとめて処理されます。これにより、各ゲームに対して検証可能なチェーンポインタが作成されます。ゲーム中にフラッシュする場合は、`sov anchor --checkpoint`を使用します。
+- **バッチアンカー処理**（v2.1以降）：ゲーム終了時の`sov anchor`は、保留中のラウンドを少数の XRPL AccountSet トランザクションにフラッシュします（各トランザクション最大8メモ。典型的な16ラウンドのCampfireは2件）。単一トランザクション／単一チェーンポインタではありません。ゲーム中のフラッシュには`sov anchor --checkpoint`を使います。
 - **ネットワーク選択**（v2.1以降）：`sov anchor --network testnet|mainnet|devnet`（または環境変数`SOV_XRPL_NETWORK`；デフォルトは`testnet`）。
 - **デーモンモード**（v2.1以降、オプション）：`sov daemon start`を実行すると、ローカルホストのHTTP/JSONサーバーが起動し、デスクトップ統合やバックグラウンドでのチェーンポーリングが可能になります。詳細は[デーモンモード](#daemon-mode-optional-v21)をご覧ください。
 - **監査ビューアデスクトップアプリ**（v2.1以降、オプション）：`npm --prefix app run tauri dev`。詳細は[デスクトップアプリ](#desktop-app-optional-v21)をご覧ください。
@@ -124,6 +124,7 @@ sov games --json                     # machine-readable saves list (v2.1+)
 sov resume <game-id>                 # switch to a saved game (v2.1+)
 sov tutorial                         # learn in 60 seconds
 sov turn                             # roll, land, resolve
+sov undo                             # last-turn only (cleared by end-round)
 sov status                           # show current game state
 sov board                            # show the board layout
 sov recap                            # what happened this round
@@ -144,7 +145,7 @@ sov game-end                         # final scores + Story Points
 sov anchor                           # batch pending rounds to XRPL (v2.1+)
 sov anchor --checkpoint              # mid-game flush (v2.1+)
 sov anchor --network mainnet         # network selection (v2.1+)
-sov verify --tx <txid>               # confirm a proof is anchored on chain
+sov verify <proof.json> --tx <txid>  # confirm a proof is anchored on chain
 sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
@@ -183,25 +184,23 @@ sov daemon stop
 
 ### インストール（バイナリ）
 
-v2.3.0には、[GitHubリリースページ](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest)に事前にビルドされたバイナリが含まれています。
+v2.3.0はgitにタグされていますが、**ホイールもデスクトップ資産も公開されていません。** `publish.yml` の実行 33118253060 は失敗しました。PyPIに2.3.0配布はなく、GitHub Release v2.3.0のアセットは空です。ファイル名 `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` は404です。`pip install …==2.3.0` をピン止めしないでください。
 
-- **macOS（ユニバーサル）：** `sovereignty-app-2.3.0-darwin-universal.dmg` — Intel + Apple Silicon
-- **Windows（x64）：** `sovereignty-app-2.3.0-win-x64.msi`
-- **Linux（x64、.deb）：** `sovereignty-app-2.3.0-linux-x64.deb` — Debian / Ubuntu / 派生ディストリビューション。`sudo dpkg -i sovereignty-app-2.3.0-linux-x64.deb`でインストールします。
-- **Linux（x64、AppImage）：** `sovereignty-app-2.3.0-linux-x64.AppImage` — `chmod +x`を実行してから実行します。
+後続タグ（2.3.1または修復した2.3.x）が実際にファイルを添付するまで：
 
-また、アプリをバックアップするPythonデーモンも必要です：`pip install 'sovereignty-game[daemon]'==2.3.0`。
+- **Python / デーモン:** `pip install 'sovereignty-game[daemon]'`（現行PyPIは **2.2.1**。ピンなしの `pipx` / `npx @mcptoolshop/sovereignty` も2.2.1です）。
+- **デスクトップアプリ:** ソースから実行（下記）。一致するファイルが載るまで [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) からバイナリを取らないでください。
 
-> **初回起動時に警告が表示される可能性があります。** macOSでは「未確認の開発者」と表示されます。アプリをコントロールクリックし、「開く」を選択して確認してください。WindowsのSmartScreenでは「認識されていない発行元」と表示されます。「詳細情報」をクリックしてから「実行する」をクリックします。これらの警告は、現在のリリースにはビルドプロセスの証拠のみが含まれており（`gh attestation verify`で検証）、OSレベルでのコード署名が行われていないことを示しています。
+> **初回起動時のOS警告は、アテステーション付きバイナリが実際に出荷されたときに想定されます。** それらのビルドはSLSAビルドプロベナンスのみで、Apple Developer ID / Authenticode のOS署名はありません。macOS: .appをコントロールクリック → 開く。Windows SmartScreen: 詳細情報 → 実行する。
 
 ### プロベナンスを検証する
 
-すべてのリリースアーティファクトには、SLSAビルドプロベナンスアテステーションが含まれています。実行前に検証してください。
+リリースが実際にデスクトップ成果物を添付したら、ダウンロードしたファイルを検証してください。
 
 ```bash
 gh attestation verify \
   --repo mcp-tool-shop-org/sovereignty \
-  ./sovereignty-app-2.3.0-darwin-universal.dmg
+  ./<downloaded-artifact>
 ```
 
 正常に検証されると、バイナリが特定のコミットから、このリポジトリのリリースワークフローによってビルドされたことが証明されます。これはOSレベルでのコード署名とは異なる信頼の層です。バイナリはOS警告を引き起こしますが、そのサプライチェーンプロベナンスは暗号化的に固定されています。

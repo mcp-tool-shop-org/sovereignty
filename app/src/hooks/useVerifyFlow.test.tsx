@@ -74,7 +74,7 @@ describe("canonicalJson", () => {
     const expectedCanonical = readFileSync(
       join(__dirname, "..", "test", "fixtures", "proof.real.canonical.txt"),
       "utf-8",
-    );
+    ).replace(/\r\n/g, "\n");
     const proof = JSON.parse(proofText) as Record<string, unknown>;
     // Strip envelope_hash before canonicalizing — same shape useVerifyFlow uses.
     const { envelope_hash: _omit, ...envelope } = proof;
@@ -201,6 +201,49 @@ describe("useVerifyFlow", () => {
     if (state?.kind === "failed") {
       expect(state.reason).toBe("envelope_mismatch");
     }
+  });
+
+  it("does not mark pending (omitted chain_lookup) as failed:not_on_chain", async () => {
+    // F-f69da9d4: /verify omits chain_lookup when pending / no txid.
+    const envelope = { game_id: "s42", round: "1" };
+    const expectedHash = await sha256Hex(canonicalJson(envelope));
+    const proof = { ...envelope, envelope_hash: expectedHash };
+
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/proofs/1")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(proof), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      }
+      if (url.includes("/verify/1")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              round: "1",
+              anchor_status: "pending",
+              envelope_hash: "a".repeat(64),
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          ),
+        );
+      }
+      return Promise.reject(new Error("unexpected"));
+    });
+
+    const { result } = renderHook(() => useVerifyFlow());
+    await act(async () => {
+      await result.current.start("s42", ["1"]);
+    });
+
+    const state = result.current.perRound.get("1");
+    expect(state?.kind).not.toBe("failed");
+    expect(state).toEqual({ kind: "pending" });
   });
 
   it("transitions to failed:not_on_chain when verify returns not_found", async () => {
