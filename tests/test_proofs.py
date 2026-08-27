@@ -454,3 +454,34 @@ def test_verify_proof_raises_or_returns_false_on_unknown_proof_version(tmp_path)
     assert "99" in msg or "unknown proof_version" in msg.lower(), (
         f"unknown proof_version must produce a version-specific message; got: {msg!r}"
     )
+
+# ---------------------------------------------------------------------------
+# JOB-010 — FINAL proof must rehash after final:true
+# ---------------------------------------------------------------------------
+
+
+def test_stamping_final_without_rehash_mismatches() -> None:
+    """Reproduce: setting final=True after make_round_proof breaks verify."""
+    state, _ = new_game(42, ["Alice", "Bob"])
+    proof = make_round_proof(state)
+    proof["final"] = True
+    with tempfile.TemporaryDirectory() as tmp:
+        path = _write_proof(proof, Path(tmp))
+        valid, msg = verify_proof(path)
+        assert not valid, "stale envelope_hash after final:true must mismatch"
+        assert "mismatch" in msg.lower()
+
+
+def test_mark_final_proof_recomputes_envelope_hash() -> None:
+    """game-end helper: final:true plus rehash verifies."""
+    from sov_engine.hashing import mark_final_proof
+    state, _ = new_game(42, ["Alice", "Bob"])
+    proof = make_round_proof(state)
+    before = proof["envelope_hash"]
+    mark_final_proof(proof)
+    assert proof["final"] is True
+    assert proof["envelope_hash"] != before
+    with tempfile.TemporaryDirectory() as tmp:
+        path = _write_proof(proof, Path(tmp))
+        valid, msg = verify_proof(path)
+        assert valid, f"FINAL proof must verify after rehash: {msg}"

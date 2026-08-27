@@ -63,6 +63,18 @@ def make_round_proof(state: GameState) -> dict[str, Any]:
     return envelope
 
 
+def mark_final_proof(proof: dict[str, Any]) -> dict[str, Any]:
+    """Stamp ``final: true`` and recompute ``envelope_hash``.
+
+    ``sov game-end`` must call this after ``make_round_proof``. Setting
+    ``final`` without recomputing the hash makes ``sov verify`` mismatch
+    every completed game (the flag is inside the hashed envelope).
+    """
+    proof["final"] = True
+    proof["envelope_hash"] = _compute_envelope_hash(proof)
+    return proof
+
+
 def save_proof(proof: dict[str, Any], directory: Path | None = None) -> Path:
     """Write proof to a JSON file atomically. Returns the path."""
     directory = directory or Path(".")
