@@ -647,7 +647,10 @@ def _windows_process_image_name(pid: int) -> str | None:
         return None
 
     process_query_limited_information = 0x1000
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    win_dll = getattr(ctypes, "WinDLL", None)
+    if win_dll is None:
+        return None
+    kernel32 = win_dll("kernel32", use_last_error=True)
     handle = kernel32.OpenProcess(process_query_limited_information, False, int(pid))
     if not handle:
         return None
@@ -697,8 +700,11 @@ def _windows_process_command_line(pid: int) -> str | None:
     process_command_line_information = 60
     status_success = 0x0
 
-    ntdll = ctypes.WinDLL("ntdll", use_last_error=True)
-    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    win_dll = getattr(ctypes, "WinDLL", None)
+    if win_dll is None:
+        return None
+    ntdll = win_dll("ntdll", use_last_error=True)
+    kernel32 = win_dll("kernel32", use_last_error=True)
     nt_query = ntdll.NtQueryInformationProcess
     nt_query.restype = ctypes.c_long
     nt_query.argtypes = [
@@ -774,7 +780,9 @@ def _is_sov_daemon_pid(pid: int) -> bool:
             cmdline = Path(f"/proc/{pid}/cmdline").read_bytes()
         except OSError:
             return False
-        return b"sov" in cmdline.lower()
+        # Match Windows: ``sov_daemon`` module, not substring ``sov``
+        # (a venv path under .../sovereignty/.venv/bin/python would match).
+        return b"sov_daemon" in cmdline.lower()
     if sys.platform == "win32":
         return _is_sov_daemon_pid_windows(pid)
     # Mac / BSD / other POSIX: ps is the cross-platform fallback.
@@ -787,7 +795,7 @@ def _is_sov_daemon_pid(pid: int) -> bool:
         # Fail-OPEN: ps unavailable or returned nonzero. Don't block a
         # legitimate stop on a missing utility.
         return True
-    return "sov" in out.lower()
+    return "sov_daemon" in out.lower()
 
 
 def _terminate_windows(pid: int) -> None:

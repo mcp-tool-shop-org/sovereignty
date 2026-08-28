@@ -158,13 +158,16 @@ fn pid_is_alive(pid: u32) -> bool {
     }
     #[cfg(unix)]
     {
-        std::process::Command::new("kill")
-            .args(["-0", &pid.to_string()])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false)
+        // `kill -0` is true for zombies. After SIGKILL the fixture Child
+        // is unreaped until drop, so treat state Z as dead.
+        let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok();
+        match stat {
+            Some(s) => match s.rsplit_once(')') {
+                Some((_, rest)) => !rest.trim_start().starts_with('Z'),
+                None => true,
+            },
+            None => false,
+        }
     }
 }
 
