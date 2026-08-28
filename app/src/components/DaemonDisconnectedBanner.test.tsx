@@ -167,4 +167,3 @@ describe("DaemonDisconnectedBanner (WEB-UI-C-004)", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
-
