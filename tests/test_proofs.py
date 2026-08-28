@@ -384,9 +384,7 @@ def test_verify_proof_raises_on_missing_envelope_hash_field(tmp_path):
     with pytest.raises(ProofFormatError) as exc_info:
         verify_proof(path)
     msg = _assert_format_error_not_orphan_tx(exc_info.value)
-    assert "envelope_hash" in msg, (
-        f"missing-field error must name the missing field; got: {msg!r}"
-    )
+    assert "envelope_hash" in msg, f"missing-field error must name the missing field; got: {msg!r}"
 
 
 def test_verify_proof_raises_on_unknown_proof_version(tmp_path):

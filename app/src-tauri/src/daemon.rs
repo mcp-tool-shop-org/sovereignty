@@ -174,9 +174,7 @@ fn pid_is_alive(pid: u32) -> bool {
 /// `exit_code == -1` remains the machine-readable timeout discriminator
 /// the frontend can dispatch on (TAURI-SHELL-C-006).
 async fn run_with_timeout(cmd: &mut Command) -> Result<Output, ShellError> {
-    run_with_timeout_inner(cmd, SUBPROCESS_TIMEOUT)
-        .await
-        .0
+    run_with_timeout_inner(cmd, SUBPROCESS_TIMEOUT).await.0
 }
 
 /// Start-specific timeout wrapper: after the CLI tree is killed, reap the
@@ -780,13 +778,8 @@ mod tests {
             .unwrap();
         let (result, cli_pid) = runtime.block_on(async {
             let mut cmd = hanging_command();
-            run_start_with_timeout_inner(
-                &mut cmd,
-                Duration::from_millis(200),
-                &handshake,
-                None,
-            )
-            .await
+            run_start_with_timeout_inner(&mut cmd, Duration::from_millis(200), &handshake, None)
+                .await
         });
         match result {
             Err(ShellError::SubprocessFailed { exit_code, .. }) => {

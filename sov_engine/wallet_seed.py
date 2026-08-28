@@ -67,15 +67,11 @@ def set_mainnet_seed(seed: str) -> None:
     try:
         import keyring
     except ImportError as exc:
-        raise KeyringUnavailableError(
-            "keyring package is not installed"
-        ) from exc
+        raise KeyringUnavailableError("keyring package is not installed") from exc
     try:
         keyring.set_password(KEYRING_SERVICE, KEYRING_MAINNET_USER, cleaned)
     except Exception as exc:  # noqa: BLE001
-        raise KeyringUnavailableError(
-            f"OS keychain unavailable ({type(exc).__name__})"
-        ) from exc
+        raise KeyringUnavailableError(f"OS keychain unavailable ({type(exc).__name__})") from exc
     logger.info("wallet_seed.keyring.set_ok service=%s", KEYRING_SERVICE)
 
 

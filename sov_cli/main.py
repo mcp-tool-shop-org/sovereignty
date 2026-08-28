@@ -2402,9 +2402,7 @@ def anchor(
         # partial-success but does not attach those txids to TransportError
         # — record+clear each chunk before the next submit so a later
         # failure cannot discard already-on-chain prefix txids.
-        txids = _commit_anchor_chunks(
-            transport, game_id=game_id, rounds=rounds, seed=seed
-        )
+        txids = _commit_anchor_chunks(transport, game_id=game_id, rounds=rounds, seed=seed)
         logger.info(
             "anchor_batch.success rounds=%d txs=%d txids=%s game_id=%s",
             n,

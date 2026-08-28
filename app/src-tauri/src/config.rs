@@ -199,8 +199,11 @@ mod tests {
     fn discover_project_root_falls_back_to_repo_marker() {
         let tmp = TempDir::new().unwrap();
         let root = tmp.path();
-        std::fs::write(root.join("pyproject.toml"), "[project]\nname = \"sovereignty-game\"\n")
-            .unwrap();
+        std::fs::write(
+            root.join("pyproject.toml"),
+            "[project]\nname = \"sovereignty-game\"\n",
+        )
+        .unwrap();
         let nested = root.join("app").join("src-tauri");
         std::fs::create_dir_all(&nested).unwrap();
 
