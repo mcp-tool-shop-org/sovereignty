@@ -76,14 +76,15 @@ def test_wallet_seed_writes_mode_0600(monkeypatch, tmp_path):
     bearer credential for an XRPL wallet, world-readable would leak it."""
     monkeypatch.chdir(tmp_path)
 
-    # Stub fund_dev_wallet so the test doesn't hit the testnet faucet.
-    from sov_transport import xrpl_testnet
+    # Stub the symbol `sov wallet` actually imports (sov_transport.xrpl,
+    # lazy inside the command). Patching xrpl_testnet is a miss — CI then
+    # hits the live Testnet faucet and 429s (Python 3.11 job on 0893de3).
+    from sov_transport import xrpl as xrpl_mod
 
     def _fake_fund(_network):
         return ("rXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "sEdTESTSEEDTESTSEEDTESTSEEDTEST")
 
-    monkeypatch.setattr(xrpl_testnet, "fund_dev_wallet", _fake_fund)
-    monkeypatch.setattr("sov_cli.main.fund_dev_wallet", _fake_fund, raising=False)
+    monkeypatch.setattr(xrpl_mod, "fund_dev_wallet", _fake_fund)
 
     result = runner.invoke(app, ["wallet"])
     assert result.exit_code == 0, f"wallet command failed: {result.output!r}"
