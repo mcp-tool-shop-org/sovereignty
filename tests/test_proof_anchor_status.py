@@ -10,12 +10,14 @@ State table:
 | anchors.json has txid | pending has round_key | chain confirms | Status     |
 |-----------------------|-----------------------|----------------|------------|
 | yes                   | no                    | yes            | ANCHORED   |
-| any                   | yes                   | -              | PENDING    |
+| no                    | yes                   | -              | PENDING    |
 | no                    | no                    | -              | MISSING    |
 | yes                   | no                    | no             | MISSING    |
+| yes                   | yes                   | yes            | ANCHORED   |
 
-PENDING beats ANCHORED when both indexes name the round (race condition
-during flush — pending wins so the next ``sov anchor`` retries cleanly).
+A recorded txid wins when both indexes name the round (flush crash
+window — Wave 4 ``heal_stale_pending_against_anchors``). Status is
+ANCHORED, not queued for retry.
 """
 
 from __future__ import annotations
@@ -107,6 +109,34 @@ def test_proof_anchor_status_anchored_when_chain_confirms(
     transport.is_anchored_on_chain.assert_called_once_with("TX-RECORDED", _HASH_A)
 
 
+def test_proof_anchor_status_txid_wins_during_flush_race(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Both indexes name the round → ANCHORED (txid wins).
+
+    Models the crash window during ``sov anchor`` flush where the txid
+    has been written into ``anchors.json`` but the pending row has not
+    yet been cleared. A recorded txid means submit already succeeded;
+    status must report ANCHORED, not queue a re-flush.
+    """
+    monkeypatch.chdir(tmp_path)
+    _ensure_game_dir("s42")
+    proof_path = _write_proof_file("s42", 1, _HASH_A)
+    _write_anchors_json("s42", {"1": "TX-RECORDED"})
+    add_pending_anchor("s42", "1", _HASH_A)
+
+    from sov_transport.xrpl_internals import ChainLookupResult
+
+    transport = MagicMock()
+    transport.is_anchored_on_chain.return_value = ChainLookupResult.FOUND
+
+    from sov_engine.proof import AnchorStatus, proof_anchor_status
+
+    status = proof_anchor_status(proof_path, transport)
+    assert status == AnchorStatus.ANCHORED
+    transport.is_anchored_on_chain.assert_called_once_with("TX-RECORDED", _HASH_A)
+
+
 # ---------------------------------------------------------------------------
 # PENDING
 # ---------------------------------------------------------------------------
@@ -115,7 +145,7 @@ def test_proof_anchor_status_anchored_when_chain_confirms(
 def test_proof_anchor_status_pending_when_in_pending_index(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """pending-anchors.json has the round → PENDING (regardless of anchors.json)."""
+    """pending-anchors.json has the round and no recorded txid → PENDING."""
     monkeypatch.chdir(tmp_path)
     _ensure_game_dir("s42")
     proof_path = _write_proof_file("s42", 1, _HASH_A)
@@ -126,30 +156,6 @@ def test_proof_anchor_status_pending_when_in_pending_index(
     transport.is_anchored_on_chain.side_effect = AssertionError(
         "transport should not be consulted when round is PENDING"
     )
-
-    from sov_engine.proof import AnchorStatus, proof_anchor_status
-
-    status = proof_anchor_status(proof_path, transport)
-    assert status == AnchorStatus.PENDING
-
-
-def test_proof_anchor_status_pending_beats_anchored_during_flush_race(
-    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-) -> None:
-    """Both indexes name the round → PENDING wins.
-
-    This models the brief window during ``sov anchor`` flush where the txid
-    has been written into ``anchors.json`` but the pending row has not yet
-    been cleared. PENDING wins so the next ``sov anchor`` invocation
-    retries the flush cleanly without skipping the round.
-    """
-    monkeypatch.chdir(tmp_path)
-    _ensure_game_dir("s42")
-    proof_path = _write_proof_file("s42", 1, _HASH_A)
-    _write_anchors_json("s42", {"1": "TX-MAYBE"})
-    add_pending_anchor("s42", "1", _HASH_A)
-
-    transport = MagicMock()
 
     from sov_engine.proof import AnchorStatus, proof_anchor_status
 

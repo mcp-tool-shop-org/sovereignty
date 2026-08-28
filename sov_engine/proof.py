@@ -385,8 +385,9 @@ def proof_anchor_status(
 
     1. Load the proof, derive its ``round_key`` (``"FINAL"`` for final
        proofs, else stringified round number) and ``game_id``.
-    2. Consult ``pending-anchors.json``. If ``round_key`` is pending,
-       short-circuit return ``PENDING``.
+    2. Consult ``pending-anchors.json`` with ``heal=True`` so a recorded
+       txid in ``anchors.json`` drops the stale pending row (flush crash
+       window). If ``round_key`` is still pending, return ``PENDING``.
     3. Consult ``anchors.json`` for a recorded txid. If found, defer to
        ``transport.is_anchored_on_chain(txid, envelope_hash)``:
        - True → ``ANCHORED``
@@ -403,7 +404,7 @@ def proof_anchor_status(
     envelope_hash = str(proof["envelope_hash"])
     round_key = _round_key_from_proof(proof)
 
-    pending = read_pending_anchors(game_id)
+    pending = read_pending_anchors(game_id, heal=True)
     if round_key in pending:
         return AnchorStatus.PENDING
 

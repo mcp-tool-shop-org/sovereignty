@@ -14,7 +14,7 @@ Health A amend from `swarm-1787866749-d85e` waves 2, 4, and 6. Do not retag `v2.
 - `publish.yml` Stage-artifact glob (invalid YAML `|` / `for glob in ...;`) and PyPI `needs` Tauri. CLI wheels can publish when linuxdeploy or mac/win staging fails.
 - `publish.yml` recovery: `require-release-tag` fails a blank dispatch; concurrency keys on the target `RELEASE_TAG`; wheel-smoke and canary import `sov_daemon` / starlette / uvicorn (not just `sov daemon --help`).
 - Daemon handshake/health readiness, Windows pid liveness (recycled non-sov pid is STALE), readonly spawn (no seed write), proofs list skips `anchors.json`, pending-anchor flush records then clears per chunk.
-- Engine RNG stream persists across `sov` process resume. CLI `sov anchor` / `sov game-end --anchor` commit each ≤8-memo chunk before the next submit. `verify_proof` raises `ProofFormatError` on IO and unknown `proof_version` instead of returning False (tamper).
+- Engine RNG stream persists across `sov` process resume. CLI `sov anchor` / `sov game-end --anchor` commit each ≤8-memo chunk before the next submit. `verify_proof` raises `ProofFormatError` on IO, unknown `proof_version`, and missing `envelope_hash` instead of returning False (tamper). `proof_anchor_status` heals stale pending against a recorded txid (txid wins).
 - Desktop start-timeout reaps the detached daemon grandchild named by the handshake pid.
 - Print pack: 9-up card clipping, 28/12/10 deck parity, Market Board PDF. Docs/README say 13 sheets / 28+12+10 + market.
 - Docs no longer claim v2.3.0 binaries shipped. `BUILD.md` matches the post-amend publish graph.

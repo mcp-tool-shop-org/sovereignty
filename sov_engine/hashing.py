@@ -114,7 +114,7 @@ def verify_proof(proof_path: Path) -> tuple[bool, str]:
         )
 
     if "envelope_hash" not in proof:
-        return False, "Proof missing 'envelope_hash' field."
+        raise ProofFormatError("Proof missing 'envelope_hash' field.")
 
     expected = proof["envelope_hash"]
     computed = _compute_envelope_hash(proof)

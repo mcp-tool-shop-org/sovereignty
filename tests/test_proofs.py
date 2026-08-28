@@ -27,7 +27,7 @@ runner = CliRunner()
 # positional proof_file, so `sov verify --tx <hash>` is rejected.
 _ORPHAN_VERIFY_TX = "sov verify --tx"
 # proof_invalid_error(kind="MODIFIED") hint. Hash-mismatch is the only path
-# that may emit this; IO / unknown-version must not.
+# that may emit this; IO / unknown-version / missing envelope_hash must not.
 _MODIFIED_HINT = "bytes don't match"
 
 # ---------------------------------------------------------------------------
@@ -330,9 +330,10 @@ def test_explicit_v1_proof_version_is_rejected():
 
 
 # ---------------------------------------------------------------------------
-# verify_proof negative branches (F-b0e0c574 / F-516d1a7f)
-# IO and unknown proof_version raise ProofFormatError, same as _load_proof.
-# Hash mismatch remains the (False, ...) / CLI kind=MODIFIED path.
+# verify_proof negative branches (F-b0e0c574 / F-516d1a7f / F-1f2828ea)
+# IO, unknown proof_version, and missing envelope_hash raise
+# ProofFormatError, same as _load_proof. Hash mismatch remains the
+# (False, ...) / CLI kind=MODIFIED path.
 # ---------------------------------------------------------------------------
 
 
@@ -372,31 +373,20 @@ def test_verify_proof_raises_on_invalid_json(tmp_path):
     assert "read" in msg.lower() or "json" in msg.lower() or "parse" in msg.lower()
 
 
-def test_verify_proof_returns_false_on_missing_envelope_hash_field(tmp_path):
-    """A v2-shaped proof missing ``envelope_hash`` must return False with a
-    field-specific message (not a hash-mismatch, not a raise).
+def test_verify_proof_raises_on_missing_envelope_hash_field(tmp_path):
+    """A v2-shaped proof missing ``envelope_hash`` raises ProofFormatError.
+
+    Returning False here made ``sov verify`` wrap the miss as
+    ``kind=MODIFIED`` ("bytes don't match"). Same contract as ``_load_proof``.
     """
-    state, _ = new_game(42, ["Alice", "Bob"])
-    snapshot = game_state_snapshot(state)
+    path = _write_v2_proof_missing_envelope_hash(tmp_path)
 
-    proof_no_hash: dict[str, Any] = {
-        "game_id": "sov_42",
-        "proof_version": 2,
-        "round": 1,
-        "ruleset": "campfire_v1",
-        "rng_seed": 42,
-        "timestamp_utc": "2024-01-01T00:00:00Z",
-        "players": ["Alice", "Bob"],
-        "state": snapshot,
-        # Notably: NO envelope_hash key.
-    }
-
-    path = tmp_path / "no_hash.proof.json"
-    path.write_text(canonical_json(proof_no_hash), encoding="utf-8", newline="\n")
-
-    valid, msg = verify_proof(path)
-    assert valid is False
-    assert "envelope_hash" in msg, f"missing-field error must name the missing field; got: {msg!r}"
+    with pytest.raises(ProofFormatError) as exc_info:
+        verify_proof(path)
+    msg = _assert_format_error_not_orphan_tx(exc_info.value)
+    assert "envelope_hash" in msg, (
+        f"missing-field error must name the missing field; got: {msg!r}"
+    )
 
 
 def test_verify_proof_raises_on_unknown_proof_version(tmp_path):
@@ -435,6 +425,30 @@ def test_verify_proof_raises_on_unknown_proof_version(tmp_path):
     )
 
 
+def _write_v2_proof_missing_envelope_hash(tmp_path: Path) -> Path:
+    state, _ = new_game(42, ["Alice", "Bob"])
+    snapshot = game_state_snapshot(state)
+    path = tmp_path / "no_hash.proof.json"
+    path.write_text(
+        canonical_json(
+            {
+                "game_id": "sov_42",
+                "proof_version": 2,
+                "round": 1,
+                "ruleset": "campfire_v1",
+                "rng_seed": 42,
+                "timestamp_utc": "2024-01-01T00:00:00Z",
+                "players": ["Alice", "Bob"],
+                "state": snapshot,
+                # Notably: NO envelope_hash key.
+            }
+        ),
+        encoding="utf-8",
+        newline="\n",
+    )
+    return path
+
+
 def _write_v3_proof(tmp_path: Path) -> Path:
     state, _ = new_game(42, ["Alice", "Bob"])
     snapshot = game_state_snapshot(state)
@@ -460,7 +474,7 @@ def _write_v3_proof(tmp_path: Path) -> Path:
 
 
 def _assert_cli_verify_not_modified(result: Any, *, label: str) -> None:
-    """sov verify on IO / unknown-version must not look like tampering."""
+    """sov verify on IO / unknown-version / missing envelope_hash is not tampering."""
     output = result.output
     assert result.exit_code != 0, f"{label}: sov verify must fail; output={output!r}"
     lower = output.lower()
@@ -497,6 +511,13 @@ def test_cli_verify_proof_version_3_is_not_modified(tmp_path: Path) -> None:
     assert "3" in result.output or "version" in lower, (
         f"proof_version 3 must name the version; got: {result.output!r}"
     )
+
+
+def test_cli_verify_missing_envelope_hash_is_not_modified(tmp_path: Path) -> None:
+    """CliRunner: v2 proof missing envelope_hash is format error, not MODIFIED."""
+    path = _write_v2_proof_missing_envelope_hash(tmp_path)
+    result = runner.invoke(app, ["verify", str(path)])
+    _assert_cli_verify_not_modified(result, label="missing envelope_hash")
 
 
 def test_cli_verify_hash_mismatch_is_the_only_modified_path(tmp_path: Path) -> None:
