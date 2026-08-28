@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Health A amend from `swarm-1787866749-d85e` waves 2, 4, and 6. Do not retag `v2.3.0`; next publish is `2.3.1` after this swarm lands and CI is green.
+## [2.3.1] - 2026-08-28
+
+Health A publish of the 2.3.0 source that failed to ship. Do not retag `v2.3.0`.
 
 ### Fixed
 
@@ -18,6 +20,12 @@ Health A amend from `swarm-1787866749-d85e` waves 2, 4, and 6. Do not retag `v2.
 - Desktop start-timeout reaps the detached daemon grandchild named by the handshake pid.
 - Print pack: 9-up card clipping, 28/12/10 deck parity, Market Board PDF. Docs/README say 13 sheets / 28+12+10 + market.
 - Docs no longer claim v2.3.0 binaries shipped. `BUILD.md` matches the post-amend publish graph.
+
+### Notes
+
+- This tag publishes the 2.3.0 feature set (`sov undo`, OS keychain, `GET /verify/{round}`, AppImage wiring, Tauri updater) plus the Health A recovery so PyPI/CLI are not blocked by a Tauri/linuxdeploy failure.
+- GitHub Release **v2.3.0** stays empty. Do not pin `pip install sovereignty-game==2.3.0`.
+- Desktop assets attach via `publish.yml`. No OS-level Apple Developer ID / Authenticode signing (JOB-028 hold). First-launch OS warnings are expected; verify with `gh attestation verify`.
 
 ## [2.3.0] - 2026-08-27
 

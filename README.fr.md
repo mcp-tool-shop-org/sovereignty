@@ -185,12 +185,10 @@ Audit Viewer est l’application de bureau v2.1 : un Tauri shell (Rust + webview
 
 ### Installation (fichiers binaires)
 
-La version 2.3.0 est étiquetée dans git mais **n’a publié ni roues PyPI ni binaires de bureau.** L’exécution 33118253060 de `publish.yml` a échoué : PyPI n’a pas de distribution 2.3.0, et GitHub Release v2.3.0 a des assets vides. Les noms `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` renvoient 404. Ne pas épingler `pip install …==2.3.0`.
+**v2.3.1** est la ligne vivante publiée par cette étiquette. GitHub Release **v2.3.0** n’a publié ni roues ni assets de bureau (`publish.yml` exécution 33118253060 ; assets vides). Ne pas épingler `pip install …==2.3.0`. Les noms `sovereignty-app-2.3.0-*` restent en 404.
 
-Jusqu’à ce qu’une étiquette suivante (2.3.1 ou un 2.3.x réparé) joigne des fichiers :
-
-- **Python / démon :** `pip install 'sovereignty-game[daemon]'` (la ligne PyPI actuelle est **2.2.1** ; `pipx` / `npx @mcptoolshop/sovereignty` sans pin résolvent aussi vers 2.2.1).
-- **Application de bureau :** exécutez depuis les sources (ci-dessous). N’utilisez pas [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) pour les binaires tant que cette page n’a pas de fichiers correspondants.
+- **Python / démon :** `pip install 'sovereignty-game[daemon]'` (cette étiquette est **2.3.1**).
+- **Application de bureau :** [GitHub Release v2.3.1](https://github.com/mcp-tool-shop-org/sovereignty/releases/tag/v2.3.1) lorsque CI a joint les fichiers de plateforme. Si un job de plateforme a échoué, exécutez depuis les sources (ci-dessous).
 
 > **L’avertissement au premier lancement est normal** lorsque des binaires attestés seront réellement publiés. Ces builds portent uniquement une attestation SLSA de provenance — pas de signature Apple Developer ID / Authenticode. macOS : clic droit sur le .app → Ouvrir. Windows SmartScreen : Plus d’informations → Exécuter quand même.
 

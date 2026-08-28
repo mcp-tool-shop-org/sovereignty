@@ -1,10 +1,8 @@
 # Roadmap
 
-## Where we are: v2.3.0 (source tagged; PyPI / binaries unpublished)
+## Where we are: v2.3.1
 
-Git tag **v2.3.0** (2026-08-27) adds `sov undo`, OS-keychain mainnet seeds, additive `GET /games/{id}/verify/{round}`, Linux AppImage bundle wiring, and the Tauri updater plugin. **Those features are in the source tree.** They are **not** on PyPI and **not** on GitHub Release assets: `publish.yml` run 33118253060 failed (empty GH assets, no 2.3.0 wheel). PyPI and npm `@mcptoolshop/sovereignty` latest remain **2.2.1**. Do not `pip install sovereignty-game==2.3.0` and do not download `sovereignty-app-2.3.0-*` — those filenames 404.
-
-Operators should stay on the live 2.2.1 line (`pip install sovereignty-game`, `npx @mcptoolshop/sovereignty`) or run 2.3.0 from source until a follow-up tag actually publishes wheels and GH assets.
+Git tag **v2.3.1** (2026-08-28) publishes the 2.3.0 feature set (`sov undo`, OS-keychain mainnet seeds, additive `GET /games/{id}/verify/{round}`, Linux AppImage wiring, Tauri updater) plus Health A recovery so PyPI is not blocked by Tauri. Git tag **v2.3.0** remains a source-only tag with empty GitHub Release assets — do not pin `==2.3.0`.
 
 v2.0.0 / `2.0.0rc1` language lives only in [CHANGELOG](../CHANGELOG.md) history.
 

@@ -186,12 +186,10 @@ The Audit Viewer is the v2.1 desktop app — a Tauri shell (Rust + webview) that
 
 ### Install (binaries)
 
-v2.3.0 is tagged in git but **did not publish wheels or desktop assets.** `publish.yml` run 33118253060 failed: PyPI has no 2.3.0 distribution, and GitHub Release v2.3.0 has empty assets. The filenames `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` 404. Do not pin `pip install …==2.3.0`.
+**v2.3.1** is the live line this tag publishes. GitHub Release **v2.3.0** did not ship wheels or desktop assets (`publish.yml` run 33118253060; empty assets). Do not pin `pip install …==2.3.0`. Filenames `sovereignty-app-2.3.0-*` still 404.
 
-Until a follow-up tag (2.3.1 or a repaired 2.3.x) actually attaches files:
-
-- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (live PyPI line is **2.2.1**; unpinned `pipx` / `npx @mcptoolshop/sovereignty` also resolve to 2.2.1).
-- **Desktop app:** run from source (below). Do not use [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) for binaries until that page has matching files.
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (this tag is **2.3.1**).
+- **Desktop app:** [GitHub Release v2.3.1](https://github.com/mcp-tool-shop-org/sovereignty/releases/tag/v2.3.1) when CI has attached platform files. If a platform job failed, run from source (below).
 
 > **First-launch OS warning is expected** when attested binaries do ship. Those builds carry SLSA build-provenance attestation only — not OS-level Apple Developer ID / Authenticode signing. macOS: control-click the .app → Open. Windows SmartScreen: More info → Run anyway.
 

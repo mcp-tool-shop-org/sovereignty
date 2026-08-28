@@ -185,12 +185,10 @@ Audit Viewer es la aplicación de escritorio v2.1: una carcasa Tauri (Rust + web
 
 ### Instalar (archivos binarios)
 
-v2.3.0 está etiquetada en git pero **no publicó ruedas ni activos de escritorio.** La ejecución 33118253060 de `publish.yml` falló: PyPI no tiene la distribución 2.3.0, y GitHub Release v2.3.0 tiene activos vacíos. Los nombres `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` dan 404. No fijes `pip install …==2.3.0`.
+**v2.3.1** es la línea viva que publica esta etiqueta. GitHub Release **v2.3.0** no publicó ruedas ni activos de escritorio (`publish.yml` ejecución 33118253060; assets vacíos). No fijes `pip install …==2.3.0`. Los nombres `sovereignty-app-2.3.0-*` siguen en 404.
 
-Hasta que una etiqueta posterior (2.3.1 o un 2.3.x reparado) adjunte archivos:
-
-- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (la línea viva de PyPI es **2.2.1**; `pipx` / `npx @mcptoolshop/sovereignty` sin pin también resuelven a 2.2.1).
-- **App de escritorio:** ejecuta desde el código fuente (abajo). No uses [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) para binarios hasta que esa página tenga archivos coincidentes.
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (esta etiqueta es **2.3.1**).
+- **App de escritorio:** [GitHub Release v2.3.1](https://github.com/mcp-tool-shop-org/sovereignty/releases/tag/v2.3.1) cuando CI haya adjuntado archivos de plataforma. Si un job de plataforma falló, ejecuta desde el código fuente (abajo).
 
 > **Se espera una advertencia al iniciar por primera vez** cuando sí se publiquen binarios atestiguados. Esas compilaciones llevan solo atestación SLSA de procedencia — no firma Apple Developer ID / Authenticode. macOS: clic derecho en el .app → Abrir. Windows SmartScreen: Más información → Ejecutar de todos modos.
 

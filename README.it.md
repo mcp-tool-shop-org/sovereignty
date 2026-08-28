@@ -186,12 +186,10 @@ L'Audit Viewer è l'app desktop v2.1: una shell Tauri (Rust + webview) che esegu
 
 ### Installa (file binari)
 
-La versione v2.3.0 è taggata in git ma **non ha pubblicato wheel né asset desktop.** L'esecuzione 33118253060 di `publish.yml` è fallita: PyPI non ha la distribuzione 2.3.0 e GitHub Release v2.3.0 ha asset vuoti. I nomi `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` danno 404. Non fissare `pip install …==2.3.0`.
+**v2.3.1** è la linea viva pubblicata da questo tag. GitHub Release **v2.3.0** non ha pubblicato wheel né asset desktop (`publish.yml` esecuzione 33118253060; asset vuoti). Non fissare `pip install …==2.3.0`. I nomi `sovereignty-app-2.3.0-*` restano 404.
 
-Finché un tag successivo (2.3.1 o un 2.3.x riparato) non allega i file:
-
-- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (la linea PyPI attuale è **2.2.1**; `pipx` / `npx @mcptoolshop/sovereignty` senza pin risolvono anch'essi a 2.2.1).
-- **App desktop:** esegui dal codice sorgente (sotto). Non usare [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) per i binari finché quella pagina non ha file corrispondenti.
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (questo tag è **2.3.1**).
+- **App desktop:** [GitHub Release v2.3.1](https://github.com/mcp-tool-shop-org/sovereignty/releases/tag/v2.3.1) quando CI ha allegato i file di piattaforma. Se un job di piattaforma è fallito, esegui dal codice sorgente (sotto).
 
 > **È previsto un avviso all'avvio** quando i binari attestati verranno effettivamente pubblicati. Quelle build portano solo l'attestazione SLSA di provenienza — non la firma Apple Developer ID / Authenticode. macOS: clic destro sul .app → Apri. Windows SmartScreen: Ulteriori informazioni → Esegui comunque.
 

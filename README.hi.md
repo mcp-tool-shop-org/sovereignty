@@ -186,12 +186,10 @@ sov daemon stop
 
 ### स्थापित करें (बाइनरी)
 
-v2.3.0 git में टैग है, लेकिन **व्हील या डेस्कटॉप एसेट प्रकाशित नहीं हुए।** `publish.yml` रन 33118253060 विफल रहा: PyPI पर 2.3.0 वितरण नहीं है, और GitHub Release v2.3.0 के एसेट खाली हैं। फ़ाइलनाम `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` 404 देते हैं। `pip install …==2.3.0` पिन न करें।
+**v2.3.1** इस टैग की लाइव लाइन है। GitHub Release **v2.3.0** ने व्हील या डेस्कटॉप एसेट नहीं भेजे (`publish.yml` रन 33118253060; खाली एसेट)। `pip install …==2.3.0` पिन न करें। `sovereignty-app-2.3.0-*` अभी भी 404 हैं।
 
-जब तक कोई फॉलो-अप टैग (2.3.1 या मरम्मत किया 2.3.x) फ़ाइलें संलग्न न करे:
-
-- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (लाइव PyPI लाइन **2.2.1** है; अनपिन `pipx` / `npx @mcptoolshop/sovereignty` भी 2.2.1 पर जाते हैं)।
-- **डेस्कटॉप ऐप:** स्रोत से चलाएँ (नीचे)। [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) का उपयोग बाइनरी के लिए न करें जब तक उस पेज पर मेल खाती फ़ाइलें न हों।
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (यह टैग **2.3.1** है)।
+- **डेस्कटॉप ऐप:** CI प्लेटफ़ॉर्म फ़ाइलें जोड़ने पर [GitHub Release v2.3.1](https://github.com/mcp-tool-shop-org/sovereignty/releases/tag/v2.3.1)। किसी प्लेटफ़ॉर्म जॉब के फेल होने पर स्रोत से चलाएँ (नीचे)।
 
 > **पहली लॉन्च चेतावनी अपेक्षित है** जब अटेस्टेड बाइनरी वास्तव में शिप हों। वे बिल्ड केवल SLSA बिल्ड-प्रोवेनैंस एटेस्टेशन रखते हैं — OS-स्तरीय Apple Developer ID / Authenticode साइनिंग नहीं। macOS: .app पर कंट्रोल-क्लिक → खोलें। Windows SmartScreen: अधिक जानकारी → फिर भी चलाएँ।
 

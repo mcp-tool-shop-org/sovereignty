@@ -185,12 +185,10 @@ sov daemon stop
 
 ### インストール（バイナリ）
 
-v2.3.0はgitにタグされていますが、**ホイールもデスクトップ資産も公開されていません。** `publish.yml` の実行 33118253060 は失敗しました。PyPIに2.3.0配布はなく、GitHub Release v2.3.0のアセットは空です。ファイル名 `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` は404です。`pip install …==2.3.0` をピン止めしないでください。
+**v2.3.1** がこのタグで公開する現行ラインです。GitHub Release **v2.3.0** はホイールもデスクトップ資産も出しませんでした（`publish.yml` 実行 33118253060、アセット空）。`pip install …==2.3.0` をピン止めしないでください。`sovereignty-app-2.3.0-*` は404のままです。
 
-後続タグ（2.3.1または修復した2.3.x）が実際にファイルを添付するまで：
-
-- **Python / デーモン:** `pip install 'sovereignty-game[daemon]'`（現行PyPIは **2.2.1**。ピンなしの `pipx` / `npx @mcptoolshop/sovereignty` も2.2.1です）。
-- **デスクトップアプリ:** ソースから実行（下記）。一致するファイルが載るまで [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) からバイナリを取らないでください。
+- **Python / デーモン:** `pip install 'sovereignty-game[daemon]'`（このタグは **2.3.1**）。
+- **デスクトップアプリ:** CIがプラットフォームファイルを添付していれば [GitHub Release v2.3.1](https://github.com/mcp-tool-shop-org/sovereignty/releases/tag/v2.3.1)。失敗したOSはソースから実行（下記）。
 
 > **初回起動時のOS警告は、アテステーション付きバイナリが実際に出荷されたときに想定されます。** それらのビルドはSLSAビルドプロベナンスのみで、Apple Developer ID / Authenticode のOS署名はありません。macOS: .appをコントロールクリック → 開く。Windows SmartScreen: 詳細情報 → 実行する。
 

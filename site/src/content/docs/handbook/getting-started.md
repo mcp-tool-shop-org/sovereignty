@@ -79,7 +79,7 @@ The active-game pointer at `.sov/active-game` tracks which game `sov turn`, `sov
 The daemon is an optional HTTP/JSON server that backs the desktop app and external audit tools. Install with the `[daemon]` extra:
 
 ```bash
-pip install 'sovereignty-game[daemon]'   # live PyPI line is 2.2.1; do not pin ==2.3.0
+pip install 'sovereignty-game[daemon]'   # 2.3.1; do not pin ==2.3.0
 
 sov daemon start --readonly   # for the audit viewer
 sov daemon status             # check pid/port/network/readonly
@@ -96,9 +96,9 @@ The Audit Viewer visualizes XRPL-anchored proofs as collapsible per-game lists w
 - `/game` — passive real-time state display for the active game
 - `/settings` — daemon config + network switcher (testnet / mainnet / devnet) with mainnet-confirmation guardrail
 
-v2.3.0 is tagged in git but **did not publish wheels or desktop assets.** `publish.yml` run 33118253060 failed: PyPI has no 2.3.0 distribution, and GitHub Release v2.3.0 has empty assets. The filenames `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` 404.
+**v2.3.1** is the live line. GitHub Release **v2.3.0** did not publish wheels or desktop assets (`publish.yml` run 33118253060). Filenames `sovereignty-app-2.3.0-*` 404. Do not pin `==2.3.0`.
 
-Until a follow-up tag actually attaches files, run the desktop app from source (`npm --prefix app run tauri dev`). Do not use [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) for binaries until that page has matching files. Python/daemon: `pip install 'sovereignty-game[daemon]'` (live line is 2.2.1).
+Python/daemon: `pip install 'sovereignty-game[daemon]'`. Desktop: GitHub Release v2.3.1 when CI has attached files, otherwise `npm --prefix app run tauri dev`.
 
 ### First-launch warning is expected
 

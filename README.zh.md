@@ -185,12 +185,10 @@ sov daemon stop
 
 ### 安装（二进制文件）
 
-v2.3.0 已在 git 打标签，但 **未发布 wheel 或桌面资源。** `publish.yml` 运行 33118253060 失败：PyPI 没有 2.3.0 发行版，GitHub Release v2.3.0 的 assets 为空。文件名 `sovereignty-app-2.3.0-{darwin-universal.dmg,win-x64.msi,linux-x64.deb,linux-x64.AppImage}` 会 404。不要固定 `pip install …==2.3.0`。
+**v2.3.1** 是本标签发布的现行版本。GitHub Release **v2.3.0** 未发布 wheel 或桌面资源（`publish.yml` 运行 33118253060，assets 为空）。不要固定 `pip install …==2.3.0`。`sovereignty-app-2.3.0-*` 仍会 404。
 
-在后续标签（2.3.1 或修复后的 2.3.x）真正附上文件之前：
-
-- **Python / 守护进程：** `pip install 'sovereignty-game[daemon]'`（当前 PyPI 为 **2.2.1**；未固定的 `pipx` / `npx @mcptoolshop/sovereignty` 也解析到 2.2.1）。
-- **桌面应用：** 从源码运行（见下）。在 [GitHub Releases latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) 有对应文件之前，不要从该页下载二进制。
+- **Python / 守护进程：** `pip install 'sovereignty-game[daemon]'`（本标签为 **2.3.1**）。
+- **桌面应用：** CI 附上平台文件后见 [GitHub Release v2.3.1](https://github.com/mcp-tool-shop-org/sovereignty/releases/tag/v2.3.1)。若某平台失败，从源码运行（见下）。
 
 > **首次启动的操作系统警告** 会在确有 attested 二进制发布时出现。那些构建只有 SLSA 构建来源证明——没有 Apple Developer ID / Authenticode 系统级签名。macOS：按住 Control 点击 .app → 打开。Windows SmartScreen：更多信息 → 仍要运行。
 

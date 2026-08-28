@@ -104,7 +104,7 @@ matrix legs blocks PyPI too, fail-closed. Desktop is not on that path.
 
 Jobs run on `release: published` **or** on `workflow_dispatch` when
 `github.ref` or `inputs.tag` is a `v*` tag. Dispatch never creates or
-moves tags. Do not retag `v2.3.0`; next publish is `2.3.1`.
+moves tags. Do not retag `v2.3.0`.
 
 ### Recovery procedure for a partial release
 
@@ -112,7 +112,7 @@ If a tagged release is missing PyPI wheels or GitHub assets (as with
 `v2.3.0`):
 
 1. **Do not** delete or move the GitHub Release tag. Do not retag
-   `v2.3.0`. Next publish is `2.3.1`.
+   `v2.3.0`. Do not retag it.
 2. Diagnose the failing job. CLI/PyPI and desktop are independent —
    a Tauri/linuxdeploy failure is not a reason to skip CLI recovery.
 3. Re-trigger via Actions → Release → Run workflow. That is

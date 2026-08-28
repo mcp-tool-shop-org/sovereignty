@@ -25,7 +25,7 @@ export const config: SiteConfig = {
   footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
-    badge: 'v2.3.0 source — undo · keychain · updater (PyPI/binaries unpublished)',
+    badge: 'v2.3.1 — undo · keychain · updater',
     headline: 'Sovereignty',
     headlineAccent: 'a board game about keeping your word.',
     description: 'Roll, trade, promise, betray. 2-4 players, 30 minutes, no screens required. The console keeps score — you keep your word. Optionally anchor results on the XRPL Testnet.',
@@ -78,8 +78,7 @@ export const config: SiteConfig = {
         { title: 'Quick start', code: 'sov tutorial           # learn in 60 seconds\nsov new -p Alice -p Bob # start a game\nsov turn               # roll, land, resolve\nsov end-round          # generate proof' },
         // DOCS-D-003 (Wave 13 Stage 9-D): desktop-app entry point alongside
         // the CLI cards. Audit Viewer + Game Shell run from source.
-        // v2.3.0 GitHub Release assets are empty; no attested binaries yet.
-        { title: 'Desktop app', code: 'npm --prefix app run tauri dev\n# Audit Viewer + Game Shell — runs from source.\n# v2.3.0 GH assets empty; no attested binaries yet.' },
+        { title: 'Desktop app', code: 'npm --prefix app run tauri dev\n# Or download attested assets from GitHub Release v2.3.1 when attached.' },
       ],
     },
     {
