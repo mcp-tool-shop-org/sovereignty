@@ -160,13 +160,12 @@ fn pid_is_alive(pid: u32) -> bool {
     {
         // `kill -0` is true for zombies. After SIGKILL the fixture Child
         // is unreaped until drop, so treat state Z as dead.
-        let stat = std::fs::read_to_string(format!("/proc/{pid}/stat")).ok();
-        match stat {
-            Some(s) => match s.rsplit_once(')') {
-                Some((_, rest)) => !rest.trim_start().starts_with('Z'),
-                None => true,
-            },
-            None => false,
+        match std::fs::read_to_string(format!("/proc/{pid}/stat")) {
+            Ok(s) => s
+                .rsplit_once(')')
+                .map(|(_, rest)| !rest.trim_start().starts_with('Z'))
+                .unwrap_or(true),
+            Err(_) => false,
         }
     }
 }
@@ -518,7 +517,7 @@ mod tests {
         #[cfg(unix)]
         {
             let mut cmd = Command::new("sleep");
-            cmd.arg("30");
+            cmd.arg("2");
             cmd
         }
     }
@@ -559,7 +558,7 @@ mod tests {
         {
             use std::os::unix::process::CommandExt;
             let child = std::process::Command::new("sleep")
-                .arg("30")
+                .arg("2")
                 .process_group(0)
                 .stdout(Stdio::null())
                 .stderr(Stdio::null())
