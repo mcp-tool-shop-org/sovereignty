@@ -151,7 +151,7 @@ jobs:
       # Cold compile on this crate is ~3min (check 83s + test 86s on 7879319).
       # New key prefix so old target-inclusive archives are not restored.
       - name: Cache Cargo
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
@@ -202,7 +202,7 @@ jobs:
         run: cargo install cargo-audit --locked --version "0.22.2"
 
       - name: Cache cargo advisory DB
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cargo/advisory-db
           # run_id key forces a refresh per CI run; advisories are
@@ -293,7 +293,7 @@ jobs:
       # forces a refresh per run — advisories are fast-moving and a stale
       # cache is more dangerous than the per-run fetch cost.
       - name: Cache pip-audit advisory DB
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/pip-audit
           key: pip-audit-db-${{ github.run_id }}
