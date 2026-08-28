@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- CI `tauri-and-frontend` no longer restores a stale Cargo `target/` cache (floating `stable` rustc + lockfile-only cache key) that left `cargo test` running until the 30m job kill — required check cancelled, red X on main. Registry/git still cached under a new key; `cargo test` is step-bounded at 10m.
+
 ## [2.3.1] - 2026-08-28
 
 Health A publish of the 2.3.0 source that failed to ship. Do not retag `v2.3.0`.
