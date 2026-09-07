@@ -26,7 +26,7 @@ on:
     - cron: "0 14 * * *"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 # Top-level least-privilege default. pages.yml + publish.yml already have
