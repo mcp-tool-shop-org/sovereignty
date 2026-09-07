@@ -1,3 +1,14 @@
+# --- Measured CI cost (dogfood-swarm SKILL item 8) --------------------------
+# 12 billable min per push across 7 jobs (8.8 min actual wall time),
+# measured 2026-09-07 from run 34122828806. Most expensive jobs:
+#     7 min  tauri-and-frontend  (6.8 min wall)
+#     1 min  publish-yml-static  (0.1 min wall)
+#     1 min  lint-and-test (3.13)  (0.4 min wall)
+# GitHub bills per JOB, rounded UP to the minute, x2 Windows / x10 macOS, so
+# billable minutes exceed wall time — many short jobs cost more than one long
+# one. This number is measured, never estimated; re-measure after any change:
+#   gh api repos/mcp-tool-shop-org/sovereignty/actions/runs/<id>/jobs
+# ---------------------------------------------------------------------------
 name: CI
 
 on:
