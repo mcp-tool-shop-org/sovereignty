@@ -1,0 +1,50 @@
+summary: ""
+boundaries:
+  - name: .github
+    globs:
+      - .github/**
+    role: config
+  - name: app
+    globs:
+      - app/**
+    role: code
+  - name: assets
+    globs:
+      - assets/**
+    role: code
+  - name: docs
+    globs:
+      - docs/**
+    role: docs
+  - name: root
+    globs:
+      - "*"
+    role: config
+  - name: scripts
+    globs:
+      - scripts/**
+    role: code
+  - name: site
+    globs:
+      - site/**
+    role: site
+  - name: sov_cli
+    globs:
+      - sov_cli/**
+    role: code
+  - name: sov_daemon
+    globs:
+      - sov_daemon/**
+    role: code
+  - name: sov_engine
+    globs:
+      - sov_engine/**
+    role: code
+  - name: sov_transport
+    globs:
+      - sov_transport/**
+    role: code
+  - name: tests
+    globs:
+      - tests/**
+    role: test
