@@ -224,8 +224,8 @@ If the fix would change behaviour a player or operator sees, or it touches the d
 | Phase 2 | 539 | 91.0 | `ae1eb42` |
 | Phase 3 | 316 | 94.7 | `9fb4a78` |
 | Phase 4 | 220 | 96.3 | `6a55aa9` |
-| Phase 5 | 108 | 98.2 | (this commit) |
-| Phase 6 | | | |
+| Phase 5 | 108 | 98.2 | `7c66029` |
+| Phase 6 | 8 | 99.9 | (this commit) |
 | Phase 7 (gate on) | | | |
 
 ## Final summary to the Director

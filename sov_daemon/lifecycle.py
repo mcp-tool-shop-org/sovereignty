@@ -143,7 +143,7 @@ def _pid_alive(pid: int) -> bool:
     return True
 
 
-def _pid_alive_windows(pid: int) -> bool:
+def _pid_alive_windows(pid: int) -> bool:  # pragma: no cover - windows only
     """Windows-specific liveness probe via ``ctypes`` ``OpenProcess``.
 
     ``os.kill(pid, 0)`` is implemented on Windows in modern CPython but
@@ -409,7 +409,7 @@ def _spawn_detached(env: dict[str, str]) -> int:
         "close_fds": True,
     }
     if sys.platform == "win32":
-        popen_kwargs["creationflags"] = (
+        popen_kwargs["creationflags"] = (  # pragma: no cover - windows only
             subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
         )
     else:
@@ -599,7 +599,7 @@ def stop_daemon() -> bool:
             # processes; CTRL_BREAK_EVENT to the new process group is
             # the spec-aligned signal. Fall back to terminate() if the
             # break event raises (e.g. detached without a console).
-            try:
+            try:  # pragma: no cover - windows only
                 os.kill(pid, signal.CTRL_BREAK_EVENT)
             except (OSError, AttributeError):
                 _terminate_windows(pid)
@@ -642,7 +642,7 @@ def _identity_mentions_sov_daemon(image: str | None, cmdline: str | None) -> boo
     return "sov_daemon" in blob
 
 
-def _windows_process_image_name(pid: int) -> str | None:
+def _windows_process_image_name(pid: int) -> str | None:  # pragma: no cover - windows only
     """Return the Win32 image path via ``QueryFullProcessImageNameW``."""
     try:
         import ctypes
@@ -680,7 +680,7 @@ def _windows_process_image_name(pid: int) -> str | None:
         kernel32.CloseHandle(handle)
 
 
-def _windows_process_command_line(pid: int) -> str | None:
+def _windows_process_command_line(pid: int) -> str | None:  # pragma: no cover - windows only
     """Return the process command line via ``NtQueryInformationProcess``.
 
     ``ProcessCommandLineInformation`` (class 60) is available on Windows
@@ -802,7 +802,7 @@ def _is_sov_daemon_pid(pid: int) -> bool:
     return "sov_daemon" in out.lower()
 
 
-def _terminate_windows(pid: int) -> None:
+def _terminate_windows(pid: int) -> None:  # pragma: no cover - windows only
     """Windows fallback: ``TerminateProcess`` via ``ctypes``.
 
     Used when ``CTRL_BREAK_EVENT`` cannot reach the detached daemon.

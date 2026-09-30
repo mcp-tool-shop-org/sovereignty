@@ -1500,7 +1500,7 @@
           "path": "docs/cli-json-output.md"
         },
         {
-          "hash": "05b8836029fe026dc9e4b87f712e0ed898f16742cdc9d70259f8a05c9c1a6ece",
+          "hash": "92b5a46efaec841ad016ef299c54fe30a00006627f1d56634153416b2cb84165",
           "path": "docs/handoffs/coverage-90.md"
         },
         {
@@ -8251,7 +8251,7 @@
       "name": "sov_daemon",
       "origin": "authored",
       "role": "code",
-      "testedBy": 38,
+      "testedBy": 39,
       "unresolvedSites": 5
     },
     {
@@ -10460,7 +10460,7 @@
       "name": "sov_engine",
       "origin": "authored",
       "role": "code",
-      "testedBy": 59,
+      "testedBy": 60,
       "unresolvedSites": 0
     },
     {
@@ -10560,7 +10560,7 @@
       "name": "sov_transport",
       "origin": "authored",
       "role": "code",
-      "testedBy": 53,
+      "testedBy": 54,
       "unresolvedSites": 18
     },
     {
@@ -11375,6 +11375,83 @@
             "tests/test_cli_integration.py"
           ],
           "path": "tests/test_daemon_lifecycle.py"
+        },
+        {
+          "exports": [
+            "fake_popen",
+            "test_double_fork_child_continues_and_clears_the_marker",
+            "test_double_fork_ignores_env_values_other_than_one",
+            "test_double_fork_is_a_noop_on_windows",
+            "test_double_fork_is_a_noop_without_the_env_var",
+            "test_double_fork_original_process_exits_immediately",
+            "test_health_probe_requires_status_200",
+            "test_health_probe_sends_bearer_token_to_loopback",
+            "test_health_probe_swallows_connection_errors",
+            "test_identity_mentions_sov_daemon",
+            "test_is_sov_daemon_pid_delegates_to_windows_probe",
+            "test_is_sov_daemon_pid_linux_fails_closed_when_proc_unreadable",
+            "test_is_sov_daemon_pid_linux_reads_proc_cmdline",
+            "test_is_sov_daemon_pid_mac_fails_open_without_ps",
+            "test_is_sov_daemon_pid_mac_uses_ps",
+            "test_is_sov_daemon_pid_windows_combines_both_probes",
+            "test_main_parses_args_then_forks_then_runs_the_daemon",
+            "test_parse_log_format_arg",
+            "test_pid_alive_maps_kill_errors",
+            "test_pid_alive_other_oserror_on_posix_is_dead",
+            "test_pid_alive_other_oserror_on_windows_falls_back_to_probe",
+            "test_pid_alive_rejects_non_positive_pids",
+            "test_pid_alive_true_for_current_process",
+            "test_read_handshake_missing_file_is_none",
+            "test_read_handshake_rejects_malformed_or_non_dict",
+            "test_read_handshake_unreadable_file_is_none",
+            "test_remove_handshake_is_idempotent",
+            "test_run_foreground_claims_port_and_token_when_not_given",
+            "test_run_foreground_human_log_format_leaves_formatters_alone",
+            "test_run_foreground_json_log_format_installs_json_formatter",
+            "test_run_foreground_removes_handshake_even_if_server_crashes",
+            "test_run_foreground_skips_handshake_when_server_never_started",
+            "test_run_foreground_without_startup_hook_still_cleans_up",
+            "test_run_foreground_writes_handshake_after_startup_and_removes_it_on_exit",
+            "test_running_the_module_as_a_script_starts_the_daemon",
+            "test_spawn_detached_posix_kills_intermediate_that_never_exits",
+            "test_spawn_detached_posix_uses_new_session_and_reaps_intermediate",
+            "test_spawn_detached_windows_detaches_and_does_not_wait",
+            "test_start_daemon_cleans_stale_handshake_and_returns_ready_info",
+            "test_start_daemon_falls_back_to_claimed_port_and_token",
+            "test_start_daemon_forwards_seed_source_to_the_child",
+            "test_start_daemon_refusal_tolerates_missing_handshake_details",
+            "test_start_daemon_refuses_when_a_live_daemon_exists",
+            "test_start_daemon_removes_partial_handshake_when_spawn_never_becomes_ready",
+            "test_status_running_when_pid_alive_and_identity_matches",
+            "test_status_stale_when_pid_dead",
+            "test_status_stale_when_pid_is_not_an_int",
+            "test_status_stale_when_pid_recycled",
+            "test_stop_daemon_dead_pid_clears_handshake_and_returns_true",
+            "test_stop_daemon_posix_pid_vanishing_at_signal_time_is_success",
+            "test_stop_daemon_posix_sends_sigterm_and_waits_for_exit",
+            "test_stop_daemon_posix_timeout_reports_kill_9_and_keeps_handshake",
+            "test_stop_daemon_refuses_to_signal_a_recycled_pid",
+            "test_stop_daemon_windows_falls_back_to_terminate_when_break_fails",
+            "test_stop_daemon_windows_sends_ctrl_break",
+            "test_stop_daemon_windows_timeout_reports_taskkill",
+            "test_stop_daemon_with_non_int_pid_clears_handshake_and_returns_false",
+            "test_stop_daemon_without_handshake_returns_false",
+            "test_wait_for_handshake_ignores_malformed_handshakes",
+            "test_wait_for_handshake_returns_info_once_healthy",
+            "test_wait_for_handshake_timeout_message_names_recovery_command",
+            "test_wait_for_handshake_times_out_when_health_never_passes",
+            "test_wait_for_handshake_times_out_when_no_handshake_appears",
+            "test_write_handshake_is_owner_only",
+            "test_write_handshake_overwrites_previous_document",
+            "test_write_handshake_round_trips_and_creates_parent_dir"
+          ],
+          "hash": "67f88b35026dd8f7510c10c7238a68fcecd01f66c031770ced33967a1f18a184",
+          "importsFiles": [
+            "sov_daemon/__main__.py",
+            "sov_daemon/lifecycle.py",
+            "sov_daemon/log_fields.py"
+          ],
+          "path": "tests/test_daemon_lifecycle_coverage.py"
         },
         {
           "exports": [
@@ -12969,7 +13046,7 @@
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 81
+          "files": 82
         }
       ],
       "readers": [],
@@ -14093,8 +14170,8 @@
     }
   ],
   "generatedFrom": {
-    "commit": "6a55aa90b18bf118d0724ab9f5adb33c5e1cf4f1",
-    "tracked": 424
+    "commit": "7c660295a2bcb55fec5f1092b9d829894dbc5def",
+    "tracked": 425
   },
   "landings": [
     {
@@ -15149,7 +15226,7 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 118,
+  "testFiles": 119,
   "unassigned": [],
   "unseen": [
     {
