@@ -96,21 +96,21 @@
   "changes": {
     "fileCounts": {
       "added": 0,
-      "changed": 4,
+      "changed": 6,
       "moved": 0,
-      "parts": 4,
+      "parts": 3,
       "removed": 0
     },
     "items": [
       {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-09-30; 4 files changed content.",
+        "sentence": "Nothing structural changed since 2026-09-30; 6 files changed content.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "bf9609cb93b0e46f9c20e40bca9d89f0bad1dace",
-      "generatedAt": "2026-09-30T05:03:09.027Z"
+      "commit": "175d33fe3ac961555a919c1f79bc47b516ddcec8",
+      "generatedAt": "2026-09-30T05:09:07.704Z"
     },
     "unchanged": true
   },
@@ -163,10 +163,10 @@
   ],
   "changesTogetherNote": [
     "Confidence is low: fewer than 25 source files reach 10 revisions in the window.",
-    "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
+    "Window: 180 days; a pair counts from 3 shared commits, since 4 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "175d33fe3ac961555a919c1f79bc47b516ddcec8",
+  "commit": "3e00fd38dc17b6687a253d55c7e9c1ee16d88a8b",
   "defaultBranch": "main",
   "derived": "14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
@@ -597,7 +597,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T05:09:07.704Z",
+  "generatedAt": "2026-09-30T06:00:47.710Z",
   "limits": [
     "39 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",

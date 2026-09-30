@@ -75,6 +75,8 @@ Stage B-2 audit-lens improvement note for next swarm: cross-check workflow filen
 
 ## Decisions worth knowing
 
+- **Never shell out to `kill` with a negative pid (post-2.3.4)**: procps-ng `kill -KILL -12345` issues `kill(-1)` (first digit only), SIGKILLing every process the user owns. `app/src-tauri/src/daemon.rs` signals via `libc::kill` behind `kill_target()`, which refuses 0, 1, our own pid and our own process group. If you need `kill(1)` in a shell script, put `--` before the pid (`kill -KILL -- -12345`). Pinned by `kill_target_refuses_process_wide_and_own_targets` + `kill_process_tree_hits_exactly_the_named_group`.
+
 - **npx launcher lives in `npm/` (post-2.3.2)**: `.github/workflows/release.yml` (workflow name "npm launcher") publishes `@mcptoolshop/sovereignty` on release, only after the Release carries `checksums-<v>.txt` + the three CLI binaries. The shim derives version/tag from `npm/package.json`; `tests/test_npm_launcher_in_sync.py` pins it to `pyproject.toml` — bump both together. Trusted Publisher on npmjs.com binds to the filename `release.yml` (no environment) — never rename it; OIDC only (NPM_TOKEN retired 2026-09-29 after the first Trusted Publisher publish).
 - **Frozen-binary version (post-2.3.2)**: PyInstaller builds need `--copy-metadata sovereignty-game`; `--version` goes through `_resolve_version()` (guarded). The release build step asserts `sovereignty <version>` from the built binary.
 

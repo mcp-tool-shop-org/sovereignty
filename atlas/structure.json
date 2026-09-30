@@ -125,7 +125,7 @@
           "path": ".github/scripts/stage-tauri-artifacts.sh"
         },
         {
-          "hash": "eaa4d5b8f6acff07fb23e4edc34003b6723e7635fd59690272b8f72f2ded0df5",
+          "hash": "e92404fd21a509f376e356291edd269549d6a576dcc7183f5364cf982ca09970",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -191,11 +191,11 @@
           "path": "app/src-tauri/.cargo/audit.toml"
         },
         {
-          "hash": "421e2af63608ee749f1db8d6f1f2a78ae9f06d6b9d909f093ddf3bc3480d0a39",
+          "hash": "f7a029677405ff1d62bedf0c59e6afc2b6ba119508fc51f852adbec37ee6eba2",
           "path": "app/src-tauri/Cargo.lock"
         },
         {
-          "hash": "1df7546b51359ee8067844400635c1a0bc40865a35611ccfbfdd20e526da4624",
+          "hash": "777cd6cdda7c8aec4dffd388d8fb46cc5ffe54bf3c9145c29f8cbba49e9ee584",
           "path": "app/src-tauri/Cargo.toml"
         },
         {
@@ -455,7 +455,7 @@
             "parse_status_output",
             "stop_blocking"
           ],
-          "hash": "5a0f3350313ecca79b56661f46f0d80683940418364a733038fff32091960a7b",
+          "hash": "6dae47e71b6a24087d19e8d75743848627dc53c750e6178e3c61d179f4d0b553",
           "importsFiles": [
             "app/src-tauri/src/commands.rs",
             "app/src-tauri/src/config.rs"
@@ -1708,11 +1708,11 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "ec0aae55b5d157959237316b764412ff173335c5ae0b60f3cbe7cc3e194e9157",
+          "hash": "c7b4a3c0ff221db4bf303bdc385a66132fa78afa3347c2889b2613d3a76568c6",
           "path": "CHANGELOG.md"
         },
         {
-          "hash": "fca18a63af205f021357e5bde8038ef08de50b94e9ceafd54d31cb153d680c6b",
+          "hash": "ce98471b18a3e86ef266c18ece3c3fe00f69b0c8ce4f21b6bcd9f99de6c63f04",
           "path": "CLAUDE.md"
         },
         {
@@ -12931,8 +12931,13 @@
         },
         {
           "job": "tauri-and-frontend",
+          "step": "Cargo test (build)",
+          "text": "cargo test --no-run"
+        },
+        {
+          "job": "tauri-and-frontend",
           "step": "Cargo test",
-          "text": "cargo test -- --test-threads=1 --nocapture"
+          "text": "timeout --kill-after=20s 5m cargo test -- --test-threads=1 --nocapture"
         },
         {
           "job": "tauri-and-frontend",
@@ -14182,7 +14187,7 @@
     }
   ],
   "generatedFrom": {
-    "commit": "175d33fe3ac961555a919c1f79bc47b516ddcec8",
+    "commit": "3e00fd38dc17b6687a253d55c7e9c1ee16d88a8b",
     "tracked": 426
   },
   "landings": [

@@ -327,12 +327,23 @@ jobs:
         working-directory: app/src-tauri
         run: cargo fmt --check
 
+      # Compile separately so a hang in the tests is never confused with a
+      # slow cold build.
+      - name: Cargo test (build)
+        working-directory: app/src-tauri
+        timeout-minutes: 15
+        run: cargo test --no-run
+
+      # Step bound (not job bound): a hang must fail this step so logs
+      # upload instead of the runner being SIGKILL'd at 30m with no log.
+      # `timeout-minutes` alone did not fire on two v2.3.x runs (the job
+      # hit its 30m cap, no log), so coreutils `timeout` enforces it from
+      # inside the step. With one test thread, libtest prints each test
+      # name before running it, so the last line names a stuck test.
       - name: Cargo test
         working-directory: app/src-tauri
-        # Step bound (not job bound): a hang must fail this step so logs
-        # upload instead of the runner being SIGKILL'd at 30m with no log.
         timeout-minutes: 10
-        run: cargo test -- --test-threads=1 --nocapture
+        run: timeout --kill-after=20s 5m cargo test -- --test-threads=1 --nocapture
 
       # Frontend gates — match acceptance-gate command order.
       - name: Frontend typecheck

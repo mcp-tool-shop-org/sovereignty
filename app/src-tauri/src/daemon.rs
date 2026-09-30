@@ -67,11 +67,10 @@ fn configure_daemon_command(cmd: &mut Command) {
 fn kill_process_tree(pid: u32) {
     #[cfg(unix)]
     {
-        let _ = std::process::Command::new("kill")
-            .args(["-KILL", &format!("-{pid}")])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status();
+        if let Some(target) = kill_target(pid) {
+            // Negative pid = the process group led by `pid`.
+            sigkill(-target);
+        }
     }
     #[cfg(windows)]
     {
@@ -92,15 +91,53 @@ fn kill_process_tree(pid: u32) {
 fn kill_pid(pid: u32) {
     #[cfg(unix)]
     {
-        let _ = std::process::Command::new("kill")
-            .args(["-KILL", &pid.to_string()])
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status();
+        if let Some(target) = kill_target(pid) {
+            sigkill(target);
+        }
     }
     #[cfg(windows)]
     {
         kill_process_tree(pid);
+    }
+}
+
+/// Validate a pid before it is signalled, as a pid or as a group (`-pid`).
+///
+/// Refuses 0 and 1 (kill(0) is our own process group, kill(-1) is every
+/// process we may signal, 1 is init), anything that does not fit `pid_t`,
+/// and our own pid or process group, so no caller can SIGKILL the shell.
+#[cfg(unix)]
+fn kill_target(pid: u32) -> Option<libc::pid_t> {
+    let target = libc::pid_t::try_from(pid).ok()?;
+    if target <= 1 {
+        return None;
+    }
+    // SAFETY: getpid/getpgrp take no arguments and cannot fail.
+    let (own_pid, own_group) = unsafe { (libc::getpid(), libc::getpgrp()) };
+    if target == own_pid || target == own_group {
+        return None;
+    }
+    Some(target)
+}
+
+/// SIGKILL via kill(2), never the `kill` binary.
+///
+/// procps-ng `kill` keeps only the FIRST DIGIT of a negative pid that follows
+/// the signal flag: `kill -KILL -3957` became kill(-3) and `kill -KILL -12345`
+/// became kill(-1), which SIGKILLs every process the user owns. That is how a
+/// timed-out `sov daemon` command could take down a Linux desktop session,
+/// and how the Rust tests killed the CI runner (v2.3.x `tauri-and-frontend`
+/// jobs cancelled at 30 min with no log). The syscall has no parser.
+#[cfg(unix)]
+fn sigkill(target: libc::pid_t) {
+    debug_assert!(
+        target != 0 && target != -1,
+        "refusing a process-wide signal"
+    );
+    // SAFETY: kill(2) with a validated, non-special pid/pgid; the result is
+    // best-effort (ESRCH for an already-reaped target is expected).
+    unsafe {
+        libc::kill(target, libc::SIGKILL);
     }
 }
 
@@ -848,6 +885,53 @@ mod tests {
         assert!(
             pid_is_alive(grandchild_pid),
             "detached handshake pid {grandchild_pid} must still be alive after CLI-tree-only kill"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn kill_target_refuses_process_wide_and_own_targets() {
+        // kill(0) = our group, kill(-1) = every process we may signal.
+        assert_eq!(kill_target(0), None);
+        assert_eq!(kill_target(1), None);
+        assert_eq!(kill_target(u32::MAX), None, "does not fit pid_t");
+        assert_eq!(kill_target(std::process::id()), None, "own pid");
+        // SAFETY: getpgrp takes no arguments and cannot fail.
+        let own_group = unsafe { libc::getpgrp() } as u32;
+        assert_eq!(kill_target(own_group), None, "own process group");
+        let other = if std::process::id() == 12345 {
+            12346
+        } else {
+            12345
+        };
+        assert_eq!(kill_target(other), Some(other as libc::pid_t));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn kill_process_tree_hits_exactly_the_named_group() {
+        // Regression for the procps `kill -KILL -<pid>` misparse (kill(-3),
+        // kill(-1)): the tree kill must reach the named group and nothing
+        // else. A sibling group standing in for "every other process" must
+        // survive.
+        let (target_pid, _target) = spawn_detached_grandchild();
+        let _reap_target = PidGuard(target_pid);
+        let (sibling_pid, _sibling) = spawn_detached_grandchild();
+        let _reap_sibling = PidGuard(sibling_pid);
+
+        kill_process_tree(target_pid);
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while std::time::Instant::now() < deadline && pid_is_alive(target_pid) {
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(
+            !pid_is_alive(target_pid),
+            "named group {target_pid} must be dead"
+        );
+        assert!(
+            pid_is_alive(sibling_pid),
+            "sibling group {sibling_pid} must survive"
         );
     }
 
