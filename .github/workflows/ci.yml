@@ -81,7 +81,7 @@ jobs:
 
       - name: Atlas check
         if: matrix.python-version == '3.12'
-        run: npx --yes @dogfood-lab/atlas@1.20.0 check
+        run: npx --yes @dogfood-lab/atlas@1.24.0 check
 
       # Parking F-593530-023: --frozen ensures CI uses locked versions.
       # --all-extras pulls in [xrpl] + [daemon] so mypy can resolve the
