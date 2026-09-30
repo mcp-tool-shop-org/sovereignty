@@ -130,18 +130,9 @@ from sov_engine.wallet_seed import (
 
 def _version_callback(value: bool) -> None:
     if value:
-        try:
-            ver = _pkg_version("sovereignty-game")
-        except Exception:
-            _pyproject = Path(__file__).parent.parent / "pyproject.toml"
-            _content = _pyproject.read_text(encoding="utf-8")
-            m = re.search(
-                r'^version\s*=\s*"([^"]+)"',
-                _content,
-                re.MULTILINE,
-            )
-            ver = m.group(1) if m else "unknown"
-        typer.echo(f"sovereignty {ver}")
+        # One resolver for every surface. The frozen PyInstaller binary has
+        # no pyproject.toml; an unguarded fallback here crashed `--version`.
+        typer.echo(f"sovereignty {_resolve_version()}")
         raise typer.Exit()
 
 

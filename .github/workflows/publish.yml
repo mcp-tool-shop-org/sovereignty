@@ -228,7 +228,13 @@ jobs:
           uv run pyinstaller --onefile --name "sovereignty" --console \
             --collect-submodules rich \
             --collect-data xrpl \
+            --copy-metadata sovereignty-game \
             sov_cli/__main__.py
+          # The frozen binary must report its own version. Without the copied
+          # metadata `--version` crashed in every binary through 2.3.2.
+          OUT=$("dist/sovereignty${{ matrix.ext }}" --version)
+          echo "$OUT"
+          [ "$OUT" = "sovereignty ${VERSION}" ] || { echo "::error::binary reports '$OUT'"; exit 1; }
           OUTNAME="sovereignty-${VERSION}-${{ matrix.target }}${{ matrix.ext }}"
           mv "dist/sovereignty${{ matrix.ext }}" "dist/${OUTNAME}"
           echo "ASSET_NAME=${OUTNAME}" >> "$GITHUB_ENV"

@@ -96,6 +96,22 @@
       "cohesionDropped": false,
       "confidence": "low",
       "highWater": null,
+      "name": "npm",
+      "qualifyingSourceCommits": 0,
+      "rebaseline": null
+    },
+    {
+      "breakage": {
+        "coChangesOnly": [],
+        "collapsed": false,
+        "confidence": "low",
+        "importsAndCoChanges": [],
+        "importsOnly": []
+      },
+      "cohesion": null,
+      "cohesionDropped": false,
+      "confidence": "low",
+      "highWater": null,
       "name": "root",
       "qualifyingSourceCommits": 0,
       "rebaseline": null
@@ -300,13 +316,18 @@
         "path": ".github/workflows/ci.yml"
       },
       {
+        "commits": 1,
+        "lines": 135,
+        "path": ".github/workflows/docker.yml"
+      },
+      {
         "commits": 6,
         "lines": 28,
         "path": ".github/workflows/pages.yml"
       },
       {
-        "commits": 17,
-        "lines": 686,
+        "commits": 18,
+        "lines": 788,
         "path": ".github/workflows/publish.yml"
       },
       {
@@ -335,8 +356,8 @@
         "path": "CHANGELOG.md"
       },
       {
-        "commits": 18,
-        "lines": 239,
+        "commits": 19,
+        "lines": 243,
         "path": "CLAUDE.md"
       },
       {
@@ -1390,8 +1411,8 @@
         "path": "assets/print/source/vendor/react.production.min.js"
       },
       {
-        "commits": 3,
-        "lines": 134,
+        "commits": 4,
+        "lines": 152,
         "path": "atlas/README.md"
       },
       {
@@ -1400,18 +1421,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 3,
-        "lines": 746,
+        "commits": 4,
+        "lines": 837,
         "path": "atlas/page.json"
       },
       {
-        "commits": 3,
-        "lines": 2584,
+        "commits": 4,
+        "lines": 2825,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 3,
-        "lines": 14266,
+        "commits": 4,
+        "lines": 14697,
         "path": "atlas/structure.json"
       },
       {
@@ -2130,9 +2151,9 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-09-30T01:33:21.388Z",
+  "generatedAt": "2026-09-30T02:17:03.177Z",
   "generatedFrom": {
-    "commit": "c9944dcf0cbf76042173dd0a61a2362d30b0bb09"
+    "commit": "269afcafeb6b38ac1536612828deda2586734664"
   },
   "pairs": [
     {
@@ -2356,16 +2377,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-09-29T20:35:42-04:00",
-    "inScopeFiles": 411,
+    "headDate": "2026-09-29T21:33:34-04:00",
+    "inScopeFiles": 421,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 100,
+    "qualifyingCommits": 101,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-03T00:35:42.000Z",
+    "since": "2026-04-03T01:33:34.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

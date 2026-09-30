@@ -1,28 +1,34 @@
 # sovereignty: how it works
 
-Mapped at 2026-09-30 from commit c9944dc.
+Mapped at 2026-09-30 from commit 269afca.
 
 ## What this is
 
-13 parts, mostly Python (111 files), TypeScript (61), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
+14 parts, mostly Python (113 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
 
-## What changed since 2026-09-30 (99955d2)
+## What changed since 2026-09-30 (c9944dc)
 
-- Release no longer runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py.
-- Release no longer checks LICENSE, README.md, docker/healthcheck.py and 1 more.
-- 4 files changed content, across 3 parts.
+- Container image (.github/workflows/docker.yml) is a new door. It starts when a release is published; or by hand. It runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py. It checks LICENSE, README.md, docker/healthcheck.py and 5 more.
+- npm launcher (.github/workflows/npm.yml) is a new door. It starts when a release is published; or by hand. It runs npm/test/.
+- npm/bin/sovereignty.js is now read by npm/test/launcher.test.js.
+- npm/package.json is now read by .github/workflows/npm.yml, npm/bin/sovereignty.js and tests/test_npm_launcher_in_sync.py.
+- pyproject.toml is now also read by tests/test_npm_launcher_in_sync.py.
+- npm is a new part, drawn from `npm/**`.
+- 10 files added and 8 changed content, across 5 parts.
 
 ## What comes in
 
-1. **CI.** On a pull request; on a push touching 12 paths; on a schedule (`0 14 * * *`); or by hand. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 136 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
-2. **Release.** When a release is published; or by hand. Runs .github/scripts/generate-latest-json.py and .github/scripts/stage-tauri-artifacts.sh; builds sov_cli/__main__.py; checks sov_cli/, sov_daemon/, sov_engine/ and 7 more.
-3. **Deploy site to GitHub Pages.** On a pull request touching 2 paths; on a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
-4. **sov** (a command people run). Runs sov_cli/main.py.
-5. **sov-tauri-shell** (a desktop app built from app/src-tauri, which nothing ships). Runs app/src-tauri/src/main.rs.
+1. **CI.** On a pull request; on a push touching 12 paths; on a schedule (`0 14 * * *`); or by hand. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 138 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
+2. **Container image.** When a release is published; or by hand. Runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py; checks LICENSE, README.md, docker/healthcheck.py and 34 more.
+3. **Release.** When a release is published; or by hand. Runs .github/scripts/generate-latest-json.py and .github/scripts/stage-tauri-artifacts.sh; builds sov_cli/__main__.py; checks sov_cli/, sov_daemon/, sov_engine/ and 7 more.
+4. **Deploy site to GitHub Pages.** On a pull request touching 2 paths; on a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
+5. **npm launcher.** When a release is published; or by hand. Runs npm/test/.
+6. **sov** (a command people run). Runs sov_cli/main.py.
+7. **sov-tauri-shell** (a desktop app built from app/src-tauri, which nothing ships). Runs app/src-tauri/src/main.rs.
 
 ## What happens through CI
 
-1. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 136 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
+1. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 138 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
 2. It writes to .sov/games/ and app/src-tauri/gen/schemas, which are not tracked.
 
 ## Who reads the results
@@ -31,9 +37,13 @@ CI writes only to .sov/games/ and app/src-tauri/gen/schemas, which are not track
 
 ## The other doors
 
+**Container image** runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py, checks LICENSE, README.md, docker/healthcheck.py and 34 more, writes to .sov/games/, which is not tracked, and publishes a container image.
+
 **Release** runs .github/scripts/generate-latest-json.py and .github/scripts/stage-tauri-artifacts.sh, checks sov_cli/, sov_daemon/, sov_engine/ and 7 more, publishes to PyPI, and builds sov_cli/__main__.py into binaries for darwin-arm64, linux-x64 and win-x64 and uploads them to the release.
 
 **Deploy site to GitHub Pages** runs site/astro.config.mjs and site/src/, and deploys the site except on a pull request.
+
+**npm launcher** runs npm/test/ and publishes @mcptoolshop/sovereignty (npm) to npm.
 
 **sov** (a command people run) runs sov_cli/main.py, reaches sov_daemon, sov_engine and sov_transport, and writes to .sov/games/, which is not tracked.
 
@@ -41,12 +51,14 @@ CI writes only to .sov/games/ and app/src-tauri/gen/schemas, which are not track
 
 ## What breaks what
 
-- **sov_engine** is imported by 3 parts (assets, sov_cli, sov_daemon), and by 1 more only from tests; it sits on the path of 3 doors.
-- **sov_transport** is imported by 3 parts (sov_cli, sov_daemon, sov_engine), and by 1 more only from tests; it sits on the path of 3 doors.
-- **sov_cli** is imported by 2 parts (sov_daemon, sov_engine), and by 1 more only from tests; it sits on the path of 3 doors.
-- **sov_daemon** is imported by 1 part (sov_cli), and by 1 more only from tests; it sits on the path of 3 doors.
+- **sov_engine** is imported by 3 parts (assets, sov_cli, sov_daemon), and by 1 more only from tests; it sits on the path of 4 doors.
+- **sov_transport** is imported by 3 parts (sov_cli, sov_daemon, sov_engine), and by 1 more only from tests; it sits on the path of 4 doors.
+- **sov_cli** is imported by 2 parts (sov_daemon, sov_engine), and by 1 more only from tests; it sits on the path of 4 doors.
+- **sov_daemon** is imported by 1 part (sov_cli), and by 1 more only from tests; it sits on the path of 4 doors.
 - **.github** is imported by no other part and sits on the path of 2 doors.
 - **app** is imported by no other part and sits on the path of 2 doors.
+- **docker** is imported by no other part and sits on the path of 2 doors.
+- **the repository root** is imported by no other part and sits on the path of 2 doors.
 
 ## What tends to change together
 
@@ -62,6 +74,7 @@ Window: 180 days; a pair counts from 3 shared commits, since 3 source files reac
 ## What no test touches
 
 - **assets** is imported by no test.
+- **npm** is imported by no test.
 
 ## Written but never read
 
@@ -87,12 +100,12 @@ Read those in order to follow one pull request end to end.
 
 ## What this map cannot see
 
-- 27 import sites could not be resolved.
+- 28 import sites could not be resolved.
 - 3 writes and 49 reads use paths built at run time and are not named here.
 - 2 writes go to places this repository does not track, so they are not listed as generated.
 - 7 reads go to a path their caller passes, not to this repository.
 - 1 command is built at run time and not followed.
-- There is a Dockerfile and a compose.yaml that no workflow runs; what deploys from them does so from outside this repository, and is not on this page.
+- There is a compose.yaml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.
 - Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window.
 
 Regenerate with `npx --yes @dogfood-lab/atlas map`.

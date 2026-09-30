@@ -1,0 +1,109 @@
+# npx launcher: @mcptoolshop/sovereignty (source in npm/).
+#
+# The launcher downloads the `sov` binary for its own version from the GitHub
+# Release, so it may only publish once that Release carries the CLI binaries
+# and checksums. publish.yml attaches them on the same release event; this
+# workflow waits for them (andon) and then publishes.
+#
+# Auth: npm Trusted Publishing (OIDC) bound to THIS filename (npm.yml), no
+# environment. NPM_TOKEN stays as the fallback until the first OIDC publish is
+# confirmed (`npm view @mcptoolshop/sovereignty@<v> --json` shows a
+# trustedPublisher block); then delete the secret and the env line below.
+#
+# Recovery: Actions -> npm launcher -> Run workflow with tag=vX.Y.Z. The shim
+# derives everything from npm/package.json, so a dispatch from main publishes
+# the version it names; the tag input must match it.
+#
+# Compensator: `npm deprecate @mcptoolshop/sovereignty@<v> "<reason>"` and
+# publish a fixed patch (npm versions cannot be reused; unpublish only within
+# 72 h). Owner: release operator.
+
+name: npm launcher
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v* GitHub Release tag whose binaries the launcher serves (e.g. v2.3.2).
+        required: true
+        type: string
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Verify launcher version matches tag
+        run: |
+          VERSION=$(node -p "require('./npm/package.json').version")
+          if [ "v$VERSION" != "$RELEASE_TAG" ]; then
+            echo "::error::npm/package.json is $VERSION but the tag is $RELEASE_TAG"
+            exit 1
+          fi
+
+      - name: Wait for release binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          want="checksums-${VERSION}.txt sovereignty-${VERSION}-linux-x64 sovereignty-${VERSION}-darwin-arm64 sovereignty-${VERSION}-win-x64.exe"
+          for attempt in $(seq 1 90); do
+            have=$(gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' 2>/dev/null || true)
+            missing=""
+            for a in $want; do grep -qx "$a" <<<"$have" || missing="$missing $a"; done
+            if [ -z "$missing" ]; then echo "All launcher assets present."; exit 0; fi
+            echo "attempt $attempt: waiting for$missing"
+            sleep 30
+          done
+          echo "::error::Release $RELEASE_TAG never carried:$missing"
+          exit 1
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+
+      - name: Install and test
+        working-directory: npm
+        run: |
+          npm ci
+          npm test
+
+      - name: Publish
+        working-directory: npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --provenance --access public
+
+      # Registry reads can lag a fresh publish by a couple of minutes.
+      - name: Smoke test npx
+        run: |
+          VERSION="${RELEASE_TAG#v}"
+          cd "$(mktemp -d)"
+          for attempt in $(seq 1 20); do
+            if OUT=$(npx --yes "@mcptoolshop/sovereignty@${VERSION}" self-check --json 2>/dev/null); then
+              STATUS=$(jq -r .status <<<"$OUT")
+              echo "self-check status: $STATUS"
+              case "$STATUS" in ok|warn) exit 0 ;; esac
+              echo "::error::npx self-check reported $STATUS"
+              exit 1
+            fi
+            echo "attempt $attempt: package not readable yet"
+            sleep 15
+          done
+          echo "::error::npx @mcptoolshop/sovereignty@${VERSION} never ran"
+          exit 1

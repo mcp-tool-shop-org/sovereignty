@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **npx launcher source in `npm/`**, published by `.github/workflows/npm.yml` after the Release carries the CLI binaries, with npm provenance and a post-publish `npx` smoke. The launcher had been hand-published and stopped at 2.2.1, so `npx @mcptoolshop/sovereignty` served 2.2.1 binaries through all of 2.3.x. It now reads its version from `npm/package.json`, and `tests/test_npm_launcher_in_sync.py` fails CI if that drifts from `pyproject.toml`.
+- **Code coverage on Codecov** (OIDC, no token): the 3.12 CI cell collects coverage and JUnit results; a separate `codecov` job uploads them. Baseline 72.5% line coverage.
+
+### Fixed
+
+- **`sov --version` crashed in every PyInstaller binary.** The frozen app has no package metadata, and the `--version` fallback read `pyproject.toml` unguarded. `--version` now uses the same guarded resolver as `self-check`, the build bundles the metadata (`--copy-metadata sovereignty-game`), and the release build fails if the binary does not report its own version.
+
 ## [2.3.2] - 2026-09-29
 
 ### Added

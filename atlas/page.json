@@ -8,7 +8,7 @@
   ],
   "breaks": [
     {
-      "doors": 3,
+      "doors": 4,
       "importedBy": [
         "assets",
         "sov_cli",
@@ -22,7 +22,7 @@
       "partLabel": "sov_engine"
     },
     {
-      "doors": 3,
+      "doors": 4,
       "importedBy": [
         "sov_cli",
         "sov_daemon",
@@ -36,7 +36,7 @@
       "partLabel": "sov_transport"
     },
     {
-      "doors": 3,
+      "doors": 4,
       "importedBy": [
         "sov_daemon",
         "sov_engine"
@@ -49,7 +49,7 @@
       "partLabel": "sov_cli"
     },
     {
-      "doors": 3,
+      "doors": 4,
       "importedBy": [
         "sov_cli"
       ],
@@ -75,47 +75,101 @@
       "kind": "part",
       "name": "app",
       "partLabel": "app"
+    },
+    {
+      "doors": 2,
+      "importedBy": [],
+      "importedByTests": [],
+      "kind": "part",
+      "name": "docker",
+      "partLabel": "docker"
+    },
+    {
+      "doors": 2,
+      "importedBy": [],
+      "importedByTests": [],
+      "kind": "part",
+      "name": "root",
+      "partLabel": "the repository root"
     }
   ],
   "changes": {
     "fileCounts": {
-      "added": 0,
-      "changed": 4,
+      "added": 10,
+      "changed": 8,
       "moved": 0,
-      "parts": 3,
+      "parts": 5,
       "removed": 0
     },
     "items": [
       {
         "kind": "door",
-        "sentence": "Release no longer runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py.",
+        "sentence": "Container image (.github/workflows/docker.yml) is a new door. It starts when a release is published; or by hand. It runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py. It checks LICENSE, README.md, docker/healthcheck.py and 5 more.",
         "subjects": [
-          ".github/workflows/publish.yml",
+          ".github/workflows/docker.yml",
+          "LICENSE",
+          "README.md",
           "docker/entrypoint.sh",
+          "docker/healthcheck.py",
+          "pyproject.toml",
+          "sov_cli/",
           "sov_cli/main.py",
-          "sov_daemon/__main__.py"
+          "sov_daemon/",
+          "sov_daemon/__main__.py",
+          "sov_engine/",
+          "sov_transport/"
         ]
       },
       {
         "kind": "door",
-        "sentence": "Release no longer checks LICENSE, README.md, docker/healthcheck.py and 1 more.",
+        "sentence": "npm launcher (.github/workflows/npm.yml) is a new door. It starts when a release is published; or by hand. It runs npm/test/.",
         "subjects": [
-          ".github/workflows/publish.yml",
-          "LICENSE",
-          "README.md",
-          "docker/healthcheck.py",
-          "pyproject.toml"
+          ".github/workflows/npm.yml",
+          "npm/test/"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "npm/bin/sovereignty.js is now read by npm/test/launcher.test.js.",
+        "subjects": [
+          "npm/bin/sovereignty.js",
+          "npm/test/launcher.test.js"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "npm/package.json is now read by .github/workflows/npm.yml, npm/bin/sovereignty.js and tests/test_npm_launcher_in_sync.py.",
+        "subjects": [
+          "npm/package.json",
+          ".github/workflows/npm.yml",
+          "npm/bin/sovereignty.js",
+          "tests/test_npm_launcher_in_sync.py"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "pyproject.toml is now also read by tests/test_npm_launcher_in_sync.py.",
+        "subjects": [
+          "pyproject.toml",
+          "tests/test_npm_launcher_in_sync.py"
+        ]
+      },
+      {
+        "kind": "part",
+        "sentence": "npm is a new part, drawn from `npm/**`.",
+        "subjects": [
+          "npm"
         ]
       },
       {
         "kind": "counts",
-        "sentence": "4 files changed content, across 3 parts.",
+        "sentence": "10 files added and 8 changed content, across 5 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "99955d263b91c86fdd768ab97e21f6dea26bc8cf",
-      "generatedAt": "2026-09-30T00:33:58.863Z"
+      "commit": "c9944dcf0cbf76042173dd0a61a2362d30b0bb09",
+      "generatedAt": "2026-09-30T01:33:21.388Z"
     },
     "unchanged": false
   },
@@ -186,9 +240,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "c9944dcf0cbf76042173dd0a61a2362d30b0bb09",
+  "commit": "269afcafeb6b38ac1536612828deda2586734664",
   "defaultBranch": "main",
-  "derived": "13 parts, mostly Python (111 files), TypeScript (61), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
+  "derived": "14 parts, mostly Python (113 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
     {
       "checks": [],
@@ -225,7 +279,7 @@
             "app/src/",
             "app/vite.config.ts"
           ],
-          "runsMore": 136,
+          "runsMore": 138,
           "when": "except on a schedule"
         }
       ],
@@ -287,7 +341,7 @@
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 72
+          "files": 74
         }
       ],
       "runs": [],
@@ -302,6 +356,73 @@
         "or by hand"
       ],
       "untracked": ".sov/games/ and app/src-tauri/gen/schemas, which are not tracked"
+    },
+    {
+      "checks": [
+        "LICENSE",
+        "README.md",
+        "docker/healthcheck.py",
+        "pyproject.toml",
+        "sov_cli/",
+        "sov_daemon/",
+        "sov_engine/",
+        "sov_transport/"
+      ],
+      "checksCount": 8,
+      "checksMore": 34,
+      "file": ".github/workflows/docker.yml",
+      "id": ".github/workflows/docker.yml",
+      "landings": [],
+      "name": "Container image",
+      "pushes": false,
+      "reach": [
+        {
+          "boundary": "docker",
+          "depth": 0,
+          "files": 2
+        },
+        {
+          "boundary": "root",
+          "depth": 0,
+          "files": 3
+        },
+        {
+          "boundary": "sov_cli",
+          "depth": 0,
+          "files": 4
+        },
+        {
+          "boundary": "sov_daemon",
+          "depth": 0,
+          "files": 7
+        },
+        {
+          "boundary": "sov_engine",
+          "depth": 0,
+          "files": 15
+        },
+        {
+          "boundary": "sov_transport",
+          "depth": 0,
+          "files": 7
+        }
+      ],
+      "runs": [
+        "docker/entrypoint.sh",
+        "sov_cli/main.py",
+        "sov_daemon/__main__.py"
+      ],
+      "runsCount": 3,
+      "runsMore": 0,
+      "sends": [
+        "publishes a container image"
+      ],
+      "stages": [],
+      "triggers": [
+        "when a release is published",
+        "or by hand"
+      ],
+      "untracked": ".sov/games/, which is not tracked"
     },
     {
       "builds": [
@@ -392,6 +513,36 @@
       "triggers": [
         "on a pull request touching 2 paths",
         "on a push to main touching 2 paths",
+        "or by hand"
+      ]
+    },
+    {
+      "checks": [],
+      "checksCount": 0,
+      "checksMore": 0,
+      "file": ".github/workflows/npm.yml",
+      "id": ".github/workflows/npm.yml",
+      "landings": [],
+      "name": "npm launcher",
+      "pushes": false,
+      "reach": [
+        {
+          "boundary": "npm",
+          "depth": 0,
+          "files": 1
+        }
+      ],
+      "runs": [
+        "npm/test/"
+      ],
+      "runsCount": 1,
+      "runsMore": 0,
+      "sends": [
+        "publishes @mcptoolshop/sovereignty (npm) to npm"
+      ],
+      "stages": [],
+      "triggers": [
+        "when a release is published",
         "or by hand"
       ]
     },
@@ -520,14 +671,14 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T01:33:21.388Z",
+  "generatedAt": "2026-09-30T02:17:03.177Z",
   "limits": [
-    "27 import sites could not be resolved.",
+    "28 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",
     "2 writes go to places this repository does not track, so they are not listed as generated.",
     "7 reads go to a path their caller passes, not to this repository.",
     "1 command is built at run time and not followed.",
-    "There is a Dockerfile and a compose.yaml that no workflow runs; what deploys from them does so from outside this repository, and is not on this page.",
+    "There is a compose.yaml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
   "mainDoor": ".github/workflows/ci.yml",
@@ -537,6 +688,7 @@
     "assets": "assets",
     "docker": "docker",
     "docs": "docs",
+    "npm": "npm",
     "root": "the repository root",
     "scripts": "scripts",
     "site": "the site",
@@ -546,7 +698,7 @@
     "sov_transport": "sov_transport",
     "tests": "tests"
   },
-  "parts": 13,
+  "parts": 14,
   "readers": [],
   "repo": "mcp-tool-shop-org/sovereignty",
   "sequences": [],
@@ -557,14 +709,15 @@
   ],
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 108,
+  "testFiles": 111,
   "testedBy": {
     "app": 32,
     "assets": 0,
-    "sov_cli": 37,
-    "sov_daemon": 33,
-    "sov_engine": 52,
-    "sov_transport": 46
+    "npm": 0,
+    "sov_cli": 38,
+    "sov_daemon": 34,
+    "sov_engine": 53,
+    "sov_transport": 47
   },
   "unnamedWrites": 3,
   "unread": [
@@ -581,6 +734,11 @@
     {
       "part": "assets",
       "partLabel": "assets",
+      "testedBy": 0
+    },
+    {
+      "part": "npm",
+      "partLabel": "npm",
       "testedBy": 0
     }
   ],

@@ -44,3 +44,6 @@ site/node_modules/
 assets/print/source/*.RENDER.html
 assets/print/source/node_modules/
 .swarm/
+coverage/
+junit.xml
+npm/node_modules/
