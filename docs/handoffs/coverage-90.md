@@ -225,8 +225,44 @@ If the fix would change behaviour a player or operator sees, or it touches the d
 | Phase 3 | 316 | 94.7 | `9fb4a78` |
 | Phase 4 | 220 | 96.3 | `6a55aa9` |
 | Phase 5 | 108 | 98.2 | `7c66029` |
-| Phase 6 | 8 | 99.9 | (this commit) |
-| Phase 7 (gate on) | | | |
+| Phase 6 | 8 | 99.9 | `f8e7430` |
+| Phase 7 (gate on) | 4 | 99.9 | (this commit) |
+
+Tally rows are cumulative full-suite runs on win32 / Python 3.13 with the CI
+`-W` flags. Phase 6 and 7 denominators shrink (5,975 → 5,873 → 5,865) because
+of the Windows-only pragmas (102 statements) and the `exclude_also` patterns.
+
+## Results (executed 2026-09-29)
+
+### Defects found, pinned as `xfail(strict=True)`, not fixed
+
+Each fix changes something a player or operator sees, or touches the daemon's
+trust boundary, so each is left for the Director. A strict xfail turns red
+the moment the fix lands, which is the cue to drop the marker.
+
+| # | Defect | Test | Minimal fix |
+|---|---|---|---|
+| 1 | **`sov tutorial` always crashes** at step 4 with rich `MarkupError`: one `[dim]` span is split across two `console.print` calls (`sov_cli/main.py` ~1826). The demo game is never saved. | `test_cli_gameplay_commands.py::test_tutorial_runs_to_completion` | Close and reopen `[dim]` in each call. |
+| 2 | **`sov postcard` never shows "Treaty kept"**: `_postcard_highlights` matches the pattern `"Treaty.*honored"` with `in`, not as a regex. | `test_cli_endgame_commands.py::test_postcard_highlights_all_style_labels_honored_treaties` | `re.search(pattern, text)`. |
+| 3 | **`sov doctor` never warns on a malformed `season.json`**: `_read_season_document` swallows the parse error and returns an empty season. | `test_cli_ops_commands.py::test_doctor_warns_when_season_json_is_malformed` | Let doctor probe the parse itself, or have the helper signal failure. |
+| 4 | **The missing-extra hint drops `[daemon]`**: `sov daemon start` without the extra prints `pip install 'sovereignty-game'` because rich treats `[daemon]` as markup. The hint names the wrong install. | `test_cli_ops_commands.py::test_daemon_missing_extra_hint_shows_the_extra_name` | Escape the hint in `_fail` (`rich.markup.escape`) or write `\[daemon]` in the factory. |
+| 5 | **`sov resume` crashes on a non-object `state.json`** (e.g. `[]`): the handler catches `TypeError` but not `AttributeError`. | `test_cli_endgame_commands.py::test_resume_with_non_object_state_still_switches_pointer` | Add `AttributeError` to the `except`. |
+| 6 | **Body-size middleware returns 500, not 413, for a chunked over-cap body to a body-reading route**: Starlette's `ServerErrorMiddleware` answers first, then `_send_413` sends a second response start (`sov_daemon/server.py` `MaxBodySizeMiddleware`). Latent: no current route reads a body. Trust boundary. | `test_daemon_server_coverage.py::test_middleware_streaming_413_through_a_real_starlette_route` | Answer the 413 from `counted_receive` before the inner app converts the error, or track "response started". |
+
+### Lines left uncovered (dead code, not excluded)
+
+- `sov_cli/main.py:1272`: a second `return` after `if saved: return` in `_doctor_check_multi_save_layout`.
+- `sov_cli/main.py:4356`: `elif not table_rows` in `_lint_scenario`; an empty table already fails the `missing_rows` branch.
+- `sov_daemon/auth.py:77-78`: `except UnicodeDecodeError` after `decode("latin-1")`, which cannot fail.
+
+Deleting them would take coverage to 100% with no behaviour change.
+
+### Smaller observations (no test pins them)
+
+- `xrpl.py` / `xrpl_async.py`: the "re-raise the same exception type" code raises inside a `try` whose `except` converts it to `TransportError`, so callers always get `TransportError`. The comment and the behaviour disagree; the behaviour is arguably the better one.
+- `xrpl_internals._from_hex` does not catch `TypeError`; a non-string `MemoData` from a malformed RPC response would raise instead of being skipped.
+- `_status_json_payload`: round keys that are neither numeric nor `FINAL` all tie on the sort key, so their order in `sov status --json` varies between runs.
+- Importing `sov_cli.main` sets `propagate = False` on the `sov_engine` and `sov_cli` loggers, so `caplog` misses their records. The new tests attach handlers directly; older tests that rely on `caplog` for those loggers may be order-dependent.
 
 ## Final summary to the Director
 

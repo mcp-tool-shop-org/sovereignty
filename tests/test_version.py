@@ -37,3 +37,17 @@ def test_version_flag_available():
     main_py = (ROOT / "sov_cli" / "main.py").read_text(encoding="utf-8")
     assert "--version" in main_py
     assert "_version_callback" in main_py
+
+
+def test_python_dash_m_entry_point_reports_version(capsys, monkeypatch):
+    """``python -m sov_cli --version`` (the PyInstaller entry) runs the app."""
+    import runpy
+    import sys
+
+    import pytest
+
+    monkeypatch.setattr(sys, "argv", ["sov", "--version"])
+    with pytest.raises(SystemExit) as exc:
+        runpy.run_module("sov_cli", run_name="__main__", alter_sys=False)
+    assert exc.value.code in (0, None)
+    assert f"sovereignty {_get_version()}" in capsys.readouterr().out

@@ -89,5 +89,20 @@ filterwarnings = [
     "ignore::DeprecationWarning:uvicorn.protocols.websockets.websockets_impl",
 ]
 
+[tool.coverage.run]
+source = ["sov_engine", "sov_transport", "sov_cli", "sov_daemon"]
+
+[tool.coverage.report]
+# CI gate: the 3.12 cell fails below this. Raising it is fine; lowering it
+# needs the Director. The only exclusions are these patterns and the
+# `# pragma: no cover - windows only` markers in sov_daemon/lifecycle.py
+# (CI runs on Linux, where those ctypes/win32 paths cannot execute).
+fail_under = 90
+exclude_also = [
+    "if TYPE_CHECKING:",
+    'if __name__ == "__main__":',
+    "raise NotImplementedError",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["sov_engine", "sov_transport", "sov_cli", "sov_daemon"]

@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **`sov --version` crashed in every PyInstaller binary.** The frozen app has no package metadata, and the `--version` fallback read `pyproject.toml` unguarded. `--version` now uses the same guarded resolver as `self-check`, the build bundles the metadata (`--copy-metadata sovereignty-game`), and the release build fails if the binary does not report its own version.
 
+### Internal
+
+- **Python line coverage 72.5% → 99.9%**, and CI now fails below 90% (`fail_under = 90` in `pyproject.toml`; `codecov.yml` sets 90% project and patch targets). About 1,070 new tests cover every CLI command, the rules, the daemon server and lifecycle, both XRPL transports and the persistence layer, all offline. Six `xfail(strict=True)` tests pin defects found along the way that are left for a decision; they are listed in `docs/handoffs/coverage-90.md`.
+
 ## [2.3.2] - 2026-09-29
 
 ### Added

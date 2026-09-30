@@ -1500,7 +1500,7 @@
           "path": "docs/cli-json-output.md"
         },
         {
-          "hash": "92b5a46efaec841ad016ef299c54fe30a00006627f1d56634153416b2cb84165",
+          "hash": "9f9ddcbb87f4eb5429651e921d33480207ab55daa464ee5deaa656de76b55a0d",
           "path": "docs/handoffs/coverage-90.md"
         },
         {
@@ -1708,7 +1708,7 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "75442374fe0ef33ef088a73a48d3e60c25a11716a7ab027b098a333f30df9485",
+          "hash": "d432c219ea8cb030b5546c7f51056aa2d038a4294e466c17a72b8f9d9147a887",
           "path": "CHANGELOG.md"
         },
         {
@@ -1772,11 +1772,15 @@
           "path": "SHIP_GATE.md"
         },
         {
+          "hash": "ae672e52bcc3a0f15e4bbac163f0b2297995d1b3ecb5fbcff48fd46902ef5a37",
+          "path": "codecov.yml"
+        },
+        {
           "hash": "240b080a44ddeddad08e0c5ec3394f7cc1cc785e00822a51bcdbfafc0d154e25",
           "path": "compose.yaml"
         },
         {
-          "hash": "7a95732ece20f99151d61799c77ee128b6f3d13b492e505768cbe34e188b280d",
+          "hash": "b39225c24d5b0d4e9feaa8e87edee4ccd05ac911c9ff735527cf313b0f770930",
           "path": "pyproject.toml"
         },
         {
@@ -12559,11 +12563,12 @@
         {
           "exports": [
             "test_changelog_contains_current_version",
+            "test_python_dash_m_entry_point_reports_version",
             "test_version_at_least_1_0_0",
             "test_version_flag_available",
             "test_version_is_semver"
           ],
-          "hash": "f845711d6575497a881254e21fc6e04ce99d95867fd4511b788beea6b8a27e62",
+          "hash": "2597b46fd539a077feb438176f1510a7dca77a41b32ce0062cbb505e2a98951b",
           "path": "tests/test_version.py"
         },
         {
@@ -14170,8 +14175,8 @@
     }
   ],
   "generatedFrom": {
-    "commit": "7c660295a2bcb55fec5f1092b9d829894dbc5def",
-    "tracked": 425
+    "commit": "f8e743028deef881de6d14de1a0dc64a50705347",
+    "tracked": 426
   },
   "landings": [
     {
