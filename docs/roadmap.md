@@ -1,6 +1,8 @@
 # Roadmap
 
-## Where we are: v2.3.4
+## Where we are: v2.3.5
+
+**v2.3.5** (2026-09-30) fixes a Linux desktop bug where a timed-out `sov daemon` command could SIGKILL every process the user owns (procps `kill` misparsed a negative pid; the shell now calls `kill(2)`), and makes the daemon's body cap answer 413 on a streamed oversized body. All six defects from the coverage work are closed.
 
 **v2.3.4** (2026-09-30) makes `sov doctor` warn about a corrupt `season.json` instead of reporting an empty season.
 

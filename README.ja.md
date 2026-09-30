@@ -235,7 +235,7 @@ SOV_DAEMON_READONLY=0 docker compose up -d
 
 ### インストール（バイナリ）
 
-**v2.3.4** が現在のリリースです。GitHub リリース **v2.3.0** には、ホイールやデスクトップアセットが含まれていませんでしたので、`pip install …==2.3.0` を指定しないでください。
+**v2.3.5** が現在のリリースです。GitHub リリース **v2.3.0** には、ホイールやデスクトップアセットが含まれていませんでしたので、`pip install …==2.3.0` を指定しないでください。
 
 - **Python / デーモン:** `pip install 'sovereignty-game[daemon]'`（デーモンの場合は2.3.2以降）。
 - **デスクトップアプリ:** CIでプラットフォームファイルがアタッチされた最新のGitHubリリース（[https://github.com/mcp-tool-shop-org/sovereignty/releases/latest](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest)）。プラットフォームジョブが失敗した場合は、ソースから実行してください（以下参照）。

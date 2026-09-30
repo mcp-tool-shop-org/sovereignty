@@ -11,7 +11,7 @@ Sovereignty ships a container image with the `sov` console and the audit/anchor 
 ghcr.io/mcp-tool-shop-org/sovereignty
 ```
 
-It is built for `linux/amd64` and `linux/arm64`, tagged by version (`2.3.4`, `2.3`, `2`) and `latest`. Each release image carries a build-provenance attestation.
+It is built for `linux/amd64` and `linux/arm64`, tagged by version (`2.3.5`, `2.3`, `2`) and `latest`. Each release image carries a build-provenance attestation.
 
 You don't need Docker to play. It suits two cases: you want the console without installing Python, or you want the daemon running as a supervised service that restarts on its own.
 
@@ -90,7 +90,7 @@ Set these in your shell or in a `.env` file next to `compose.yaml`:
 | `SOV_DAEMON_TOKEN` | fresh each start | A fixed token lets clients reconnect after a restart without re-reading the handshake. |
 | `SOV_DAEMON_LOG_FORMAT` | `human` | `json` emits one structured line per event. |
 | `SOV_LOG_LEVEL` | `WARNING` | Python log level for the daemon. |
-| `SOV_IMAGE_TAG` | `latest` | Pin an image version, e.g. `2.3.4`. |
+| `SOV_IMAGE_TAG` | `latest` | Pin an image version, e.g. `2.3.5`. |
 
 ## Attach the desktop app
 
@@ -137,7 +137,7 @@ Inside the container the daemon binds `0.0.0.0` so Docker can forward the port. 
 ## Verify the image
 
 ```bash
-gh attestation verify oci://ghcr.io/mcp-tool-shop-org/sovereignty:2.3.4 \
+gh attestation verify oci://ghcr.io/mcp-tool-shop-org/sovereignty:2.3.5 \
   --repo mcp-tool-shop-org/sovereignty
 ```
 

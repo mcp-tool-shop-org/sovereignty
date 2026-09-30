@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.3.5] - 2026-09-30
+
 ### Fixed
 
 - **Linux desktop app: a timed-out `sov daemon` command could SIGKILL every process the user owns.** The Tauri shell killed a timed-out child's process group by running `kill -KILL -<pid>`. procps-ng `kill` (Debian, Ubuntu, and most Linux distributions) keeps only the first digit of a negative pid in that position, so `-3957` became `kill(-3)` and any pid starting with 1 became `kill(-1)`: SIGKILL to the user's entire session. The shell now calls `kill(2)` directly, and refuses pid 0, pid 1, its own pid and its own process group. macOS and Windows were not affected (BSD `kill` and `taskkill`). The same bug made the Rust tests kill the CI runner, which is why `tauri-and-frontend` jobs were cancelled at 30 minutes with no log; CI now also runs `cargo test` under a hard `timeout`, with the build in its own step.

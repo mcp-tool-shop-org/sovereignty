@@ -96,21 +96,21 @@
   "changes": {
     "fileCounts": {
       "added": 0,
-      "changed": 6,
+      "changed": 22,
       "moved": 0,
-      "parts": 3,
+      "parts": 6,
       "removed": 0
     },
     "items": [
       {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-09-30; 6 files changed content.",
+        "sentence": "Nothing structural changed since 2026-09-30; 22 files changed content.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "175d33fe3ac961555a919c1f79bc47b516ddcec8",
-      "generatedAt": "2026-09-30T05:09:07.704Z"
+      "commit": "3e00fd38dc17b6687a253d55c7e9c1ee16d88a8b",
+      "generatedAt": "2026-09-30T06:00:47.710Z"
     },
     "unchanged": true
   },
@@ -166,7 +166,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 4 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "3e00fd38dc17b6687a253d55c7e9c1ee16d88a8b",
+  "commit": "9a1df32495cfcba48f2f4851ff4f29f6b5324a1f",
   "defaultBranch": "main",
   "derived": "14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
@@ -597,7 +597,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T06:00:47.710Z",
+  "generatedAt": "2026-09-30T06:11:09.421Z",
   "limits": [
     "39 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",

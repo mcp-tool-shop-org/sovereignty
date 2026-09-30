@@ -33,7 +33,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "app",
-      "qualifyingSourceCommits": 16,
+      "qualifyingSourceCommits": 17,
       "rebaseline": null
     },
     {
@@ -311,8 +311,8 @@
         "path": ".github/scripts/stage-tauri-artifacts.sh"
       },
       {
-        "commits": 22,
-        "lines": 638,
+        "commits": 23,
+        "lines": 655,
         "path": ".github/workflows/ci.yml"
       },
       {
@@ -356,13 +356,13 @@
         "path": "BUILD.md"
       },
       {
-        "commits": 36,
-        "lines": 504,
+        "commits": 37,
+        "lines": 505,
         "path": "CHANGELOG.md"
       },
       {
-        "commits": 24,
-        "lines": 256,
+        "commits": 25,
+        "lines": 258,
         "path": "CLAUDE.md"
       },
       {
@@ -461,13 +461,13 @@
         "path": "app/src-tauri/.cargo/audit.toml"
       },
       {
-        "commits": 5,
-        "lines": 5508,
+        "commits": 6,
+        "lines": 5509,
         "path": "app/src-tauri/Cargo.lock"
       },
       {
-        "commits": 3,
-        "lines": 31,
+        "commits": 4,
+        "lines": 35,
         "path": "app/src-tauri/Cargo.toml"
       },
       {
@@ -751,8 +751,8 @@
         "path": "app/src-tauri/src/config.rs"
       },
       {
-        "commits": 9,
-        "lines": 1182,
+        "commits": 10,
+        "lines": 1286,
         "path": "app/src-tauri/src/daemon.rs"
       },
       {
@@ -1416,8 +1416,8 @@
         "path": "assets/print/source/vendor/react.production.min.js"
       },
       {
-        "commits": 20,
-        "lines": 346,
+        "commits": 21,
+        "lines": 354,
         "path": "atlas/README.md"
       },
       {
@@ -1426,18 +1426,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 20,
-        "lines": 1509,
+        "commits": 21,
+        "lines": 1525,
         "path": "atlas/page.json"
       },
       {
-        "commits": 20,
-        "lines": 4709,
+        "commits": 21,
+        "lines": 4805,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 20,
-        "lines": 19703,
+        "commits": 21,
+        "lines": 19724,
         "path": "atlas/structure.json"
       },
       {
@@ -2251,9 +2251,9 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-09-30T06:00:47.710Z",
+  "generatedAt": "2026-09-30T06:11:09.421Z",
   "generatedFrom": {
-    "commit": "3e00fd38dc17b6687a253d55c7e9c1ee16d88a8b"
+    "commit": "9a1df32495cfcba48f2f4851ff4f29f6b5324a1f"
   },
   "pairs": [
     {
@@ -2448,72 +2448,72 @@
     {
       "a": "atlas/README.md",
       "b": "atlas/page.json",
-      "either": 20,
-      "shared": 20,
+      "either": 21,
+      "shared": 21,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/statistics.json",
-      "either": 20,
-      "shared": 20,
+      "either": 21,
+      "shared": 21,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/structure.json",
-      "either": 20,
-      "shared": 20,
+      "either": 21,
+      "shared": 21,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "docs/handoffs/coverage-90.md",
-      "either": 20,
+      "either": 21,
       "shared": 11,
-      "strength": 0.55
+      "strength": 0.52381
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/statistics.json",
-      "either": 20,
-      "shared": 20,
+      "either": 21,
+      "shared": 21,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/structure.json",
-      "either": 20,
-      "shared": 20,
+      "either": 21,
+      "shared": 21,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "docs/handoffs/coverage-90.md",
-      "either": 20,
+      "either": 21,
       "shared": 11,
-      "strength": 0.55
+      "strength": 0.52381
     },
     {
       "a": "atlas/statistics.json",
       "b": "atlas/structure.json",
-      "either": 20,
-      "shared": 20,
+      "either": 21,
+      "shared": 21,
       "strength": 1
     },
     {
       "a": "atlas/statistics.json",
       "b": "docs/handoffs/coverage-90.md",
-      "either": 20,
+      "either": 21,
       "shared": 11,
-      "strength": 0.55
+      "strength": 0.52381
     },
     {
       "a": "atlas/structure.json",
       "b": "docs/handoffs/coverage-90.md",
-      "either": 20,
+      "either": 21,
       "shared": 11,
-      "strength": 0.55
+      "strength": 0.52381
     },
     {
       "a": "docs/roadmap.md",
@@ -2568,16 +2568,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-09-30T01:09:15-04:00",
+    "headDate": "2026-09-30T02:01:04-04:00",
     "inScopeFiles": 431,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 117,
+    "qualifyingCommits": 118,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-03T05:09:15.000Z",
+    "since": "2026-04-03T06:01:04.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",
