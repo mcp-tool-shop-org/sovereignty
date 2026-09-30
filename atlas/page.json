@@ -95,24 +95,53 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 0,
-      "changed": 10,
+      "added": 1,
+      "changed": 0,
       "moved": 0,
-      "parts": 2,
+      "parts": 1,
       "removed": 0
     },
     "items": [
       {
+        "kind": "landing",
+        "sentence": "sov_cli/ is now read by docs/handoffs/coverage-90.md.",
+        "subjects": [
+          "sov_cli/",
+          "docs/handoffs/coverage-90.md"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "sov_daemon/ is now also read by docs/handoffs/coverage-90.md.",
+        "subjects": [
+          "sov_daemon/",
+          "docs/handoffs/coverage-90.md"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "sov_engine/ is now read by docs/handoffs/coverage-90.md.",
+        "subjects": [
+          "sov_engine/",
+          "docs/handoffs/coverage-90.md"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "And 1 more new writer or reader of a place.",
+        "subjects": []
+      },
+      {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-09-30; 10 files changed content.",
+        "sentence": "1 file added, across 1 part.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "e85b0672c389c2a2e1cc88d3d6226c8a55e99d86",
-      "generatedAt": "2026-09-30T02:30:53.478Z"
+      "commit": "30b3925fb718fa4fc8a2808f6c822b257910aa3c",
+      "generatedAt": "2026-09-30T02:36:42.617Z"
     },
-    "unchanged": true
+    "unchanged": false
   },
   "changesTogether": [
     {
@@ -166,7 +195,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "30b3925fb718fa4fc8a2808f6c822b257910aa3c",
+  "commit": "0184f5430f3df6522cbaabd7da107c338cd30537",
   "defaultBranch": "main",
   "derived": "14 parts, mostly Python (113 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
@@ -597,7 +626,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T02:36:42.617Z",
+  "generatedAt": "2026-09-30T02:42:46.568Z",
   "limits": [
     "28 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",

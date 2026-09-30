@@ -1500,6 +1500,10 @@
           "path": "docs/cli-json-output.md"
         },
         {
+          "hash": "be964dea860d7ec8c27f2a78a6ea654a524fb42d37f7c01f312552d28ffa7182",
+          "path": "docs/handoffs/coverage-90.md"
+        },
+        {
           "hash": "00a9663ba98e8e5891de139790f3ad6880d5ea50690f3657375592627e5b7de7",
           "path": "docs/league_night.md"
         },
@@ -13356,8 +13360,8 @@
     }
   ],
   "generatedFrom": {
-    "commit": "30b3925fb718fa4fc8a2808f6c822b257910aa3c",
-    "tracked": 416
+    "commit": "0184f5430f3df6522cbaabd7da107c338cd30537",
+    "tracked": 417
   },
   "landings": [
     {
@@ -14210,6 +14214,17 @@
     {
       "readers": [
         {
+          "by": "docs/handoffs/coverage-90.md",
+          "call": "--cov",
+          "confidence": "text"
+        }
+      ],
+      "target": "sov_cli",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
           "by": "scripts/check-voice.sh",
           "call": "literal",
           "confidence": "text"
@@ -14263,6 +14278,11 @@
     {
       "readers": [
         {
+          "by": "docs/handoffs/coverage-90.md",
+          "call": "--cov",
+          "confidence": "text"
+        },
+        {
           "by": "tests/test_daemon_amend_wave9.py",
           "call": "rglob",
           "confidence": "ast",
@@ -14300,6 +14320,28 @@
         }
       ],
       "target": "sov_daemon/server.py",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "docs/handoffs/coverage-90.md",
+          "call": "--cov",
+          "confidence": "text"
+        }
+      ],
+      "target": "sov_engine",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "docs/handoffs/coverage-90.md",
+          "call": "--cov",
+          "confidence": "text"
+        }
+      ],
+      "target": "sov_transport",
       "writers": []
     },
     {
