@@ -1500,7 +1500,7 @@
           "path": "docs/cli-json-output.md"
         },
         {
-          "hash": "1bd9a3f19306cadac9ce21619f68bd5ecbd25c7ef8eac0513b24544d4f24afd1",
+          "hash": "af01ceafafa17c34cccd1705c7d2afd8aa289251a4f1f6cd66cd83a29a305b34",
           "path": "docs/handoffs/coverage-90.md"
         },
         {
@@ -10460,7 +10460,7 @@
       "name": "sov_engine",
       "origin": "authored",
       "role": "code",
-      "testedBy": 56,
+      "testedBy": 57,
       "unresolvedSites": 0
     },
     {
@@ -11886,6 +11886,105 @@
         },
         {
           "exports": [
+            "test_apologize_needs_a_coin_and_only_works_once",
+            "test_bank_spaces_pay_out",
+            "test_big_order_raises_all_campfire_prices",
+            "test_boom_town_gives_everyone_a_coin",
+            "test_broken_bridge_flags_skip_and_roll_consumes_it",
+            "test_builder_gates_on_rep_then_coins_then_builds",
+            "test_campfire_upgrade_hint_is_locked",
+            "test_check_treaty_deadlines_auto_keeps_each_treaty_once",
+            "test_check_winner_records_winner_and_log",
+            "test_crossroads_draws_a_deal_and_discards_it",
+            "test_crossroads_with_empty_deal_deck",
+            "test_deck_draw_returns_none_when_everything_is_empty",
+            "test_deck_reshuffles_discards_when_draw_pile_is_empty",
+            "test_every_event_card_has_a_handler",
+            "test_festival_converts_a_coin_to_rep",
+            "test_festival_refuses_when_broke",
+            "test_game_rng_choice_and_randint_follow_the_seeded_stream",
+            "test_game_rng_setstate_rejects_malformed_state",
+            "test_game_rng_state_round_trips",
+            "test_good_news_gives_nothing_to_a_non_helper",
+            "test_good_news_rewards_a_helper",
+            "test_harvest_moon_tops_up_the_poorest_player",
+            "test_has_won_is_false_for_unknown_win_condition",
+            "test_help_desk_refuses_a_penniless_helper",
+            "test_interactive_spaces_change_nothing",
+            "test_keep_and_break_known_promises_move_reputation",
+            "test_keep_and_break_unknown_promise_are_rejected",
+            "test_landing_exactly_on_campfire_does_not_double_pay",
+            "test_lost_wallet_and_awkward_favor_and_old_friend_name_current_player",
+            "test_lucky_find_chains_into_the_next_card",
+            "test_lucky_find_with_empty_deck",
+            "test_market_actions_refuse_on_campfire",
+            "test_market_all_down_shifts_every_price",
+            "test_market_buy_and_sell_reject_unknown_resource",
+            "test_market_buy_out_of_stock_and_too_poor",
+            "test_market_buy_then_sell_round_trip",
+            "test_market_events_are_harmless_without_a_market_board",
+            "test_market_feast_takes_one_food_from_each_holder",
+            "test_market_feast_with_no_food_anywhere",
+            "test_market_fire_never_drives_supply_negative",
+            "test_market_prices_as_dict_and_board_edge_cases",
+            "test_market_restock_and_fire_move_supply_by_two",
+            "test_market_rulesets_start_with_a_board_and_resources",
+            "test_market_sell_without_stock",
+            "test_market_status_reports_price_and_supply",
+            "test_message_only_events_leave_state_untouched",
+            "test_moving_without_wrapping_pays_nothing",
+            "test_next_treaty_id_ignores_malformed_ids",
+            "test_parse_stake_accepts",
+            "test_parse_stake_rejects",
+            "test_passing_campfire_pays_one_coin",
+            "test_player_count_bounds_are_enforced",
+            "test_redeem_voucher_with_unknown_party",
+            "test_resolve_space_covers_every_space_kind",
+            "test_rumor_costs_current_player_one_rep",
+            "test_rumor_mill_draws_and_resolves_an_event",
+            "test_rumor_mill_with_no_events_left",
+            "test_shortcut_trades_rep_for_coins",
+            "test_single_resource_price_shift_events",
+            "test_stake_helpers_move_resources",
+            "test_storm_charges_coins_then_reputation",
+            "test_supply_delay_uses_description_verbatim",
+            "test_swindle_names_current_player",
+            "test_tall_tale_boundary",
+            "test_taxman_costs_a_coin_or_else_a_rep",
+            "test_treaty_break_forfeits_breakers_stake",
+            "test_treaty_break_rejects_outsiders_and_missing_players",
+            "test_treaty_keep_returns_stakes_and_pays_rep",
+            "test_treaty_make_enforces_active_treaty_limits_for_both_parties",
+            "test_treaty_make_rejects_self_treaty",
+            "test_treaty_make_rejects_unaffordable_stakes",
+            "test_treaty_make_requires_some_stake",
+            "test_trouble_costs_a_coin_or_else_a_rep",
+            "test_trust_crisis_hits_only_low_rep_players",
+            "test_trust_crisis_with_nobody_affected",
+            "test_unknown_event_effect_reports_its_id",
+            "test_unknown_space_kind_falls_through",
+            "test_upgrade_with_resources_builder_rep_gate",
+            "test_upgrade_with_resources_needs_coins_then_resource_then_succeeds",
+            "test_upgrade_with_resources_rejects_unknown_space",
+            "test_windfall_pays_three_coins",
+            "test_workshop_buys_an_upgrade",
+            "test_workshop_refuses_when_broke"
+          ],
+          "hash": "d0561370499b6126cdd7eebbaaecd21f320d5af78f1ba35cef33d9aad079e802",
+          "importsFiles": [
+            "sov_engine/content.py",
+            "sov_engine/models.py",
+            "sov_engine/rng.py",
+            "sov_engine/rules/__init__.py",
+            "sov_engine/rules/campfire.py",
+            "sov_engine/rules/market_day.py",
+            "sov_engine/rules/town_hall.py",
+            "sov_engine/rules/treaty_table.py"
+          ],
+          "path": "tests/test_rules_coverage.py"
+        },
+        {
+          "exports": [
             "test_migrations_registry_is_empty_in_v2_1",
             "test_read_versioned_forward_bump_raises",
             "test_read_versioned_missing_schema_version_raises",
@@ -12599,7 +12698,7 @@
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 77
+          "files": 78
         }
       ],
       "readers": [],
@@ -13723,8 +13822,8 @@
     }
   ],
   "generatedFrom": {
-    "commit": "65453b5492882980c599bfaada3c89ea289e2451",
-    "tracked": 420
+    "commit": "84d51cd976f1eb3d5e878ab20e51eb1a34352003",
+    "tracked": 421
   },
   "landings": [
     {
@@ -14779,7 +14878,7 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 114,
+  "testFiles": 115,
   "unassigned": [],
   "unseen": [
     {

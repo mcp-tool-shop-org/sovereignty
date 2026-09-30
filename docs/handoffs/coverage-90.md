@@ -220,8 +220,8 @@ If the fix would change behaviour a player or operator sees, or it touches the d
 | After | Missed | Total % | Commit |
 |---|---:|---:|---|
 | Baseline | 1643 | 72.5 | `0184f54` |
-| Phase 1 | 660 | 89.0 | (this commit) |
-| Phase 2 | | | |
+| Phase 1 | 660 | 89.0 | `84d51cd` |
+| Phase 2 | 539 | 91.0 | (this commit) |
 | Phase 3 | | | |
 | Phase 4 | | | |
 | Phase 5 | | | |
