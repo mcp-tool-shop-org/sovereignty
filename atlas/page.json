@@ -95,81 +95,45 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 10,
-      "changed": 8,
+      "added": 1,
+      "changed": 3,
       "moved": 0,
-      "parts": 5,
-      "removed": 0
+      "parts": 3,
+      "removed": 1
     },
     "items": [
       {
         "kind": "door",
-        "sentence": "Container image (.github/workflows/docker.yml) is a new door. It starts when a release is published; or by hand. It runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py. It checks LICENSE, README.md, docker/healthcheck.py and 5 more.",
+        "sentence": "npm launcher (.github/workflows/npm.yml) is no longer a door.",
         "subjects": [
-          ".github/workflows/docker.yml",
-          "LICENSE",
-          "README.md",
-          "docker/entrypoint.sh",
-          "docker/healthcheck.py",
-          "pyproject.toml",
-          "sov_cli/",
-          "sov_cli/main.py",
-          "sov_daemon/",
-          "sov_daemon/__main__.py",
-          "sov_engine/",
-          "sov_transport/"
+          ".github/workflows/npm.yml"
         ]
       },
       {
         "kind": "door",
-        "sentence": "npm launcher (.github/workflows/npm.yml) is a new door. It starts when a release is published; or by hand. It runs npm/test/.",
+        "sentence": "npm launcher (.github/workflows/release.yml) is a new door. It starts when a release is published; or by hand. It runs npm/test/.",
         "subjects": [
-          ".github/workflows/npm.yml",
+          ".github/workflows/release.yml",
           "npm/test/"
         ]
       },
       {
         "kind": "landing",
-        "sentence": "npm/bin/sovereignty.js is now read by npm/test/launcher.test.js.",
-        "subjects": [
-          "npm/bin/sovereignty.js",
-          "npm/test/launcher.test.js"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "npm/package.json is now read by .github/workflows/npm.yml, npm/bin/sovereignty.js and tests/test_npm_launcher_in_sync.py.",
+        "sentence": "npm/package.json is now also read by .github/workflows/release.yml.",
         "subjects": [
           "npm/package.json",
-          ".github/workflows/npm.yml",
-          "npm/bin/sovereignty.js",
-          "tests/test_npm_launcher_in_sync.py"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "pyproject.toml is now also read by tests/test_npm_launcher_in_sync.py.",
-        "subjects": [
-          "pyproject.toml",
-          "tests/test_npm_launcher_in_sync.py"
-        ]
-      },
-      {
-        "kind": "part",
-        "sentence": "npm is a new part, drawn from `npm/**`.",
-        "subjects": [
-          "npm"
+          ".github/workflows/release.yml"
         ]
       },
       {
         "kind": "counts",
-        "sentence": "10 files added and 8 changed content, across 5 parts.",
+        "sentence": "1 file added, 1 removed and 3 changed content, across 3 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "c9944dcf0cbf76042173dd0a61a2362d30b0bb09",
-      "generatedAt": "2026-09-30T01:33:21.388Z"
+      "commit": "269afcafeb6b38ac1536612828deda2586734664",
+      "generatedAt": "2026-09-30T02:17:03.177Z"
     },
     "unchanged": false
   },
@@ -206,21 +170,6 @@
     },
     {
       "a": "sov_cli/errors.py",
-      "b": "sov_cli/main.py",
-      "either": 20,
-      "partLabels": [
-        "sov_cli",
-        "sov_cli"
-      ],
-      "parts": [
-        "sov_cli",
-        "sov_cli"
-      ],
-      "relation": "inside",
-      "shared": 10
-    },
-    {
-      "a": "sov_cli/errors.py",
       "b": "sov_transport/xrpl_testnet.py",
       "either": 10,
       "partLabels": [
@@ -240,7 +189,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "269afcafeb6b38ac1536612828deda2586734664",
+  "commit": "e85b0672c389c2a2e1cc88d3d6226c8a55e99d86",
   "defaultBranch": "main",
   "derived": "14 parts, mostly Python (113 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
@@ -520,8 +469,8 @@
       "checks": [],
       "checksCount": 0,
       "checksMore": 0,
-      "file": ".github/workflows/npm.yml",
-      "id": ".github/workflows/npm.yml",
+      "file": ".github/workflows/release.yml",
+      "id": ".github/workflows/release.yml",
       "landings": [],
       "name": "npm launcher",
       "pushes": false,
@@ -671,7 +620,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T02:17:03.177Z",
+  "generatedAt": "2026-09-30T02:30:53.478Z",
   "limits": [
     "28 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",

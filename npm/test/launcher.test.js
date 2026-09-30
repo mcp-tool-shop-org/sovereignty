@@ -1,7 +1,7 @@
 "use strict";
 
 // Shape checks only. The download path hits GitHub Releases and is exercised
-// by the post-publish smoke in .github/workflows/npm.yml.
+// by the post-publish smoke in .github/workflows/release.yml.
 
 const { test } = require("node:test");
 const assert = require("node:assert/strict");

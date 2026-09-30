@@ -5,8 +5,10 @@
 # and checksums. publish.yml attaches them on the same release event; this
 # workflow waits for them (andon) and then publishes.
 #
-# Auth: npm Trusted Publishing (OIDC) bound to THIS filename (npm.yml), no
-# environment. NPM_TOKEN stays as the fallback until the first OIDC publish is
+# Auth: npm Trusted Publishing (OIDC). The binding on npmjs.com names the
+# filename release.yml (no environment) -- that name is load-bearing; do not
+# rename this file. (publish.yml is the PyPI/binaries workflow; its PyPI
+# Trusted Publisher binds to publish.yml the same way.) NPM_TOKEN stays as the fallback until the first OIDC publish is
 # confirmed (`npm view @mcptoolshop/sovereignty@<v> --json` shows a
 # trustedPublisher block); then delete the secret and the env line below.
 #

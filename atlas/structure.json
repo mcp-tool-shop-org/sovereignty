@@ -133,16 +133,16 @@
           "path": ".github/workflows/docker.yml"
         },
         {
-          "hash": "b6ce3c26270e5520bcdc61c3f0e6d2fd720e8eb656b1bb18a44c5bb47e666624",
-          "path": ".github/workflows/npm.yml"
-        },
-        {
           "hash": "c520bd041ca1fc8603ab43704d8105c13169f66ba0002effa097b76c2d3c2117",
           "path": ".github/workflows/pages.yml"
         },
         {
           "hash": "1ea05c5b1d65e786385d1c95bcec9660e8fef0675a0372a45fd4bc972634c837",
           "path": ".github/workflows/publish.yml"
+        },
+        {
+          "hash": "d0f4445ca92be19270bc50733b8001cf0b8a24dd5e928af65d2b0846a929a6fd",
+          "path": ".github/workflows/release.yml"
         }
       ],
       "globs": [
@@ -1661,7 +1661,7 @@
           "path": "npm/package.json"
         },
         {
-          "hash": "19f14cf5a0a24cf88b4e823f1a5b99ffd03dc705b6d9791819d3097f969183dd",
+          "hash": "0ed55ae8c29c4b65d56d7547729643b427402042a371f1d9d227226ed011a2fe",
           "path": "npm/test/launcher.test.js"
         }
       ],
@@ -1704,11 +1704,11 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "c1c46d715a832903b528759a939ab27bdfb974c23195eb63fd6908108b60852c",
+          "hash": "75442374fe0ef33ef088a73a48d3e60c25a11716a7ab027b098a333f30df9485",
           "path": "CHANGELOG.md"
         },
         {
-          "hash": "1877d1309937f6a600487893d04675eb58d824b91ccebf86d7f43b5e93b2d855",
+          "hash": "28a589e55ed7d4ef43ae50a5437a44f07f2649db1241fe4cce3f056b94aaaaf4",
           "path": "CLAUDE.md"
         },
         {
@@ -12733,108 +12733,6 @@
       "checksCount": 0,
       "commands": [
         {
-          "job": "publish",
-          "step": "Verify launcher version matches tag",
-          "text": "VERSION=$(node -p \"require('./npm/package.json').version\")\nif [ \"v$VERSION\" != \"$RELEASE_TAG\" ]; then\n  echo \"::error::npm/package.json is $VERSION but the tag is $RELEASE_TAG\"\n  exit 1\nfi\n"
-        },
-        {
-          "job": "publish",
-          "step": "Wait for release binaries",
-          "text": "VERSION=\"${RELEASE_TAG#v}\"\nwant=\"checksums-${VERSION}.txt sovereignty-${VERSION}-linux-x64 sovereignty-${VERSION}-darwin-arm64 sovereignty-${VERSION}-win-x64.exe\"\nfor attempt in $(seq 1 90); do\n  have=$(gh release view \"$RELEASE_TAG\" --repo \"$GITHUB_REPOSITORY\" --json assets --jq '.assets[].name' 2>/dev/null || true)\n  missing=\"\"\n  for a in $want; do grep -qx \"$a\" <<<\"$have\" || missing=\"$missing $a\"; done\n  if [ -z \"$missing\" ]; then echo \"All launcher assets present.\"; exit 0; fi\n  echo \"attempt $attempt: waiting for$missing\"\n  sleep 30\ndone\necho \"::error::Release $RELEASE_TAG never carried:$missing\"\nexit 1\n"
-        },
-        {
-          "job": "publish",
-          "step": "Install and test",
-          "text": "npm ci\nnpm test\n"
-        },
-        {
-          "job": "publish",
-          "step": "Publish",
-          "text": "npm publish --provenance --access public"
-        },
-        {
-          "job": "publish",
-          "step": "Smoke test npx",
-          "text": "VERSION=\"${RELEASE_TAG#v}\"\ncd \"$(mktemp -d)\"\nfor attempt in $(seq 1 20); do\n  if OUT=$(npx --yes \"@mcptoolshop/sovereignty@${VERSION}\" self-check --json 2>/dev/null); then\n    STATUS=$(jq -r .status <<<\"$OUT\")\n    echo \"self-check status: $STATUS\"\n    case \"$STATUS\" in ok|warn) exit 0 ;; esac\n    echo \"::error::npx self-check reported $STATUS\"\n    exit 1\n  fi\n  echo \"attempt $attempt: package not readable yet\"\n  sleep 15\ndone\necho \"::error::npx @mcptoolshop/sovereignty@${VERSION} never ran\"\nexit 1\n"
-        }
-      ],
-      "elsewhere": [],
-      "file": ".github/workflows/npm.yml",
-      "landings": [],
-      "mentions": [
-        {
-          "job": "publish",
-          "path": "npm/package.json"
-        }
-      ],
-      "name": "npm launcher",
-      "permissions": [
-        "contents:read",
-        "id-token:write"
-      ],
-      "pushes": false,
-      "reach": [
-        {
-          "boundary": "npm",
-          "depth": 0,
-          "files": 1
-        }
-      ],
-      "readers": [],
-      "runs": [
-        {
-          "directory": true,
-          "job": "publish",
-          "matched": true,
-          "path": "npm/test/",
-          "runKind": "executes"
-        }
-      ],
-      "runsCount": 1,
-      "secrets": [
-        "NPM_TOKEN"
-      ],
-      "sends": {
-        "deploysPages": false,
-        "dispatchesTo": [],
-        "opensIssues": false,
-        "opensIssuesOnFailure": false,
-        "opensPullRequests": false,
-        "packages": [
-          {
-            "dir": "npm",
-            "name": "@mcptoolshop/sovereignty",
-            "registry": "npm"
-          }
-        ],
-        "publishes": true,
-        "publishesTo": [
-          "npm"
-        ],
-        "releases": false
-      },
-      "stages": [],
-      "triggers": [
-        {
-          "event": "release",
-          "types": [
-            "published"
-          ]
-        },
-        {
-          "event": "workflow_dispatch"
-        }
-      ],
-      "uses": [
-        "actions/checkout",
-        "actions/setup-node"
-      ],
-      "usesWorkflowToken": true
-    },
-    {
-      "checksCount": 0,
-      "commands": [
-        {
           "job": "build",
           "step": "Install site dependencies",
           "text": "npm ci"
@@ -13170,6 +13068,108 @@
       "usesWorkflowToken": false
     },
     {
+      "checksCount": 0,
+      "commands": [
+        {
+          "job": "publish",
+          "step": "Verify launcher version matches tag",
+          "text": "VERSION=$(node -p \"require('./npm/package.json').version\")\nif [ \"v$VERSION\" != \"$RELEASE_TAG\" ]; then\n  echo \"::error::npm/package.json is $VERSION but the tag is $RELEASE_TAG\"\n  exit 1\nfi\n"
+        },
+        {
+          "job": "publish",
+          "step": "Wait for release binaries",
+          "text": "VERSION=\"${RELEASE_TAG#v}\"\nwant=\"checksums-${VERSION}.txt sovereignty-${VERSION}-linux-x64 sovereignty-${VERSION}-darwin-arm64 sovereignty-${VERSION}-win-x64.exe\"\nfor attempt in $(seq 1 90); do\n  have=$(gh release view \"$RELEASE_TAG\" --repo \"$GITHUB_REPOSITORY\" --json assets --jq '.assets[].name' 2>/dev/null || true)\n  missing=\"\"\n  for a in $want; do grep -qx \"$a\" <<<\"$have\" || missing=\"$missing $a\"; done\n  if [ -z \"$missing\" ]; then echo \"All launcher assets present.\"; exit 0; fi\n  echo \"attempt $attempt: waiting for$missing\"\n  sleep 30\ndone\necho \"::error::Release $RELEASE_TAG never carried:$missing\"\nexit 1\n"
+        },
+        {
+          "job": "publish",
+          "step": "Install and test",
+          "text": "npm ci\nnpm test\n"
+        },
+        {
+          "job": "publish",
+          "step": "Publish",
+          "text": "npm publish --provenance --access public"
+        },
+        {
+          "job": "publish",
+          "step": "Smoke test npx",
+          "text": "VERSION=\"${RELEASE_TAG#v}\"\ncd \"$(mktemp -d)\"\nfor attempt in $(seq 1 20); do\n  if OUT=$(npx --yes \"@mcptoolshop/sovereignty@${VERSION}\" self-check --json 2>/dev/null); then\n    STATUS=$(jq -r .status <<<\"$OUT\")\n    echo \"self-check status: $STATUS\"\n    case \"$STATUS\" in ok|warn) exit 0 ;; esac\n    echo \"::error::npx self-check reported $STATUS\"\n    exit 1\n  fi\n  echo \"attempt $attempt: package not readable yet\"\n  sleep 15\ndone\necho \"::error::npx @mcptoolshop/sovereignty@${VERSION} never ran\"\nexit 1\n"
+        }
+      ],
+      "elsewhere": [],
+      "file": ".github/workflows/release.yml",
+      "landings": [],
+      "mentions": [
+        {
+          "job": "publish",
+          "path": "npm/package.json"
+        }
+      ],
+      "name": "npm launcher",
+      "permissions": [
+        "contents:read",
+        "id-token:write"
+      ],
+      "pushes": false,
+      "reach": [
+        {
+          "boundary": "npm",
+          "depth": 0,
+          "files": 1
+        }
+      ],
+      "readers": [],
+      "runs": [
+        {
+          "directory": true,
+          "job": "publish",
+          "matched": true,
+          "path": "npm/test/",
+          "runKind": "executes"
+        }
+      ],
+      "runsCount": 1,
+      "secrets": [
+        "NPM_TOKEN"
+      ],
+      "sends": {
+        "deploysPages": false,
+        "dispatchesTo": [],
+        "opensIssues": false,
+        "opensIssuesOnFailure": false,
+        "opensPullRequests": false,
+        "packages": [
+          {
+            "dir": "npm",
+            "name": "@mcptoolshop/sovereignty",
+            "registry": "npm"
+          }
+        ],
+        "publishes": true,
+        "publishesTo": [
+          "npm"
+        ],
+        "releases": false
+      },
+      "stages": [],
+      "triggers": [
+        {
+          "event": "release",
+          "types": [
+            "published"
+          ]
+        },
+        {
+          "event": "workflow_dispatch"
+        }
+      ],
+      "uses": [
+        "actions/checkout",
+        "actions/setup-node"
+      ],
+      "usesWorkflowToken": true
+    },
+    {
       "app": "desktop",
       "checksCount": 0,
       "commands": [],
@@ -13358,7 +13358,7 @@
     }
   ],
   "generatedFrom": {
-    "commit": "269afcafeb6b38ac1536612828deda2586734664",
+    "commit": "e85b0672c389c2a2e1cc88d3d6226c8a55e99d86",
     "tracked": 416
   },
   "landings": [
@@ -14113,7 +14113,7 @@
     {
       "readers": [
         {
-          "by": ".github/workflows/npm.yml"
+          "by": ".github/workflows/release.yml"
         },
         {
           "by": "npm/bin/sovereignty.js",

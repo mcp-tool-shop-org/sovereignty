@@ -1,20 +1,17 @@
 # sovereignty: how it works
 
-Mapped at 2026-09-30 from commit 269afca.
+Mapped at 2026-09-30 from commit e85b067.
 
 ## What this is
 
 14 parts, mostly Python (113 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
 
-## What changed since 2026-09-30 (c9944dc)
+## What changed since 2026-09-30 (269afca)
 
-- Container image (.github/workflows/docker.yml) is a new door. It starts when a release is published; or by hand. It runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py. It checks LICENSE, README.md, docker/healthcheck.py and 5 more.
-- npm launcher (.github/workflows/npm.yml) is a new door. It starts when a release is published; or by hand. It runs npm/test/.
-- npm/bin/sovereignty.js is now read by npm/test/launcher.test.js.
-- npm/package.json is now read by .github/workflows/npm.yml, npm/bin/sovereignty.js and tests/test_npm_launcher_in_sync.py.
-- pyproject.toml is now also read by tests/test_npm_launcher_in_sync.py.
-- npm is a new part, drawn from `npm/**`.
-- 10 files added and 8 changed content, across 5 parts.
+- npm launcher (.github/workflows/npm.yml) is no longer a door.
+- npm launcher (.github/workflows/release.yml) is a new door. It starts when a release is published; or by hand. It runs npm/test/.
+- npm/package.json is now also read by .github/workflows/release.yml.
+- 1 file added, 1 removed and 3 changed content, across 3 parts.
 
 ## What comes in
 
@@ -64,7 +61,6 @@ CI writes only to .sov/games/ and app/src-tauri/gen/schemas, which are not track
 
 - **sov_engine/hashing.py** and **tests/test_proofs.py** changed together in 6 of 8 commits, and the tests part imports the sov_engine part.
 - **sov_transport/base.py** and **sov_transport/xrpl_testnet.py** changed together in 4 of 6 commits, inside the sov_transport part.
-- **sov_cli/errors.py** and **sov_cli/main.py** changed together in 10 of 20 commits, inside the sov_cli part.
 - **sov_cli/errors.py** and **sov_transport/xrpl_testnet.py** changed together in 5 of 10 commits, and the sov_cli part imports the sov_transport part.
 
 Confidence is low: fewer than 25 source files reach 10 revisions in the window.
