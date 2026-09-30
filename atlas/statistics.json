@@ -33,7 +33,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "app",
-      "qualifyingSourceCommits": 14,
+      "qualifyingSourceCommits": 15,
       "rebaseline": null
     },
     {
@@ -50,6 +50,22 @@
       "highWater": null,
       "name": "assets",
       "qualifyingSourceCommits": 2,
+      "rebaseline": null
+    },
+    {
+      "breakage": {
+        "coChangesOnly": [],
+        "collapsed": false,
+        "confidence": "low",
+        "importsAndCoChanges": [],
+        "importsOnly": []
+      },
+      "cohesion": null,
+      "cohesionDropped": false,
+      "confidence": "low",
+      "highWater": null,
+      "name": "docker",
+      "qualifyingSourceCommits": 1,
       "rebaseline": null
     },
     {
@@ -130,12 +146,12 @@
           "tests"
         ]
       },
-      "cohesion": 0,
+      "cohesion": 0.5,
       "cohesionDropped": false,
       "confidence": "low",
       "highWater": null,
       "name": "sov_cli",
-      "qualifyingSourceCommits": 22,
+      "qualifyingSourceCommits": 20,
       "rebaseline": null
     },
     {
@@ -154,7 +170,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "sov_daemon",
-      "qualifyingSourceCommits": 11,
+      "qualifyingSourceCommits": 13,
       "rebaseline": null
     },
     {
@@ -176,7 +192,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "sov_engine",
-      "qualifyingSourceCommits": 17,
+      "qualifyingSourceCommits": 16,
       "rebaseline": null
     },
     {
@@ -216,13 +232,23 @@
       "confidence": "full",
       "highWater": null,
       "name": "tests",
-      "qualifyingSourceCommits": 31,
+      "qualifyingSourceCommits": 30,
       "rebaseline": null
     }
   ],
   "churn": {
     "definition": "commits is how many commits in the window touch the file, including merges and commits dropped from coupling. lines is added plus deleted in those commits.",
     "files": [
+      {
+        "commits": 1,
+        "lines": 13,
+        "path": ".dockerignore"
+      },
+      {
+        "commits": 1,
+        "lines": 4,
+        "path": ".gitattributes"
+      },
       {
         "commits": 1,
         "lines": 47,
@@ -269,8 +295,8 @@
         "path": ".github/scripts/stage-tauri-artifacts.sh"
       },
       {
-        "commits": 19,
-        "lines": 539,
+        "commits": 21,
+        "lines": 563,
         "path": ".github/workflows/ci.yml"
       },
       {
@@ -280,7 +306,7 @@
       },
       {
         "commits": 17,
-        "lines": 613,
+        "lines": 686,
         "path": ".github/workflows/publish.yml"
       },
       {
@@ -289,8 +315,8 @@
         "path": ".github/workflows/release.yml"
       },
       {
-        "commits": 4,
-        "lines": 9,
+        "commits": 3,
+        "lines": 8,
         "path": ".gitignore"
       },
       {
@@ -304,8 +330,8 @@
         "path": "BUILD.md"
       },
       {
-        "commits": 28,
-        "lines": 505,
+        "commits": 27,
+        "lines": 448,
         "path": "CHANGELOG.md"
       },
       {
@@ -317,6 +343,11 @@
         "commits": 3,
         "lines": 117,
         "path": "CONTRIBUTING.md"
+      },
+      {
+        "commits": 1,
+        "lines": 65,
+        "path": "Dockerfile"
       },
       {
         "commits": 10,
@@ -344,8 +375,8 @@
         "path": "README.ja.md"
       },
       {
-        "commits": 28,
-        "lines": 478,
+        "commits": 27,
+        "lines": 438,
         "path": "README.md"
       },
       {
@@ -364,8 +395,8 @@
         "path": "SCORECARD.md"
       },
       {
-        "commits": 8,
-        "lines": 191,
+        "commits": 7,
+        "lines": 179,
         "path": "SECURITY.md"
       },
       {
@@ -404,8 +435,8 @@
         "path": "app/src-tauri/.cargo/audit.toml"
       },
       {
-        "commits": 4,
-        "lines": 5504,
+        "commits": 5,
+        "lines": 5508,
         "path": "app/src-tauri/Cargo.lock"
       },
       {
@@ -744,8 +775,8 @@
         "path": "app/src/components/DaemonDisconnectedBanner.module.css"
       },
       {
-        "commits": 5,
-        "lines": 179,
+        "commits": 6,
+        "lines": 199,
         "path": "app/src/components/DaemonDisconnectedBanner.test.tsx"
       },
       {
@@ -819,8 +850,8 @@
         "path": "app/src/components/PanicModal.module.css"
       },
       {
-        "commits": 2,
-        "lines": 119,
+        "commits": 3,
+        "lines": 137,
         "path": "app/src/components/PanicModal.test.tsx"
       },
       {
@@ -974,8 +1005,8 @@
         "path": "app/src/routes/Audit.module.css"
       },
       {
-        "commits": 4,
-        "lines": 273,
+        "commits": 5,
+        "lines": 287,
         "path": "app/src/routes/Audit.test.tsx"
       },
       {
@@ -1019,8 +1050,8 @@
         "path": "app/src/routes/Settings.module.css"
       },
       {
-        "commits": 3,
-        "lines": 358,
+        "commits": 4,
+        "lines": 364,
         "path": "app/src/routes/Settings.test.tsx"
       },
       {
@@ -1064,9 +1095,14 @@
         "path": "app/src/test/msw-handlers.ts"
       },
       {
-        "commits": 2,
-        "lines": 165,
+        "commits": 3,
+        "lines": 171,
         "path": "app/src/test/proofs-wire-shape.test.ts"
+      },
+      {
+        "commits": 1,
+        "lines": 28,
+        "path": "app/src/test/setup.ts"
       },
       {
         "commits": 1,
@@ -1094,8 +1130,8 @@
         "path": "app/tsconfig.json"
       },
       {
-        "commits": 1,
-        "lines": 18,
+        "commits": 2,
+        "lines": 19,
         "path": "app/vite.config.ts"
       },
       {
@@ -1355,6 +1391,46 @@
       },
       {
         "commits": 1,
+        "lines": 94,
+        "path": "atlas/README.md"
+      },
+      {
+        "commits": 1,
+        "lines": 50,
+        "path": "atlas/boundaries.yaml"
+      },
+      {
+        "commits": 1,
+        "lines": 527,
+        "path": "atlas/page.json"
+      },
+      {
+        "commits": 1,
+        "lines": 2316,
+        "path": "atlas/statistics.json"
+      },
+      {
+        "commits": 1,
+        "lines": 13589,
+        "path": "atlas/structure.json"
+      },
+      {
+        "commits": 1,
+        "lines": 61,
+        "path": "compose.yaml"
+      },
+      {
+        "commits": 1,
+        "lines": 28,
+        "path": "docker/entrypoint.sh"
+      },
+      {
+        "commits": 1,
+        "lines": 38,
+        "path": "docker/healthcheck.py"
+      },
+      {
+        "commits": 1,
         "lines": 40,
         "path": "docs/board/board_v1.md"
       },
@@ -1435,11 +1511,6 @@
       },
       {
         "commits": 1,
-        "lines": 40,
-        "path": "release.yml}"
-      },
-      {
-        "commits": 1,
         "lines": 129,
         "path": "scripts/check-theme-tokens.sh"
       },
@@ -1504,28 +1575,18 @@
         "path": "site/src/components/BaseLayout.astro"
       },
       {
-        "commits": 2,
-        "lines": 138,
-        "path": "site/src/content/docs/handbook/beginners.md"
-      },
-      {
-        "commits": 1,
-        "lines": 5,
-        "path": "site/src/content/docs/handbook/diary-mode.md"
-      },
-      {
-        "commits": 11,
-        "lines": 162,
+        "commits": 10,
+        "lines": 158,
         "path": "site/src/content/docs/handbook/getting-started.md"
       },
       {
-        "commits": 4,
-        "lines": 81,
+        "commits": 2,
+        "lines": 8,
         "path": "site/src/content/docs/handbook/how-to-play.md"
       },
       {
-        "commits": 3,
-        "lines": 36,
+        "commits": 2,
+        "lines": 35,
         "path": "site/src/content/docs/handbook/index.md"
       },
       {
@@ -1534,14 +1595,9 @@
         "path": "site/src/content/docs/handbook/print-and-play.md"
       },
       {
-        "commits": 4,
-        "lines": 100,
+        "commits": 3,
+        "lines": 22,
         "path": "site/src/content/docs/handbook/reference.md"
-      },
-      {
-        "commits": 2,
-        "lines": 32,
-        "path": "site/src/content/docs/handbook/tiers.md"
       },
       {
         "commits": 6,
@@ -1569,8 +1625,8 @@
         "path": "sov_cli/errors.py"
       },
       {
-        "commits": 25,
-        "lines": 4514,
+        "commits": 23,
+        "lines": 4475,
         "path": "sov_cli/main.py"
       },
       {
@@ -1594,8 +1650,8 @@
         "path": "sov_daemon/events.py"
       },
       {
-        "commits": 7,
-        "lines": 1152,
+        "commits": 8,
+        "lines": 1186,
         "path": "sov_daemon/lifecycle.py"
       },
       {
@@ -1604,8 +1660,8 @@
         "path": "sov_daemon/log_fields.py"
       },
       {
-        "commits": 11,
-        "lines": 2131,
+        "commits": 12,
+        "lines": 2163,
         "path": "sov_daemon/server.py"
       },
       {
@@ -1654,8 +1710,8 @@
         "path": "sov_engine/rules/town_hall.py"
       },
       {
-        "commits": 3,
-        "lines": 84,
+        "commits": 2,
+        "lines": 65,
         "path": "sov_engine/rules/treaty_table.py"
       },
       {
@@ -1792,6 +1848,11 @@
         "commits": 1,
         "lines": 143,
         "path": "tests/test_daemon_auth.py"
+      },
+      {
+        "commits": 1,
+        "lines": 88,
+        "path": "tests/test_daemon_container_host.py"
       },
       {
         "commits": 1,
@@ -1954,8 +2015,8 @@
         "path": "tests/test_sov_games_cli.py"
       },
       {
-        "commits": 1,
-        "lines": 122,
+        "commits": 2,
+        "lines": 134,
         "path": "tests/test_sov_play_alias.py"
       },
       {
@@ -1984,8 +2045,8 @@
         "path": "tests/test_transport.py"
       },
       {
-        "commits": 2,
-        "lines": 118,
+        "commits": 1,
+        "lines": 115,
         "path": "tests/test_treaty_table.py"
       },
       {
@@ -1999,8 +2060,8 @@
         "path": "tests/test_validate_game_id.py"
       },
       {
-        "commits": 2,
-        "lines": 45,
+        "commits": 1,
+        "lines": 5,
         "path": "tests/test_version.py"
       },
       {
@@ -2055,18 +2116,18 @@
       },
       {
         "commits": 13,
-        "lines": 1296,
+        "lines": 689,
         "path": "uv.lock"
       }
     ]
   },
   "confidence": {
     "level": "low",
-    "reason": "fewer than 20 source files reach 10 revisions in the window"
+    "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-09-25T02:37:23.878Z",
+  "generatedAt": "2026-09-30T00:26:44.282Z",
   "generatedFrom": {
-    "commit": "41fa408b1f2902e4a85293abc44782f76ec8f68e"
+    "commit": "ebba7c7281ddf01eba3e30a41e37493e90e96bdf"
   },
   "pairs": [
     {
@@ -2240,9 +2301,9 @@
     {
       "a": "pyproject.toml",
       "b": "uv.lock",
-      "either": 16,
-      "shared": 10,
-      "strength": 0.625
+      "either": 17,
+      "shared": 9,
+      "strength": 0.529412
     },
     {
       "a": "site/package-lock.json",
@@ -2250,6 +2311,13 @@
       "either": 6,
       "shared": 6,
       "strength": 1
+    },
+    {
+      "a": "sov_cli/errors.py",
+      "b": "sov_cli/main.py",
+      "either": 20,
+      "shared": 10,
+      "strength": 0.5
     },
     {
       "a": "sov_cli/errors.py",
@@ -2283,16 +2351,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-09-08T00:45:34-04:00",
-    "inScopeFiles": 397,
+    "headDate": "2026-09-29T20:26:13-04:00",
+    "inScopeFiles": 410,
     "pinnedStart": null,
-    "priorFloor": null,
+    "priorFloor": "fallen",
     "qualifyingCommits": 97,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-03-12T04:45:34.000Z",
+    "since": "2026-04-03T00:26:13.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

@@ -1,6 +1,7 @@
 {
   "authored": [
     ".github/",
+    "docker/",
     "docs/",
     "root",
     "site/"
@@ -74,10 +75,80 @@
       "kind": "part",
       "name": "app",
       "partLabel": "app"
+    },
+    {
+      "doors": 2,
+      "importedBy": [],
+      "importedByTests": [],
+      "kind": "part",
+      "name": "docker",
+      "partLabel": "docker"
+    },
+    {
+      "doors": 2,
+      "importedBy": [],
+      "importedByTests": [],
+      "kind": "part",
+      "name": "root",
+      "partLabel": "the repository root"
     }
   ],
   "changes": {
-    "first": true
+    "fileCounts": {
+      "added": 8,
+      "changed": 25,
+      "moved": 0,
+      "parts": 9,
+      "removed": 0
+    },
+    "items": [
+      {
+        "kind": "door",
+        "sentence": "CI now also checks docker/.",
+        "subjects": [
+          ".github/workflows/ci.yml",
+          "docker/"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "Release now also runs docker/entrypoint.sh and sov_daemon/__main__.py.",
+        "subjects": [
+          ".github/workflows/publish.yml",
+          "docker/entrypoint.sh",
+          "sov_daemon/__main__.py"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "Release now also checks LICENSE, README.md, docker/healthcheck.py and 2 more.",
+        "subjects": [
+          ".github/workflows/publish.yml",
+          "LICENSE",
+          "README.md",
+          "docker/healthcheck.py",
+          "pyproject.toml",
+          "sov_daemon/"
+        ]
+      },
+      {
+        "kind": "part",
+        "sentence": "docker is a new part, drawn from `docker/**`.",
+        "subjects": [
+          "docker"
+        ]
+      },
+      {
+        "kind": "counts",
+        "sentence": "8 files added and 25 changed content, across 9 parts.",
+        "subjects": []
+      }
+    ],
+    "since": {
+      "commit": "41fa408b1f2902e4a85293abc44782f76ec8f68e",
+      "generatedAt": "2026-09-25T02:37:23.878Z"
+    },
+    "unchanged": false
   },
   "changesTogether": [
     {
@@ -112,6 +183,21 @@
     },
     {
       "a": "sov_cli/errors.py",
+      "b": "sov_cli/main.py",
+      "either": 20,
+      "partLabels": [
+        "sov_cli",
+        "sov_cli"
+      ],
+      "parts": [
+        "sov_cli",
+        "sov_cli"
+      ],
+      "relation": "inside",
+      "shared": 10
+    },
+    {
+      "a": "sov_cli/errors.py",
       "b": "sov_transport/xrpl_testnet.py",
       "either": 10,
       "partLabels": [
@@ -127,13 +213,13 @@
     }
   ],
   "changesTogetherNote": [
-    "Confidence is low: fewer than 20 source files reach 10 revisions in the window.",
+    "Confidence is low: fewer than 25 source files reach 10 revisions in the window.",
     "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "41fa408b1f2902e4a85293abc44782f76ec8f68e",
+  "commit": "ebba7c7281ddf01eba3e30a41e37493e90e96bdf",
   "defaultBranch": "main",
-  "derived": "12 parts, mostly Python (109 files), TypeScript (60), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 10 parts. It publishes to PyPI. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
+  "derived": "13 parts, mostly Python (111 files), TypeScript (61), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
     {
       "checks": [],
@@ -152,9 +238,10 @@
             "app/src-tauri/src/main.rs",
             "assets/print/source/check-deck-parity.py",
             "assets/print/source/check-pdf-fonts.py",
-            "assets/print/source/inline-fonts.py"
+            "assets/print/source/inline-fonts.py",
+            "docker/"
           ],
-          "checksMore": 28,
+          "checksMore": 29,
           "lead": "except on a schedule",
           "runs": [
             ".github/scripts/check-publish-yml.py",
@@ -169,7 +256,7 @@
             "app/src/",
             "app/vite.config.ts"
           ],
-          "runsMore": 134,
+          "runsMore": 136,
           "when": "except on a schedule"
         }
       ],
@@ -186,12 +273,17 @@
         {
           "boundary": "app",
           "depth": 0,
-          "files": 80
+          "files": 81
         },
         {
           "boundary": "assets",
           "depth": 0,
           "files": 3
+        },
+        {
+          "boundary": "docker",
+          "depth": 0,
+          "files": 1
         },
         {
           "boundary": "root",
@@ -226,7 +318,7 @@
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 71
+          "files": 72
         }
       ],
       "runs": [],
@@ -247,12 +339,17 @@
         "sov_cli/__main__.py"
       ],
       "checks": [
+        "LICENSE",
+        "README.md",
+        "docker/healthcheck.py",
+        "pyproject.toml",
         "sov_cli/",
+        "sov_daemon/",
         "sov_engine/",
         "sov_transport/"
       ],
-      "checksCount": 3,
-      "checksMore": 0,
+      "checksCount": 8,
+      "checksMore": 34,
       "file": ".github/workflows/publish.yml",
       "id": ".github/workflows/publish.yml",
       "landings": [],
@@ -265,9 +362,24 @@
           "files": 2
         },
         {
+          "boundary": "docker",
+          "depth": 0,
+          "files": 2
+        },
+        {
+          "boundary": "root",
+          "depth": 0,
+          "files": 3
+        },
+        {
           "boundary": "sov_cli",
           "depth": 0,
           "files": 4
+        },
+        {
+          "boundary": "sov_daemon",
+          "depth": 0,
+          "files": 7
         },
         {
           "boundary": "sov_engine",
@@ -278,22 +390,19 @@
           "boundary": "sov_transport",
           "depth": 0,
           "files": 7
-        },
-        {
-          "boundary": "sov_daemon",
-          "depth": 1,
-          "files": 6
         }
       ],
       "runs": [
         ".github/scripts/generate-latest-json.py",
         ".github/scripts/stage-tauri-artifacts.sh",
-        "sov_cli/main.py"
+        "docker/entrypoint.sh",
+        "sov_cli/main.py",
+        "sov_daemon/__main__.py"
       ],
-      "runsCount": 3,
-      "runsMore": 0,
+      "runsCount": 5,
+      "runsMore": 2,
       "sends": [
-        "publishes to PyPI",
+        "publishes to PyPI and a container image",
         "builds sov_cli/__main__.py into binaries for darwin-arm64, linux-x64 and win-x64 and uploads them to the release"
       ],
       "stages": [],
@@ -460,20 +569,22 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-25T02:37:23.878Z",
+  "generatedAt": "2026-09-30T00:26:44.282Z",
   "limits": [
     "27 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",
     "2 writes go to places this repository does not track, so they are not listed as generated.",
     "7 reads go to a path their caller passes, not to this repository.",
     "1 command is built at run time and not followed.",
-    "Statistics confidence is low: fewer than 20 source files reach 10 revisions in the window."
+    "There is a compose.yaml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.",
+    "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
   "mainDoor": ".github/workflows/ci.yml",
   "partLabels": {
     ".github": ".github",
     "app": "app",
     "assets": "assets",
+    "docker": "docker",
     "docs": "docs",
     "root": "the repository root",
     "scripts": "scripts",
@@ -484,7 +595,7 @@
     "sov_transport": "sov_transport",
     "tests": "tests"
   },
-  "parts": 12,
+  "parts": 13,
   "readers": [],
   "repo": "mcp-tool-shop-org/sovereignty",
   "sequences": [],
@@ -495,14 +606,14 @@
   ],
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 106,
+  "testFiles": 108,
   "testedBy": {
     "app": 32,
     "assets": 0,
     "sov_cli": 37,
-    "sov_daemon": 32,
-    "sov_engine": 51,
-    "sov_transport": 45
+    "sov_daemon": 33,
+    "sov_engine": 52,
+    "sov_transport": 46
   },
   "unnamedWrites": 3,
   "unread": [

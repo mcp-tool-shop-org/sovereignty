@@ -125,7 +125,7 @@
           "path": ".github/scripts/stage-tauri-artifacts.sh"
         },
         {
-          "hash": "18dfd22c15e5a9fce9bff249240a51dd3a0605522841ffaf1e91a8b6871e70df",
+          "hash": "a861a3674393cf63750e54aa294ac6ecb4fe70ab822aa6ac78892fc9fc561ef2",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -133,7 +133,7 @@
           "path": ".github/workflows/pages.yml"
         },
         {
-          "hash": "4a33fcf2d92b71ed5cc03d5df7d4c8ded4e01fe9f73eeba1954c07eae6cbe43d",
+          "hash": "d36c055657ba1a331f84244e7fed076f27da4a7a2a8da3106fa302b354ef6fc5",
           "path": ".github/workflows/publish.yml"
         }
       ],
@@ -171,11 +171,11 @@
           "path": "app/index.html"
         },
         {
-          "hash": "1000d0fee4c2d9b5f7c5b75cc8d90c7ef7d42dcb959e038a4384696f7728d52a",
+          "hash": "a87eea337e03a47e5b667cfdd537bb0a8eefae86c5dff466cfc91dfb818c8713",
           "path": "app/package-lock.json"
         },
         {
-          "hash": "b4d9a2236b95f898b082b6a601e342862de6109b8a041b5a335bdb9e22932822",
+          "hash": "59c2e6b8a3840656bff178213ca5a6f971b026314d0e7645bac1859554434db8",
           "path": "app/package.json"
         },
         {
@@ -183,7 +183,7 @@
           "path": "app/src-tauri/.cargo/audit.toml"
         },
         {
-          "hash": "ad0f8d2acd955af8705c05edb785e2014e00d9249f347a3b3c488f69deca7e4b",
+          "hash": "421e2af63608ee749f1db8d6f1f2a78ae9f06d6b9d909f093ddf3bc3480d0a39",
           "path": "app/src-tauri/Cargo.lock"
         },
         {
@@ -518,7 +518,7 @@
           ]
         },
         {
-          "hash": "1eda7127d7dc869c720a4032b152a8b1fb02a3be20bf93350509f6897d50d892",
+          "hash": "bda2b6fa61adc381f1059be2c0f14a0ca988e1b2635f05817af24cb93e37f13e",
           "path": "app/src-tauri/tauri.conf.json"
         },
         {
@@ -570,7 +570,7 @@
           "path": "app/src/components/DaemonDisconnectedBanner.module.css"
         },
         {
-          "hash": "979249e186e010d736da8b86ea2708327c3ce0a9fc978527662369bc8ba992cb",
+          "hash": "f69df48483efaa6730014b6d5d75dfeec7ee1aea9ef65d65157590c5da7ce245",
           "importsFiles": [
             "app/src/components/DaemonDisconnectedBanner.tsx",
             "app/src/hooks/useDaemon.tsx"
@@ -682,7 +682,7 @@
           "path": "app/src/components/PanicModal.module.css"
         },
         {
-          "hash": "0579f699b26c74d8e89f6cda681ff92e01a10f29fdb71400fa51ae305ffcff04",
+          "hash": "89b34e8b6c8850206044cc899249457ed11bce468c6b6aa7ff0b5d6aebecf4cf",
           "importsFiles": [
             "app/src/components/PanicModal.tsx",
             "app/src/types/daemon.ts"
@@ -949,7 +949,7 @@
           "path": "app/src/routes/Audit.module.css"
         },
         {
-          "hash": "c0b9d505c8a43651f60dbc0dce8a46cc70fac938d98ab7ef3d7660f5ecdaea1c",
+          "hash": "39dc778df3691ae652d9392538367ba94fa201680e7d0872d679ba948c656640",
           "importsFiles": [
             "app/src/hooks/useDaemon.tsx",
             "app/src/routes/Audit.tsx"
@@ -1046,7 +1046,7 @@
           "path": "app/src/routes/Settings.module.css"
         },
         {
-          "hash": "fd7a03a57e2fd4be2ee13d31cf08ece4911d1546c2227dc1e907b8c8cc452841",
+          "hash": "7166d75e001e599e417e89fe0207f187842634ff986c33d4047f948d6bfc1408",
           "importsFiles": [
             "app/src/hooks/useDaemon.tsx",
             "app/src/routes/Settings.tsx"
@@ -1110,11 +1110,15 @@
           "path": "app/src/test/msw-handlers.ts"
         },
         {
-          "hash": "2d3d3e971b6727c702894b7a38eae39a7bfd2f058c7aec98b99a505bc2fff5e5",
+          "hash": "d9e8f695fa545a96607c1ceea3caa11a768c1cb34ed3d9948e6f303dc2cd5ea6",
           "importsFiles": [
             "app/src/types/daemon.ts"
           ],
           "path": "app/src/test/proofs-wire-shape.test.ts"
+        },
+        {
+          "hash": "fa8a51cb73f39ab95e414ae68f397078968f20256d2b3898cf3ba3521917ba02",
+          "path": "app/src/test/setup.ts"
         },
         {
           "hash": "a124fefbcaf4c0448eb684c0822df6ea508d77de079cac5a800871710a435ebc",
@@ -1143,7 +1147,7 @@
           "path": "app/tsconfig.json"
         },
         {
-          "hash": "90e42215e29692f119f417420846fcd690d43c38064fccf13de85ec137defe2f",
+          "hash": "b55b56f7055aebd32e31c19c9623c3130100342cf70af6b82be7b160e717f8f2",
           "path": "app/vite.config.ts"
         }
       ],
@@ -1442,6 +1446,36 @@
       "externals": 0,
       "files": [
         {
+          "hash": "2fe9878c79871d7beec7219532e5fa0a72c3b7617b67ce93fecca5efcc097347",
+          "path": "docker/entrypoint.sh"
+        },
+        {
+          "exports": [
+            "main"
+          ],
+          "hash": "59053a93025042fd392305e86325704ecfd6da201ae9afad940d62506ad04a3a",
+          "path": "docker/healthcheck.py"
+        }
+      ],
+      "globs": [
+        "docker/**"
+      ],
+      "importConfidence": "full",
+      "name": "docker",
+      "origin": "authored",
+      "role": "config",
+      "testedBy": 0,
+      "unresolvedSites": 0
+    },
+    {
+      "dynamicReads": 0,
+      "dynamicSpawns": 0,
+      "dynamicSpawnsInTests": 0,
+      "dynamicWrites": 0,
+      "entryPoints": [],
+      "externals": 0,
+      "files": [
+        {
           "hash": "65b539d4fbdf34a4474b05d4baa308c663998fcb7dce5bf33d707ac861a9d2fd",
           "path": "docs/board/board_v1.md"
         },
@@ -1498,7 +1532,7 @@
           "path": "docs/print-and-play.md"
         },
         {
-          "hash": "80c0480349edc14caffebbd9a47748672ae131f363f076d2d618ac47410c2fb6",
+          "hash": "628a7c1e0d3309f7c15efbd98c70d4801437b4e12688697ab8cf44ec466e0964",
           "path": "docs/roadmap.md"
         },
         {
@@ -1597,6 +1631,14 @@
       "externals": 0,
       "files": [
         {
+          "hash": "1fa0c4a87ad051c199b134d76ebc0fbd9e255ff6ba1d4c9e18e5ba861ca9fe25",
+          "path": ".dockerignore"
+        },
+        {
+          "hash": "fd0a62d52f58a685b54aa8081bc4521902749b97c20fd94262b04ddd64205b4a",
+          "path": ".gitattributes"
+        },
+        {
           "hash": "036882f84693f8faafb8843e91baed5cc7261c5cef56a3925b52e02c4b1dad89",
           "path": ".gitignore"
         },
@@ -1609,16 +1651,20 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "a2c228ded57abd616bd6956d9cbeefec5f4f1e666b6a0dbe4e504274a85c75d7",
+          "hash": "dd84180fbcd3a0c28ed75ee1d91680c96dedb24db5c17a0c5d5e065add7206e2",
           "path": "CHANGELOG.md"
         },
         {
-          "hash": "8f9109584aa4a3f61d4e7e1c0462ae9fa540f149789ed407f89d259a51d88695",
+          "hash": "2d4257f6624809c2116d05187c8c3a62d800d4b1a3ff736c307390d50f3b0e4f",
           "path": "CLAUDE.md"
         },
         {
           "hash": "1ae3f344d347f968167e7ad165661912ee996e527570b94e7a086db4a21fffc0",
           "path": "CONTRIBUTING.md"
+        },
+        {
+          "hash": "7de2cad5c397940221d0ed09772ac262101f93fd0885b079eef2276b7658dd93",
+          "path": "Dockerfile"
         },
         {
           "hash": "367e5141e4f5884e5791c4021f33a9faa958840a5decf44e1b273a87aad1c459",
@@ -1645,7 +1691,7 @@
           "path": "README.ja.md"
         },
         {
-          "hash": "bbd928aa484c29bf4c9df9fb82bf54f907a76e59b95505b4f45785fcffd4631d",
+          "hash": "81e10e03ca448c533743b7d866dea70f4dde5832a10ad97127bc252e1d131270",
           "path": "README.md"
         },
         {
@@ -1669,11 +1715,15 @@
           "path": "SHIP_GATE.md"
         },
         {
-          "hash": "ad05aa175626e82f31f26607129ff73b6187b81fcf898d19872d0db7dfb14c78",
+          "hash": "240b080a44ddeddad08e0c5ec3394f7cc1cc785e00822a51bcdbfafc0d154e25",
+          "path": "compose.yaml"
+        },
+        {
+          "hash": "98494b6991c789974fc08c5baf8d90a340c8e05e5bbddc8ba1224d5da197b234",
           "path": "pyproject.toml"
         },
         {
-          "hash": "08ac9fea4a1c46616819e50894796ee991d5b459b4d37f5938a36cb7ff7f7818",
+          "hash": "0a0d97005168ad543599f8d0b0d848c0a29da42a9a8ca66a43d5bd64e2bdc1f8",
           "path": "uv.lock"
         }
       ],
@@ -1779,7 +1829,7 @@
           "path": "site/src/content/docs/handbook/diary-mode.md"
         },
         {
-          "hash": "aec210561de4bd56f315f31aa03d45b53ce7da1950fa83a7382634c031b1ea92",
+          "hash": "011c24a11f746ba2c6098562a912f99467009e01e14be19a740b20a890b8b500",
           "path": "site/src/content/docs/handbook/getting-started.md"
         },
         {
@@ -1807,7 +1857,7 @@
           "path": "site/src/pages/index.astro"
         },
         {
-          "hash": "e9c6427194fac741ad2bd6915644f88d6444f528c5cbe83ed4c1bec8ef3ee61f",
+          "hash": "6d46c9d2872123a552ba641736ca61c49dccd21738cb06255b49b9179efc5ab2",
           "path": "site/src/site-config.ts"
         },
         {
@@ -2005,7 +2055,7 @@
             "vote",
             "wallet"
           ],
-          "hash": "9be07f35f25d09f4b52c3a2ffc406b3cda948d0ec84ecea6fd5ed32ff3421ac3",
+          "hash": "c6cb5a1a5c30cf19e9b7e5969cd237ffb3eabfe1bd242f395f1f276d29625691",
           "importsFiles": [
             "sov_cli/errors.py",
             "sov_daemon/__init__.py",
@@ -7178,7 +7228,7 @@
             {
               "calls": [
                 {
-                  "line": 4067,
+                  "line": 4073,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7193,14 +7243,14 @@
             {
               "calls": [
                 {
-                  "line": 4108,
+                  "line": 4114,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4113,
+                  "line": 4119,
                   "name": "anchors_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7215,21 +7265,21 @@
                   "via": "_read_anchors_entries"
                 },
                 {
-                  "line": 4120,
+                  "line": 4126,
                   "name": "proofs_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4128,
+                  "line": 4134,
                   "name": "_round_key_from_proof",
                   "target": {
                     "file": "sov_engine/proof.py"
                   }
                 },
                 {
-                  "line": 4204,
+                  "line": 4210,
                   "name": "anchor_pending_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7244,14 +7294,14 @@
             {
               "calls": [
                 {
-                  "line": 4446,
+                  "line": 4452,
                   "name": "build_event_deck",
                   "target": {
                     "file": "sov_engine/content.py"
                   }
                 },
                 {
-                  "line": 4447,
+                  "line": 4453,
                   "name": "build_deal_deck",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -7266,14 +7316,14 @@
             {
               "calls": [
                 {
-                  "line": 4530,
+                  "line": 4536,
                   "name": "scenario_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 4446,
+                  "line": 4452,
                   "name": "build_event_deck",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -7281,7 +7331,7 @@
                   "via": "_lint_scenario"
                 },
                 {
-                  "line": 4447,
+                  "line": 4453,
                   "name": "build_deal_deck",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -7289,7 +7339,7 @@
                   "via": "_lint_scenario"
                 },
                 {
-                  "line": 4599,
+                  "line": 4605,
                   "name": "invalid_action_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7304,21 +7354,21 @@
             {
               "calls": [
                 {
-                  "line": 4666,
+                  "line": 4672,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4667,
+                  "line": 4673,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4668,
+                  "line": 4674,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7349,21 +7399,21 @@
                   "via": "_validate_game_id_or_fail"
                 },
                 {
-                  "line": 4736,
+                  "line": 4742,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4737,
+                  "line": 4743,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4743,
+                  "line": 4749,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7581,7 +7631,7 @@
             {
               "calls": [
                 {
-                  "line": 4915,
+                  "line": 4921,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7596,7 +7646,7 @@
             {
               "calls": [
                 {
-                  "line": 4915,
+                  "line": 4921,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7628,7 +7678,7 @@
             {
               "calls": [
                 {
-                  "line": 4915,
+                  "line": 4921,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7660,7 +7710,7 @@
             {
               "calls": [
                 {
-                  "line": 4915,
+                  "line": 4921,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7668,14 +7718,14 @@
                   "via": "_import_daemon_api"
                 },
                 {
-                  "line": 5036,
+                  "line": 5042,
                   "name": "daemon_not_running_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 5038,
+                  "line": 5044,
                   "name": "daemon_stop_failed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7690,7 +7740,7 @@
             {
               "calls": [
                 {
-                  "line": 4915,
+                  "line": 4921,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7727,13 +7777,15 @@
       "externals": 0,
       "files": [
         {
-          "hash": "b7ad6786b338ae34a3ddbaa82c263336ae72f0c6e5ebccce7ad95cb681886f9b",
+          "hash": "07249da9a47f67cb3f624e52351c31df702235b395829c916894bb1fa1397fd9",
           "importsFiles": [
             "sov_daemon/lifecycle.py"
           ],
           "path": "sov_daemon/__init__.py"
         },
         {
+          "entry": "main",
+          "entryRule": 1,
           "exports": [
             "main"
           ],
@@ -7741,7 +7793,66 @@
           "importsFiles": [
             "sov_daemon/lifecycle.py"
           ],
-          "path": "sov_daemon/__main__.py"
+          "path": "sov_daemon/__main__.py",
+          "sequences": [
+            {
+              "calls": [
+                {
+                  "inner": [
+                    {
+                      "line": 876,
+                      "name": "XRPLNetwork",
+                      "target": {
+                        "file": "sov_transport/xrpl_internals.py"
+                      },
+                      "via": "run_foreground"
+                    },
+                    {
+                      "line": 906,
+                      "name": "build_app",
+                      "target": {
+                        "file": "sov_daemon/server.py"
+                      },
+                      "via": "run_foreground"
+                    },
+                    {
+                      "line": 922,
+                      "name": "JsonLineFormatter",
+                      "target": {
+                        "file": "sov_daemon/log_fields.py"
+                      },
+                      "via": "run_foreground"
+                    },
+                    {
+                      "line": 948,
+                      "name": "MaxBodySizeMiddleware",
+                      "target": {
+                        "file": "sov_daemon/server.py"
+                      },
+                      "via": "run_foreground"
+                    },
+                    {
+                      "line": 104,
+                      "name": "save_root",
+                      "target": {
+                        "file": "sov_engine/io_utils.py"
+                      },
+                      "via": "daemon_file_path"
+                    }
+                  ],
+                  "line": 95,
+                  "name": "run_foreground_from_env",
+                  "target": {
+                    "file": "sov_daemon/lifecycle.py"
+                  }
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": true,
+              "isDefaultExport": false,
+              "name": "main"
+            }
+          ]
         },
         {
           "exports": [
@@ -7767,6 +7878,8 @@
           "path": "sov_daemon/events.py"
         },
         {
+          "entry": "run_foreground",
+          "entryRule": 4,
           "exports": [
             "daemon_file_path",
             "daemon_info",
@@ -7776,14 +7889,258 @@
             "start_daemon",
             "stop_daemon"
           ],
-          "hash": "6bae9a56ccea53476253289f3cef3c2414ebf685f4e40d0b587c41c2c0dc4551",
+          "hash": "611a232345aa043f13fbe1fbc51ad873aba88aa149e47ed087068e0feef7b9b3",
           "importsFiles": [
             "sov_daemon/log_fields.py",
             "sov_daemon/server.py",
             "sov_engine/io_utils.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "sov_daemon/lifecycle.py"
+          "path": "sov_daemon/lifecycle.py",
+          "sequences": [
+            {
+              "calls": [
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  }
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "daemon_file_path"
+            },
+            {
+              "calls": [
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                }
+              ],
+              "exported": false,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "_read_handshake"
+            },
+            {
+              "calls": [
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                },
+                {
+                  "line": 215,
+                  "name": "atomic_write_text",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  }
+                }
+              ],
+              "exported": false,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "_write_handshake"
+            },
+            {
+              "calls": [
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                }
+              ],
+              "exported": false,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "_remove_handshake"
+            },
+            {
+              "calls": [
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "daemon_status"
+            },
+            {
+              "calls": [
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "daemon_info"
+            },
+            {
+              "calls": [
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                }
+              ],
+              "exported": false,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "_wait_for_handshake"
+            },
+            {
+              "calls": [
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "start_daemon"
+            },
+            {
+              "calls": [
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "stop_daemon"
+            },
+            {
+              "calls": [
+                {
+                  "line": 876,
+                  "name": "XRPLNetwork",
+                  "target": {
+                    "file": "sov_transport/xrpl_internals.py"
+                  }
+                },
+                {
+                  "line": 906,
+                  "name": "build_app",
+                  "target": {
+                    "file": "sov_daemon/server.py"
+                  }
+                },
+                {
+                  "line": 922,
+                  "name": "JsonLineFormatter",
+                  "target": {
+                    "file": "sov_daemon/log_fields.py"
+                  }
+                },
+                {
+                  "line": 948,
+                  "name": "MaxBodySizeMiddleware",
+                  "target": {
+                    "file": "sov_daemon/server.py"
+                  }
+                },
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "run_foreground"
+            },
+            {
+              "calls": [
+                {
+                  "line": 876,
+                  "name": "XRPLNetwork",
+                  "target": {
+                    "file": "sov_transport/xrpl_internals.py"
+                  },
+                  "via": "run_foreground"
+                },
+                {
+                  "line": 906,
+                  "name": "build_app",
+                  "target": {
+                    "file": "sov_daemon/server.py"
+                  },
+                  "via": "run_foreground"
+                },
+                {
+                  "line": 922,
+                  "name": "JsonLineFormatter",
+                  "target": {
+                    "file": "sov_daemon/log_fields.py"
+                  },
+                  "via": "run_foreground"
+                },
+                {
+                  "line": 948,
+                  "name": "MaxBodySizeMiddleware",
+                  "target": {
+                    "file": "sov_daemon/server.py"
+                  },
+                  "via": "run_foreground"
+                },
+                {
+                  "line": 104,
+                  "name": "save_root",
+                  "target": {
+                    "file": "sov_engine/io_utils.py"
+                  },
+                  "via": "daemon_file_path"
+                }
+              ],
+              "exported": true,
+              "invokedAtTopLevel": false,
+              "isDefaultExport": false,
+              "name": "run_foreground_from_env"
+            }
+          ]
         },
         {
           "hash": "624635ac715f1c8cd22edaf4c129530384707c61c95a718ab6328afcd0a7814e",
@@ -7807,7 +8164,7 @@
             "proofs_list_handler",
             "verify_round_handler"
           ],
-          "hash": "85d51d550d4af3540651ee109c3ee4353715e9fcce9e35ac86561ba90c0154dd",
+          "hash": "cc2b6c51285bfbcf4112d7ad6865a8c38ccdeaddb3e972343809fb78b1fd548c",
           "importsFiles": [
             "sov_cli/errors.py",
             "sov_daemon/__init__.py",
@@ -7833,7 +8190,7 @@
       "name": "sov_daemon",
       "origin": "authored",
       "role": "code",
-      "testedBy": 32,
+      "testedBy": 33,
       "unresolvedSites": 5
     },
     {
@@ -10042,7 +10399,7 @@
       "name": "sov_engine",
       "origin": "authored",
       "role": "code",
-      "testedBy": 51,
+      "testedBy": 52,
       "unresolvedSites": 0
     },
     {
@@ -10142,7 +10499,7 @@
       "name": "sov_transport",
       "origin": "authored",
       "role": "code",
-      "testedBy": 45,
+      "testedBy": 46,
       "unresolvedSites": 18
     },
     {
@@ -10511,6 +10868,19 @@
             "sov_daemon/server.py"
           ],
           "path": "tests/test_daemon_auth.py"
+        },
+        {
+          "exports": [
+            "test_detached_spawn_never_inherits_host",
+            "test_empty_host_falls_back_to_loopback",
+            "test_host_defaults_to_loopback",
+            "test_host_env_is_forwarded"
+          ],
+          "hash": "b34295cc8119eff1e03a35f67a3e7f28de9433810ccdbd5b3da4d8cc5e3f06cd",
+          "importsFiles": [
+            "sov_daemon/lifecycle.py"
+          ],
+          "path": "tests/test_daemon_container_host.py"
         },
         {
           "exports": [
@@ -11145,9 +11515,10 @@
             "test_sov_play_default_roster_is_solo_vs_ai",
             "test_sov_play_help_lists_ruleset_argument",
             "test_sov_play_parity_with_sov_new_defaults",
-            "test_sov_play_ruleset_to_tier_mapping"
+            "test_sov_play_ruleset_to_tier_mapping",
+            "test_sov_play_status_addresses_the_human_seat"
           ],
-          "hash": "c054d90c84b6c50adcd81e740ae43aa1f10e79578ca5ea9ce32c6857c601d74f",
+          "hash": "f1eb6f07e9652000bf8304dc4942c6cac3433f5761a30844f66fdd1376cfa186",
           "importsFiles": [
             "sov_cli/main.py"
           ],
@@ -11581,7 +11952,7 @@
   ],
   "doors": [
     {
-      "checksCount": 10,
+      "checksCount": 11,
       "commands": [
         {
           "job": "lint-and-test",
@@ -11630,7 +12001,7 @@
         },
         {
           "job": "tauri-and-frontend",
-          "step": "npm audit signatures (advisory)",
+          "step": "npm audit signatures",
           "text": "npm audit signatures"
         },
         {
@@ -11741,12 +12112,17 @@
         {
           "boundary": "app",
           "depth": 0,
-          "files": 80
+          "files": 81
         },
         {
           "boundary": "assets",
           "depth": 0,
           "files": 3
+        },
+        {
+          "boundary": "docker",
+          "depth": 0,
+          "files": 1
         },
         {
           "boundary": "root",
@@ -11781,7 +12157,7 @@
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 71
+          "files": 72
         }
       ],
       "readers": [],
@@ -11953,6 +12329,19 @@
           }
         },
         {
+          "directory": true,
+          "job": "lint-and-test",
+          "matched": true,
+          "path": "docker/",
+          "runKind": "checks",
+          "via": "ruff",
+          "when": {
+            "except": [
+              "schedule"
+            ]
+          }
+        },
+        {
           "job": "tauri-and-frontend",
           "path": "scripts/check-theme-tokens.sh",
           "runKind": "executes",
@@ -12028,7 +12417,7 @@
           }
         }
       ],
-      "runsCount": 21,
+      "runsCount": 22,
       "secrets": [],
       "sends": {
         "deploysPages": false,
@@ -12195,7 +12584,7 @@
       "usesWorkflowToken": false
     },
     {
-      "checksCount": 3,
+      "checksCount": 8,
       "commands": [
         {
           "job": "require-release-tag",
@@ -12225,7 +12614,7 @@
         {
           "job": "publish",
           "step": "Smoke test built wheel in fresh venv",
-          "text": "set -euo pipefail\nSMOKE_DIR=\"$(mktemp -d)\"\n# hatchling produces sovereignty_game-*.whl (PEP 503 underscore form);\n# `|| true` defangs `set -euo pipefail` propagating ls's nonzero exit\n# when the glob has no matches, so the defensive empty-WHEEL check\n# below can actually run. v2.0.0 shipped with two glob patterns\n# (underscore + hyphen) — the hyphen variant matched nothing and\n# killed the script via set -e BEFORE the if check; v2.0.1 fixes that.\nWHEEL=$(ls dist/sovereignty_game-*.whl 2>/dev/null | head -n1 || true)\nif [ -z \"$WHEEL\" ]; then\n  echo \"::error::No built wheel found under dist/\"\n  ls -la dist/\n  exit 1\nfi\necho \"Smoke-testing wheel: $WHEEL\"\npython -m venv \"$SMOKE_DIR/venv\"\n# shellcheck disable=SC1091\nsource \"$SMOKE_DIR/venv/bin/activate\"\npip install --upgrade pip\n# Install with both extras. [daemon] pulls starlette/uvicorn/httpx.\n# hatch wheel packages are sov_engine/sov_transport/sov_cli —\n# sov_daemon is not on the import path unless the extra's install\n# layout actually exposes it. `sov daemon --help` is CLI wiring\n# only (Typer never imports sov_daemon). Import-surface check is\n# `python -c \"import sov_daemon, starlette, uvicorn\"` (F-f6699291).\npip install \"${WHEEL}[xrpl,daemon]\"\n# 1. --version exits 0 with a non-empty version line\nVERSION_OUT=$(sov --version)\necho \"sov --version => $VERSION_OUT\"\n[ -n \"$VERSION_OUT\" ] || { echo \"::error::sov --version produced empty output\"; exit 1; }\n# 2. --help exits 0 and mentions the binary name\nHELP_OUT=$(sov --help)\necho \"$HELP_OUT\" | grep -q \"sov\" || { echo \"::error::sov --help missing binary name\"; exit 1; }\n# 3. self-check JSON status must be ok or warn (not fail)\nSTATUS=$(sov self-check --json | jq -r .status)\necho \"sov self-check --json status => $STATUS\"\ncase \"$STATUS\" in\n  ok|warn) echo \"Smoke test passed.\" ;;\n  *) echo \"::error::sov self-check --json reported status=$STATUS (expected ok|warn)\"; exit 1 ;;\nesac\n# 4. CLI wiring: daemon Typer subapp is registered (does NOT\n# import sov_daemon / starlette / uvicorn).\nsov daemon --help > /dev/null || { echo \"::error::sov daemon --help failed — daemon CLI not wired\"; exit 1; }\n# 5. Import surface for the [daemon] extra (F-f6699291). Typer\n# --help never runs _import_daemon_api(); missing extra deps or a\n# wheel that omitted sov_daemon must fail here.\npython -c \"import sov_daemon, starlette, uvicorn\" || { echo \"::error::[daemon] extra import surface missing (sov_daemon/starlette/uvicorn)\"; exit 1; }\ndeactivate\nrm -rf \"$SMOKE_DIR\"\n"
+          "text": "set -euo pipefail\nSMOKE_DIR=\"$(mktemp -d)\"\n# hatchling produces sovereignty_game-*.whl (PEP 503 underscore form);\n# `|| true` defangs `set -euo pipefail` propagating ls's nonzero exit\n# when the glob has no matches, so the defensive empty-WHEEL check\n# below can actually run. v2.0.0 shipped with two glob patterns\n# (underscore + hyphen) — the hyphen variant matched nothing and\n# killed the script via set -e BEFORE the if check; v2.0.1 fixes that.\nWHEEL=$(ls dist/sovereignty_game-*.whl 2>/dev/null | head -n1 || true)\nif [ -z \"$WHEEL\" ]; then\n  echo \"::error::No built wheel found under dist/\"\n  ls -la dist/\n  exit 1\nfi\necho \"Smoke-testing wheel: $WHEEL\"\nWHEEL=\"$(pwd)/$WHEEL\"\npython -m venv \"$SMOKE_DIR/venv\"\n# shellcheck disable=SC1091\nsource \"$SMOKE_DIR/venv/bin/activate\"\n# Leave the checkout. From the repo root, `import sov_daemon`\n# resolved to the source tree on sys.path, so the check passed\n# while every wheel through 2.3.1 omitted sov_daemon entirely.\ncd \"$SMOKE_DIR\"\npip install --upgrade pip\n# Install with both extras. [daemon] pulls starlette/uvicorn/httpx.\n# hatch wheel packages are sov_engine/sov_transport/sov_cli —\n# sov_daemon is not on the import path unless the extra's install\n# layout actually exposes it. `sov daemon --help` is CLI wiring\n# only (Typer never imports sov_daemon). Import-surface check is\n# `python -c \"import sov_daemon, starlette, uvicorn\"` (F-f6699291).\npip install \"${WHEEL}[xrpl,daemon]\"\n# 1. --version exits 0 with a non-empty version line\nVERSION_OUT=$(sov --version)\necho \"sov --version => $VERSION_OUT\"\n[ -n \"$VERSION_OUT\" ] || { echo \"::error::sov --version produced empty output\"; exit 1; }\n# 2. --help exits 0 and mentions the binary name\nHELP_OUT=$(sov --help)\necho \"$HELP_OUT\" | grep -q \"sov\" || { echo \"::error::sov --help missing binary name\"; exit 1; }\n# 3. self-check JSON status must be ok or warn (not fail)\nSTATUS=$(sov self-check --json | jq -r .status)\necho \"sov self-check --json status => $STATUS\"\ncase \"$STATUS\" in\n  ok|warn) echo \"Smoke test passed.\" ;;\n  *) echo \"::error::sov self-check --json reported status=$STATUS (expected ok|warn)\"; exit 1 ;;\nesac\n# 4. CLI wiring: daemon Typer subapp is registered (does NOT\n# import sov_daemon / starlette / uvicorn).\nsov daemon --help > /dev/null || { echo \"::error::sov daemon --help failed — daemon CLI not wired\"; exit 1; }\n# 5. Import surface for the [daemon] extra (F-f6699291). Typer\n# --help never runs _import_daemon_api(); missing extra deps or a\n# wheel that omitted sov_daemon must fail here.\npython -c \"import sov_daemon, starlette, uvicorn\" || { echo \"::error::[daemon] extra import surface missing (sov_daemon/starlette/uvicorn)\"; exit 1; }\ndeactivate\nrm -rf \"$SMOKE_DIR\"\n"
         },
         {
           "job": "build-binaries",
@@ -12268,6 +12657,16 @@
           "text": "set -euo pipefail\nVERSION=\"${VERSION#v}\"\nexport VERSION ARTIFACT_GLOBS BUNDLE_BASE TARGET\nbash .github/scripts/stage-tauri-artifacts.sh\n"
         },
         {
+          "job": "docker",
+          "step": "Verify version matches tag",
+          "text": "VERSION=$(python3 -c \"import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])\")\nif [ \"$VERSION\" != \"${RELEASE_TAG#v}\" ]; then\n  echo \"::error::pyproject.toml version $VERSION does not match tag $RELEASE_TAG\"\n  exit 1\nfi\n"
+        },
+        {
+          "job": "docker",
+          "step": "Smoke test image",
+          "text": "set -euo pipefail\nOUT=$(docker run --rm sovereignty:smoke --version)\necho \"$OUT\"\n[ \"$OUT\" = \"sovereignty ${RELEASE_TAG#v}\" ] || { echo \"::error::image reports '$OUT'\"; exit 1; }\nSTATUS=$(docker run --rm sovereignty:smoke self-check --json | jq -r .status)\ncase \"$STATUS\" in ok|warn) ;; *) echo \"::error::self-check status=$STATUS\"; exit 1 ;; esac\ndocker run --rm sovereignty:smoke python -c \"import sov_daemon, starlette, uvicorn, xrpl\"\ndocker run -d --name sov-smoke -p 127.0.0.1:47823:47823 -e SOV_DAEMON_TOKEN=smoke sovereignty:smoke\nfor _ in $(seq 1 30); do\n  code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer smoke' http://127.0.0.1:47823/health || true)\n  [ \"$code\" = 200 ] && break\n  sleep 1\ndone\ndocker logs sov-smoke\n[ \"$code\" = 200 ] || { echo \"::error::daemon /health never returned 200 (last=$code)\"; exit 1; }\nnoauth=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:47823/health)\n[ \"$noauth\" = 401 ] || { echo \"::error::unauthenticated /health returned $noauth\"; exit 1; }\ndocker rm -f sov-smoke\n"
+        },
+        {
           "job": "upload-cli-binaries",
           "step": "Generate checksums",
           "text": "set -euo pipefail\nVERSION=${RELEASE_TAG#v}\ncd artifacts\nsha256sum * > \"checksums-${VERSION}.txt\"\ncat \"checksums-${VERSION}.txt\"\n"
@@ -12297,7 +12696,8 @@
         "attestations:write",
         "contents:read",
         "contents:write",
-        "id-token:write"
+        "id-token:write",
+        "packages:write"
       ],
       "pushes": false,
       "reach": [
@@ -12307,9 +12707,24 @@
           "files": 2
         },
         {
+          "boundary": "docker",
+          "depth": 0,
+          "files": 2
+        },
+        {
+          "boundary": "root",
+          "depth": 0,
+          "files": 3
+        },
+        {
           "boundary": "sov_cli",
           "depth": 0,
           "files": 4
+        },
+        {
+          "boundary": "sov_daemon",
+          "depth": 0,
+          "files": 7
         },
         {
           "boundary": "sov_engine",
@@ -12320,15 +12735,6 @@
           "boundary": "sov_transport",
           "depth": 0,
           "files": 7
-        },
-        {
-          "boundary": "sov_daemon",
-          "depth": 1,
-          "enters": {
-            "file": "sov_daemon/__init__.py",
-            "from": "sov_cli/main.py"
-          },
-          "files": 6
         }
       ],
       "readers": [],
@@ -12344,6 +12750,43 @@
           "runKind": "executes"
         },
         {
+          "job": "docker",
+          "path": "LICENSE",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
+        },
+        {
+          "job": "docker",
+          "path": "README.md",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
+        },
+        {
+          "job": "docker",
+          "path": "docker/entrypoint.sh",
+          "runKind": "executes",
+          "via": "docker build Dockerfile"
+        },
+        {
+          "job": "docker",
+          "path": "docker/healthcheck.py",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
+        },
+        {
+          "job": "docker",
+          "path": "pyproject.toml",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
+        },
+        {
+          "directory": true,
+          "job": "docker",
+          "path": "sov_cli/",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
+        },
+        {
           "directory": true,
           "job": "publish",
           "path": "sov_cli/",
@@ -12357,9 +12800,37 @@
           "runKind": "executes"
         },
         {
-          "job": "publish",
+          "job": "docker",
           "path": "sov_cli/main.py",
-          "runKind": "executes"
+          "runKind": "executes",
+          "via": "docker build Dockerfile → docker/entrypoint.sh"
+        },
+        {
+          "directory": true,
+          "job": "docker",
+          "path": "sov_daemon/",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
+        },
+        {
+          "directory": true,
+          "job": "publish",
+          "path": "sov_daemon/",
+          "runKind": "checks",
+          "via": "build pyproject.toml"
+        },
+        {
+          "job": "docker",
+          "path": "sov_daemon/__main__.py",
+          "runKind": "executes",
+          "via": "docker build Dockerfile → docker/entrypoint.sh"
+        },
+        {
+          "directory": true,
+          "job": "docker",
+          "path": "sov_engine/",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
         },
         {
           "directory": true,
@@ -12370,14 +12841,22 @@
         },
         {
           "directory": true,
+          "job": "docker",
+          "path": "sov_transport/",
+          "runKind": "checks",
+          "via": "docker build Dockerfile"
+        },
+        {
+          "directory": true,
           "job": "publish",
           "path": "sov_transport/",
           "runKind": "checks",
           "via": "build pyproject.toml"
         }
       ],
-      "runsCount": 7,
+      "runsCount": 14,
       "secrets": [
+        "GITHUB_TOKEN",
         "TAURI_SIGNING_PRIVATE_KEY",
         "TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
       ],
@@ -12394,6 +12873,7 @@
         "opensPullRequests": false,
         "publishes": true,
         "publishesTo": [
+          "container image",
           "pypi"
         ],
         "releases": false
@@ -12421,11 +12901,16 @@
         "actions/setup-python",
         "actions/upload-artifact",
         "astral-sh/setup-uv",
+        "docker/build-push-action",
+        "docker/login-action",
+        "docker/metadata-action",
+        "docker/setup-buildx-action",
+        "docker/setup-qemu-action",
         "dtolnay/rust-toolchain",
         "pypa/gh-action-pypi-publish",
         "softprops/action-gh-release"
       ],
-      "usesWorkflowToken": false
+      "usesWorkflowToken": true
     },
     {
       "app": "desktop",
@@ -12616,8 +13101,8 @@
     }
   ],
   "generatedFrom": {
-    "commit": "41fa408b1f2902e4a85293abc44782f76ec8f68e",
-    "tracked": 397
+    "commit": "ebba7c7281ddf01eba3e30a41e37493e90e96bdf",
+    "tracked": 405
   },
   "landings": [
     {
@@ -13584,6 +14069,14 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 106,
-  "unassigned": []
+  "testFiles": 108,
+  "unassigned": [],
+  "unseen": [
+    {
+      "files": [
+        "compose.yaml"
+      ],
+      "kind": "deploy"
+    }
+  ]
 }
