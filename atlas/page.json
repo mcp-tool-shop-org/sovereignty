@@ -75,44 +75,49 @@
       "kind": "part",
       "name": "app",
       "partLabel": "app"
-    },
-    {
-      "doors": 2,
-      "importedBy": [],
-      "importedByTests": [],
-      "kind": "part",
-      "name": "docker",
-      "partLabel": "docker"
-    },
-    {
-      "doors": 2,
-      "importedBy": [],
-      "importedByTests": [],
-      "kind": "part",
-      "name": "root",
-      "partLabel": "the repository root"
     }
   ],
   "changes": {
     "fileCounts": {
-      "added": 1,
-      "changed": 7,
+      "added": 0,
+      "changed": 4,
       "moved": 0,
-      "parts": 2,
+      "parts": 3,
       "removed": 0
     },
     "items": [
       {
+        "kind": "door",
+        "sentence": "Release no longer runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py.",
+        "subjects": [
+          ".github/workflows/publish.yml",
+          "docker/entrypoint.sh",
+          "sov_cli/main.py",
+          "sov_daemon/__main__.py"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "Release no longer checks LICENSE, README.md, docker/healthcheck.py and 1 more.",
+        "subjects": [
+          ".github/workflows/publish.yml",
+          "LICENSE",
+          "README.md",
+          "docker/healthcheck.py",
+          "pyproject.toml"
+        ]
+      },
+      {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-09-30; 1 file added and 7 changed content.",
+        "sentence": "4 files changed content, across 3 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "ebba7c7281ddf01eba3e30a41e37493e90e96bdf",
-      "generatedAt": "2026-09-30T00:26:44.282Z"
+      "commit": "99955d263b91c86fdd768ab97e21f6dea26bc8cf",
+      "generatedAt": "2026-09-30T00:33:58.863Z"
     },
-    "unchanged": true
+    "unchanged": false
   },
   "changesTogether": [
     {
@@ -181,9 +186,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "99955d263b91c86fdd768ab97e21f6dea26bc8cf",
+  "commit": "c9944dcf0cbf76042173dd0a61a2362d30b0bb09",
   "defaultBranch": "main",
-  "derived": "13 parts, mostly Python (111 files), TypeScript (61), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
+  "derived": "13 parts, mostly Python (111 files), TypeScript (61), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
     {
       "checks": [],
@@ -303,17 +308,13 @@
         "sov_cli/__main__.py"
       ],
       "checks": [
-        "LICENSE",
-        "README.md",
-        "docker/healthcheck.py",
-        "pyproject.toml",
         "sov_cli/",
         "sov_daemon/",
         "sov_engine/",
         "sov_transport/"
       ],
-      "checksCount": 8,
-      "checksMore": 34,
+      "checksCount": 4,
+      "checksMore": 7,
       "file": ".github/workflows/publish.yml",
       "id": ".github/workflows/publish.yml",
       "landings": [],
@@ -324,16 +325,6 @@
           "boundary": ".github",
           "depth": 0,
           "files": 2
-        },
-        {
-          "boundary": "docker",
-          "depth": 0,
-          "files": 2
-        },
-        {
-          "boundary": "root",
-          "depth": 0,
-          "files": 3
         },
         {
           "boundary": "sov_cli",
@@ -358,23 +349,19 @@
       ],
       "runs": [
         ".github/scripts/generate-latest-json.py",
-        ".github/scripts/stage-tauri-artifacts.sh",
-        "docker/entrypoint.sh",
-        "sov_cli/main.py",
-        "sov_daemon/__main__.py"
+        ".github/scripts/stage-tauri-artifacts.sh"
       ],
-      "runsCount": 5,
-      "runsMore": 2,
+      "runsCount": 2,
+      "runsMore": 0,
       "sends": [
-        "publishes to PyPI and a container image",
+        "publishes to PyPI",
         "builds sov_cli/__main__.py into binaries for darwin-arm64, linux-x64 and win-x64 and uploads them to the release"
       ],
       "stages": [],
       "triggers": [
         "when a release is published",
         "or by hand"
-      ],
-      "untracked": ".sov/games/, which is not tracked"
+      ]
     },
     {
       "checks": [],
@@ -533,14 +520,14 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T00:33:58.863Z",
+  "generatedAt": "2026-09-30T01:33:21.388Z",
   "limits": [
     "27 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",
     "2 writes go to places this repository does not track, so they are not listed as generated.",
     "7 reads go to a path their caller passes, not to this repository.",
     "1 command is built at run time and not followed.",
-    "There is a compose.yaml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.",
+    "There is a Dockerfile and a compose.yaml that no workflow runs; what deploys from them does so from outside this repository, and is not on this page.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
   ],
   "mainDoor": ".github/workflows/ci.yml",

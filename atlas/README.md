@@ -1,19 +1,21 @@
 # sovereignty: how it works
 
-Mapped at 2026-09-30 from commit 99955d2.
+Mapped at 2026-09-30 from commit c9944dc.
 
 ## What this is
 
-13 parts, mostly Python (111 files), TypeScript (61), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
+13 parts, mostly Python (111 files), TypeScript (61), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
 
-## What changed since 2026-09-30 (ebba7c7)
+## What changed since 2026-09-30 (99955d2)
 
-Nothing structural changed since 2026-09-30; 1 file added and 7 changed content.
+- Release no longer runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py.
+- Release no longer checks LICENSE, README.md, docker/healthcheck.py and 1 more.
+- 4 files changed content, across 3 parts.
 
 ## What comes in
 
 1. **CI.** On a pull request; on a push touching 12 paths; on a schedule (`0 14 * * *`); or by hand. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 136 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
-2. **Release.** When a release is published; or by hand. Runs .github/scripts/generate-latest-json.py, .github/scripts/stage-tauri-artifacts.sh, docker/entrypoint.sh and 2 more; builds sov_cli/__main__.py; checks LICENSE, README.md, docker/healthcheck.py and 34 more.
+2. **Release.** When a release is published; or by hand. Runs .github/scripts/generate-latest-json.py and .github/scripts/stage-tauri-artifacts.sh; builds sov_cli/__main__.py; checks sov_cli/, sov_daemon/, sov_engine/ and 7 more.
 3. **Deploy site to GitHub Pages.** On a pull request touching 2 paths; on a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
 4. **sov** (a command people run). Runs sov_cli/main.py.
 5. **sov-tauri-shell** (a desktop app built from app/src-tauri, which nothing ships). Runs app/src-tauri/src/main.rs.
@@ -29,7 +31,7 @@ CI writes only to .sov/games/ and app/src-tauri/gen/schemas, which are not track
 
 ## The other doors
 
-**Release** runs .github/scripts/generate-latest-json.py, .github/scripts/stage-tauri-artifacts.sh, docker/entrypoint.sh and 2 more, checks LICENSE, README.md, docker/healthcheck.py and 34 more, writes to .sov/games/, which is not tracked, publishes to PyPI and a container image, and builds sov_cli/__main__.py into binaries for darwin-arm64, linux-x64 and win-x64 and uploads them to the release.
+**Release** runs .github/scripts/generate-latest-json.py and .github/scripts/stage-tauri-artifacts.sh, checks sov_cli/, sov_daemon/, sov_engine/ and 7 more, publishes to PyPI, and builds sov_cli/__main__.py into binaries for darwin-arm64, linux-x64 and win-x64 and uploads them to the release.
 
 **Deploy site to GitHub Pages** runs site/astro.config.mjs and site/src/, and deploys the site except on a pull request.
 
@@ -45,8 +47,6 @@ CI writes only to .sov/games/ and app/src-tauri/gen/schemas, which are not track
 - **sov_daemon** is imported by 1 part (sov_cli), and by 1 more only from tests; it sits on the path of 3 doors.
 - **.github** is imported by no other part and sits on the path of 2 doors.
 - **app** is imported by no other part and sits on the path of 2 doors.
-- **docker** is imported by no other part and sits on the path of 2 doors.
-- **the repository root** is imported by no other part and sits on the path of 2 doors.
 
 ## What tends to change together
 
@@ -92,7 +92,7 @@ Read those in order to follow one pull request end to end.
 - 2 writes go to places this repository does not track, so they are not listed as generated.
 - 7 reads go to a path their caller passes, not to this repository.
 - 1 command is built at run time and not followed.
-- There is a compose.yaml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.
+- There is a Dockerfile and a compose.yaml that no workflow runs; what deploys from them does so from outside this repository, and is not on this page.
 - Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window.
 
 Regenerate with `npx --yes @dogfood-lab/atlas map`.

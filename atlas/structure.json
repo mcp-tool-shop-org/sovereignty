@@ -133,7 +133,7 @@
           "path": ".github/workflows/pages.yml"
         },
         {
-          "hash": "d36c055657ba1a331f84244e7fed076f27da4a7a2a8da3106fa302b354ef6fc5",
+          "hash": "0c7a40324a0534eadac0d39cca4e9631e44aa980b97f8b3c8c593fe1cfef2dd9",
           "path": ".github/workflows/publish.yml"
         }
       ],
@@ -1046,7 +1046,7 @@
           "path": "app/src/routes/Settings.module.css"
         },
         {
-          "hash": "7166d75e001e599e417e89fe0207f187842634ff986c33d4047f948d6bfc1408",
+          "hash": "ee1cbc80675d90ee5d0932a59acfb43c8be8149362f09f0afdaf09a1eacd583f",
           "importsFiles": [
             "app/src/hooks/useDaemon.tsx",
             "app/src/routes/Settings.tsx"
@@ -1651,11 +1651,11 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "dd84180fbcd3a0c28ed75ee1d91680c96dedb24db5c17a0c5d5e065add7206e2",
+          "hash": "77ba0c81399b3dfc1152b5baf829736f7e5acf73d266553e155faad8f3e7a41c",
           "path": "CHANGELOG.md"
         },
         {
-          "hash": "2d4257f6624809c2116d05187c8c3a62d800d4b1a3ff736c307390d50f3b0e4f",
+          "hash": "21c705a6d21e9d38d86e5f488f6e7e6bd4030bb009dbc8408869996eb3f380b0",
           "path": "CLAUDE.md"
         },
         {
@@ -7788,8 +7788,6 @@
           "path": "sov_daemon/__init__.py"
         },
         {
-          "entry": "main",
-          "entryRule": 1,
           "exports": [
             "main"
           ],
@@ -7797,66 +7795,7 @@
           "importsFiles": [
             "sov_daemon/lifecycle.py"
           ],
-          "path": "sov_daemon/__main__.py",
-          "sequences": [
-            {
-              "calls": [
-                {
-                  "inner": [
-                    {
-                      "line": 876,
-                      "name": "XRPLNetwork",
-                      "target": {
-                        "file": "sov_transport/xrpl_internals.py"
-                      },
-                      "via": "run_foreground"
-                    },
-                    {
-                      "line": 906,
-                      "name": "build_app",
-                      "target": {
-                        "file": "sov_daemon/server.py"
-                      },
-                      "via": "run_foreground"
-                    },
-                    {
-                      "line": 922,
-                      "name": "JsonLineFormatter",
-                      "target": {
-                        "file": "sov_daemon/log_fields.py"
-                      },
-                      "via": "run_foreground"
-                    },
-                    {
-                      "line": 948,
-                      "name": "MaxBodySizeMiddleware",
-                      "target": {
-                        "file": "sov_daemon/server.py"
-                      },
-                      "via": "run_foreground"
-                    },
-                    {
-                      "line": 104,
-                      "name": "save_root",
-                      "target": {
-                        "file": "sov_engine/io_utils.py"
-                      },
-                      "via": "daemon_file_path"
-                    }
-                  ],
-                  "line": 95,
-                  "name": "run_foreground_from_env",
-                  "target": {
-                    "file": "sov_daemon/lifecycle.py"
-                  }
-                }
-              ],
-              "exported": true,
-              "invokedAtTopLevel": true,
-              "isDefaultExport": false,
-              "name": "main"
-            }
-          ]
+          "path": "sov_daemon/__main__.py"
         },
         {
           "exports": [
@@ -7882,8 +7821,6 @@
           "path": "sov_daemon/events.py"
         },
         {
-          "entry": "run_foreground",
-          "entryRule": 4,
           "exports": [
             "daemon_file_path",
             "daemon_info",
@@ -7900,251 +7837,7 @@
             "sov_engine/io_utils.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "sov_daemon/lifecycle.py",
-          "sequences": [
-            {
-              "calls": [
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  }
-                }
-              ],
-              "exported": true,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "daemon_file_path"
-            },
-            {
-              "calls": [
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                }
-              ],
-              "exported": false,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "_read_handshake"
-            },
-            {
-              "calls": [
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                },
-                {
-                  "line": 215,
-                  "name": "atomic_write_text",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  }
-                }
-              ],
-              "exported": false,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "_write_handshake"
-            },
-            {
-              "calls": [
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                }
-              ],
-              "exported": false,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "_remove_handshake"
-            },
-            {
-              "calls": [
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                }
-              ],
-              "exported": true,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "daemon_status"
-            },
-            {
-              "calls": [
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                }
-              ],
-              "exported": true,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "daemon_info"
-            },
-            {
-              "calls": [
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                }
-              ],
-              "exported": false,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "_wait_for_handshake"
-            },
-            {
-              "calls": [
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                }
-              ],
-              "exported": true,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "start_daemon"
-            },
-            {
-              "calls": [
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                }
-              ],
-              "exported": true,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "stop_daemon"
-            },
-            {
-              "calls": [
-                {
-                  "line": 876,
-                  "name": "XRPLNetwork",
-                  "target": {
-                    "file": "sov_transport/xrpl_internals.py"
-                  }
-                },
-                {
-                  "line": 906,
-                  "name": "build_app",
-                  "target": {
-                    "file": "sov_daemon/server.py"
-                  }
-                },
-                {
-                  "line": 922,
-                  "name": "JsonLineFormatter",
-                  "target": {
-                    "file": "sov_daemon/log_fields.py"
-                  }
-                },
-                {
-                  "line": 948,
-                  "name": "MaxBodySizeMiddleware",
-                  "target": {
-                    "file": "sov_daemon/server.py"
-                  }
-                },
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                }
-              ],
-              "exported": true,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "run_foreground"
-            },
-            {
-              "calls": [
-                {
-                  "line": 876,
-                  "name": "XRPLNetwork",
-                  "target": {
-                    "file": "sov_transport/xrpl_internals.py"
-                  },
-                  "via": "run_foreground"
-                },
-                {
-                  "line": 906,
-                  "name": "build_app",
-                  "target": {
-                    "file": "sov_daemon/server.py"
-                  },
-                  "via": "run_foreground"
-                },
-                {
-                  "line": 922,
-                  "name": "JsonLineFormatter",
-                  "target": {
-                    "file": "sov_daemon/log_fields.py"
-                  },
-                  "via": "run_foreground"
-                },
-                {
-                  "line": 948,
-                  "name": "MaxBodySizeMiddleware",
-                  "target": {
-                    "file": "sov_daemon/server.py"
-                  },
-                  "via": "run_foreground"
-                },
-                {
-                  "line": 104,
-                  "name": "save_root",
-                  "target": {
-                    "file": "sov_engine/io_utils.py"
-                  },
-                  "via": "daemon_file_path"
-                }
-              ],
-              "exported": true,
-              "invokedAtTopLevel": false,
-              "isDefaultExport": false,
-              "name": "run_foreground_from_env"
-            }
-          ]
+          "path": "sov_daemon/lifecycle.py"
         },
         {
           "hash": "624635ac715f1c8cd22edaf4c129530384707c61c95a718ab6328afcd0a7814e",
@@ -12588,7 +12281,7 @@
       "usesWorkflowToken": false
     },
     {
-      "checksCount": 8,
+      "checksCount": 4,
       "commands": [
         {
           "job": "require-release-tag",
@@ -12661,16 +12354,6 @@
           "text": "set -euo pipefail\nVERSION=\"${VERSION#v}\"\nexport VERSION ARTIFACT_GLOBS BUNDLE_BASE TARGET\nbash .github/scripts/stage-tauri-artifacts.sh\n"
         },
         {
-          "job": "docker",
-          "step": "Verify version matches tag",
-          "text": "VERSION=$(python3 -c \"import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])\")\nif [ \"$VERSION\" != \"${RELEASE_TAG#v}\" ]; then\n  echo \"::error::pyproject.toml version $VERSION does not match tag $RELEASE_TAG\"\n  exit 1\nfi\n"
-        },
-        {
-          "job": "docker",
-          "step": "Smoke test image",
-          "text": "set -euo pipefail\nOUT=$(docker run --rm sovereignty:smoke --version)\necho \"$OUT\"\n[ \"$OUT\" = \"sovereignty ${RELEASE_TAG#v}\" ] || { echo \"::error::image reports '$OUT'\"; exit 1; }\nSTATUS=$(docker run --rm sovereignty:smoke self-check --json | jq -r .status)\ncase \"$STATUS\" in ok|warn) ;; *) echo \"::error::self-check status=$STATUS\"; exit 1 ;; esac\ndocker run --rm sovereignty:smoke python -c \"import sov_daemon, starlette, uvicorn, xrpl\"\ndocker run -d --name sov-smoke -p 127.0.0.1:47823:47823 -e SOV_DAEMON_TOKEN=smoke sovereignty:smoke\nfor _ in $(seq 1 30); do\n  code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer smoke' http://127.0.0.1:47823/health || true)\n  [ \"$code\" = 200 ] && break\n  sleep 1\ndone\ndocker logs sov-smoke\n[ \"$code\" = 200 ] || { echo \"::error::daemon /health never returned 200 (last=$code)\"; exit 1; }\nnoauth=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:47823/health)\n[ \"$noauth\" = 401 ] || { echo \"::error::unauthenticated /health returned $noauth\"; exit 1; }\ndocker rm -f sov-smoke\n"
-        },
-        {
           "job": "upload-cli-binaries",
           "step": "Generate checksums",
           "text": "set -euo pipefail\nVERSION=${RELEASE_TAG#v}\ncd artifacts\nsha256sum * > \"checksums-${VERSION}.txt\"\ncat \"checksums-${VERSION}.txt\"\n"
@@ -12700,8 +12383,7 @@
         "attestations:write",
         "contents:read",
         "contents:write",
-        "id-token:write",
-        "packages:write"
+        "id-token:write"
       ],
       "pushes": false,
       "reach": [
@@ -12709,16 +12391,6 @@
           "boundary": ".github",
           "depth": 0,
           "files": 2
-        },
-        {
-          "boundary": "docker",
-          "depth": 0,
-          "files": 2
-        },
-        {
-          "boundary": "root",
-          "depth": 0,
-          "files": 3
         },
         {
           "boundary": "sov_cli",
@@ -12754,43 +12426,6 @@
           "runKind": "executes"
         },
         {
-          "job": "docker",
-          "path": "LICENSE",
-          "runKind": "checks",
-          "via": "docker build Dockerfile"
-        },
-        {
-          "job": "docker",
-          "path": "README.md",
-          "runKind": "checks",
-          "via": "docker build Dockerfile"
-        },
-        {
-          "job": "docker",
-          "path": "docker/entrypoint.sh",
-          "runKind": "executes",
-          "via": "docker build Dockerfile"
-        },
-        {
-          "job": "docker",
-          "path": "docker/healthcheck.py",
-          "runKind": "checks",
-          "via": "docker build Dockerfile"
-        },
-        {
-          "job": "docker",
-          "path": "pyproject.toml",
-          "runKind": "checks",
-          "via": "docker build Dockerfile"
-        },
-        {
-          "directory": true,
-          "job": "docker",
-          "path": "sov_cli/",
-          "runKind": "checks",
-          "via": "docker build Dockerfile"
-        },
-        {
           "directory": true,
           "job": "publish",
           "path": "sov_cli/",
@@ -12804,19 +12439,6 @@
           "runKind": "executes"
         },
         {
-          "job": "docker",
-          "path": "sov_cli/main.py",
-          "runKind": "executes",
-          "via": "docker build Dockerfile → docker/entrypoint.sh"
-        },
-        {
-          "directory": true,
-          "job": "docker",
-          "path": "sov_daemon/",
-          "runKind": "checks",
-          "via": "docker build Dockerfile"
-        },
-        {
           "directory": true,
           "job": "publish",
           "path": "sov_daemon/",
@@ -12824,31 +12446,11 @@
           "via": "build pyproject.toml"
         },
         {
-          "job": "docker",
-          "path": "sov_daemon/__main__.py",
-          "runKind": "executes",
-          "via": "docker build Dockerfile → docker/entrypoint.sh"
-        },
-        {
-          "directory": true,
-          "job": "docker",
-          "path": "sov_engine/",
-          "runKind": "checks",
-          "via": "docker build Dockerfile"
-        },
-        {
           "directory": true,
           "job": "publish",
           "path": "sov_engine/",
           "runKind": "checks",
           "via": "build pyproject.toml"
-        },
-        {
-          "directory": true,
-          "job": "docker",
-          "path": "sov_transport/",
-          "runKind": "checks",
-          "via": "docker build Dockerfile"
         },
         {
           "directory": true,
@@ -12858,9 +12460,8 @@
           "via": "build pyproject.toml"
         }
       ],
-      "runsCount": 14,
+      "runsCount": 7,
       "secrets": [
-        "GITHUB_TOKEN",
         "TAURI_SIGNING_PRIVATE_KEY",
         "TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
       ],
@@ -12877,7 +12478,6 @@
         "opensPullRequests": false,
         "publishes": true,
         "publishesTo": [
-          "container image",
           "pypi"
         ],
         "releases": false
@@ -12894,9 +12494,6 @@
           "event": "workflow_dispatch"
         }
       ],
-      "untrackedLandings": [
-        ".sov/games/"
-      ],
       "uses": [
         "actions/attest-build-provenance",
         "actions/checkout",
@@ -12905,16 +12502,11 @@
         "actions/setup-python",
         "actions/upload-artifact",
         "astral-sh/setup-uv",
-        "docker/build-push-action",
-        "docker/login-action",
-        "docker/metadata-action",
-        "docker/setup-buildx-action",
-        "docker/setup-qemu-action",
         "dtolnay/rust-toolchain",
         "pypa/gh-action-pypi-publish",
         "softprops/action-gh-release"
       ],
-      "usesWorkflowToken": true
+      "usesWorkflowToken": false
     },
     {
       "app": "desktop",
@@ -13105,7 +12697,7 @@
     }
   ],
   "generatedFrom": {
-    "commit": "99955d263b91c86fdd768ab97e21f6dea26bc8cf",
+    "commit": "c9944dcf0cbf76042173dd0a61a2362d30b0bb09",
     "tracked": 406
   },
   "landings": [
@@ -14078,6 +13670,7 @@
   "unseen": [
     {
       "files": [
+        "Dockerfile",
         "compose.yaml"
       ],
       "kind": "deploy"
