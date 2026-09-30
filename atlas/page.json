@@ -109,8 +109,8 @@
       }
     ],
     "since": {
-      "commit": "84d51cd976f1eb3d5e878ab20e51eb1a34352003",
-      "generatedAt": "2026-09-30T03:02:52.378Z"
+      "commit": "ae1eb42ff3d713ede0f22f9fdc335383374aee99",
+      "generatedAt": "2026-09-30T03:03:22.384Z"
     },
     "unchanged": true
   },
@@ -166,9 +166,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "ae1eb42ff3d713ede0f22f9fdc335383374aee99",
+  "commit": "9fb4a780d57c47b130c872444b85a0e59df3786e",
   "defaultBranch": "main",
-  "derived": "14 parts, mostly Python (118 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
+  "derived": "14 parts, mostly Python (119 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
     {
       "checks": [],
@@ -205,7 +205,7 @@
             "app/src/",
             "app/vite.config.ts"
           ],
-          "runsMore": 143,
+          "runsMore": 144,
           "when": "except on a schedule"
         }
       ],
@@ -267,7 +267,7 @@
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 79
+          "files": 80
         }
       ],
       "runs": [],
@@ -597,7 +597,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T03:03:22.384Z",
+  "generatedAt": "2026-09-30T03:03:37.094Z",
   "limits": [
     "39 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",
@@ -635,7 +635,7 @@
   ],
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 116,
+  "testFiles": 117,
   "testedBy": {
     "app": 32,
     "assets": 0,
@@ -643,7 +643,7 @@
     "sov_cli": 42,
     "sov_daemon": 38,
     "sov_engine": 58,
-    "sov_transport": 51
+    "sov_transport": 52
   },
   "unnamedWrites": 3,
   "unread": [

@@ -222,8 +222,8 @@ If the fix would change behaviour a player or operator sees, or it touches the d
 | Baseline | 1643 | 72.5 | `0184f54` |
 | Phase 1 | 660 | 89.0 | `84d51cd` |
 | Phase 2 | 539 | 91.0 | `ae1eb42` |
-| Phase 3 | 316 | 94.7 | (this commit) |
-| Phase 4 | | | |
+| Phase 3 | 316 | 94.7 | `9fb4a78` |
+| Phase 4 | 220 | 96.3 | (this commit) |
 | Phase 5 | | | |
 | Phase 6 | | | |
 | Phase 7 (gate on) | | | |

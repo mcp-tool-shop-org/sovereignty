@@ -1500,7 +1500,7 @@
           "path": "docs/cli-json-output.md"
         },
         {
-          "hash": "404f0482ab1e2940d371600de42fa285ad4114b2f275722db729b7d2cd039a4d",
+          "hash": "6f21982c2e72f95f5c559c195d94287e01f28ba398f78530e4a5db00eee6d74d",
           "path": "docs/handoffs/coverage-90.md"
         },
         {
@@ -10560,7 +10560,7 @@
       "name": "sov_transport",
       "origin": "authored",
       "role": "code",
-      "testedBy": 51,
+      "testedBy": 52,
       "unresolvedSites": 18
     },
     {
@@ -12246,6 +12246,86 @@
         },
         {
           "exports": [
+            "fake_xrpl",
+            "sut",
+            "test_anchor_batch_chunks_at_eight_memos_and_keeps_order",
+            "test_anchor_batch_partial_failure_surfaces_transport_error",
+            "test_anchor_batch_rejects_chunk_over_aggregate_byte_cap",
+            "test_anchor_batch_rejects_empty_rounds",
+            "test_anchor_batch_rejects_single_oversized_memo",
+            "test_anchor_rejects_oversized_memo_before_any_submission",
+            "test_anchor_submits_memo_and_returns_hash",
+            "test_base_get_memo_text_default_refuses_by_name",
+            "test_base_verify_is_a_deprecated_bool_alias",
+            "test_classify_submit_error_tokens",
+            "test_constructor_https_guard_and_insecure_escape_hatch",
+            "test_explorer_root_strips_transactions_segment",
+            "test_extract_memos_prefers_top_level_then_tx_json_then_tx",
+            "test_extract_memos_tolerates_malformed_shapes",
+            "test_from_hex_is_lenient",
+            "test_fund_dev_wallet_mainnet_has_no_faucet",
+            "test_fund_dev_wallet_missing_xrpl_raises_runtime_error",
+            "test_fund_dev_wallet_rejects_wallet_without_seed",
+            "test_fund_dev_wallet_returns_address_and_seed",
+            "test_get_memo_text_decodes_every_envelope_shape",
+            "test_get_memo_text_missing_xrpl_raises_runtime_error",
+            "test_get_memo_text_none_when_every_memo_is_undecodable",
+            "test_get_memo_text_none_when_no_memos",
+            "test_get_memo_text_propagates_request_failure_but_releases_client",
+            "test_get_memo_text_rejects_empty_txid",
+            "test_get_memo_text_skips_undecodable_memos_and_returns_first_good",
+            "test_is_anchored_found_for_every_envelope_shape",
+            "test_is_anchored_found_when_is_successful_raises",
+            "test_is_anchored_found_when_response_has_no_is_successful",
+            "test_is_anchored_lookup_failed_on_unsuccessful_response",
+            "test_is_anchored_lookup_failed_when_request_raises",
+            "test_is_anchored_missing_xrpl_raises_runtime_error",
+            "test_is_anchored_not_found_when_hash_differs_or_is_only_a_prefix",
+            "test_is_anchored_not_found_when_no_memos_extractable",
+            "test_is_anchored_rejects_empty_arguments",
+            "test_is_anchored_releases_client_and_survives_close_failure",
+            "test_is_anchored_skips_junk_memos_and_finds_later_match",
+            "test_is_anchored_txn_not_found_is_definitive_not_found",
+            "test_maybe_aclose_awaits_async_aclose",
+            "test_maybe_aclose_calls_sync_aclose_without_awaiting",
+            "test_maybe_aclose_falls_back_to_async_close",
+            "test_maybe_aclose_falls_back_to_sync_close",
+            "test_maybe_aclose_noop_when_client_has_no_lifecycle_method",
+            "test_maybe_aclose_prefers_aclose_over_close",
+            "test_maybe_aclose_swallows_cleanup_errors",
+            "test_null_anchor_batch_rejects_empty_input",
+            "test_null_anchor_batch_returns_single_marker_keyed_off_first_entry",
+            "test_null_anchor_returns_offline_marker",
+            "test_null_explorer_url_and_memo_text_are_offline_placeholders",
+            "test_null_is_anchored_passthrough_for_offline_txids_only",
+            "test_null_strict_verify_refuses_to_pass_through",
+            "test_submit_clamps_backoff_to_remaining_deadline",
+            "test_submit_deadline_already_elapsed_skips_submission",
+            "test_submit_exhaustion_message_names_reason_and_recovery",
+            "test_submit_exhausts_retries_for_each_error_class",
+            "test_submit_missing_xrpl_raises_runtime_error",
+            "test_submit_never_leaks_seed_through_logs_or_message",
+            "test_submit_rejects_unexpected_response_shapes",
+            "test_submit_retries_transient_errors_then_succeeds",
+            "test_submit_stops_retrying_when_deadline_passes_after_failure",
+            "test_submit_success_returns_hash_and_builds_memos",
+            "test_submit_success_when_is_successful_raises",
+            "test_submit_success_when_response_has_no_is_successful",
+            "test_submit_unsuccessful_response_hint_names_network_explorer"
+          ],
+          "hash": "641b2ccbd1b4d3015e7fadc36ec54055f66072c725726747f70fb103c93431f8",
+          "importsFiles": [
+            "sov_transport/__init__.py",
+            "sov_transport/base.py",
+            "sov_transport/null.py",
+            "sov_transport/xrpl.py",
+            "sov_transport/xrpl_async.py",
+            "sov_transport/xrpl_internals.py"
+          ],
+          "path": "tests/test_transport_coverage.py"
+        },
+        {
+          "exports": [
             "test_new_treaty_table_game_setup",
             "test_next_treaty_id_with_malformed_id_skips_gracefully",
             "test_parse_stake_coins",
@@ -12801,7 +12881,7 @@
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 79
+          "files": 80
         }
       ],
       "readers": [],
@@ -13925,8 +14005,8 @@
     }
   ],
   "generatedFrom": {
-    "commit": "ae1eb42ff3d713ede0f22f9fdc335383374aee99",
-    "tracked": 422
+    "commit": "9fb4a780d57c47b130c872444b85a0e59df3786e",
+    "tracked": 423
   },
   "landings": [
     {
@@ -14981,7 +15061,7 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 116,
+  "testFiles": 117,
   "unassigned": [],
   "unseen": [
     {
