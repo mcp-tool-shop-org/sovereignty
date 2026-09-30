@@ -1,7 +1,7 @@
 {
   "boundaries": [
     {
-      "dynamicReads": 2,
+      "dynamicReads": 0,
       "dynamicSpawns": 0,
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 0,
@@ -39,6 +39,22 @@
             "extract_artifacts_values",
             "main"
           ],
+          "failurePaths": [
+            {
+              "in": "_bash",
+              "kind": "raise",
+              "line": 35
+            },
+            {
+              "in": "_fail",
+              "kind": "raise",
+              "line": 40
+            },
+            {
+              "kind": "raise",
+              "line": 192
+            }
+          ],
           "hash": "d2a5a22d2f13e25a099aefee6554a541f88521f7b978e489b81c757601ac48e2",
           "path": ".github/scripts/check-publish-yml.py",
           "sequences": []
@@ -49,6 +65,17 @@
           "exports": [
             "generate_latest_json",
             "main"
+          ],
+          "failurePaths": [
+            {
+              "in": "generate_latest_json",
+              "kind": "raise",
+              "line": 90
+            },
+            {
+              "kind": "raise",
+              "line": 119
+            }
           ],
           "hash": "76223c3d894b1300067bbaacbb1a88241857dbd6bf83d8b0ef06cde2a5fc421c",
           "path": ".github/scripts/generate-latest-json.py",
@@ -125,7 +152,7 @@
           "path": ".github/scripts/stage-tauri-artifacts.sh"
         },
         {
-          "hash": "e92404fd21a509f376e356291edd269549d6a576dcc7183f5364cf982ca09970",
+          "hash": "c86207963ced34c1791c39d985116925edc37f0d24789bb02bbabdbff0cfb322",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -151,6 +178,17 @@
       "importConfidence": "full",
       "name": ".github",
       "origin": "authored",
+      "outsidePlaces": [
+        {
+          "reads": 2,
+          "where": [
+            "caller"
+          ],
+          "writes": 1
+        }
+      ],
+      "outsideReads": 2,
+      "outsideWrites": 1,
       "role": "config",
       "testedBy": 0,
       "unresolvedSites": 0
@@ -440,6 +478,33 @@
             "read_daemon_config_at",
             "subprocess_cwd"
           ],
+          "failurePaths": [
+            {
+              "in": "read_daemon_config_at",
+              "kind": "match-err",
+              "line": 94
+            },
+            {
+              "in": "read_daemon_config_at",
+              "kind": "err",
+              "line": 95
+            },
+            {
+              "in": "read_daemon_config_at",
+              "kind": "match-err",
+              "line": 97
+            },
+            {
+              "in": "read_daemon_config_at",
+              "kind": "err",
+              "line": 98
+            },
+            {
+              "in": "read_daemon_config_at",
+              "kind": "err",
+              "line": 108
+            }
+          ],
           "hash": "fb53224accc4741893ad68aaebcca7aed70ee0522c678e576bb50884e22c65a7",
           "importsFiles": [
             "app/src-tauri/src/commands.rs"
@@ -454,6 +519,78 @@
             "daemon_stop_subprocess",
             "parse_status_output",
             "stop_blocking"
+          ],
+          "failurePaths": [
+            {
+              "in": "pid_is_alive",
+              "kind": "match-err",
+              "line": 193
+            },
+            {
+              "in": "pid_is_alive",
+              "kind": "match-err",
+              "line": 205
+            },
+            {
+              "in": "run_with_timeout_inner",
+              "kind": "match-err",
+              "line": 264
+            },
+            {
+              "in": "run_with_timeout_inner",
+              "kind": "err",
+              "line": 264
+            },
+            {
+              "in": "run_with_timeout_inner",
+              "kind": "match-err",
+              "line": 271
+            },
+            {
+              "in": "run_with_timeout_inner",
+              "kind": "err",
+              "line": 271
+            },
+            {
+              "in": "run_with_timeout_inner",
+              "kind": "match-err",
+              "line": 290
+            },
+            {
+              "in": "run_with_timeout_inner",
+              "kind": "err",
+              "line": 297
+            },
+            {
+              "in": "daemon_start_subprocess",
+              "kind": "err",
+              "line": 350
+            },
+            {
+              "in": "daemon_stop_subprocess",
+              "kind": "err",
+              "line": 379
+            },
+            {
+              "in": "parse_status_output",
+              "kind": "err",
+              "line": 432
+            },
+            {
+              "in": "extract_state",
+              "kind": "err",
+              "line": 484
+            },
+            {
+              "in": "parse_state_str",
+              "kind": "err",
+              "line": 495
+            },
+            {
+              "in": "extract_config",
+              "kind": "err",
+              "line": 517
+            }
           ],
           "hash": "6dae47e71b6a24087d19e8d75743848627dc53c750e6178e3c61d179f4d0b553",
           "importsFiles": [
@@ -471,6 +608,13 @@
             "format_panic_location",
             "format_panic_payload",
             "run"
+          ],
+          "failurePaths": [
+            {
+              "in": "handle_window_event",
+              "kind": "match-err",
+              "line": 226
+            }
           ],
           "hash": "7d45962fb87893a575eb322173c12f1a9feb7b85bc229ababc0e4787fac30d6d",
           "importsFiles": [
@@ -534,7 +678,8 @@
           "importsFiles": [
             "app/src/App.tsx"
           ],
-          "path": "app/src/App.test.tsx"
+          "path": "app/src/App.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -561,7 +706,8 @@
           "importsFiles": [
             "app/src/components/ConfirmDialog.tsx"
           ],
-          "path": "app/src/components/ConfirmDialog.test.tsx"
+          "path": "app/src/components/ConfirmDialog.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -579,17 +725,26 @@
         },
         {
           "hash": "f69df48483efaa6730014b6d5d75dfeec7ee1aea9ef65d65157590c5da7ce245",
+          "importOrder": [
+            "app/src/hooks/useDaemon.tsx",
+            "app/src/components/DaemonDisconnectedBanner.tsx"
+          ],
           "importsFiles": [
             "app/src/components/DaemonDisconnectedBanner.tsx",
             "app/src/hooks/useDaemon.tsx"
           ],
-          "path": "app/src/components/DaemonDisconnectedBanner.test.tsx"
+          "path": "app/src/components/DaemonDisconnectedBanner.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "DaemonDisconnectedBanner"
           ],
           "hash": "bbdf98f418eaff554129f8b1cba2cd0421b9c5208e42314a3d3330635b00156c",
+          "importOrder": [
+            "app/src/hooks/useDaemon.tsx",
+            "app/src/components/DaemonDisconnectedBanner.module.css"
+          ],
           "importsFiles": [
             "app/src/components/DaemonDisconnectedBanner.module.css",
             "app/src/hooks/useDaemon.tsx"
@@ -605,7 +760,8 @@
           "importsFiles": [
             "app/src/components/EmptyState.tsx"
           ],
-          "path": "app/src/components/EmptyState.test.tsx"
+          "path": "app/src/components/EmptyState.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -629,7 +785,8 @@
           "importsFiles": [
             "app/src/components/EventFeed.tsx"
           ],
-          "path": "app/src/components/EventFeed.test.tsx"
+          "path": "app/src/components/EventFeed.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -637,6 +794,10 @@
             "formatEventSummary"
           ],
           "hash": "082af788075d76f18cefbbc0de3c31432e12b5f81d1ea021220ac2f253d815fc",
+          "importOrder": [
+            "app/src/types/daemon.ts",
+            "app/src/components/EventFeed.module.css"
+          ],
           "importsFiles": [
             "app/src/components/EventFeed.module.css",
             "app/src/types/daemon.ts"
@@ -652,7 +813,8 @@
           "importsFiles": [
             "app/src/components/ExpandableRow.tsx"
           ],
-          "path": "app/src/components/ExpandableRow.test.tsx"
+          "path": "app/src/components/ExpandableRow.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -673,7 +835,8 @@
           "importsFiles": [
             "app/src/components/LoadingSpinner.tsx"
           ],
-          "path": "app/src/components/LoadingSpinner.test.tsx"
+          "path": "app/src/components/LoadingSpinner.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -691,17 +854,42 @@
         },
         {
           "hash": "89b34e8b6c8850206044cc899249457ed11bce468c6b6aa7ff0b5d6aebecf4cf",
+          "importOrder": [
+            "app/src/types/daemon.ts",
+            "app/src/components/PanicModal.tsx"
+          ],
           "importsFiles": [
             "app/src/components/PanicModal.tsx",
             "app/src/types/daemon.ts"
           ],
-          "path": "app/src/components/PanicModal.test.tsx"
+          "names": [
+            "app/src-tauri/src/commands.rs",
+            "app/src-tauri/src/lib.rs"
+          ],
+          "path": "app/src/components/PanicModal.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "PanicModal"
           ],
+          "failurePaths": [
+            {
+              "in": "loadTauriEvents",
+              "kind": "catch",
+              "line": 36
+            },
+            {
+              "in": "PanicModal",
+              "kind": "catch",
+              "line": 56
+            }
+          ],
           "hash": "7ccd386a5e0d0f5780508f1ecacad2ccfc95d26113fcdf64d226647301ffcb04",
+          "importOrder": [
+            "app/src/types/daemon.ts",
+            "app/src/components/PanicModal.module.css"
+          ],
           "importsFiles": [
             "app/src/components/PanicModal.module.css",
             "app/src/types/daemon.ts"
@@ -717,7 +905,8 @@
           "importsFiles": [
             "app/src/components/Pill.tsx"
           ],
-          "path": "app/src/components/Pill.test.tsx"
+          "path": "app/src/components/Pill.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -735,17 +924,26 @@
         },
         {
           "hash": "866ddff4b75bdf6618825f3ae6f76b2ecb0318f37e63033799651c3d4c8a7297",
+          "importOrder": [
+            "app/src/types/game.ts",
+            "app/src/components/PlayerCard.tsx"
+          ],
           "importsFiles": [
             "app/src/components/PlayerCard.tsx",
             "app/src/types/game.ts"
           ],
-          "path": "app/src/components/PlayerCard.test.tsx"
+          "path": "app/src/components/PlayerCard.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "PlayerCard"
           ],
           "hash": "001cd1943193b7af898a790e1989754d7940f68c962dc05b63adccbb14cda37c",
+          "importOrder": [
+            "app/src/types/game.ts",
+            "app/src/components/PlayerCard.module.css"
+          ],
           "importsFiles": [
             "app/src/components/PlayerCard.module.css",
             "app/src/types/game.ts"
@@ -761,7 +959,8 @@
           "importsFiles": [
             "app/src/components/RoundTimeline.tsx"
           ],
-          "path": "app/src/components/RoundTimeline.test.tsx"
+          "path": "app/src/components/RoundTimeline.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -778,12 +977,50 @@
           "importsFiles": [
             "app/src/hooks/useDaemon.tsx"
           ],
-          "path": "app/src/hooks/useDaemon.test.tsx"
+          "path": "app/src/hooks/useDaemon.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "DaemonProvider",
             "useDaemon"
+          ],
+          "failurePaths": [
+            {
+              "in": "DaemonProvider",
+              "kind": "catch",
+              "line": 54
+            },
+            {
+              "in": "DaemonProvider",
+              "kind": "catch",
+              "line": 66
+            },
+            {
+              "in": "DaemonProvider",
+              "kind": "throw",
+              "line": 68
+            },
+            {
+              "in": "DaemonProvider",
+              "kind": "catch",
+              "line": 77
+            },
+            {
+              "in": "DaemonProvider",
+              "kind": "throw",
+              "line": 79
+            },
+            {
+              "in": "DaemonProvider",
+              "kind": "catch",
+              "line": 97
+            },
+            {
+              "in": "useDaemon",
+              "kind": "throw",
+              "line": 121
+            }
           ],
           "hash": "3a61c3eca622e94ed3a8a5e54239d6d90f06c80d0370f0776882f1c58e26dfd1",
           "importsFiles": [
@@ -799,21 +1036,49 @@
             "app/src/hooks/useDaemon.tsx",
             "app/src/hooks/useDaemonEvents.ts"
           ],
-          "path": "app/src/hooks/useDaemonEvents.hook.test.tsx"
+          "path": "app/src/hooks/useDaemonEvents.hook.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "hash": "999ac85ca50b27769cf0351b7a77694629cdd527ab9209c313c0ba335e976e62",
           "importsFiles": [
             "app/src/hooks/useDaemonEvents.ts"
           ],
-          "path": "app/src/hooks/useDaemonEvents.test.ts"
+          "path": "app/src/hooks/useDaemonEvents.test.ts",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "parseSSEFrame",
             "useDaemonEvents"
           ],
+          "failurePaths": [
+            {
+              "in": "connect",
+              "kind": "throw",
+              "line": 48
+            },
+            {
+              "in": "connect",
+              "kind": "catch",
+              "line": 70
+            },
+            {
+              "in": "connect",
+              "kind": "catch",
+              "line": 81
+            },
+            {
+              "in": "parseSSEFrame",
+              "kind": "catch",
+              "line": 118
+            }
+          ],
           "hash": "41c61cc37bbdac24c7b7bc1bd689191dab5b8a0c67e88aa77f39505f894b8291",
+          "importOrder": [
+            "app/src/types/daemon.ts",
+            "app/src/hooks/useDaemon.tsx"
+          ],
           "importsFiles": [
             "app/src/hooks/useDaemon.tsx",
             "app/src/types/daemon.ts"
@@ -822,19 +1087,39 @@
         },
         {
           "hash": "c0c9b91d5a7a7394e8a22ec4dea1d036f43bae480fe6f9ca444e24ccddad6efc",
+          "importOrder": [
+            "app/src/types/daemon.ts",
+            "app/src/types/game.ts",
+            "app/src/hooks/useGameState.ts"
+          ],
           "importsFiles": [
             "app/src/hooks/useGameState.ts",
             "app/src/types/daemon.ts",
             "app/src/types/game.ts"
           ],
-          "path": "app/src/hooks/useGameState.test.tsx"
+          "path": "app/src/hooks/useGameState.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "pickActiveGame",
             "useGameState"
           ],
+          "failurePaths": [
+            {
+              "in": "useGameState",
+              "kind": "catch",
+              "line": 75
+            }
+          ],
           "hash": "f8b15d9e77393697649fa3b0bd2dae54676d9f9895ee1bd0177169daf5d03a82",
+          "importOrder": [
+            "app/src/lib/daemonClient.ts",
+            "app/src/types/daemon.ts",
+            "app/src/types/game.ts",
+            "app/src/hooks/useDaemon.tsx",
+            "app/src/hooks/useDaemonEvents.ts"
+          ],
           "importsFiles": [
             "app/src/hooks/useDaemon.tsx",
             "app/src/hooks/useDaemonEvents.ts",
@@ -849,7 +1134,8 @@
           "importsFiles": [
             "app/src/hooks/useVerifyFlow.ts"
           ],
-          "path": "app/src/hooks/useVerifyFlow.test.tsx"
+          "path": "app/src/hooks/useVerifyFlow.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -857,7 +1143,38 @@
             "sha256Hex",
             "useVerifyFlow"
           ],
+          "failurePaths": [
+            {
+              "in": "canonicalize",
+              "kind": "throw",
+              "line": 94
+            },
+            {
+              "in": "canonicalize",
+              "kind": "throw",
+              "line": 115
+            },
+            {
+              "in": "useVerifyFlow",
+              "kind": "catch",
+              "line": 178
+            },
+            {
+              "in": "useVerifyFlow",
+              "kind": "catch",
+              "line": 201
+            },
+            {
+              "in": "useVerifyFlow",
+              "kind": "catch",
+              "line": 242
+            }
+          ],
           "hash": "06d6f71c8771137a7c40a749607e96a065c0b30ba291b8d671d83317bcfb56ea",
+          "importOrder": [
+            "app/src/lib/daemonClient.ts",
+            "app/src/hooks/useDaemon.tsx"
+          ],
           "importsFiles": [
             "app/src/hooks/useDaemon.tsx",
             "app/src/lib/daemonClient.ts"
@@ -866,15 +1183,62 @@
         },
         {
           "hash": "e212f0f12ad09f49da040838b1e9c658bff4822a585b9147a0e92489b81eebae",
+          "importOrder": [
+            "app/src/types/daemon.ts",
+            "app/src/lib/daemonClient.ts"
+          ],
           "importsFiles": [
             "app/src/lib/daemonClient.ts",
             "app/src/types/daemon.ts"
           ],
-          "path": "app/src/lib/daemonClient.test.ts"
+          "path": "app/src/lib/daemonClient.test.ts",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "unwrapPendingAnchors"
+          ],
+          "failurePaths": [
+            {
+              "in": "health",
+              "kind": "throw",
+              "line": 37
+            },
+            {
+              "in": "games",
+              "kind": "throw",
+              "line": 43
+            },
+            {
+              "in": "game",
+              "kind": "throw",
+              "line": 51
+            },
+            {
+              "in": "proofs",
+              "kind": "throw",
+              "line": 70
+            },
+            {
+              "in": "proof",
+              "kind": "throw",
+              "line": 82
+            },
+            {
+              "in": "pendingAnchors",
+              "kind": "throw",
+              "line": 90
+            },
+            {
+              "in": "anchorStatus",
+              "kind": "throw",
+              "line": 104
+            },
+            {
+              "in": "verifyRound",
+              "kind": "throw",
+              "line": 119
+            }
           ],
           "hash": "ab20afe6793bc070ef1e59a73d7d6f63f77331517074ac738a116755a47fa892",
           "importsFiles": [
@@ -888,11 +1252,19 @@
           "importsFiles": [
             "app/src/lib/errorFormat.ts"
           ],
-          "path": "app/src/lib/errorFormat.test.ts"
+          "path": "app/src/lib/errorFormat.test.ts",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "formatError"
+          ],
+          "failurePaths": [
+            {
+              "in": "tryParseJsonObject",
+              "kind": "catch",
+              "line": 82
+            }
           ],
           "hash": "1e52794feb9b789a8d05187adde7ea76964856603cea5df99b06a93d9f2f0515",
           "path": "app/src/lib/errorFormat.ts"
@@ -915,11 +1287,19 @@
           "importsFiles": [
             "app/src/lib/url.ts"
           ],
-          "path": "app/src/lib/url.test.ts"
+          "path": "app/src/lib/url.test.ts",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "isSafeExplorerUrl"
+          ],
+          "failurePaths": [
+            {
+              "in": "isSafeExplorerUrl",
+              "kind": "catch",
+              "line": 17
+            }
           ],
           "hash": "848d65c721a3c41d968d9c7d3cf87c00ffa8c9b1b13e1b8062d89d4e05edca4b",
           "path": "app/src/lib/url.ts"
@@ -929,7 +1309,8 @@
           "importsFiles": [
             "app/src/lib/verifyDisplay.ts"
           ],
-          "path": "app/src/lib/verifyDisplay.test.ts"
+          "path": "app/src/lib/verifyDisplay.test.ts",
+          "testFramework": "vitest"
         },
         {
           "exports": [
@@ -944,7 +1325,18 @@
           "path": "app/src/lib/verifyDisplay.ts"
         },
         {
+          "failurePaths": [
+            {
+              "kind": "throw",
+              "line": 9
+            }
+          ],
           "hash": "bdead5f71ffc84454a053f19f79144c127c307a6098285f5b2fa8c53b1a461c2",
+          "importOrder": [
+            "app/src/App.tsx",
+            "app/src/styles/theme.css",
+            "app/src/styles/globals.css"
+          ],
           "importsFiles": [
             "app/src/App.tsx",
             "app/src/styles/globals.css",
@@ -962,14 +1354,53 @@
             "app/src/hooks/useDaemon.tsx",
             "app/src/routes/Audit.tsx"
           ],
-          "path": "app/src/routes/Audit.test.tsx"
+          "path": "app/src/routes/Audit.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "Audit",
             "auditBrowseAnchorParts"
           ],
+          "failurePaths": [
+            {
+              "in": "Audit",
+              "kind": "catch",
+              "line": 85
+            },
+            {
+              "in": "Audit",
+              "kind": "catch",
+              "line": 124
+            },
+            {
+              "in": "Audit",
+              "kind": "catch",
+              "line": 140
+            },
+            {
+              "in": "Audit",
+              "kind": "catch",
+              "line": 165
+            }
+          ],
           "hash": "162d1b49fb144ca9a807898cddb6c05dc2c917fafd73b462e993209fb98010a6",
+          "importOrder": [
+            "app/src/components/EmptyState.tsx",
+            "app/src/components/EventFeed.tsx",
+            "app/src/components/ExpandableRow.tsx",
+            "app/src/components/LoadingSpinner.tsx",
+            "app/src/components/Pill.tsx",
+            "app/src/hooks/useDaemon.tsx",
+            "app/src/hooks/useDaemonEvents.ts",
+            "app/src/hooks/useVerifyFlow.ts",
+            "app/src/lib/daemonClient.ts",
+            "app/src/lib/errorFormat.ts",
+            "app/src/lib/url.ts",
+            "app/src/lib/verifyDisplay.ts",
+            "app/src/types/daemon.ts",
+            "app/src/routes/Audit.module.css"
+          ],
           "importsFiles": [
             "app/src/components/EmptyState.tsx",
             "app/src/components/EventFeed.tsx",
@@ -998,13 +1429,27 @@
             "app/src/hooks/useDaemon.tsx",
             "app/src/routes/Game.tsx"
           ],
-          "path": "app/src/routes/Game.test.tsx"
+          "path": "app/src/routes/Game.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "Game"
           ],
           "hash": "2e5255bb25891e56259ea3114ec614e90a062d4b23fae16196c08d14cc49b6e3",
+          "importOrder": [
+            "app/src/components/EmptyState.tsx",
+            "app/src/components/EventFeed.tsx",
+            "app/src/components/LoadingSpinner.tsx",
+            "app/src/components/Pill.tsx",
+            "app/src/components/PlayerCard.tsx",
+            "app/src/components/RoundTimeline.tsx",
+            "app/src/hooks/useDaemon.tsx",
+            "app/src/hooks/useDaemonEvents.ts",
+            "app/src/hooks/useGameState.ts",
+            "app/src/types/daemon.ts",
+            "app/src/routes/Game.module.css"
+          ],
           "importsFiles": [
             "app/src/components/EmptyState.tsx",
             "app/src/components/EventFeed.tsx",
@@ -1030,13 +1475,24 @@
             "app/src/hooks/useDaemon.tsx",
             "app/src/routes/Index.tsx"
           ],
-          "path": "app/src/routes/Index.test.tsx"
+          "path": "app/src/routes/Index.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "Index"
           ],
           "hash": "5515e73d9df538ed99e1a01e4c7cf050694c61cd1d6e005ec92351c1c1a22d49",
+          "importOrder": [
+            "app/src/components/EmptyState.tsx",
+            "app/src/components/LoadingSpinner.tsx",
+            "app/src/components/Pill.tsx",
+            "app/src/hooks/useDaemon.tsx",
+            "app/src/lib/daemonClient.ts",
+            "app/src/lib/errorFormat.ts",
+            "app/src/types/daemon.ts",
+            "app/src/routes/Index.module.css"
+          ],
           "importsFiles": [
             "app/src/components/EmptyState.tsx",
             "app/src/components/LoadingSpinner.tsx",
@@ -1059,13 +1515,47 @@
             "app/src/hooks/useDaemon.tsx",
             "app/src/routes/Settings.tsx"
           ],
-          "path": "app/src/routes/Settings.test.tsx"
+          "path": "app/src/routes/Settings.test.tsx",
+          "testFramework": "vitest"
         },
         {
           "exports": [
             "Settings"
           ],
+          "failurePaths": [
+            {
+              "in": "Settings",
+              "kind": "catch",
+              "line": 89
+            },
+            {
+              "in": "Settings",
+              "kind": "catch",
+              "line": 120
+            },
+            {
+              "in": "Settings",
+              "kind": "catch",
+              "line": 186
+            },
+            {
+              "in": "Settings",
+              "kind": "catch",
+              "line": 192
+            }
+          ],
           "hash": "2aecff3a8b46c1d7030cb4d49bea16add33ac11a1dcbb8cf6dcc606c85054c6f",
+          "importOrder": [
+            "app/src/components/ConfirmDialog.tsx",
+            "app/src/components/EmptyState.tsx",
+            "app/src/components/Pill.tsx",
+            "app/src/hooks/useDaemon.tsx",
+            "app/src/lib/daemonClient.ts",
+            "app/src/lib/errorFormat.ts",
+            "app/src/lib/invoke.ts",
+            "app/src/types/daemon.ts",
+            "app/src/routes/Settings.module.css"
+          ],
           "importsFiles": [
             "app/src/components/ConfirmDialog.tsx",
             "app/src/components/EmptyState.tsx",
@@ -1085,7 +1575,8 @@
         },
         {
           "hash": "3d63fc24981603aa5ba4389b463d8840056b822c935c5d6cab9db2c80143b0cc",
-          "path": "app/src/styles/globals.test.ts"
+          "path": "app/src/styles/globals.test.ts",
+          "testFramework": "vitest"
         },
         {
           "hash": "045fce35730bf7351933fb4c0cb6c98f921f379343d84f0cd1953f406a1d11c9",
@@ -1097,7 +1588,8 @@
             "app/src/routes/Audit.tsx",
             "app/src/types/daemon.ts"
           ],
-          "path": "app/src/test/anchor-status-wire-shape.test.ts"
+          "path": "app/src/test/anchor-status-wire-shape.test.ts",
+          "testFramework": "vitest"
         },
         {
           "hash": "85a9f0200383e054a145d221c0c19f50ba8c4837b10e201e56c92ad87c116297",
@@ -1122,7 +1614,11 @@
           "importsFiles": [
             "app/src/types/daemon.ts"
           ],
-          "path": "app/src/test/proofs-wire-shape.test.ts"
+          "names": [
+            "app/src/routes/Audit.tsx"
+          ],
+          "path": "app/src/test/proofs-wire-shape.test.ts",
+          "testFramework": "vitest"
         },
         {
           "hash": "fa8a51cb73f39ab95e414ae68f397078968f20256d2b3898cf3ba3521917ba02",
@@ -1137,7 +1633,12 @@
           "importsFiles": [
             "app/src/types/daemon.ts"
           ],
-          "path": "app/src/types/daemon.test.ts"
+          "names": [
+            "app/src-tauri/src/commands.rs",
+            "app/src-tauri/src/lib.rs"
+          ],
+          "path": "app/src/types/daemon.test.ts",
+          "testFramework": "vitest"
         },
         {
           "hash": "0fe1c10d66129a0f33769453bc5f6bf11d6072de0e4eeba267755a995c49ea9e",
@@ -1159,6 +1660,9 @@
           "path": "app/vite.config.ts"
         }
       ],
+      "frameworks": [
+        "tauri"
+      ],
       "globs": [
         "app/**"
       ],
@@ -1176,14 +1680,18 @@
       ],
       "outsideReads": 3,
       "role": "code",
+      "testRunners": [
+        "cargo test",
+        "vitest"
+      ],
       "testedBy": 32,
       "unresolvedSites": 0
     },
     {
-      "dynamicReads": 6,
+      "dynamicReads": 2,
       "dynamicSpawns": 1,
       "dynamicSpawnsInTests": 0,
-      "dynamicWrites": 1,
+      "dynamicWrites": 0,
       "entryPoints": [],
       "externals": 0,
       "files": [
@@ -1291,6 +1799,17 @@
           "exports": [
             "main"
           ],
+          "failurePaths": [
+            {
+              "in": "_const_block",
+              "kind": "raise",
+              "line": 27
+            },
+            {
+              "kind": "raise",
+              "line": 119
+            }
+          ],
           "hash": "af50cc6bd54a2f908c20ae85fba46a66b801c93ff174d3dde02ba39e8f0a541a",
           "importsFiles": [
             "sov_engine/content.py",
@@ -1303,10 +1822,22 @@
             "inspect",
             "main"
           ],
+          "failurePaths": [
+            {
+              "kind": "raise",
+              "line": 87
+            }
+          ],
           "hash": "27221a693b41aaf408a2b3dd08378c2c2122c7a1c5cbd4f417de924452281ddd",
           "path": "assets/print/source/check-pdf-fonts.py"
         },
         {
+          "failurePaths": [
+            {
+              "kind": "throw",
+              "line": 39
+            }
+          ],
           "hash": "b30193e52d4f46d6f7725de6cee18cde1e0f6e64059573b9e80a5452defeb2c0",
           "path": "assets/print/source/compile-jsx.mjs"
         },
@@ -1393,6 +1924,21 @@
           "path": "assets/print/source/print-viewer.js"
         },
         {
+          "failurePaths": [
+            {
+              "in": "resolveChrome",
+              "kind": "throw",
+              "line": 45
+            },
+            {
+              "kind": "throw",
+              "line": 57
+            },
+            {
+              "kind": "throw",
+              "line": 62
+            }
+          ],
           "hash": "5fdab57d6e5f5894f5087d8bb00651dc276af9f1c35536ea46ce822c59a50301",
           "path": "assets/print/source/render.mjs"
         },
@@ -1413,10 +1959,767 @@
           "path": "assets/print/source/vendor/README.md"
         },
         {
+          "failurePaths": [
+            {
+              "in": "bc",
+              "kind": "throw",
+              "line": 17
+            },
+            {
+              "in": "bc",
+              "kind": "catch",
+              "line": 17
+            },
+            {
+              "in": "b",
+              "kind": "throw",
+              "line": 17
+            },
+            {
+              "in": "set",
+              "kind": "throw",
+              "line": 17
+            },
+            {
+              "in": "be",
+              "kind": "catch",
+              "line": 17
+            },
+            {
+              "in": "be",
+              "kind": "catch",
+              "line": 17
+            },
+            {
+              "in": "be",
+              "kind": "throw",
+              "line": 17
+            },
+            {
+              "in": "be",
+              "kind": "catch",
+              "line": 18
+            },
+            {
+              "in": "be",
+              "kind": "catch",
+              "line": 18
+            },
+            {
+              "in": "de",
+              "kind": "catch",
+              "line": 20
+            },
+            {
+              "in": "Qc",
+              "kind": "catch",
+              "line": 24
+            },
+            {
+              "in": "ne",
+              "kind": "throw",
+              "line": 28
+            },
+            {
+              "in": "ng",
+              "kind": "throw",
+              "line": 28
+            },
+            {
+              "in": "ng",
+              "kind": "throw",
+              "line": 28
+            },
+            {
+              "in": "pe",
+              "kind": "throw",
+              "line": 31
+            },
+            {
+              "in": "pe",
+              "kind": "throw",
+              "line": 31
+            },
+            {
+              "in": "pe",
+              "kind": "throw",
+              "line": 31
+            },
+            {
+              "in": "pe",
+              "kind": "throw",
+              "line": 31
+            },
+            {
+              "in": "tg",
+              "kind": "throw",
+              "line": 32
+            },
+            {
+              "in": "fc",
+              "kind": "throw",
+              "line": 34
+            },
+            {
+              "in": "mj",
+              "kind": "throw",
+              "line": 34
+            },
+            {
+              "in": "Ag",
+              "kind": "throw",
+              "line": 35
+            },
+            {
+              "in": "nj",
+              "kind": "throw",
+              "line": 35
+            },
+            {
+              "in": "nj",
+              "kind": "throw",
+              "line": 35
+            },
+            {
+              "in": "nj",
+              "kind": "throw",
+              "line": 36
+            },
+            {
+              "in": "nj",
+              "kind": "throw",
+              "line": 36
+            },
+            {
+              "in": "nj",
+              "kind": "throw",
+              "line": 36
+            },
+            {
+              "in": "oj",
+              "kind": "catch",
+              "line": 37
+            },
+            {
+              "in": "ch",
+              "kind": "catch",
+              "line": 57
+            },
+            {
+              "in": "Xg",
+              "kind": "throw",
+              "line": 63
+            },
+            {
+              "in": "jd",
+              "kind": "throw",
+              "line": 74
+            },
+            {
+              "in": "ik",
+              "kind": "throw",
+              "line": 74
+            },
+            {
+              "in": "Ib",
+              "kind": "throw",
+              "line": 76
+            },
+            {
+              "in": "th",
+              "kind": "throw",
+              "line": 77
+            },
+            {
+              "in": "uh",
+              "kind": "throw",
+              "line": 78
+            },
+            {
+              "in": "vh",
+              "kind": "throw",
+              "line": 78
+            },
+            {
+              "in": "db",
+              "kind": "catch",
+              "line": 79
+            },
+            {
+              "in": "db",
+              "kind": "throw",
+              "line": 79
+            },
+            {
+              "in": "Xe",
+              "kind": "throw",
+              "line": 82
+            },
+            {
+              "in": "Xe",
+              "kind": "throw",
+              "line": 82
+            },
+            {
+              "in": "pd",
+              "kind": "throw",
+              "line": 83
+            },
+            {
+              "in": "pd",
+              "kind": "throw",
+              "line": 83
+            },
+            {
+              "in": "vc",
+              "kind": "throw",
+              "line": 84
+            },
+            {
+              "in": "vc",
+              "kind": "throw",
+              "line": 84
+            },
+            {
+              "in": "vc",
+              "kind": "throw",
+              "line": 84
+            },
+            {
+              "in": "vc",
+              "kind": "throw",
+              "line": 84
+            },
+            {
+              "in": "qd",
+              "kind": "throw",
+              "line": 85
+            },
+            {
+              "in": "I",
+              "kind": "throw",
+              "line": 91
+            },
+            {
+              "in": "I",
+              "kind": "throw",
+              "line": 91
+            },
+            {
+              "in": "qa",
+              "kind": "throw",
+              "line": 96
+            },
+            {
+              "in": "Hh",
+              "kind": "throw",
+              "line": 103
+            },
+            {
+              "in": "ub",
+              "kind": "throw",
+              "line": 103
+            },
+            {
+              "in": "V",
+              "kind": "throw",
+              "line": 105
+            },
+            {
+              "in": "mf",
+              "kind": "throw",
+              "line": 105
+            },
+            {
+              "in": "mf",
+              "kind": "throw",
+              "line": 106
+            },
+            {
+              "in": "sa",
+              "kind": "throw",
+              "line": 106
+            },
+            {
+              "in": "of",
+              "kind": "throw",
+              "line": 107
+            },
+            {
+              "in": "pf",
+              "kind": "throw",
+              "line": 109
+            },
+            {
+              "in": "Kh",
+              "kind": "throw",
+              "line": 110
+            },
+            {
+              "in": "Oh",
+              "kind": "catch",
+              "line": 111
+            },
+            {
+              "in": "ok",
+              "kind": "catch",
+              "line": 116
+            },
+            {
+              "in": "Ub",
+              "kind": "catch",
+              "line": 120
+            },
+            {
+              "in": "wf",
+              "kind": "catch",
+              "line": 121
+            },
+            {
+              "in": "wf",
+              "kind": "throw",
+              "line": 121
+            },
+            {
+              "in": "Qa",
+              "kind": "throw",
+              "line": 142
+            },
+            {
+              "in": "xk",
+              "kind": "throw",
+              "line": 147
+            },
+            {
+              "in": "xk",
+              "kind": "throw",
+              "line": 154
+            },
+            {
+              "in": "xk",
+              "kind": "throw",
+              "line": 155
+            },
+            {
+              "in": "xk",
+              "kind": "throw",
+              "line": 155
+            },
+            {
+              "in": "xk",
+              "kind": "throw",
+              "line": 160
+            },
+            {
+              "in": "Bk",
+              "kind": "throw",
+              "line": 160
+            },
+            {
+              "in": "Wb",
+              "kind": "catch",
+              "line": 161
+            },
+            {
+              "in": "If",
+              "kind": "catch",
+              "line": 161
+            },
+            {
+              "in": "Ck",
+              "kind": "catch",
+              "line": 162
+            },
+            {
+              "in": "Ck",
+              "kind": "throw",
+              "line": 164
+            },
+            {
+              "in": "Ck",
+              "kind": "catch",
+              "line": 164
+            },
+            {
+              "in": "Di",
+              "kind": "catch",
+              "line": 168
+            },
+            {
+              "in": "Di",
+              "kind": "catch",
+              "line": 170
+            },
+            {
+              "in": "Aa",
+              "kind": "throw",
+              "line": 171
+            },
+            {
+              "in": "Aa",
+              "kind": "catch",
+              "line": 171
+            },
+            {
+              "in": "Fi",
+              "kind": "catch",
+              "line": 172
+            },
+            {
+              "in": "Fi",
+              "kind": "catch",
+              "line": 172
+            },
+            {
+              "in": "Fi",
+              "kind": "catch",
+              "line": 172
+            },
+            {
+              "in": "Fi",
+              "kind": "catch",
+              "line": 173
+            },
+            {
+              "in": "Fi",
+              "kind": "throw",
+              "line": 174
+            },
+            {
+              "in": "Fi",
+              "kind": "catch",
+              "line": 174
+            },
+            {
+              "in": "Fi",
+              "kind": "catch",
+              "line": 174
+            },
+            {
+              "in": "Fi",
+              "kind": "catch",
+              "line": 175
+            },
+            {
+              "in": "Fi",
+              "kind": "catch",
+              "line": 176
+            },
+            {
+              "in": "Fi",
+              "kind": "catch",
+              "line": 177
+            },
+            {
+              "in": "Ha",
+              "kind": "throw",
+              "line": 178
+            },
+            {
+              "in": "Ha",
+              "kind": "throw",
+              "line": 178
+            },
+            {
+              "in": "Ha",
+              "kind": "catch",
+              "line": 178
+            },
+            {
+              "in": "Ji",
+              "kind": "throw",
+              "line": 181
+            },
+            {
+              "in": "Ji",
+              "kind": "catch",
+              "line": 181
+            },
+            {
+              "in": "Ii",
+              "kind": "catch",
+              "line": 182
+            },
+            {
+              "in": "Ii",
+              "kind": "catch",
+              "line": 182
+            },
+            {
+              "in": "Ii",
+              "kind": "catch",
+              "line": 182
+            },
+            {
+              "in": "Ii",
+              "kind": "catch",
+              "line": 182
+            },
+            {
+              "in": "Ii",
+              "kind": "catch",
+              "line": 182
+            },
+            {
+              "in": "xa",
+              "kind": "throw",
+              "line": 183
+            },
+            {
+              "in": "Ni",
+              "kind": "throw",
+              "line": 185
+            },
+            {
+              "in": "Ni",
+              "kind": "catch",
+              "line": 185
+            },
+            {
+              "in": "Ni",
+              "kind": "throw",
+              "line": 185
+            },
+            {
+              "in": "Ni",
+              "kind": "throw",
+              "line": 186
+            },
+            {
+              "in": "Ni",
+              "kind": "throw",
+              "line": 186
+            },
+            {
+              "in": "Ni",
+              "kind": "throw",
+              "line": 187
+            },
+            {
+              "in": "Lk",
+              "kind": "catch",
+              "line": 188
+            },
+            {
+              "in": "Li",
+              "kind": "throw",
+              "line": 189
+            },
+            {
+              "in": "Li",
+              "kind": "throw",
+              "line": 189
+            },
+            {
+              "in": "Li",
+              "kind": "throw",
+              "line": 189
+            },
+            {
+              "in": "Pi",
+              "kind": "catch",
+              "line": 194
+            },
+            {
+              "in": "Nd",
+              "kind": "catch",
+              "line": 194
+            },
+            {
+              "in": "Nd",
+              "kind": "throw",
+              "line": 195
+            },
+            {
+              "in": "Rk",
+              "kind": "throw",
+              "line": 196
+            },
+            {
+              "in": "Rk",
+              "kind": "throw",
+              "line": 196
+            },
+            {
+              "in": "Rk",
+              "kind": "throw",
+              "line": 198
+            },
+            {
+              "in": "Xb",
+              "kind": "throw",
+              "line": 198
+            },
+            {
+              "in": "Xb",
+              "kind": "catch",
+              "line": 200
+            },
+            {
+              "in": "Xb",
+              "kind": "catch",
+              "line": 201
+            },
+            {
+              "in": "Gk",
+              "kind": "throw",
+              "line": 203
+            },
+            {
+              "in": "rd",
+              "kind": "throw",
+              "line": 206
+            },
+            {
+              "in": "Vi",
+              "kind": "throw",
+              "line": 209
+            },
+            {
+              "in": "Vi",
+              "kind": "throw",
+              "line": 209
+            },
+            {
+              "kind": "catch",
+              "line": 223
+            },
+            {
+              "in": "kj",
+              "kind": "catch",
+              "line": 223
+            },
+            {
+              "in": "useSyncExternalStore",
+              "kind": "throw",
+              "line": 241
+            },
+            {
+              "in": "useSyncExternalStore",
+              "kind": "throw",
+              "line": 241
+            },
+            {
+              "in": "Qk",
+              "kind": "throw",
+              "line": 251
+            },
+            {
+              "in": "Qk",
+              "kind": "throw",
+              "line": 252
+            },
+            {
+              "in": "Qk",
+              "kind": "throw",
+              "line": 256
+            },
+            {
+              "in": "Qk",
+              "kind": "throw",
+              "line": 257
+            },
+            {
+              "in": "Xf.prototype.render",
+              "kind": "throw",
+              "line": 257
+            },
+            {
+              "in": "se",
+              "kind": "throw",
+              "line": 260
+            },
+            {
+              "kind": "catch",
+              "line": 262
+            },
+            {
+              "in": "Q.createPortal",
+              "kind": "throw",
+              "line": 263
+            },
+            {
+              "in": "Q.createRoot",
+              "kind": "throw",
+              "line": 263
+            },
+            {
+              "in": "Q.findDOMNode",
+              "kind": "throw",
+              "line": 264
+            },
+            {
+              "in": "Q.findDOMNode",
+              "kind": "throw",
+              "line": 264
+            },
+            {
+              "in": "Q.hydrate",
+              "kind": "throw",
+              "line": 264
+            },
+            {
+              "in": "Q.hydrateRoot",
+              "kind": "throw",
+              "line": 264
+            },
+            {
+              "in": "Q.render",
+              "kind": "throw",
+              "line": 266
+            },
+            {
+              "in": "Q.unmountComponentAtNode",
+              "kind": "throw",
+              "line": 266
+            },
+            {
+              "in": "Q.unstable_renderSubtreeIntoContainer",
+              "kind": "throw",
+              "line": 266
+            },
+            {
+              "in": "Q.unstable_renderSubtreeIntoContainer",
+              "kind": "throw",
+              "line": 266
+            }
+          ],
           "hash": "35f4f974f4b2bcd44da73963347f8952e341f83909e4498227d4e26b98f66f0d",
           "path": "assets/print/source/vendor/react-dom.production.min.js"
         },
         {
+          "failurePaths": [
+            {
+              "in": "B",
+              "kind": "throw",
+              "line": 13
+            },
+            {
+              "in": "ra",
+              "kind": "throw",
+              "line": 15
+            },
+            {
+              "in": "ka",
+              "kind": "throw",
+              "line": 17
+            },
+            {
+              "in": "w.prototype.setState",
+              "kind": "throw",
+              "line": 19
+            },
+            {
+              "in": "only",
+              "kind": "throw",
+              "line": 25
+            },
+            {
+              "in": "c.cloneElement",
+              "kind": "throw",
+              "line": 26
+            }
+          ],
           "hash": "d949f1c3687aedadcedac85261865f29b17cd273997e7f6b2bfc53b2f9d4c4dd",
           "path": "assets/print/source/vendor/react.production.min.js"
         },
@@ -1433,16 +2736,29 @@
       "origin": "mixed",
       "outsidePlaces": [
         {
-          "reads": 4,
+          "reads": 8,
           "where": [
             "caller"
           ],
-          "writes": 0
+          "writes": 1
         }
       ],
-      "outsideReads": 4,
+      "outsideReads": 8,
+      "outsideWrites": 1,
       "role": "code",
       "testedBy": 0,
+      "unresolvedNamed": [
+        {
+          "path": "assets/print/source/render.mjs",
+          "specifier": "puppeteer-core",
+          "why": "undeclared"
+        },
+        {
+          "path": "assets/print/source/vendor/react-dom.production.min.js",
+          "specifier": "react",
+          "why": "undeclared"
+        }
+      ],
       "unresolvedSites": 2
     },
     {
@@ -1460,6 +2776,18 @@
         {
           "exports": [
             "main"
+          ],
+          "failurePaths": [
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 21
+            },
+            {
+              "in": "main",
+              "kind": "except",
+              "line": 32
+            }
           ],
           "hash": "59053a93025042fd392305e86325704ecfd6da201ae9afad940d62506ad04a3a",
           "path": "docker/healthcheck.py"
@@ -1666,7 +2994,11 @@
         },
         {
           "hash": "0ed55ae8c29c4b65d56d7547729643b427402042a371f1d9d227226ed011a2fe",
-          "path": "npm/test/launcher.test.js"
+          "names": [
+            "npm/bin/sovereignty.js"
+          ],
+          "path": "npm/test/launcher.test.js",
+          "testFramework": "node --test"
         }
       ],
       "globs": [
@@ -1676,8 +3008,12 @@
       "name": "npm",
       "origin": "authored",
       "role": "code",
-      "testedBy": 0,
-      "unresolvedSites": 1
+      "testRunners": [
+        "node --test"
+      ],
+      "testedBy": 1,
+      "testedByScript": true,
+      "unresolvedSites": 0
     },
     {
       "dynamicReads": 0,
@@ -1878,6 +3214,7 @@
           "path": "site/src/components/BaseLayout.astro"
         },
         {
+          "constantOnly": true,
           "hash": "ee756dfba4122d2acc94a39b2555d9f200fff56a87a8c0b10f9cd01df26a8b62",
           "path": "site/src/content.config.ts"
         },
@@ -1918,10 +3255,28 @@
           "path": "site/src/content/docs/handbook/tiers.md"
         },
         {
+          "failurePaths": [
+            {
+              "in": "assertNever",
+              "kind": "throw",
+              "line": 65
+            }
+          ],
           "hash": "f8190ef4a5ea119b49d367dc87cc0794a184a6fb39615920ae6d1a9445187d6b",
+          "importOrder": [
+            "site/src/styles/global.css",
+            "site/src/components/BaseLayout.astro",
+            "site/src/site-config.ts"
+          ],
+          "importsFiles": [
+            "site/src/components/BaseLayout.astro",
+            "site/src/site-config.ts",
+            "site/src/styles/global.css"
+          ],
           "path": "site/src/pages/index.astro"
         },
         {
+          "constantOnly": true,
           "hash": "23306c1cae1b5d939722d5327bea8b368687cc1ed6e7be23456c708880d39dcf",
           "path": "site/src/site-config.ts"
         },
@@ -1949,7 +3304,7 @@
       "unresolvedSites": 0
     },
     {
-      "dynamicReads": 19,
+      "dynamicReads": 14,
       "dynamicSpawns": 0,
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 0,
@@ -2024,6 +3379,18 @@
             "upgrade_rep_error",
             "upgrade_unavailable_error",
             "wallet_error"
+          ],
+          "failurePaths": [
+            {
+              "in": "_v1_layout_note",
+              "kind": "except",
+              "line": 206
+            },
+            {
+              "in": "state_version_mismatch_error",
+              "kind": "except",
+              "line": 247
+            }
           ],
           "hash": "976431bb644076069b8bbd2dd226de88b7ba5ffb71237643c4a81a2281f7428b",
           "importsFiles": [
@@ -2120,7 +3487,389 @@
             "vote",
             "wallet"
           ],
+          "failurePaths": [
+            {
+              "in": "_version_callback",
+              "kind": "raise",
+              "line": 137
+            },
+            {
+              "in": "_validate_game_id_or_fail",
+              "kind": "except",
+              "line": 244
+            },
+            {
+              "in": "_resolve_active_game_id",
+              "kind": "except",
+              "line": 275
+            },
+            {
+              "in": "_resolve_network",
+              "kind": "except",
+              "line": 484
+            },
+            {
+              "in": "_commit_anchor_chunks",
+              "kind": "raise",
+              "line": 537
+            },
+            {
+              "in": "_commit_anchor_chunks",
+              "kind": "except",
+              "line": 543
+            },
+            {
+              "in": "_commit_anchor_chunks",
+              "kind": "raise",
+              "line": 554
+            },
+            {
+              "in": "_load_game",
+              "kind": "except",
+              "line": 584
+            },
+            {
+              "in": "_fail",
+              "kind": "raise",
+              "line": 721
+            },
+            {
+              "in": "doctor",
+              "kind": "except",
+              "line": 931
+            },
+            {
+              "in": "doctor",
+              "kind": "except",
+              "line": 1016
+            },
+            {
+              "in": "doctor",
+              "kind": "except",
+              "line": 1055
+            },
+            {
+              "in": "_doctor_check_daemon_presence",
+              "kind": "except",
+              "line": 1158
+            },
+            {
+              "in": "_doctor_check_daemon_extra_coherence",
+              "kind": "except",
+              "line": 1215
+            },
+            {
+              "in": "_doctor_check_schema_version_currency",
+              "kind": "except",
+              "line": 1330
+            },
+            {
+              "in": "_doctor_check_schema_version_currency",
+              "kind": "except",
+              "line": 1332
+            },
+            {
+              "in": "_doctor_check_schema_version_currency",
+              "kind": "except",
+              "line": 1346
+            },
+            {
+              "in": "_doctor_check_schema_version_currency",
+              "kind": "except",
+              "line": 1348
+            },
+            {
+              "in": "_doctor_check_schema_version_currency",
+              "kind": "except",
+              "line": 1365
+            },
+            {
+              "in": "_collect_checks",
+              "kind": "except",
+              "line": 1408
+            },
+            {
+              "in": "_collect_checks",
+              "kind": "except",
+              "line": 1417
+            },
+            {
+              "in": "_collect_checks",
+              "kind": "except",
+              "line": 1433
+            },
+            {
+              "in": "support_bundle",
+              "kind": "except",
+              "line": 1568
+            },
+            {
+              "in": "new",
+              "kind": "raise",
+              "line": 1685
+            },
+            {
+              "in": "turn",
+              "kind": "raise",
+              "line": 1910
+            },
+            {
+              "in": "turn",
+              "kind": "raise",
+              "line": 1953
+            },
+            {
+              "in": "verify",
+              "kind": "except",
+              "line": 2088
+            },
+            {
+              "in": "verify",
+              "kind": "except",
+              "line": 2123
+            },
+            {
+              "in": "verify",
+              "kind": "raise",
+              "line": 2126
+            },
+            {
+              "in": "verify",
+              "kind": "except",
+              "line": 2127
+            },
+            {
+              "in": "anchor",
+              "kind": "except",
+              "line": 2196
+            },
+            {
+              "in": "anchor",
+              "kind": "raise",
+              "line": 2200
+            },
+            {
+              "in": "anchor",
+              "kind": "raise",
+              "line": 2208
+            },
+            {
+              "in": "anchor",
+              "kind": "except",
+              "line": 2282
+            },
+            {
+              "in": "anchor",
+              "kind": "except",
+              "line": 2291
+            },
+            {
+              "in": "anchor",
+              "kind": "raise",
+              "line": 2324
+            },
+            {
+              "in": "anchor",
+              "kind": "raise",
+              "line": 2335
+            },
+            {
+              "in": "_sort_key",
+              "kind": "except",
+              "line": 2350
+            },
+            {
+              "in": "anchor",
+              "kind": "except",
+              "line": 2445
+            },
+            {
+              "in": "anchor",
+              "kind": "except",
+              "line": 2455
+            },
+            {
+              "in": "wallet",
+              "kind": "except",
+              "line": 2497
+            },
+            {
+              "in": "wallet",
+              "kind": "raise",
+              "line": 2509
+            },
+            {
+              "in": "wallet",
+              "kind": "except",
+              "line": 2538
+            },
+            {
+              "in": "wallet",
+              "kind": "except",
+              "line": 2542
+            },
+            {
+              "in": "wallet",
+              "kind": "except",
+              "line": 2544
+            },
+            {
+              "in": "toast",
+              "kind": "raise",
+              "line": 2954
+            },
+            {
+              "in": "_read_season_document",
+              "kind": "except",
+              "line": 3054
+            },
+            {
+              "in": "_read_season_document",
+              "kind": "raise",
+              "line": 3056
+            },
+            {
+              "in": "_read_season_document",
+              "kind": "raise",
+              "line": 3066
+            },
+            {
+              "in": "_read_season_document",
+              "kind": "raise",
+              "line": 3074
+            },
+            {
+              "in": "_read_season_document",
+              "kind": "raise",
+              "line": 3081
+            },
+            {
+              "in": "_sort_key",
+              "kind": "except",
+              "line": 3314
+            },
+            {
+              "in": "game_end",
+              "kind": "except",
+              "line": 3363
+            },
+            {
+              "in": "season_postcard",
+              "kind": "raise",
+              "line": 3396
+            },
+            {
+              "in": "season_postcard",
+              "kind": "raise",
+              "line": 3410
+            },
+            {
+              "in": "_print_status",
+              "kind": "except",
+              "line": 3983
+            },
+            {
+              "in": "_query_daemon_status",
+              "kind": "except",
+              "line": 4012
+            },
+            {
+              "in": "_daemon_status_view",
+              "kind": "except",
+              "line": 4032
+            },
+            {
+              "in": "_print_brief_status",
+              "kind": "except",
+              "line": 4088
+            },
+            {
+              "in": "_print_brief_status",
+              "kind": "except",
+              "line": 4104
+            },
+            {
+              "in": "_status_json_payload",
+              "kind": "except",
+              "line": 4146
+            },
+            {
+              "in": "_sort_key",
+              "kind": "except",
+              "line": 4157
+            },
+            {
+              "in": "_status_json_payload",
+              "kind": "except",
+              "line": 4180
+            },
+            {
+              "in": "_resolve_version",
+              "kind": "except",
+              "line": 4301
+            },
+            {
+              "in": "_resolve_version",
+              "kind": "except",
+              "line": 4305
+            },
+            {
+              "in": "scenario",
+              "kind": "raise",
+              "line": 4616
+            },
+            {
+              "in": "_format_last_played",
+              "kind": "except",
+              "line": 4672
+            },
+            {
+              "in": "resume_cmd",
+              "kind": "raise",
+              "line": 4761
+            },
+            {
+              "in": "resume_cmd",
+              "kind": "except",
+              "line": 4776
+            },
+            {
+              "in": "_import_daemon_api",
+              "kind": "except",
+              "line": 4934
+            },
+            {
+              "in": "daemon_stop",
+              "kind": "except",
+              "line": 5055
+            },
+            {
+              "in": "daemon_stop",
+              "kind": "except",
+              "line": 5057
+            }
+          ],
           "hash": "6f1df474fe2b9260f9b785c8c0d980b6b5ba0d586f655f5f03963977e2a56b28",
+          "importOrder": [
+            "sov_cli/errors.py",
+            "sov_engine/hashing.py",
+            "sov_engine/io_utils.py",
+            "sov_engine/models.py",
+            "sov_engine/proof.py",
+            "sov_engine/rng.py",
+            "sov_engine/rules/campfire.py",
+            "sov_engine/rules/market_day.py",
+            "sov_engine/rules/town_hall.py",
+            "sov_engine/rules/treaty_table.py",
+            "sov_engine/serialize.py",
+            "sov_engine/wallet_seed.py",
+            "sov_engine/content.py",
+            "sov_transport/xrpl.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_daemon/__init__.py",
+            "sov_engine/schemas.py",
+            "sov_transport/base.py"
+          ],
           "importsFiles": [
             "sov_cli/errors.py",
             "sov_daemon/__init__.py",
@@ -7827,8 +9576,42 @@
       "importConfidence": "full",
       "name": "sov_cli",
       "origin": "authored",
+      "outsidePlaces": [
+        {
+          "reads": 7,
+          "where": [
+            "caller"
+          ],
+          "writes": 0
+        },
+        {
+          "reads": 1,
+          "where": [
+            "cwd:README.md"
+          ],
+          "writes": 0
+        },
+        {
+          "reads": 1,
+          "where": [
+            "cwd:docs/"
+          ],
+          "writes": 0
+        }
+      ],
+      "outsideReads": 9,
       "role": "code",
+      "testRunners": [
+        "pytest"
+      ],
       "testedBy": 43,
+      "unresolvedNamed": [
+        {
+          "path": "sov_cli/main.py",
+          "specifier": null,
+          "why": "dynamic"
+        }
+      ],
       "unresolvedSites": 1
     },
     {
@@ -7839,7 +9622,10 @@
       "entryPoints": [
         "sov_daemon/__main__.py"
       ],
-      "externals": 0,
+      "externalNames": [
+        "xrpl"
+      ],
+      "externals": 5,
       "files": [
         {
           "hash": "5d1237462dc554ddb2935c8995f7cc7eb59be7dbc3b5fac4eaa3cd5d89b4120f",
@@ -7923,6 +9709,13 @@
           "exports": [
             "cors_headers"
           ],
+          "failurePaths": [
+            {
+              "in": "_authorization_header",
+              "kind": "except",
+              "line": 77
+            }
+          ],
           "hash": "07cb58923a20b5f194bf6578190c7dca2cb928ad10562be69371bbab3b0daee1",
           "path": "sov_daemon/auth.py"
         },
@@ -7935,6 +9728,48 @@
             "get_chain_cache",
             "reset_default_broadcaster",
             "sse_stream"
+          ],
+          "failurePaths": [
+            {
+              "in": "subscribe",
+              "kind": "raise",
+              "line": 112
+            },
+            {
+              "in": "broadcast",
+              "kind": "except",
+              "line": 171
+            },
+            {
+              "in": "_poll_state_changes",
+              "kind": "except",
+              "line": 197
+            },
+            {
+              "in": "_poll_state_changes",
+              "kind": "except",
+              "line": 209
+            },
+            {
+              "in": "_poll_state_changes",
+              "kind": "raise",
+              "line": 212
+            },
+            {
+              "in": "_poll_once",
+              "kind": "except",
+              "line": 228
+            },
+            {
+              "in": "get",
+              "kind": "except",
+              "line": 302
+            },
+            {
+              "in": "get",
+              "kind": "raise",
+              "line": 307
+            }
           ],
           "hash": "92d7c56ba6a8cfcfe2f11d94d1197a01f926e0a36a6f2000cdf7e5764f6c1d4c",
           "importsFiles": [
@@ -7953,6 +9788,133 @@
             "run_foreground_from_env",
             "start_daemon",
             "stop_daemon"
+          ],
+          "failurePaths": [
+            {
+              "in": "_pid_alive",
+              "kind": "except",
+              "line": 132
+            },
+            {
+              "in": "_pid_alive",
+              "kind": "except",
+              "line": 134
+            },
+            {
+              "in": "_pid_alive",
+              "kind": "except",
+              "line": 138
+            },
+            {
+              "in": "_pid_alive_windows",
+              "kind": "except",
+              "line": 158
+            },
+            {
+              "in": "_read_handshake",
+              "kind": "except",
+              "line": 191
+            },
+            {
+              "in": "_spawn_detached",
+              "kind": "except",
+              "line": 427
+            },
+            {
+              "in": "_spawn_detached",
+              "kind": "raise",
+              "line": 431
+            },
+            {
+              "in": "_health_endpoint_ok",
+              "kind": "except",
+              "line": 458
+            },
+            {
+              "in": "_wait_for_handshake",
+              "kind": "raise",
+              "line": 494
+            },
+            {
+              "in": "start_daemon",
+              "kind": "raise",
+              "line": 528
+            },
+            {
+              "in": "start_daemon",
+              "kind": "except",
+              "line": 549
+            },
+            {
+              "in": "start_daemon",
+              "kind": "raise",
+              "line": 552
+            },
+            {
+              "in": "stop_daemon",
+              "kind": "raise",
+              "line": 591
+            },
+            {
+              "in": "stop_daemon",
+              "kind": "except",
+              "line": 604
+            },
+            {
+              "in": "stop_daemon",
+              "kind": "except",
+              "line": 608
+            },
+            {
+              "in": "stop_daemon",
+              "kind": "raise",
+              "line": 626
+            },
+            {
+              "in": "_windows_process_image_name",
+              "kind": "except",
+              "line": 650
+            },
+            {
+              "in": "_windows_process_image_name",
+              "kind": "except",
+              "line": 677
+            },
+            {
+              "in": "_windows_process_command_line",
+              "kind": "except",
+              "line": 693
+            },
+            {
+              "in": "_windows_process_command_line",
+              "kind": "except",
+              "line": 745
+            },
+            {
+              "in": "_is_sov_daemon_pid",
+              "kind": "except",
+              "line": 785
+            },
+            {
+              "in": "_is_sov_daemon_pid",
+              "kind": "except",
+              "line": 798
+            },
+            {
+              "in": "_terminate_windows",
+              "kind": "except",
+              "line": 812
+            },
+            {
+              "in": "run_foreground",
+              "kind": "except",
+              "line": 877
+            },
+            {
+              "in": "run_foreground",
+              "kind": "raise",
+              "line": 879
+            }
           ],
           "hash": "3fe8dcb91434a35dfec66862da3161ade8bb0722a7694fd02961348695471657",
           "importsFiles": [
@@ -8229,7 +10191,214 @@
             "proofs_list_handler",
             "verify_round_handler"
           ],
+          "failurePaths": [
+            {
+              "in": "_daemon_version",
+              "kind": "except",
+              "line": 77
+            },
+            {
+              "in": "_validate_game_id",
+              "kind": "except",
+              "line": 153
+            },
+            {
+              "in": "_read_state",
+              "kind": "except",
+              "line": 199
+            },
+            {
+              "in": "_read_state",
+              "kind": "except",
+              "line": 209
+            },
+            {
+              "in": "_proof_path_for_round",
+              "kind": "except",
+              "line": 317
+            },
+            {
+              "in": "_proof_path_for_round",
+              "kind": "except",
+              "line": 327
+            },
+            {
+              "in": "_proof_path_for_round",
+              "kind": "except",
+              "line": 340
+            },
+            {
+              "in": "health_handler",
+              "kind": "except",
+              "line": 386
+            },
+            {
+              "in": "health_handler",
+              "kind": "except",
+              "line": 399
+            },
+            {
+              "in": "games_handler",
+              "kind": "except",
+              "line": 437
+            },
+            {
+              "in": "games_handler",
+              "kind": "except",
+              "line": 469
+            },
+            {
+              "in": "proofs_list_handler",
+              "kind": "except",
+              "line": 543
+            },
+            {
+              "in": "proof_detail_handler",
+              "kind": "except",
+              "line": 583
+            },
+            {
+              "in": "anchor_status_handler",
+              "kind": "except",
+              "line": 620
+            },
+            {
+              "in": "verify_round_handler",
+              "kind": "except",
+              "line": 675
+            },
+            {
+              "in": "verify_round_handler",
+              "kind": "except",
+              "line": 705
+            },
+            {
+              "in": "flush_pending_anchors",
+              "kind": "raise",
+              "line": 842
+            },
+            {
+              "in": "flush_pending_anchors",
+              "kind": "raise",
+              "line": 881
+            },
+            {
+              "in": "flush_pending_anchors",
+              "kind": "except",
+              "line": 887
+            },
+            {
+              "in": "flush_pending_anchors",
+              "kind": "raise",
+              "line": 900
+            },
+            {
+              "in": "_reserve_base_drops_from_server_state",
+              "kind": "except",
+              "line": 940
+            },
+            {
+              "in": "_async_xrpl_client",
+              "kind": "raise",
+              "line": 957
+            },
+            {
+              "in": "_fetch_reserve_base_drops",
+              "kind": "raise",
+              "line": 973
+            },
+            {
+              "in": "_check_wallet_balance_or_raise",
+              "kind": "except",
+              "line": 1018
+            },
+            {
+              "in": "_check_wallet_balance_or_raise",
+              "kind": "raise",
+              "line": 1028
+            },
+            {
+              "in": "_check_wallet_balance_or_raise",
+              "kind": "raise",
+              "line": 1032
+            },
+            {
+              "in": "_check_wallet_balance_or_raise",
+              "kind": "except",
+              "line": 1033
+            },
+            {
+              "in": "_check_wallet_balance_or_raise",
+              "kind": "raise",
+              "line": 1041
+            },
+            {
+              "in": "_check_wallet_balance_or_raise",
+              "kind": "raise",
+              "line": 1044
+            },
+            {
+              "in": "_do_anchor",
+              "kind": "except",
+              "line": 1103
+            },
+            {
+              "in": "_do_anchor",
+              "kind": "except",
+              "line": 1110
+            },
+            {
+              "in": "_do_anchor",
+              "kind": "except",
+              "line": 1120
+            },
+            {
+              "in": "_do_anchor",
+              "kind": "except",
+              "line": 1124
+            },
+            {
+              "in": "_do_anchor",
+              "kind": "except",
+              "line": 1130
+            },
+            {
+              "in": "_round_sort_key",
+              "kind": "except",
+              "line": 1207
+            },
+            {
+              "in": "build_app",
+              "kind": "raise",
+              "line": 1381
+            },
+            {
+              "in": "__call__",
+              "kind": "except",
+              "line": 1590
+            },
+            {
+              "in": "counted_receive",
+              "kind": "raise",
+              "line": 1622
+            }
+          ],
           "hash": "e4d7c4433034adaa7245086c236a41ff08044aa2e1d999c7c9130b9d046b3957",
+          "importOrder": [
+            "sov_daemon/auth.py",
+            "sov_daemon/events.py",
+            "sov_engine/io_utils.py",
+            "sov_daemon/__init__.py",
+            "sov_cli/errors.py",
+            "sov_engine/schemas.py",
+            "sov_engine/proof.py",
+            "sov_transport/xrpl.py",
+            "sov_transport/base.py",
+            "sov_transport/xrpl_async.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_engine/wallet_seed.py",
+            "sov_daemon/lifecycle.py"
+          ],
           "importsFiles": [
             "sov_cli/errors.py",
             "sov_daemon/__init__.py",
@@ -8254,15 +10423,28 @@
       "importConfidence": "full",
       "name": "sov_daemon",
       "origin": "authored",
+      "outsidePlaces": [
+        {
+          "reads": 3,
+          "where": [
+            "caller"
+          ],
+          "writes": 0
+        }
+      ],
+      "outsideReads": 3,
       "role": "code",
-      "testedBy": 39,
-      "unresolvedSites": 5
+      "testRunners": [
+        "pytest"
+      ],
+      "testedBy": 40,
+      "unresolvedSites": 0
     },
     {
-      "dynamicReads": 8,
+      "dynamicReads": 2,
       "dynamicSpawns": 0,
       "dynamicSpawnsInTests": 0,
-      "dynamicWrites": 2,
+      "dynamicWrites": 1,
       "entryPoints": [],
       "externals": 0,
       "files": [
@@ -8383,6 +10565,33 @@
             "mark_final_proof",
             "save_proof",
             "verify_proof"
+          ],
+          "failurePaths": [
+            {
+              "in": "verify_proof",
+              "kind": "except",
+              "line": 100
+            },
+            {
+              "in": "verify_proof",
+              "kind": "raise",
+              "line": 101
+            },
+            {
+              "in": "verify_proof",
+              "kind": "raise",
+              "line": 105
+            },
+            {
+              "in": "verify_proof",
+              "kind": "raise",
+              "line": 112
+            },
+            {
+              "in": "verify_proof",
+              "kind": "raise",
+              "line": 117
+            }
           ],
           "hash": "2f240545e63048ca697e08f7e4e4e8b809e80214a5c6c35adb8ca5afb6b7ce41",
           "importsFiles": [
@@ -8551,6 +10760,113 @@
             "set_active_game_id",
             "state_file",
             "undo_state_file"
+          ],
+          "failurePaths": [
+            {
+              "in": "_validate_game_id",
+              "kind": "raise",
+              "line": 72
+            },
+            {
+              "in": "atomic_write_text",
+              "kind": "except",
+              "line": 119
+            },
+            {
+              "in": "atomic_write_text",
+              "kind": "raise",
+              "line": 125
+            },
+            {
+              "in": "atomic_write_text",
+              "kind": "except",
+              "line": 132
+            },
+            {
+              "in": "atomic_write_text",
+              "kind": "except",
+              "line": 146
+            },
+            {
+              "in": "get_active_game_id",
+              "kind": "except",
+              "line": 248
+            },
+            {
+              "in": "get_active_game_id",
+              "kind": "except",
+              "line": 260
+            },
+            {
+              "in": "_summarize_game",
+              "kind": "except",
+              "line": 302
+            },
+            {
+              "in": "list_saved_games",
+              "kind": "except",
+              "line": 338
+            },
+            {
+              "in": "_write_migration_breadcrumb",
+              "kind": "except",
+              "line": 395
+            },
+            {
+              "in": "_read_migration_breadcrumb",
+              "kind": "except",
+              "line": 418
+            },
+            {
+              "in": "migrate_v1_layout",
+              "kind": "except",
+              "line": 481
+            },
+            {
+              "in": "migrate_v1_layout",
+              "kind": "except",
+              "line": 494
+            },
+            {
+              "in": "migrate_v1_layout",
+              "kind": "except",
+              "line": 522
+            },
+            {
+              "in": "migrate_v1_layout",
+              "kind": "raise",
+              "line": 532
+            },
+            {
+              "in": "_recover_partial_migration",
+              "kind": "except",
+              "line": 559
+            },
+            {
+              "in": "_recover_partial_migration",
+              "kind": "except",
+              "line": 582
+            },
+            {
+              "in": "_recover_partial_migration",
+              "kind": "raise",
+              "line": 590
+            },
+            {
+              "in": "_quarantine_malformed",
+              "kind": "except",
+              "line": 702
+            },
+            {
+              "in": "_read_pending_anchors_tagged",
+              "kind": "except",
+              "line": 749
+            },
+            {
+              "in": "_read_pending_anchors_tagged",
+              "kind": "except",
+              "line": 758
+            }
           ],
           "hash": "9a0c2365608cde3c67997122c59ec96036439e7e1eeb1ef23427167e1e352cc8",
           "importsFiles": [
@@ -8864,6 +11180,68 @@
             "record_anchors_and_clear_pending",
             "verify_proof_local"
           ],
+          "failurePaths": [
+            {
+              "in": "_render_proof_path",
+              "kind": "except",
+              "line": 102
+            },
+            {
+              "in": "_render_proof_path",
+              "kind": "except",
+              "line": 108
+            },
+            {
+              "in": "_load_proof",
+              "kind": "except",
+              "line": 126
+            },
+            {
+              "in": "_load_proof",
+              "kind": "raise",
+              "line": 127
+            },
+            {
+              "in": "_load_proof",
+              "kind": "raise",
+              "line": 134
+            },
+            {
+              "in": "_load_proof",
+              "kind": "raise",
+              "line": 142
+            },
+            {
+              "in": "_load_proof",
+              "kind": "raise",
+              "line": 148
+            },
+            {
+              "in": "_load_proof",
+              "kind": "raise",
+              "line": 156
+            },
+            {
+              "in": "_load_proof",
+              "kind": "raise",
+              "line": 162
+            },
+            {
+              "in": "_read_anchors",
+              "kind": "except",
+              "line": 225
+            },
+            {
+              "in": "_migrate_anchors_to_wrapped",
+              "kind": "except",
+              "line": 302
+            },
+            {
+              "in": "read_anchors_file",
+              "kind": "except",
+              "line": 364
+            }
+          ],
           "hash": "9af3b874e553790102c73ff98782ca7310c3e7817ceff76a1c6fb75b60250c4c",
           "importsFiles": [
             "sov_cli/errors.py",
@@ -8950,6 +11328,7 @@
                   "branch": "required not in proof",
                   "line": 156,
                   "name": "ProofFormatError",
+                  "over": "\"envelope_hash\", \"round\", \"game_id\"",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
@@ -9021,6 +11400,7 @@
                   "branch": "required not in proof",
                   "line": 156,
                   "name": "ProofFormatError",
+                  "over": "\"envelope_hash\", \"round\", \"game_id\"",
                   "target": {
                     "file": "sov_cli/errors.py"
                   },
@@ -9215,6 +11595,7 @@
                   "branch": "required not in proof",
                   "line": 156,
                   "name": "ProofFormatError",
+                  "over": "\"envelope_hash\", \"round\", \"game_id\"",
                   "target": {
                     "file": "sov_cli/errors.py"
                   },
@@ -9267,6 +11648,18 @@
           ]
         },
         {
+          "failurePaths": [
+            {
+              "in": "setstate",
+              "kind": "raise",
+              "line": 43
+            },
+            {
+              "in": "setstate",
+              "kind": "raise",
+              "line": 46
+            }
+          ],
           "hash": "99a63e1c8f866cef50bac92005828d5999e4ecedc0204bdbc31feb6ba62d8636",
           "path": "sov_engine/rng.py"
         },
@@ -9294,6 +11687,13 @@
             "resolve_help_desk",
             "resolve_space",
             "roll_and_move"
+          ],
+          "failurePaths": [
+            {
+              "in": "new_game",
+              "kind": "raise",
+              "line": 41
+            }
           ],
           "hash": "4bec6f4b067c599f6d663bb9d0d4a8312f0366e63f18a1a87ff335f6cd3f75bb",
           "importsFiles": [
@@ -9788,6 +12188,13 @@
           "exports": [
             "new_market_day_game"
           ],
+          "failurePaths": [
+            {
+              "in": "new_market_day_game",
+              "kind": "raise",
+              "line": 63
+            }
+          ],
           "hash": "f9594fd088c0d848ecf66d57ab47fad01a1ebd50da84db8ac379994f33bf388c",
           "importsFiles": [
             "sov_engine/content.py",
@@ -9903,6 +12310,13 @@
             "market_status",
             "new_town_hall_game",
             "upgrade_with_resources"
+          ],
+          "failurePaths": [
+            {
+              "in": "new_town_hall_game",
+              "kind": "raise",
+              "line": 80
+            }
           ],
           "hash": "a2da9bded0202da5c1b7a790c13624db43d674928ba955bb5ef7a60ce473e911",
           "importsFiles": [
@@ -10092,6 +12506,23 @@
             "treaty_keep",
             "treaty_list",
             "treaty_make"
+          ],
+          "failurePaths": [
+            {
+              "in": "_next_treaty_id",
+              "kind": "except",
+              "line": 58
+            },
+            {
+              "in": "new_treaty_table_game",
+              "kind": "raise",
+              "line": 75
+            },
+            {
+              "in": "parse_stake",
+              "kind": "except",
+              "line": 133
+            }
           ],
           "hash": "cf14e1e4774fb53995380bf2875fc595a33429f44e0ba1bfd27d2c44ee9862a1",
           "importsFiles": [
@@ -10400,6 +12831,18 @@
           "exports": [
             "read_versioned"
           ],
+          "failurePaths": [
+            {
+              "in": "read_versioned",
+              "kind": "raise",
+              "line": 84
+            },
+            {
+              "in": "read_versioned",
+              "kind": "raise",
+              "line": 100
+            }
+          ],
           "hash": "b5e5a878b3ec5a6dc0af150fddea192c8f2b86f7961b1864cebb596e2a6723b3",
           "path": "sov_engine/schemas.py",
           "sequences": [
@@ -10438,6 +12881,63 @@
             "resolve_wallet_seed",
             "set_mainnet_seed"
           ],
+          "failurePaths": [
+            {
+              "in": "get_mainnet_seed",
+              "kind": "except",
+              "line": 40
+            },
+            {
+              "in": "get_mainnet_seed",
+              "kind": "except",
+              "line": 45
+            },
+            {
+              "in": "set_mainnet_seed",
+              "kind": "raise",
+              "line": 66
+            },
+            {
+              "in": "set_mainnet_seed",
+              "kind": "except",
+              "line": 69
+            },
+            {
+              "in": "set_mainnet_seed",
+              "kind": "raise",
+              "line": 70
+            },
+            {
+              "in": "set_mainnet_seed",
+              "kind": "except",
+              "line": 73
+            },
+            {
+              "in": "set_mainnet_seed",
+              "kind": "raise",
+              "line": 74
+            },
+            {
+              "in": "clear_mainnet_seed",
+              "kind": "except",
+              "line": 82
+            },
+            {
+              "in": "clear_mainnet_seed",
+              "kind": "except",
+              "line": 86
+            },
+            {
+              "in": "resolve_wallet_seed",
+              "kind": "except",
+              "line": 110
+            },
+            {
+              "in": "resolve_wallet_seed",
+              "kind": "except",
+              "line": 123
+            }
+          ],
           "hash": "a3228b8eafa7ac35559dde9873b8f18b87556d9fbb1edfee3fa379b09f590acc",
           "path": "sov_engine/wallet_seed.py",
           "sequences": [
@@ -10463,8 +12963,29 @@
       "importConfidence": "full",
       "name": "sov_engine",
       "origin": "authored",
+      "outsidePlaces": [
+        {
+          "reads": 19,
+          "where": [
+            "caller"
+          ],
+          "writes": 1
+        },
+        {
+          "reads": 0,
+          "where": [
+            "cwd:.sov/"
+          ],
+          "writes": 1
+        }
+      ],
+      "outsideReads": 19,
+      "outsideWrites": 2,
       "role": "code",
-      "testedBy": 60,
+      "testRunners": [
+        "pytest"
+      ],
+      "testedBy": 62,
       "unresolvedSites": 0
     },
     {
@@ -10473,7 +12994,10 @@
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 0,
       "entryPoints": [],
-      "externals": 0,
+      "externalNames": [
+        "xrpl"
+      ],
+      "externals": 18,
       "files": [
         {
           "hash": "58dbeddf33a7673ed14827595600e99fa674c74682abc1c0edbe537e720f1c6f",
@@ -10486,10 +13010,29 @@
           "path": "sov_transport/__init__.py"
         },
         {
+          "failurePaths": [
+            {
+              "in": "get_memo_text",
+              "kind": "raise",
+              "line": 184
+            }
+          ],
           "hash": "9cfb2a5896f89fc375664a4cad29f2a89dba0d0706e4f323b745f99fed09dca2",
           "path": "sov_transport/base.py"
         },
         {
+          "failurePaths": [
+            {
+              "in": "anchor_batch",
+              "kind": "raise",
+              "line": 55
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "raise",
+              "line": 62
+            }
+          ],
           "hash": "c59d4eb800c108df3e7fa772ec1df61ae367ca0ac3ba46960ac28129254acb0f",
           "importsFiles": [
             "sov_transport/base.py",
@@ -10502,6 +13045,158 @@
           "entryRule": 4,
           "exports": [
             "fund_dev_wallet"
+          ],
+          "failurePaths": [
+            {
+              "in": "__init__",
+              "kind": "raise",
+              "line": 128
+            },
+            {
+              "in": "anchor",
+              "kind": "raise",
+              "line": 187
+            },
+            {
+              "in": "anchor_batch",
+              "kind": "raise",
+              "line": 237
+            },
+            {
+              "in": "anchor_batch",
+              "kind": "raise",
+              "line": 246
+            },
+            {
+              "in": "anchor_batch",
+              "kind": "raise",
+              "line": 266
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 297
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 298
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 353
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 391
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 408
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 417
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 427
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 438
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 454
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 469
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 470
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 471
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "raise",
+              "line": 520
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "raise",
+              "line": 522
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "except",
+              "line": 527
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "raise",
+              "line": 528
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "except",
+              "line": 536
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "except",
+              "line": 563
+            },
+            {
+              "in": "get_memo_text",
+              "kind": "raise",
+              "line": 616
+            },
+            {
+              "in": "get_memo_text",
+              "kind": "except",
+              "line": 620
+            },
+            {
+              "in": "get_memo_text",
+              "kind": "raise",
+              "line": 621
+            },
+            {
+              "in": "fund_dev_wallet",
+              "kind": "raise",
+              "line": 677
+            },
+            {
+              "in": "fund_dev_wallet",
+              "kind": "except",
+              "line": 688
+            },
+            {
+              "in": "fund_dev_wallet",
+              "kind": "raise",
+              "line": 689
+            },
+            {
+              "in": "fund_dev_wallet",
+              "kind": "raise",
+              "line": 697
+            }
           ],
           "hash": "d2eee66691f5515f268d8aadd99565b0a5a2dfde6e78483f8e29755ea9b1d91d",
           "importsFiles": [
@@ -10530,6 +13225,148 @@
           ]
         },
         {
+          "failurePaths": [
+            {
+              "in": "__init__",
+              "kind": "raise",
+              "line": 118
+            },
+            {
+              "in": "anchor",
+              "kind": "raise",
+              "line": 166
+            },
+            {
+              "in": "anchor_batch",
+              "kind": "raise",
+              "line": 202
+            },
+            {
+              "in": "anchor_batch",
+              "kind": "raise",
+              "line": 209
+            },
+            {
+              "in": "anchor_batch",
+              "kind": "raise",
+              "line": 226
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 259
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 260
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 311
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 349
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 366
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 375
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 385
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 396
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 412
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 427
+            },
+            {
+              "in": "_submit",
+              "kind": "except",
+              "line": 428
+            },
+            {
+              "in": "_submit",
+              "kind": "raise",
+              "line": 429
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "raise",
+              "line": 458
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "raise",
+              "line": 460
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "except",
+              "line": 465
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "raise",
+              "line": 466
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "except",
+              "line": 474
+            },
+            {
+              "in": "is_anchored_on_chain",
+              "kind": "except",
+              "line": 491
+            },
+            {
+              "in": "get_memo_text",
+              "kind": "raise",
+              "line": 546
+            },
+            {
+              "in": "get_memo_text",
+              "kind": "except",
+              "line": 550
+            },
+            {
+              "in": "get_memo_text",
+              "kind": "raise",
+              "line": 551
+            },
+            {
+              "in": "_maybe_aclose",
+              "kind": "except",
+              "line": 598
+            },
+            {
+              "in": "_maybe_aclose",
+              "kind": "except",
+              "line": 606
+            }
+          ],
           "hash": "d138e60c9897522526829f20f1e0320dc3d2bf0ad1f6bc2a370d7359e15b2ebd",
           "importsFiles": [
             "sov_transport/__init__.py",
@@ -10539,6 +13376,13 @@
           "path": "sov_transport/xrpl_async.py"
         },
         {
+          "failurePaths": [
+            {
+              "in": "_from_hex",
+              "kind": "except",
+              "line": 169
+            }
+          ],
           "hash": "6ad55badcb72bd77fcbb626f66e6662ceff65b17b9f35bcbc7f48e3fa5978d64",
           "importsFiles": [
             "sov_transport/base.py"
@@ -10549,10 +13393,23 @@
           "exports": [
             "fund_testnet_wallet"
           ],
+          "failurePaths": [
+            {
+              "in": "__getattr__",
+              "kind": "raise",
+              "line": 83
+            }
+          ],
           "hash": "d9ac1ae07adadfb385fdc88b160a4b48a24c289d2319491a7bf8ec30990ba11b",
+          "importOrder": [
+            "sov_transport/xrpl.py",
+            "sov_transport/__init__.py",
+            "sov_transport/xrpl_internals.py"
+          ],
           "importsFiles": [
             "sov_transport/__init__.py",
-            "sov_transport/xrpl.py"
+            "sov_transport/xrpl.py",
+            "sov_transport/xrpl_internals.py"
           ],
           "path": "sov_transport/xrpl_testnet.py"
         }
@@ -10564,8 +13421,11 @@
       "name": "sov_transport",
       "origin": "authored",
       "role": "code",
-      "testedBy": 54,
-      "unresolvedSites": 18
+      "testRunners": [
+        "pytest"
+      ],
+      "testedBy": 56,
+      "unresolvedSites": 0
     },
     {
       "dynamicReads": 0,
@@ -10573,7 +13433,10 @@
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 0,
       "entryPoints": [],
-      "externals": 0,
+      "externalNames": [
+        "xrpl"
+      ],
+      "externals": 12,
       "files": [
         {
           "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -10583,9 +13446,11 @@
         {
           "hash": "3e1ed744eb1c752f9ad25781dca984068a40dd4fb72eef670df6bf14ec217a51",
           "importsFiles": [
-            "sov_engine/rules/__init__.py"
+            "sov_engine/rules/__init__.py",
+            "sov_engine/rules/campfire.py"
           ],
-          "path": "tests/conftest.py"
+          "path": "tests/conftest.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -10603,7 +13468,8 @@
             "sov_cli/main.py",
             "sov_engine/io_utils.py"
           ],
-          "path": "tests/test_active_game_resolution.py"
+          "path": "tests/test_active_game_resolution.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -10622,7 +13488,8 @@
             "sov_transport/base.py",
             "sov_transport/xrpl.py"
           ],
-          "path": "tests/test_anchor_batch.py"
+          "path": "tests/test_anchor_batch.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -10652,7 +13519,8 @@
             "sov_transport/xrpl.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_anchor_cli.py"
+          "path": "tests/test_anchor_cli.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -10663,6 +13531,9 @@
           "importsFiles": [
             "sov_engine/hashing.py",
             "sov_engine/rules/campfire.py"
+          ],
+          "names": [
+            "sov_cli/main.py"
           ],
           "path": "tests/test_anchor_contract.py"
         },
@@ -10675,13 +13546,20 @@
             "test_record_anchors_merges_without_dropping_prior_rounds"
           ],
           "hash": "233015869401f42e6550bfef9aa7d9d101236deb93206eaab23a742d30adba8c",
+          "importOrder": [
+            "sov_engine/io_utils.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_engine/proof.py",
+            "sov_daemon/server.py"
+          ],
           "importsFiles": [
             "sov_daemon/server.py",
             "sov_engine/io_utils.py",
             "sov_engine/proof.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_anchors_json_shape.py"
+          "path": "tests/test_anchors_json_shape.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -10708,7 +13586,8 @@
           "importsFiles": [
             "sov_engine/io_utils.py"
           ],
-          "path": "tests/test_backend_amend_wave6.py"
+          "path": "tests/test_backend_amend_wave6.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -10721,8 +13600,14 @@
             "test_render_backticks_transforms_single_command"
           ],
           "hash": "c686feffe4b9e1e82ecc1719a16832d1de0734dcb57cd9be9f2716a654cb0f2e",
+          "importOrder": [
+            "sov_cli/main.py",
+            "sov_cli/__init__.py",
+            "sov_cli/errors.py"
+          ],
           "importsFiles": [
             "sov_cli/__init__.py",
+            "sov_cli/errors.py",
             "sov_cli/main.py"
           ],
           "path": "tests/test_backtick_rendering.py"
@@ -10747,7 +13632,8 @@
             "sov_transport/xrpl_async.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_bridge_amend_wave11.py"
+          "path": "tests/test_bridge_amend_wave11.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -10772,9 +13658,11 @@
             "sov_engine/io_utils.py",
             "sov_engine/rules/campfire.py",
             "sov_engine/serialize.py",
-            "sov_transport/__init__.py"
+            "sov_transport/__init__.py",
+            "sov_transport/xrpl.py"
           ],
-          "path": "tests/test_cli_amend_wave9.py"
+          "path": "tests/test_cli_amend_wave9.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -10789,7 +13677,8 @@
           ],
           "hash": "c2c7807aebfa236a7709346ec1344de72cd7f2a38a6a22b9ca221c581344e78b",
           "importsFiles": [
-            "sov_cli/__init__.py"
+            "sov_cli/__init__.py",
+            "sov_cli/main.py"
           ],
           "path": "tests/test_cli_empty_states.py"
         },
@@ -10890,6 +13779,19 @@
             "test_update_season_without_games_key_resets_skeleton"
           ],
           "hash": "437eb712c2d5e136911a25aeea95396c345e24c17c268d39e050b63861fb678a",
+          "importOrder": [
+            "sov_cli/__init__.py",
+            "sov_cli/main.py",
+            "sov_engine/io_utils.py",
+            "sov_engine/models.py",
+            "sov_engine/proof.py",
+            "sov_engine/rules/campfire.py",
+            "sov_engine/rules/market_day.py",
+            "sov_engine/rules/town_hall.py",
+            "sov_engine/rules/treaty_table.py",
+            "sov_engine/serialize.py",
+            "sov_engine/content.py"
+          ],
           "importsFiles": [
             "sov_cli/__init__.py",
             "sov_cli/main.py",
@@ -10903,7 +13805,8 @@
             "sov_engine/rules/treaty_table.py",
             "sov_engine/serialize.py"
           ],
-          "path": "tests/test_cli_endgame_commands.py"
+          "path": "tests/test_cli_endgame_commands.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11006,6 +13909,15 @@
             "test_vote_errors"
           ],
           "hash": "142c53ace3c4deb77b14e38b886656f85ae99eb025dd6992ed42cef3948cd0ad",
+          "importOrder": [
+            "sov_cli/__init__.py",
+            "sov_cli/main.py",
+            "sov_cli/errors.py",
+            "sov_daemon/__init__.py",
+            "sov_engine/io_utils.py",
+            "sov_engine/rules/campfire.py",
+            "sov_engine/rules/town_hall.py"
+          ],
           "importsFiles": [
             "sov_cli/__init__.py",
             "sov_cli/errors.py",
@@ -11015,7 +13927,8 @@
             "sov_engine/rules/campfire.py",
             "sov_engine/rules/town_hall.py"
           ],
-          "path": "tests/test_cli_gameplay_commands.py"
+          "path": "tests/test_cli_gameplay_commands.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11025,7 +13938,8 @@
           "importsFiles": [
             "sov_cli/main.py"
           ],
-          "path": "tests/test_cli_help_no_placeholders.py"
+          "path": "tests/test_cli_help_no_placeholders.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11047,6 +13961,17 @@
             "test_sov_support_bundle_writes_zip_with_required_files_and_no_seed_material"
           ],
           "hash": "d2f5aa764b913291ac35ba8f740f91b7a5905116147901ff86bc4f825e79fe38",
+          "importOrder": [
+            "sov_cli/main.py",
+            "sov_engine/hashing.py",
+            "sov_engine/rules/campfire.py",
+            "sov_engine/serialize.py",
+            "sov_engine/io_utils.py",
+            "sov_engine/models.py",
+            "sov_engine/rules/treaty_table.py",
+            "sov_cli/__init__.py",
+            "sov_engine/rng.py"
+          ],
           "importsFiles": [
             "sov_cli/__init__.py",
             "sov_cli/main.py",
@@ -11058,7 +13983,8 @@
             "sov_engine/rules/treaty_table.py",
             "sov_engine/serialize.py"
           ],
-          "path": "tests/test_cli_integration.py"
+          "path": "tests/test_cli_integration.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11193,6 +14119,15 @@
             "test_wallet_testnet_writes_seed_file_and_hides_nothing_but_the_seed"
           ],
           "hash": "13d01054a7ac8f51a2d4e7fa881ef05591ca03e81350cf9e5669da1c0ce2952f",
+          "importOrder": [
+            "sov_cli/main.py",
+            "sov_engine/io_utils.py",
+            "sov_engine/rules/campfire.py",
+            "sov_transport/base.py",
+            "sov_transport/xrpl.py",
+            "sov_daemon/__init__.py",
+            "sov_engine/wallet_seed.py"
+          ],
           "importsFiles": [
             "sov_cli/main.py",
             "sov_daemon/__init__.py",
@@ -11202,7 +14137,8 @@
             "sov_transport/base.py",
             "sov_transport/xrpl.py"
           ],
-          "path": "tests/test_cli_ops_commands.py"
+          "path": "tests/test_cli_ops_commands.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11215,9 +14151,18 @@
             "test_daemon_c_012_stop_daemon_uses_platform_aware_kill_hint"
           ],
           "hash": "1062b02757f756569d15bb0694863b29c5363f3ca52fbbc28bbeb858eb435572",
+          "importOrder": [
+            "sov_daemon/events.py",
+            "sov_daemon/__init__.py",
+            "sov_daemon/lifecycle.py"
+          ],
           "importsFiles": [
             "sov_daemon/__init__.py",
-            "sov_daemon/events.py"
+            "sov_daemon/events.py",
+            "sov_daemon/lifecycle.py"
+          ],
+          "names": [
+            "sov_daemon/server.py"
           ],
           "path": "tests/test_daemon_amend_wave11.py"
         },
@@ -11243,6 +14188,14 @@
             "test_readonly_subprocess_env_omits_seed_material"
           ],
           "hash": "ab66ecd77c08d86ad7a7b48636c3f74b2fa1f084309f39b61829f403171a2056",
+          "importOrder": [
+            "sov_daemon/server.py",
+            "sov_daemon/lifecycle.py",
+            "sov_daemon/__init__.py",
+            "sov_engine/io_utils.py",
+            "sov_transport/xrpl_async.py",
+            "sov_daemon/events.py"
+          ],
           "importsFiles": [
             "sov_daemon/__init__.py",
             "sov_daemon/events.py",
@@ -11251,7 +14204,8 @@
             "sov_engine/io_utils.py",
             "sov_transport/xrpl_async.py"
           ],
-          "path": "tests/test_daemon_amend_wave7.py"
+          "path": "tests/test_daemon_amend_wave7.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11275,6 +14229,16 @@
             "test_daemon_b_014_subscriber_cap_refuses_overflow"
           ],
           "hash": "a0cf215c4a7e1d11cb9780a4728fa41c12546ecd56d7845d1bb0f35f66c949c0",
+          "importOrder": [
+            "sov_daemon/server.py",
+            "sov_daemon/lifecycle.py",
+            "sov_daemon/log_fields.py",
+            "sov_daemon/__main__.py",
+            "sov_daemon/events.py",
+            "sov_cli/errors.py",
+            "sov_engine/io_utils.py",
+            "sov_daemon/__init__.py"
+          ],
           "importsFiles": [
             "sov_cli/errors.py",
             "sov_daemon/__init__.py",
@@ -11285,7 +14249,12 @@
             "sov_daemon/server.py",
             "sov_engine/io_utils.py"
           ],
-          "path": "tests/test_daemon_amend_wave9.py"
+          "names": [
+            "app/src-tauri/src/commands.rs",
+            "app/src/types/daemon.ts"
+          ],
+          "path": "tests/test_daemon_amend_wave9.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11300,7 +14269,8 @@
           "importsFiles": [
             "sov_daemon/server.py"
           ],
-          "path": "tests/test_daemon_auth.py"
+          "path": "tests/test_daemon_auth.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11313,7 +14283,8 @@
           "importsFiles": [
             "sov_daemon/lifecycle.py"
           ],
-          "path": "tests/test_daemon_container_host.py"
+          "path": "tests/test_daemon_container_host.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11326,7 +14297,8 @@
           "importsFiles": [
             "sov_daemon/server.py"
           ],
-          "path": "tests/test_daemon_cors.py"
+          "path": "tests/test_daemon_cors.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11357,7 +14329,8 @@
             "sov_engine/io_utils.py",
             "sov_engine/proof.py"
           ],
-          "path": "tests/test_daemon_endpoints.py"
+          "path": "tests/test_daemon_endpoints.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11377,13 +14350,20 @@
             "test_stop_daemon_removes_daemon_json"
           ],
           "hash": "3df3684011e04089936bbdf235fe6160bde99543a6b4edf482bf3867accd9e20",
+          "importOrder": [
+            "sov_daemon/lifecycle.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_cli/main.py",
+            "tests/test_cli_integration.py"
+          ],
           "importsFiles": [
             "sov_cli/main.py",
             "sov_daemon/lifecycle.py",
             "sov_transport/xrpl_internals.py",
             "tests/test_cli_integration.py"
           ],
-          "path": "tests/test_daemon_lifecycle.py"
+          "path": "tests/test_daemon_lifecycle.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11460,7 +14440,8 @@
             "sov_daemon/lifecycle.py",
             "sov_daemon/log_fields.py"
           ],
-          "path": "tests/test_daemon_lifecycle_coverage.py"
+          "path": "tests/test_daemon_lifecycle_coverage.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11476,7 +14457,8 @@
           "importsFiles": [
             "sov_daemon/server.py"
           ],
-          "path": "tests/test_daemon_readonly.py"
+          "path": "tests/test_daemon_readonly.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11490,7 +14472,8 @@
             "sov_daemon/lifecycle.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_daemon_seed_leak.py"
+          "path": "tests/test_daemon_seed_leak.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11583,6 +14566,18 @@
             "test_verify_round_transport_exception_becomes_lookup_failed"
           ],
           "hash": "21b59e7ac422454b487e276ff01e6641b107ecd45c451c99c08df41be82c63d5",
+          "importOrder": [
+            "sov_daemon/server.py",
+            "sov_engine/io_utils.py",
+            "sov_daemon/events.py",
+            "sov_daemon/__init__.py",
+            "sov_engine/schemas.py",
+            "sov_engine/proof.py",
+            "sov_transport/xrpl.py",
+            "sov_transport/xrpl_async.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_daemon/log_fields.py"
+          ],
           "importsFiles": [
             "sov_daemon/__init__.py",
             "sov_daemon/events.py",
@@ -11595,7 +14590,8 @@
             "sov_transport/xrpl_async.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_daemon_server_coverage.py"
+          "path": "tests/test_daemon_server_coverage.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11608,11 +14604,16 @@
             "test_sse_reconnect_yields_fresh_daemon_ready_no_replay"
           ],
           "hash": "900966919580470d4334e49df662d2bba9390f769d47c190328bf86d1861d62e",
+          "importOrder": [
+            "sov_daemon/server.py",
+            "sov_daemon/events.py"
+          ],
           "importsFiles": [
             "sov_daemon/events.py",
             "sov_daemon/server.py"
           ],
-          "path": "tests/test_daemon_sse.py"
+          "path": "tests/test_daemon_sse.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11623,12 +14624,21 @@
             "test_xrpl_network_values_match_python_enum"
           ],
           "hash": "f838b7bea2a4c96e3df1c19665a07a53965dd76fe22b0bc8c10797d7c04fae4e",
+          "importOrder": [
+            "sov_engine/proof.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_transport/base.py"
+          ],
           "importsFiles": [
             "sov_engine/proof.py",
             "sov_transport/base.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_daemon_types_ts_in_sync.py"
+          "names": [
+            "app/src/types/daemon.ts"
+          ],
+          "path": "tests/test_daemon_types_ts_in_sync.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11641,13 +14651,20 @@
             "test_verify_works_in_readonly"
           ],
           "hash": "dfa54969c225f3e0cf97486e95243b29bdaef311211c23c6bd6040daab662aec",
+          "importOrder": [
+            "sov_transport/base.py",
+            "sov_daemon/server.py",
+            "sov_engine/proof.py",
+            "sov_engine/io_utils.py"
+          ],
           "importsFiles": [
             "sov_daemon/server.py",
             "sov_engine/io_utils.py",
             "sov_engine/proof.py",
             "sov_transport/base.py"
           ],
-          "path": "tests/test_daemon_verify_endpoint.py"
+          "path": "tests/test_daemon_verify_endpoint.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11664,7 +14681,8 @@
             "sov_engine/io_utils.py",
             "tests/test_daemon_endpoints.py"
           ],
-          "path": "tests/test_daemon_wallet_file.py"
+          "path": "tests/test_daemon_wallet_file.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11698,6 +14716,10 @@
             "test_print_checks_tally_yellow_on_warn_only"
           ],
           "hash": "52ef8979d9972c6ea84393f507d3b34a353460f3b5eef0e0ba4f58d439b2036a",
+          "importOrder": [
+            "sov_cli/main.py",
+            "sov_cli/__init__.py"
+          ],
           "importsFiles": [
             "sov_cli/__init__.py",
             "sov_cli/main.py"
@@ -11760,13 +14782,20 @@
             "test_toast_once_per_game"
           ],
           "hash": "6c5555d2396200592bf94ee01e73389d4c86cde21c5b8c330d07a90a44ee8b11",
+          "importOrder": [
+            "sov_engine/rules/campfire.py",
+            "sov_cli/main.py",
+            "sov_engine/io_utils.py",
+            "sov_engine/content.py"
+          ],
           "importsFiles": [
             "sov_cli/main.py",
             "sov_engine/content.py",
             "sov_engine/io_utils.py",
             "sov_engine/rules/campfire.py"
           ],
-          "path": "tests/test_engine.py"
+          "path": "tests/test_engine.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11774,7 +14803,11 @@
             "test_hint_contains_backticked_command"
           ],
           "hash": "12e6dc87ee6a4a290bb43d9ca8133866a336805b93aec1063d24a42288d85438",
-          "path": "tests/test_error_hints_have_commands.py"
+          "names": [
+            "sov_cli/errors.py"
+          ],
+          "path": "tests/test_error_hints_have_commands.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11814,9 +14847,11 @@
           ],
           "hash": "26c0a4f9fb149f53eb320d5c1038a131e0df826e84287157491fb1e8b319776e",
           "importsFiles": [
-            "sov_cli/__init__.py"
+            "sov_cli/__init__.py",
+            "sov_cli/errors.py"
           ],
-          "path": "tests/test_errors_hint_backticks.py"
+          "path": "tests/test_errors_hint_backticks.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11824,6 +14859,9 @@
             "test_no_inline_sov_error_codes_outside_registry"
           ],
           "hash": "07ff5ffe71d1af29dc02fe2585a00105ef6bf72a198e0348ee214b2ea3c3e48b",
+          "names": [
+            "sov_cli/errors.py"
+          ],
           "path": "tests/test_errors_registry_no_inline_codes.py"
         },
         {
@@ -11840,7 +14878,8 @@
             "sov_transport/xrpl.py",
             "sov_transport/xrpl_testnet.py"
           ],
-          "path": "tests/test_fund_dev_wallet.py"
+          "path": "tests/test_fund_dev_wallet.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11860,7 +14899,12 @@
             "test_game_ts_contains_field"
           ],
           "hash": "be9a14324f0191212f49337eb9bb62f68466dee4e454b00aa99a896b922615d1",
-          "path": "tests/test_game_types_ts_in_sync.py"
+          "names": [
+            "app/src/types/game.ts",
+            "sov_engine/models.py"
+          ],
+          "path": "tests/test_game_types_ts_in_sync.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11878,7 +14922,8 @@
             "sov_engine/proof.py",
             "sov_engine/serialize.py"
           ],
-          "path": "tests/test_load_proof_errors.py"
+          "path": "tests/test_load_proof_errors.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11888,6 +14933,15 @@
             "test_f010_sov_upgrade_workshop_on_campfire_surfaces_hint"
           ],
           "hash": "42adadc2e1b10f49836069edc1381130e3e41dbd0d5eb8843017f4dc6d5b6ad1",
+          "importOrder": [
+            "sov_engine/rules/campfire.py",
+            "sov_engine/rules/market_day.py",
+            "sov_engine/rules/town_hall.py",
+            "sov_engine/rules/treaty_table.py",
+            "sov_cli/main.py",
+            "sov_engine/serialize.py",
+            "sov_engine/io_utils.py"
+          ],
           "importsFiles": [
             "sov_cli/main.py",
             "sov_engine/io_utils.py",
@@ -11897,7 +14951,8 @@
             "sov_engine/rules/treaty_table.py",
             "sov_engine/serialize.py"
           ],
-          "path": "tests/test_log_contracts.py"
+          "path": "tests/test_log_contracts.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -11974,7 +15029,8 @@
           "importsFiles": [
             "sov_engine/io_utils.py"
           ],
-          "path": "tests/test_multi_save.py"
+          "path": "tests/test_multi_save.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12000,7 +15056,8 @@
           "importsFiles": [
             "sov_engine/io_utils.py"
           ],
-          "path": "tests/test_pending_anchors.py"
+          "path": "tests/test_pending_anchors.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12080,15 +15137,30 @@
             "test_verify_proof_local_true_for_intact_and_false_for_tampered"
           ],
           "hash": "42454e255c786fe646009dd607189e57400645bf4c3251ca256f2209db7332b3",
-          "importsFiles": [
+          "importOrder": [
             "sov_cli/__init__.py",
+            "sov_cli/errors.py",
             "sov_engine/__init__.py",
             "sov_engine/io_utils.py",
+            "sov_engine/schemas.py",
+            "sov_engine/proof.py",
             "sov_engine/serialize.py",
             "sov_engine/wallet_seed.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_persistence_coverage.py"
+          "importsFiles": [
+            "sov_cli/__init__.py",
+            "sov_cli/errors.py",
+            "sov_engine/__init__.py",
+            "sov_engine/io_utils.py",
+            "sov_engine/proof.py",
+            "sov_engine/schemas.py",
+            "sov_engine/serialize.py",
+            "sov_engine/wallet_seed.py",
+            "sov_transport/xrpl_internals.py"
+          ],
+          "path": "tests/test_persistence_coverage.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12102,12 +15174,18 @@
             "test_proof_anchor_status_txid_wins_during_flush_race"
           ],
           "hash": "1c1d5bb6c16ed293b6241789e6ece4aca938191c4b26f590d9e9caa4dea09f4f",
+          "importOrder": [
+            "sov_engine/io_utils.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_engine/proof.py"
+          ],
           "importsFiles": [
             "sov_engine/io_utils.py",
             "sov_engine/proof.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_proof_anchor_status.py"
+          "path": "tests/test_proof_anchor_status.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12142,7 +15220,8 @@
             "sov_engine/rules/campfire.py",
             "sov_engine/serialize.py"
           ],
-          "path": "tests/test_proofs.py"
+          "path": "tests/test_proofs.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12161,7 +15240,8 @@
           "importsFiles": [
             "sov_cli/main.py"
           ],
-          "path": "tests/test_readme_examples.py"
+          "path": "tests/test_readme_examples.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12260,7 +15340,8 @@
             "sov_engine/rules/town_hall.py",
             "sov_engine/rules/treaty_table.py"
           ],
-          "path": "tests/test_rules_coverage.py"
+          "path": "tests/test_rules_coverage.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12275,7 +15356,8 @@
           "importsFiles": [
             "sov_engine/schemas.py"
           ],
-          "path": "tests/test_schema_reader.py"
+          "path": "tests/test_schema_reader.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12288,7 +15370,8 @@
           "importsFiles": [
             "sov_engine/schemas.py"
           ],
-          "path": "tests/test_schema_version_error_has_hint.py"
+          "path": "tests/test_schema_version_error_has_hint.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12302,7 +15385,8 @@
           "importsFiles": [
             "sov_cli/main.py"
           ],
-          "path": "tests/test_share_codes.py"
+          "path": "tests/test_share_codes.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12316,7 +15400,8 @@
             "sov_cli/main.py",
             "sov_engine/io_utils.py"
           ],
-          "path": "tests/test_sov_games_cli.py"
+          "path": "tests/test_sov_games_cli.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12347,7 +15432,8 @@
             "sov_cli/main.py",
             "sov_engine/io_utils.py"
           ],
-          "path": "tests/test_sov_resume_cli.py"
+          "path": "tests/test_sov_resume_cli.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12400,6 +15486,13 @@
             "test_upgrade_with_resources_workshop"
           ],
           "hash": "8ce21e1618185af21a73acc9c31932096e28173d21e0d3e00693a1dc3c91a70a",
+          "importOrder": [
+            "sov_engine/models.py",
+            "sov_engine/rules/town_hall.py",
+            "sov_engine/rng.py",
+            "sov_engine/rules/campfire.py",
+            "sov_engine/serialize.py"
+          ],
           "importsFiles": [
             "sov_engine/models.py",
             "sov_engine/rng.py",
@@ -12490,6 +15583,14 @@
             "test_submit_unsuccessful_response_hint_names_network_explorer"
           ],
           "hash": "641b2ccbd1b4d3015e7fadc36ec54055f66072c725726747f70fb103c93431f8",
+          "importOrder": [
+            "sov_transport/__init__.py",
+            "sov_transport/base.py",
+            "sov_transport/null.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_transport/xrpl.py",
+            "sov_transport/xrpl_async.py"
+          ],
           "importsFiles": [
             "sov_transport/__init__.py",
             "sov_transport/base.py",
@@ -12498,7 +15599,8 @@
             "sov_transport/xrpl_async.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_transport_coverage.py"
+          "path": "tests/test_transport_coverage.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12551,7 +15653,8 @@
           "importsFiles": [
             "sov_engine/io_utils.py"
           ],
-          "path": "tests/test_v1_migration.py"
+          "path": "tests/test_v1_migration.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12565,7 +15668,8 @@
           "importsFiles": [
             "sov_engine/io_utils.py"
           ],
-          "path": "tests/test_validate_game_id.py"
+          "path": "tests/test_validate_game_id.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12576,7 +15680,11 @@
             "test_version_is_semver"
           ],
           "hash": "2597b46fd539a077feb438176f1510a7dca77a41b32ce0062cbb505e2a98951b",
-          "path": "tests/test_version.py"
+          "names": [
+            "sov_cli/main.py"
+          ],
+          "path": "tests/test_version.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12586,7 +15694,8 @@
           "importsFiles": [
             "sov_cli/main.py"
           ],
-          "path": "tests/test_version_frozen_fallback.py"
+          "path": "tests/test_version_frozen_fallback.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12598,6 +15707,9 @@
           "hash": "379aba5fb66e980675e2188759517947dae8ec4e1a90ea883fa5b283f97d02c2",
           "importsFiles": [
             "sov_cli/main.py"
+          ],
+          "names": [
+            "sov_cli/errors.py"
           ],
           "path": "tests/test_version_in_sync.py"
         },
@@ -12637,7 +15749,8 @@
             "sov_cli/main.py",
             "sov_engine/wallet_seed.py"
           ],
-          "path": "tests/test_wallet_keychain.py"
+          "path": "tests/test_wallet_keychain.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12660,6 +15773,13 @@
             "test_bridge_005_async_client_close_invoked_even_on_exception"
           ],
           "hash": "8fe3a1d610b3fc8ccf3d9954a2ce41bfc8c8f033176dc84fe17f2f12d35f59fe",
+          "importOrder": [
+            "sov_transport/xrpl.py",
+            "sov_transport/base.py",
+            "sov_transport/xrpl_async.py",
+            "sov_transport/__init__.py",
+            "sov_transport/xrpl_internals.py"
+          ],
           "importsFiles": [
             "sov_transport/__init__.py",
             "sov_transport/base.py",
@@ -12667,7 +15787,8 @@
             "sov_transport/xrpl_async.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_xrpl_amend_regressions.py"
+          "path": "tests/test_xrpl_amend_regressions.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12675,6 +15796,13 @@
             "test_async_anchor_batch_three_rounds_returns_single_txid"
           ],
           "hash": "4e5772604c90c8c1953a8af4171be0f61568fa782c24cfd4a736b8b85208b1db",
+          "importOrder": [
+            "sov_transport/base.py",
+            "sov_transport/xrpl.py",
+            "sov_transport/xrpl_async.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_transport/__init__.py"
+          ],
           "importsFiles": [
             "sov_transport/__init__.py",
             "sov_transport/base.py",
@@ -12682,7 +15810,8 @@
             "sov_transport/xrpl_async.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_xrpl_async_integration.py"
+          "path": "tests/test_xrpl_async_integration.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12710,13 +15839,20 @@
             "test_async_xrpl_transport_re_exported_from_package"
           ],
           "hash": "93bb31b2db91eba4d8b658772dfcc3c02428abb8415870e1c0e4d28d53b39389",
+          "importOrder": [
+            "sov_transport/xrpl_async.py",
+            "sov_transport/xrpl_internals.py",
+            "sov_transport/__init__.py",
+            "sov_transport/base.py"
+          ],
           "importsFiles": [
             "sov_transport/__init__.py",
             "sov_transport/base.py",
             "sov_transport/xrpl_async.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_xrpl_async_transport.py"
+          "path": "tests/test_xrpl_async_transport.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12727,12 +15863,18 @@
             "test_real_testnet_verify_returns_false_for_unknown_txid"
           ],
           "hash": "bb4725a7493e840579ca506617d24f99588f503e4e7526d0072ee67da1ab3c4e",
+          "importOrder": [
+            "sov_transport/xrpl_testnet.py",
+            "sov_transport/__init__.py",
+            "sov_transport/xrpl.py"
+          ],
           "importsFiles": [
             "sov_transport/__init__.py",
             "sov_transport/xrpl.py",
             "sov_transport/xrpl_testnet.py"
           ],
-          "path": "tests/test_xrpl_integration.py"
+          "path": "tests/test_xrpl_integration.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12772,12 +15914,18 @@
             "test_xrpl_network_enum_string_values"
           ],
           "hash": "a2f70f00d49c5fbed9ded292f9a786c3808a9c4ab76488f616592dde1769c0b1",
+          "importOrder": [
+            "sov_transport/xrpl_internals.py",
+            "sov_transport/base.py",
+            "sov_transport/xrpl.py"
+          ],
           "importsFiles": [
             "sov_transport/base.py",
             "sov_transport/xrpl.py",
             "sov_transport/xrpl_internals.py"
           ],
-          "path": "tests/test_xrpl_internals.py"
+          "path": "tests/test_xrpl_internals.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12815,7 +15963,8 @@
           "importsFiles": [
             "sov_transport/xrpl.py"
           ],
-          "path": "tests/test_xrpl_transport.py"
+          "path": "tests/test_xrpl_transport.py",
+          "testFramework": "pytest"
         },
         {
           "exports": [
@@ -12831,12 +15980,18 @@
             "test_xrpl_transport_verify_alias_delegates_to_is_anchored"
           ],
           "hash": "18640b8864c6187aa86e32044162cd51ffd70d9c0ad6bdfdff2b65b193a7222f",
+          "importOrder": [
+            "sov_transport/xrpl.py",
+            "sov_transport/xrpl_testnet.py",
+            "sov_transport/xrpl_internals.py"
+          ],
           "importsFiles": [
             "sov_transport/xrpl.py",
             "sov_transport/xrpl_internals.py",
             "sov_transport/xrpl_testnet.py"
           ],
-          "path": "tests/test_xrpl_transport_legacy.py"
+          "path": "tests/test_xrpl_transport_legacy.py",
+          "testFramework": "pytest"
         }
       ],
       "globs": [
@@ -12846,8 +16001,11 @@
       "name": "tests",
       "origin": "authored",
       "role": "test",
+      "testRunners": [
+        "pytest"
+      ],
       "testedBy": 0,
-      "unresolvedSites": 12
+      "unresolvedSites": 0
     }
   ],
   "doors": [
@@ -12855,143 +16013,351 @@
       "checksCount": 11,
       "commands": [
         {
+          "dir": "",
           "job": "lint-and-test",
-          "step": "Atlas check",
-          "text": "npx --yes @dogfood-lab/atlas@1.20.0 check"
+          "programs": [
+            "npx"
+          ],
+          "step": "Atlas check"
         },
         {
+          "dir": "",
           "job": "lint-and-test",
-          "step": "Install dependencies",
-          "text": "uv sync --frozen --all-extras --dev"
+          "programs": [
+            "uv"
+          ],
+          "step": "Install dependencies"
         },
         {
+          "dir": "",
           "job": "lint-and-test",
-          "step": "Lint with ruff",
-          "text": "uv run ruff check --output-format=github ."
+          "programs": [
+            "uv"
+          ],
+          "step": "Lint with ruff"
         },
         {
+          "dir": "",
           "job": "lint-and-test",
-          "step": "Check formatting with ruff",
-          "text": "uv run ruff format --check ."
+          "programs": [
+            "uv"
+          ],
+          "step": "Check formatting with ruff"
         },
         {
+          "dir": "",
           "job": "lint-and-test",
-          "step": "Type-check with mypy",
-          "text": "uv run mypy sov_engine sov_transport sov_cli sov_daemon"
+          "programs": [
+            "uv"
+          ],
+          "step": "Type-check with mypy"
         },
         {
+          "dir": "",
           "job": "lint-and-test",
-          "step": "Voice anti-pattern gate",
-          "text": "bash scripts/check-voice.sh"
+          "programs": [
+            "bash"
+          ],
+          "step": "Voice anti-pattern gate"
         },
         {
+          "dir": "",
           "job": "lint-and-test",
-          "step": "Run tests",
-          "text": "# shellcheck disable=SC2086 # COVERAGE_ARGS is a word list by design\nuv run pytest tests/ -v $COVERAGE_ARGS \\\n  -W error::DeprecationWarning \\\n  -W error::PendingDeprecationWarning \\\n  -W \"ignore::DeprecationWarning:websockets\" \\\n  -W \"ignore::DeprecationWarning:websockets.legacy\" \\\n  -W \"ignore::DeprecationWarning:uvicorn.protocols.websockets.websockets_impl\"\n"
+          "programs": [
+            "uv"
+          ],
+          "step": "Run tests"
         },
         {
+          "dir": "",
           "job": "tauri-and-frontend",
-          "step": "Install Tauri Linux deps",
-          "text": "sudo apt-get update\nsudo apt-get install -y libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev\n"
+          "programs": [
+            "sudo"
+          ],
+          "step": "Install Tauri Linux deps"
         },
         {
+          "dir": "",
           "job": "tauri-and-frontend",
-          "step": "Install frontend deps",
-          "text": "npm --prefix app ci"
+          "programs": [
+            "npm"
+          ],
+          "step": "Install frontend deps"
         },
         {
+          "dir": "app",
           "job": "tauri-and-frontend",
-          "step": "npm audit signatures",
-          "text": "npm audit signatures"
+          "programs": [
+            "npm"
+          ],
+          "step": "npm audit signatures"
         },
         {
+          "dir": "app/src-tauri",
           "job": "tauri-and-frontend",
-          "step": "Cargo check",
-          "text": "cargo check"
+          "programs": [
+            "cargo"
+          ],
+          "step": "Cargo check"
         },
         {
+          "dir": "",
           "job": "tauri-and-frontend",
-          "step": "Install cargo-audit",
-          "text": "cargo install cargo-audit --locked --version \"0.22.2\""
+          "programs": [
+            "cargo"
+          ],
+          "step": "Install cargo-audit"
         },
         {
+          "dir": "app/src-tauri",
           "job": "tauri-and-frontend",
-          "step": "Cargo audit",
-          "text": "cargo audit --deny warnings \\\n  --ignore RUSTSEC-2026-0190 \\\n  --ignore RUSTSEC-2026-0194 \\\n  --ignore RUSTSEC-2026-0195\n"
+          "programs": [
+            "cargo"
+          ],
+          "step": "Cargo audit"
         },
         {
+          "dir": "app/src-tauri",
           "job": "tauri-and-frontend",
-          "step": "Cargo clippy",
-          "text": "cargo clippy --all-targets -- -D warnings"
+          "programs": [
+            "cargo"
+          ],
+          "step": "Cargo clippy"
         },
         {
+          "dir": "app/src-tauri",
           "job": "tauri-and-frontend",
-          "step": "Cargo fmt --check",
-          "text": "cargo fmt --check"
+          "programs": [
+            "cargo"
+          ],
+          "step": "Cargo fmt --check"
         },
         {
+          "dir": "app/src-tauri",
           "job": "tauri-and-frontend",
-          "step": "Cargo test (build)",
-          "text": "cargo test --no-run"
+          "programs": [
+            "cargo"
+          ],
+          "step": "Cargo test (build)"
         },
         {
+          "dir": "app/src-tauri",
           "job": "tauri-and-frontend",
-          "step": "Cargo test",
-          "text": "timeout --kill-after=20s 5m cargo test -- --test-threads=1 --nocapture"
+          "programs": [
+            "timeout"
+          ],
+          "step": "Cargo test"
         },
         {
+          "dir": "",
           "job": "tauri-and-frontend",
-          "step": "Frontend typecheck",
-          "text": "npm --prefix app run typecheck"
+          "programs": [
+            "npm"
+          ],
+          "step": "Frontend typecheck"
         },
         {
+          "dir": "",
           "job": "tauri-and-frontend",
-          "step": "Frontend lint",
-          "text": "npm --prefix app run lint"
+          "programs": [
+            "npm"
+          ],
+          "step": "Frontend lint"
         },
         {
+          "dir": "",
           "job": "tauri-and-frontend",
-          "step": "Theme-token discipline gate",
-          "text": "bash scripts/check-theme-tokens.sh"
+          "programs": [
+            "bash"
+          ],
+          "step": "Theme-token discipline gate"
         },
         {
+          "dir": "",
           "job": "tauri-and-frontend",
-          "step": "Frontend test",
-          "text": "npm --prefix app test"
+          "programs": [
+            "npm"
+          ],
+          "step": "Frontend test"
         },
         {
+          "dir": "",
           "job": "tauri-and-frontend",
-          "step": "Frontend build",
-          "text": "npm --prefix app run build"
+          "programs": [
+            "npm"
+          ],
+          "step": "Frontend build"
         },
         {
+          "dir": "",
           "job": "security",
-          "step": "Install dependencies",
-          "text": "uv sync --frozen --all-extras --dev"
+          "programs": [
+            "uv"
+          ],
+          "step": "Install dependencies"
         },
         {
+          "dir": "",
           "job": "security",
-          "step": "pip-audit (HIGH gate)",
-          "text": "# Build --ignore-vuln args from allowlist file if present.\nALLOWLIST_ARGS=\"\"\nif [ -f .pip-audit-ignore ]; then\n  while IFS= read -r line; do\n    # Strip trailing inline rationale comment + whitespace\n    entry=\"${line%%#*}\"\n    entry=\"${entry// /}\"\n    entry=\"${entry//$'\\t'/}\"\n    [ -z \"$entry\" ] && continue\n    ALLOWLIST_ARGS=\"$ALLOWLIST_ARGS --ignore-vuln $entry\"\n  done < .pip-audit-ignore\nfi\n# Frozen lock → requirements.txt; uvx does not touch the project venv.\nuv export --frozen --all-extras --no-hashes -o \"${RUNNER_TEMP}/sov-reqs.txt\"\n# Overlay click==8.3.3 (PYSEC-2026-2132 / GHSA-47fr-3ffg-hgmw).\n# uv.lock is shared across domains and must not be rewritten here;\n# pyproject.toml is out of ci-tooling. Scanner env + exported reqs\n# are pinned so this known click advisory cannot fail-open the rest\n# of the gate; a real lock bump still belongs with the pyproject owner.\npython3 -c \"\nfrom pathlib import Path\nimport os, re\np = Path(os.environ['RUNNER_TEMP']) / 'sov-reqs.txt'\nt = p.read_text(encoding='utf-8')\nt2, n = re.subn(r'(?im)^click(?:==|>=|~=|!=|<|>)[^\\n]*', 'click==8.3.3', t)\nif n == 0:\n    t2 = t.rstrip() + '\\nclick==8.3.3\\n'\np.write_text(t2, encoding='utf-8')\nprint('pinned click==8.3.3 in pip-audit input (replacements=%d)' % n)\n\"\n# pip-audit fails on any unfixed advisory by default; --strict is\n# for signature verification (different concern) and conflicts with\n# positional --ignore-vuln args. Allowlist is the failure-mode gate.\nuvx --from \"pip-audit==${PIP_AUDIT_VERSION}\" --with \"click==8.3.3\" pip-audit -r \"${RUNNER_TEMP}/sov-reqs.txt\" $ALLOWLIST_ARGS\n"
+          "programs": [
+            "python3",
+            "read",
+            "uv",
+            "uvx"
+          ],
+          "step": "pip-audit (HIGH gate)"
         },
         {
+          "dir": "",
           "job": "publish-yml-static",
-          "step": "bash -n Stage artifact matrix",
-          "text": "python3 .github/scripts/check-publish-yml.py"
+          "programs": [
+            "python3"
+          ],
+          "step": "bash -n Stage artifact matrix"
         },
         {
+          "dir": "",
           "job": "canary",
-          "step": "2",
-          "text": "uv sync --frozen --all-extras"
+          "programs": [
+            "uv"
+          ],
+          "step": "2"
         },
         {
+          "dir": "",
           "job": "canary",
-          "step": "CLI smoke",
-          "text": "uv run sov --help\nuv run sov self-check\nuv run sov doctor\nuv run python -c \"import sov_daemon, starlette, uvicorn\"\nuv run sov daemon --help\n"
+          "programs": [
+            "uv"
+          ],
+          "step": "CLI smoke"
         }
       ],
       "elsewhere": [],
       "file": ".github/workflows/ci.yml",
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "lint-and-test",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "22",
+                  "range": ">=22.0.0 <23.0.0-0"
+                }
+              ],
+              "step": "Set up Node for Atlas",
+              "uses": "actions/setup-node",
+              "version": "22"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "codecov",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "tauri-and-frontend",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "20",
+                  "range": ">=20.0.0 <21.0.0-0"
+                }
+              ],
+              "step": "Setup Node",
+              "uses": "actions/setup-node",
+              "version": "20"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "security",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "publish-yml-static",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "canary",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        }
+      ],
       "landings": [],
       "mentions": [
         {
@@ -13290,6 +16656,15 @@
           }
         },
         {
+          "job": "canary",
+          "path": "sov_daemon/__init__.py",
+          "runKind": "executes",
+          "when": {
+            "byHand": true,
+            "event": "schedule"
+          }
+        },
+        {
           "directory": true,
           "job": "lint-and-test",
           "path": "sov_engine/",
@@ -13323,7 +16698,7 @@
           }
         }
       ],
-      "runsCount": 22,
+      "runsCount": 23,
       "secrets": [],
       "sends": {
         "deploysPages": false,
@@ -13336,6 +16711,40 @@
         "releases": false
       },
       "stages": [],
+      "tests": [
+        {
+          "config": "pyproject.toml",
+          "files": 82,
+          "job": "lint-and-test",
+          "runner": "pytest",
+          "step": "Run tests"
+        },
+        {
+          "dir": "app/src-tauri",
+          "files": 5,
+          "job": "tauri-and-frontend",
+          "runner": "cargo test",
+          "step": "Cargo test (build)"
+        },
+        {
+          "dir": "app/src-tauri",
+          "files": 5,
+          "job": "tauri-and-frontend",
+          "runner": "cargo test",
+          "step": "Cargo test"
+        },
+        {
+          "config": "app/vite.config.ts",
+          "dir": "app",
+          "files": 28,
+          "job": "tauri-and-frontend",
+          "runner": "vitest",
+          "step": "Frontend test",
+          "through": [
+            "npm test (app)"
+          ]
+        }
+      ],
       "triggers": [
         {
           "event": "pull_request"
@@ -13365,8 +16774,36 @@
           "event": "workflow_dispatch"
         }
       ],
+      "unresolvedChecks": [
+        {
+          "job": "canary",
+          "manifest": "pyproject.toml",
+          "requires": ">=3.11",
+          "rule": "D1-python",
+          "step": "2",
+          "tool": "uv sync",
+          "why": "no setup-python step before it"
+        },
+        {
+          "job": "lint-and-test",
+          "manifest": "pyproject.toml",
+          "requires": ">=3.11",
+          "rule": "D1-python",
+          "step": "Install dependencies",
+          "tool": "uv sync",
+          "why": "no setup-python step before it"
+        },
+        {
+          "job": "security",
+          "manifest": "pyproject.toml",
+          "requires": ">=3.11",
+          "rule": "D1-python",
+          "step": "Install dependencies",
+          "tool": "uv sync",
+          "why": "no setup-python step before it"
+        }
+      ],
       "untrackedLandings": [
-        ".sov/games/",
         "app/src-tauri/gen/schemas"
       ],
       "uses": [
@@ -13386,23 +16823,57 @@
       "checksCount": 8,
       "commands": [
         {
+          "dir": "",
           "job": "image",
-          "step": "Require a v* tag",
-          "text": "if [[ ! \"$RELEASE_TAG\" =~ ^v[0-9] ]]; then\n  echo \"::error::Container image needs a v* tag (got '$RELEASE_TAG').\"\n  exit 1\nfi\n"
+          "programs": [
+            "echo"
+          ],
+          "step": "Require a v* tag"
         },
         {
+          "dir": "",
           "job": "image",
-          "step": "Verify version matches tag",
-          "text": "VERSION=$(python3 -c \"import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])\")\nif [ \"$VERSION\" != \"${RELEASE_TAG#v}\" ]; then\n  echo \"::error::pyproject.toml version $VERSION does not match tag $RELEASE_TAG\"\n  exit 1\nfi\n"
+          "programs": [
+            "echo",
+            "python3"
+          ],
+          "step": "Verify version matches tag"
         },
         {
+          "dir": "",
           "job": "image",
-          "step": "Smoke test image",
-          "text": "set -euo pipefail\nOUT=$(docker run --rm sovereignty:smoke --version)\necho \"$OUT\"\n[ \"$OUT\" = \"sovereignty ${RELEASE_TAG#v}\" ] || { echo \"::error::image reports '$OUT'\"; exit 1; }\nSTATUS=$(docker run --rm sovereignty:smoke self-check --json | jq -r .status)\ncase \"$STATUS\" in ok|warn) ;; *) echo \"::error::self-check status=$STATUS\"; exit 1 ;; esac\n# --entrypoint: the image entrypoint hands every argument to `sov`.\ndocker run --rm --entrypoint python sovereignty:smoke -c \"import sov_daemon, starlette, uvicorn, xrpl\"\ndocker run -d --name sov-smoke -p 127.0.0.1:47823:47823 -e SOV_DAEMON_TOKEN=smoke sovereignty:smoke\ncode=000\nfor _ in $(seq 1 30); do\n  code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Authorization: Bearer smoke' http://127.0.0.1:47823/health || true)\n  [ \"$code\" = 200 ] && break\n  sleep 1\ndone\ndocker logs sov-smoke\n[ \"$code\" = 200 ] || { echo \"::error::daemon /health never returned 200 (last=$code)\"; exit 1; }\nnoauth=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:47823/health)\n[ \"$noauth\" = 401 ] || { echo \"::error::unauthenticated /health returned $noauth\"; exit 1; }\ndocker rm -f sov-smoke\n"
+          "programs": [
+            "curl",
+            "docker",
+            "echo",
+            "jq",
+            "seq",
+            "sleep",
+            "warn"
+          ],
+          "step": "Smoke test image"
         }
       ],
       "elsewhere": [],
       "file": ".github/workflows/docker.yml",
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "image",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        }
+      ],
       "landings": [],
       "mentions": [],
       "name": "Container image",
@@ -13449,12 +16920,14 @@
       "runs": [
         {
           "job": "image",
+          "packed": true,
           "path": "LICENSE",
           "runKind": "checks",
           "via": "docker build Dockerfile"
         },
         {
           "job": "image",
+          "packed": true,
           "path": "README.md",
           "runKind": "checks",
           "via": "docker build Dockerfile"
@@ -13467,12 +16940,14 @@
         },
         {
           "job": "image",
+          "packed": true,
           "path": "docker/healthcheck.py",
           "runKind": "checks",
           "via": "docker build Dockerfile"
         },
         {
           "job": "image",
+          "packed": true,
           "path": "pyproject.toml",
           "runKind": "checks",
           "via": "docker build Dockerfile"
@@ -13535,6 +17010,13 @@
         "releases": false
       },
       "stages": [],
+      "tests": [
+        {
+          "job": "image",
+          "runner": null,
+          "step": "Smoke test image"
+        }
+      ],
       "triggers": [
         {
           "event": "release",
@@ -13545,9 +17027,6 @@
         {
           "event": "workflow_dispatch"
         }
-      ],
-      "untrackedLandings": [
-        ".sov/games/"
       ],
       "uses": [
         "actions/attest-build-provenance",
@@ -13564,14 +17043,20 @@
       "checksCount": 0,
       "commands": [
         {
+          "dir": "site",
           "job": "build",
-          "step": "Install site dependencies",
-          "text": "npm ci"
+          "programs": [
+            "npm"
+          ],
+          "step": "Install site dependencies"
         },
         {
+          "dir": "site",
           "job": "build",
-          "step": "Build site",
-          "text": "npm run build"
+          "programs": [
+            "npm"
+          ],
+          "step": "Build site"
         }
       ],
       "elsewhere": [],
@@ -13579,6 +17064,7 @@
       "gated": [
         {
           "jobs": [
+            "build",
             "deploy"
           ],
           "pushes": false,
@@ -13587,10 +17073,62 @@
           ],
           "stages": [],
           "when": {
-            "except": [
-              "pull_request"
-            ]
+            "branches": [
+              "main"
+            ],
+            "byHand": true,
+            "event": "push"
           }
+        }
+      ],
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "build",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "22",
+                  "range": ">=22.0.0 <23.0.0-0"
+                }
+              ],
+              "step": "1",
+              "uses": "actions/setup-node",
+              "version": "22"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "environment": {
+            "name": "github-pages"
+          },
+          "name": "deploy",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
         }
       ],
       "landings": [],
@@ -13606,7 +17144,7 @@
         {
           "boundary": "site",
           "depth": 0,
-          "files": 3
+          "files": 6
         }
       ],
       "readers": [],
@@ -13671,96 +17209,334 @@
       "usesWorkflowToken": false
     },
     {
-      "checksCount": 4,
+      "checksCount": 5,
       "commands": [
         {
+          "dir": "",
           "job": "require-release-tag",
-          "step": "Fail unless a v* tag is targeted",
-          "text": "set -euo pipefail\nif [[ \"$GIT_REF\" == refs/tags/v* ]]; then\n  echo \"ok: github.ref=$GIT_REF\"\n  exit 0\nfi\nif [[ \"$TAG_INPUT\" =~ ^v ]]; then\n  echo \"ok: inputs.tag=$TAG_INPUT\"\n  exit 0\nfi\necho \"::error::Release requires github.ref=refs/tags/v* or workflow_dispatch inputs.tag matching ^v (event=$EVENT_NAME ref=$GIT_REF tag='$TAG_INPUT'). Actions → Release → Run workflow on the default branch with a blank tag is not a recovery; pass tag=vX.Y.Z or dispatch from the tag ref with the same value.\"\nexit 1\n"
+          "programs": [
+            "echo"
+          ],
+          "step": "Fail unless a v* tag is targeted"
         },
         {
+          "dir": "",
           "job": "publish",
-          "step": "Verify version matches tag",
-          "text": "VERSION=$(python -c \"import tomllib; print(tomllib.loads(open('pyproject.toml','rb').read().decode())['project']['version'])\")\nTAG=\"${RELEASE_TAG#v}\"\nif [ \"$VERSION\" != \"$TAG\" ]; then\n  echo \"::error::pyproject.toml version $VERSION does not match git tag $TAG\"\n  exit 1\nfi\n"
+          "programs": [
+            "echo",
+            "python"
+          ],
+          "step": "Verify version matches tag"
         },
         {
+          "dir": "",
           "job": "publish",
-          "step": "Install build tools",
-          "text": "pip install build"
+          "programs": [
+            "pip"
+          ],
+          "step": "Install build tools"
         },
         {
+          "dir": "",
           "job": "publish",
-          "step": "Build package",
-          "text": "python -m build"
+          "programs": [
+            "python"
+          ],
+          "step": "Build package"
         },
         {
+          "dir": "",
           "job": "publish",
-          "step": "Install jq for status assertion",
-          "text": "sudo apt-get update && sudo apt-get install -y jq"
+          "programs": [
+            "sudo"
+          ],
+          "step": "Install jq for status assertion"
         },
         {
+          "dir": "",
           "job": "publish",
-          "step": "Smoke test built wheel in fresh venv",
-          "text": "set -euo pipefail\nSMOKE_DIR=\"$(mktemp -d)\"\n# hatchling produces sovereignty_game-*.whl (PEP 503 underscore form);\n# `|| true` defangs `set -euo pipefail` propagating ls's nonzero exit\n# when the glob has no matches, so the defensive empty-WHEEL check\n# below can actually run. v2.0.0 shipped with two glob patterns\n# (underscore + hyphen) — the hyphen variant matched nothing and\n# killed the script via set -e BEFORE the if check; v2.0.1 fixes that.\nWHEEL=$(ls dist/sovereignty_game-*.whl 2>/dev/null | head -n1 || true)\nif [ -z \"$WHEEL\" ]; then\n  echo \"::error::No built wheel found under dist/\"\n  ls -la dist/\n  exit 1\nfi\necho \"Smoke-testing wheel: $WHEEL\"\nWHEEL=\"$(pwd)/$WHEEL\"\npython -m venv \"$SMOKE_DIR/venv\"\n# shellcheck disable=SC1091\nsource \"$SMOKE_DIR/venv/bin/activate\"\n# Leave the checkout. From the repo root, `import sov_daemon`\n# resolved to the source tree on sys.path, so the check passed\n# while every wheel through 2.3.1 omitted sov_daemon entirely.\ncd \"$SMOKE_DIR\"\npip install --upgrade pip\n# Install with both extras. [daemon] pulls starlette/uvicorn/httpx.\n# hatch wheel packages are sov_engine/sov_transport/sov_cli —\n# sov_daemon is not on the import path unless the extra's install\n# layout actually exposes it. `sov daemon --help` is CLI wiring\n# only (Typer never imports sov_daemon). Import-surface check is\n# `python -c \"import sov_daemon, starlette, uvicorn\"` (F-f6699291).\npip install \"${WHEEL}[xrpl,daemon]\"\n# 1. --version exits 0 with a non-empty version line\nVERSION_OUT=$(sov --version)\necho \"sov --version => $VERSION_OUT\"\n[ -n \"$VERSION_OUT\" ] || { echo \"::error::sov --version produced empty output\"; exit 1; }\n# 2. --help exits 0 and mentions the binary name\nHELP_OUT=$(sov --help)\necho \"$HELP_OUT\" | grep -q \"sov\" || { echo \"::error::sov --help missing binary name\"; exit 1; }\n# 3. self-check JSON status must be ok or warn (not fail)\nSTATUS=$(sov self-check --json | jq -r .status)\necho \"sov self-check --json status => $STATUS\"\ncase \"$STATUS\" in\n  ok|warn) echo \"Smoke test passed.\" ;;\n  *) echo \"::error::sov self-check --json reported status=$STATUS (expected ok|warn)\"; exit 1 ;;\nesac\n# 4. CLI wiring: daemon Typer subapp is registered (does NOT\n# import sov_daemon / starlette / uvicorn).\nsov daemon --help > /dev/null || { echo \"::error::sov daemon --help failed — daemon CLI not wired\"; exit 1; }\n# 5. Import surface for the [daemon] extra (F-f6699291). Typer\n# --help never runs _import_daemon_api(); missing extra deps or a\n# wheel that omitted sov_daemon must fail here.\npython -c \"import sov_daemon, starlette, uvicorn\" || { echo \"::error::[daemon] extra import surface missing (sov_daemon/starlette/uvicorn)\"; exit 1; }\ndeactivate\nrm -rf \"$SMOKE_DIR\"\n"
+          "programs": [
+            "cd",
+            "deactivate",
+            "echo",
+            "grep",
+            "head",
+            "jq",
+            "ls",
+            "mktemp",
+            "ok",
+            "pip",
+            "pwd",
+            "python",
+            "rm",
+            "source",
+            "sov",
+            "warn"
+          ],
+          "step": "Smoke test built wheel in fresh venv"
         },
         {
+          "dir": "",
           "job": "build-binaries",
-          "step": "2",
-          "text": "uv python install 3.12"
+          "programs": [
+            "uv"
+          ],
+          "step": "2"
         },
         {
+          "dir": "",
           "job": "build-binaries",
-          "step": "3",
-          "text": "uv venv"
+          "programs": [
+            "uv"
+          ],
+          "step": "3"
         },
         {
+          "dir": "",
           "job": "build-binaries",
-          "step": "Install dependencies + PyInstaller",
-          "text": "uv pip install . \"pyinstaller==6.11.1\""
+          "programs": [
+            "uv"
+          ],
+          "step": "Install dependencies + PyInstaller"
         },
         {
+          "dir": "",
           "job": "build-binaries",
-          "step": "Build binary",
-          "text": "VERSION=${RELEASE_TAG#v}\nuv run pyinstaller --onefile --name \"sovereignty\" --console \\\n  --collect-submodules rich \\\n  --collect-data xrpl \\\n  --copy-metadata sovereignty-game \\\n  sov_cli/__main__.py\n# The frozen binary must report its own version. Without the copied\n# metadata `--version` crashed in every binary through 2.3.2.\nOUT=$(\"dist/sovereignty${{ matrix.ext }}\" --version)\necho \"$OUT\"\n[ \"$OUT\" = \"sovereignty ${VERSION}\" ] || { echo \"::error::binary reports '$OUT'\"; exit 1; }\nOUTNAME=\"sovereignty-${VERSION}-${{ matrix.target }}${{ matrix.ext }}\"\nmv \"dist/sovereignty${{ matrix.ext }}\" \"dist/${OUTNAME}\"\necho \"ASSET_NAME=${OUTNAME}\" >> \"$GITHUB_ENV\"\n"
+          "programs": [
+            "echo",
+            "mv",
+            "uv"
+          ],
+          "step": "Build binary"
         },
         {
+          "dir": "",
           "job": "build-tauri-binaries",
-          "step": "Install Tauri Linux deps",
-          "text": "sudo apt-get update\nsudo apt-get install -y \\\n  libwebkit2gtk-4.1-dev libsoup-3.0-dev libssl-dev \\\n  file patchelf libayatana-appindicator3-dev librsvg2-dev\nsudo apt-get install -y libfuse2t64 || sudo apt-get install -y libfuse2\n"
+          "programs": [
+            "sudo"
+          ],
+          "step": "Install Tauri Linux deps"
         },
         {
+          "dir": "",
           "job": "build-tauri-binaries",
-          "step": "Install frontend deps",
-          "text": "npm --prefix app ci"
+          "programs": [
+            "npm"
+          ],
+          "step": "Install frontend deps"
         },
         {
+          "dir": "",
           "job": "build-tauri-binaries",
-          "step": "Build Tauri app",
-          "text": "set -euo pipefail\nif [ \"${{ matrix.os }}\" = \"ubuntu-latest\" ]; then\n  if ! npm --prefix app run tauri build -- ${{ matrix.tauri-args }} --verbose; then\n    echo \"::warning::combined --bundles deb,appimage failed (likely linuxdeploy); rebuilding .deb only\"\n    find app/src-tauri/target -type f \\\n      \\( -iname '*linuxdeploy*' -o -iname '*appimage*.log' \\) \\\n      -print -exec echo '===== {} =====' \\; -exec cat {} \\; || true\n    npm --prefix app run tauri build -- --bundles deb --verbose\n  fi\nelse\n  npm --prefix app run tauri build -- ${{ matrix.tauri-args }}\nfi\n"
+          "programs": [
+            "echo",
+            "find",
+            "npm"
+          ],
+          "step": "Build Tauri app"
         },
         {
+          "dir": "",
           "job": "build-tauri-binaries",
-          "step": "Stage artifact",
-          "text": "set -euo pipefail\nVERSION=\"${VERSION#v}\"\nexport VERSION ARTIFACT_GLOBS BUNDLE_BASE TARGET\nbash .github/scripts/stage-tauri-artifacts.sh\n"
+          "programs": [
+            "bash"
+          ],
+          "step": "Stage artifact"
         },
         {
+          "dir": "",
           "job": "upload-cli-binaries",
-          "step": "Generate checksums",
-          "text": "set -euo pipefail\nVERSION=${RELEASE_TAG#v}\ncd artifacts\nsha256sum * > \"checksums-${VERSION}.txt\"\ncat \"checksums-${VERSION}.txt\"\n"
+          "programs": [
+            "cat",
+            "cd",
+            "sha256sum"
+          ],
+          "step": "Generate checksums"
         },
         {
+          "dir": "",
           "job": "upload-tauri-binaries",
-          "step": "Generate latest.json",
-          "text": "set -euo pipefail\nexport VERSION=\"${VERSION#v}\"\npython3 .github/scripts/generate-latest-json.py artifacts\n"
+          "programs": [
+            "python3"
+          ],
+          "step": "Generate latest.json"
         },
         {
+          "dir": "",
           "job": "upload-tauri-binaries",
-          "step": "Generate checksums",
-          "text": "set -euo pipefail\nVERSION=${RELEASE_TAG#v}\ncd artifacts\nsha256sum * > \"checksums-app-${VERSION}.txt\"\ncat \"checksums-app-${VERSION}.txt\"\n"
+          "programs": [
+            "cat",
+            "cd",
+            "sha256sum"
+          ],
+          "step": "Generate checksums"
         }
       ],
       "elsewhere": [],
       "file": ".github/workflows/publish.yml",
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "require-release-tag",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "environment": {
+            "name": "pypi"
+          },
+          "name": "publish",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "3.12",
+                  "range": ">=3.12.0 <3.13.0-0"
+                }
+              ],
+              "step": "Set up Python",
+              "uses": "actions/setup-python",
+              "version": "3.12"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "build-binaries",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            },
+            {
+              "labels": [
+                "macos-latest"
+              ],
+              "platform": {
+                "cpu": "arm64",
+                "os": "darwin"
+              }
+            },
+            {
+              "labels": [
+                "windows-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "os": "win32"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "build-tauri-binaries",
+          "runsOn": [
+            {
+              "labels": [
+                "macos-latest"
+              ],
+              "platform": {
+                "cpu": "arm64",
+                "os": "darwin"
+              }
+            },
+            {
+              "labels": [
+                "windows-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "os": "win32"
+              }
+            },
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "20",
+                  "range": ">=20.0.0 <21.0.0-0"
+                }
+              ],
+              "step": "Setup Node",
+              "uses": "actions/setup-node",
+              "version": "20"
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "upload-cli-binaries",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        },
+        {
+          "basis": "declared",
+          "name": "upload-tauri-binaries",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ]
+        }
+      ],
       "landings": [],
       "mentions": [
         {
@@ -13781,6 +17557,11 @@
           "boundary": ".github",
           "depth": 0,
           "files": 2
+        },
+        {
+          "boundary": "app",
+          "depth": 0,
+          "files": 81
         },
         {
           "boundary": "sov_cli",
@@ -13814,6 +17595,43 @@
           "job": "build-tauri-binaries",
           "path": ".github/scripts/stage-tauri-artifacts.sh",
           "runKind": "executes"
+        },
+        {
+          "job": "build-tauri-binaries",
+          "matched": true,
+          "path": "app/src-tauri/build.rs",
+          "runKind": "executes",
+          "via": "tauri build"
+        },
+        {
+          "job": "build-tauri-binaries",
+          "matched": true,
+          "path": "app/src-tauri/src/lib.rs",
+          "runKind": "checks",
+          "via": "tauri build"
+        },
+        {
+          "built": true,
+          "job": "build-tauri-binaries",
+          "matched": true,
+          "path": "app/src-tauri/src/main.rs",
+          "runKind": "executes",
+          "via": "tauri build"
+        },
+        {
+          "directory": true,
+          "job": "build-tauri-binaries",
+          "matched": true,
+          "path": "app/src/",
+          "runKind": "executes",
+          "via": "tauri build → tsc app/tsconfig.json"
+        },
+        {
+          "job": "build-tauri-binaries",
+          "matched": true,
+          "path": "app/vite.config.ts",
+          "runKind": "executes",
+          "via": "tauri build → vite build"
         },
         {
           "directory": true,
@@ -13850,7 +17668,7 @@
           "via": "build pyproject.toml"
         }
       ],
-      "runsCount": 7,
+      "runsCount": 12,
       "secrets": [
         "TAURI_SIGNING_PRIVATE_KEY",
         "TAURI_SIGNING_PRIVATE_KEY_PASSWORD"
@@ -13858,6 +17676,7 @@
       "sends": {
         "assets": [
           "binary:darwin-arm64",
+          "binary:darwin-universal",
           "binary:linux-x64",
           "binary:win-x64"
         ],
@@ -13873,6 +17692,13 @@
         "releases": false
       },
       "stages": [],
+      "tests": [
+        {
+          "job": "publish",
+          "runner": null,
+          "step": "Smoke test built wheel in fresh venv"
+        }
+      ],
       "triggers": [
         {
           "event": "release",
@@ -13883,6 +17709,20 @@
         {
           "event": "workflow_dispatch"
         }
+      ],
+      "unresolvedChecks": [
+        {
+          "job": "build-binaries",
+          "manifest": "pyproject.toml",
+          "requires": ">=3.11",
+          "rule": "D1-python",
+          "step": "Install dependencies + PyInstaller",
+          "tool": "uv pip",
+          "why": "no setup-python step before it"
+        }
+      ],
+      "untrackedLandings": [
+        "app/src-tauri/gen/schemas"
       ],
       "uses": [
         "actions/attest-build-provenance",
@@ -13902,33 +17742,93 @@
       "checksCount": 0,
       "commands": [
         {
+          "dir": "",
           "job": "publish",
-          "step": "Verify launcher version matches tag",
-          "text": "VERSION=$(node -p \"require('./npm/package.json').version\")\nif [ \"v$VERSION\" != \"$RELEASE_TAG\" ]; then\n  echo \"::error::npm/package.json is $VERSION but the tag is $RELEASE_TAG\"\n  exit 1\nfi\n"
+          "programs": [
+            "echo",
+            "node"
+          ],
+          "step": "Verify launcher version matches tag"
         },
         {
+          "dir": "",
           "job": "publish",
-          "step": "Wait for release binaries",
-          "text": "VERSION=\"${RELEASE_TAG#v}\"\nwant=\"checksums-${VERSION}.txt sovereignty-${VERSION}-linux-x64 sovereignty-${VERSION}-darwin-arm64 sovereignty-${VERSION}-win-x64.exe\"\nfor attempt in $(seq 1 90); do\n  have=$(gh release view \"$RELEASE_TAG\" --repo \"$GITHUB_REPOSITORY\" --json assets --jq '.assets[].name' 2>/dev/null || true)\n  missing=\"\"\n  for a in $want; do grep -qx \"$a\" <<<\"$have\" || missing=\"$missing $a\"; done\n  if [ -z \"$missing\" ]; then echo \"All launcher assets present.\"; exit 0; fi\n  echo \"attempt $attempt: waiting for$missing\"\n  sleep 30\ndone\necho \"::error::Release $RELEASE_TAG never carried:$missing\"\nexit 1\n"
+          "programs": [
+            "echo",
+            "gh",
+            "grep",
+            "seq",
+            "sleep"
+          ],
+          "step": "Wait for release binaries"
         },
         {
+          "dir": "npm",
           "job": "publish",
-          "step": "Install and test",
-          "text": "npm ci\nnpm test\n"
+          "programs": [
+            "npm"
+          ],
+          "step": "Install and test"
         },
         {
+          "dir": "npm",
           "job": "publish",
-          "step": "Publish",
-          "text": "npm publish --provenance --access public"
+          "programs": [
+            "npm"
+          ],
+          "step": "Publish"
         },
         {
+          "dir": "",
           "job": "publish",
-          "step": "Smoke test npx",
-          "text": "VERSION=\"${RELEASE_TAG#v}\"\nPKG=\"@mcptoolshop/sovereignty@${VERSION}\"\ncd \"$(mktemp -d)\"\nfor attempt in $(seq 1 40); do\n  if [ \"$(npm view \"$PKG\" version 2>/dev/null)\" = \"$VERSION\" ]; then\n    echo \"registry serves $PKG (attempt $attempt)\"\n    break\n  fi\n  [ \"$attempt\" = 40 ] && { echo \"::error::registry never served $PKG after 10 min\"; exit 1; }\n  sleep 15\ndone\nfor attempt in 1 2 3; do\n  if npx --yes \"$PKG\" self-check --json > out.json 2> err.txt; then\n    STATUS=$(jq -r .status out.json)\n    echo \"self-check status: $STATUS\"\n    case \"$STATUS\" in ok|warn) exit 0 ;; esac\n    echo \"::error::npx self-check reported $STATUS\"\n    exit 1\n  fi\n  echo \"npx attempt $attempt failed:\"\n  tail -20 err.txt\n  sleep 20\ndone\necho \"::error::npx $PKG failed three times (stderr above)\"\nexit 1\n"
+          "programs": [
+            "cd",
+            "echo",
+            "jq",
+            "mktemp",
+            "npm",
+            "npx",
+            "seq",
+            "sleep",
+            "tail",
+            "warn"
+          ],
+          "step": "Smoke test npx"
         }
       ],
       "elsewhere": [],
       "file": ".github/workflows/release.yml",
+      "jobs": [
+        {
+          "basis": "declared",
+          "name": "publish",
+          "runsOn": [
+            {
+              "labels": [
+                "ubuntu-latest"
+              ],
+              "platform": {
+                "cpu": "x64",
+                "libc": "glibc",
+                "os": "linux"
+              }
+            }
+          ],
+          "setup": [
+            {
+              "ranges": [
+                {
+                  "from": "24",
+                  "range": ">=24.0.0 <25.0.0-0"
+                }
+              ],
+              "step": "3",
+              "uses": "actions/setup-node",
+              "version": "24"
+            }
+          ]
+        }
+      ],
       "landings": [],
       "mentions": [
         {
@@ -13981,6 +17881,23 @@
         "releases": false
       },
       "stages": [],
+      "tests": [
+        {
+          "dir": "npm",
+          "files": 1,
+          "job": "publish",
+          "runner": "node --test",
+          "step": "Install and test",
+          "through": [
+            "npm test (npm)"
+          ]
+        },
+        {
+          "job": "publish",
+          "runner": null,
+          "step": "Smoke test npx"
+        }
+      ],
       "triggers": [
         {
           "event": "release",
@@ -14038,7 +17955,48 @@
       },
       "stages": [],
       "triggers": [],
-      "unshipped": true,
+      "uses": [],
+      "usesWorkflowToken": false
+    },
+    {
+      "checksCount": 0,
+      "commands": [],
+      "elsewhere": [],
+      "file": "npm/package.json",
+      "kind": "command",
+      "landings": [],
+      "mentions": [],
+      "name": "sovereignty",
+      "permissions": [],
+      "pushes": false,
+      "reach": [
+        {
+          "boundary": "npm",
+          "depth": 0,
+          "files": 1
+        }
+      ],
+      "readers": [],
+      "runs": [
+        {
+          "path": "npm/bin/sovereignty.js",
+          "runKind": "executes"
+        }
+      ],
+      "runsCount": 1,
+      "secrets": [],
+      "sends": {
+        "deploysPages": false,
+        "dispatchesTo": [],
+        "opensIssues": false,
+        "opensIssuesOnFailure": false,
+        "opensPullRequests": false,
+        "publishes": false,
+        "publishesTo": [],
+        "releases": false
+      },
+      "stages": [],
+      "triggers": [],
       "uses": [],
       "usesWorkflowToken": false
     },
@@ -14066,7 +18024,7 @@
             "file": "sov_daemon/__init__.py",
             "from": "sov_cli/main.py"
           },
-          "files": 6
+          "files": 7
         },
         {
           "boundary": "sov_engine",
@@ -14108,9 +18066,6 @@
       },
       "stages": [],
       "triggers": [],
-      "untrackedLandings": [
-        ".sov/games/"
-      ],
       "uses": [],
       "usesWorkflowToken": false
     }
@@ -14186,8 +18141,9 @@
       "to": "sov_transport"
     }
   ],
+  "engine": "1.24.0",
   "generatedFrom": {
-    "commit": "9a1df32495cfcba48f2f4851ff4f29f6b5324a1f",
+    "commit": "83f9b40eba1ef98f18c978316208899b5e450860",
     "tracked": 426
   },
   "landings": [
@@ -14248,17 +18204,6 @@
       "writers": []
     },
     {
-      "readers": [],
-      "target": ".sov/games",
-      "tracked": false,
-      "writers": [
-        {
-          "by": "sov_engine/io_utils.py",
-          "confidence": "ast"
-        }
-      ]
-    },
-    {
       "readers": [
         {
           "by": "tests/test_version.py",
@@ -14276,11 +18221,6 @@
           "by": "pyproject.toml",
           "call": "configuration",
           "confidence": "config"
-        },
-        {
-          "by": "sov_cli/main.py",
-          "call": "literal",
-          "confidence": "ast"
         },
         {
           "by": "tests/test_cli_endgame_commands.py",
@@ -14804,6 +18744,27 @@
     {
       "readers": [
         {
+          "by": "assets/print/source/Board A - Parchment Heritage.html",
+          "call": "stylesheet",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack - print.html",
+          "call": "stylesheet",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack.html",
+          "call": "stylesheet",
+          "confidence": "ast"
+        }
+      ],
+      "target": "assets/print/source/fonts.css",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
           "by": "assets/print/source/compile-jsx.mjs",
           "call": "existsSync",
           "confidence": "ast"
@@ -14814,6 +18775,21 @@
     },
     {
       "readers": [
+        {
+          "by": "assets/print/source/Board A - Parchment Heritage.html",
+          "call": "script",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack - print.html",
+          "call": "script",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack.html",
+          "call": "script",
+          "confidence": "ast"
+        },
         {
           "by": "assets/print/source/compile-jsx.mjs",
           "call": "statSync",
@@ -14827,6 +18803,28 @@
           "confidence": "ast"
         }
       ]
+    },
+    {
+      "readers": [
+        {
+          "by": "assets/print/source/Sovereignty Print Pack - print.html",
+          "call": "script",
+          "confidence": "ast"
+        }
+      ],
+      "target": "assets/print/source/print-entry.js",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "assets/print/source/Sovereignty Print Pack.html",
+          "call": "script",
+          "confidence": "ast"
+        }
+      ],
+      "target": "assets/print/source/print-viewer.js",
+      "writers": []
     },
     {
       "readers": [
@@ -14853,12 +18851,64 @@
     {
       "readers": [
         {
-          "by": "sov_cli/main.py",
-          "call": "glob",
+          "by": "assets/print/source/Board A - Parchment Heritage.html",
+          "call": "script",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack - print.html",
+          "call": "script",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack.html",
+          "call": "script",
           "confidence": "ast"
         }
       ],
-      "target": "docs/scenarios",
+      "target": "assets/print/source/tokens.js",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "assets/print/source/Board A - Parchment Heritage.html",
+          "call": "script",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack - print.html",
+          "call": "script",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack.html",
+          "call": "script",
+          "confidence": "ast"
+        }
+      ],
+      "target": "assets/print/source/vendor/react-dom.production.min.js",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "assets/print/source/Board A - Parchment Heritage.html",
+          "call": "script",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack - print.html",
+          "call": "script",
+          "confidence": "ast"
+        },
+        {
+          "by": "assets/print/source/Sovereignty Print Pack.html",
+          "call": "script",
+          "confidence": "ast"
+        }
+      ],
+      "target": "assets/print/source/vendor/react.production.min.js",
       "writers": []
     },
     {
@@ -14948,7 +18998,8 @@
     {
       "readers": [
         {
-          "by": ".github/workflows/release.yml"
+          "by": ".github/workflows/release.yml",
+          "confidence": "config"
         },
         {
           "by": "npm/bin/sovereignty.js",
@@ -14968,10 +19019,12 @@
     {
       "readers": [
         {
-          "by": ".github/workflows/ci.yml"
+          "by": ".github/workflows/ci.yml",
+          "confidence": "config"
         },
         {
-          "by": ".github/workflows/publish.yml"
+          "by": ".github/workflows/publish.yml",
+          "confidence": "config"
         },
         {
           "by": "sov_cli/main.py",
@@ -15233,7 +19286,8 @@
     {
       "readers": [
         {
-          "by": ".github/workflows/ci.yml"
+          "by": ".github/workflows/ci.yml",
+          "confidence": "config"
         }
       ],
       "target": "uv.lock",

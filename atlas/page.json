@@ -61,6 +61,14 @@
       "partLabel": "sov_daemon"
     },
     {
+      "doors": 3,
+      "importedBy": [],
+      "importedByTests": [],
+      "kind": "part",
+      "name": "app",
+      "partLabel": "app"
+    },
+    {
       "doors": 2,
       "importedBy": [],
       "importedByTests": [],
@@ -73,46 +81,104 @@
       "importedBy": [],
       "importedByTests": [],
       "kind": "part",
-      "name": "app",
-      "partLabel": "app"
-    },
-    {
-      "doors": 2,
-      "importedBy": [],
-      "importedByTests": [],
-      "kind": "part",
       "name": "docker",
       "partLabel": "docker"
     },
     {
-      "doors": 2,
-      "importedBy": [],
-      "importedByTests": [],
-      "kind": "part",
-      "name": "root",
-      "partLabel": "the repository root"
+      "kind": "place",
+      "readers": [
+        "assets"
+      ],
+      "target": "assets/print/source/print-bundle.js",
+      "writers": [
+        "assets"
+      ]
     }
   ],
   "changes": {
     "fileCounts": {
       "added": 0,
-      "changed": 22,
+      "changed": 1,
       "moved": 0,
-      "parts": 6,
+      "parts": 1,
       "removed": 0
     },
     "items": [
       {
+        "kind": "door",
+        "sentence": "CI now also runs sov_daemon/__init__.py.",
+        "subjects": [
+          ".github/workflows/ci.yml",
+          "sov_daemon/__init__.py"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "Release now also runs app/src-tauri/build.rs, app/src/ and app/vite.config.ts.",
+        "subjects": [
+          ".github/workflows/publish.yml",
+          "app/src-tauri/build.rs",
+          "app/src/",
+          "app/vite.config.ts"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "Release now also builds app/src-tauri/src/main.rs.",
+        "subjects": [
+          ".github/workflows/publish.yml",
+          "app/src-tauri/src/main.rs"
+        ]
+      },
+      {
+        "kind": "door",
+        "sentence": "And 2 more changes to doors.",
+        "subjects": []
+      },
+      {
+        "kind": "landing",
+        "sentence": "assets/print/source/fonts.css is now read by assets/print/source/Board A - Parchment Heritage.html, assets/print/source/Sovereignty Print Pack - print.html and assets/print/source/Sovereignty Print Pack.html.",
+        "subjects": [
+          "assets/print/source/fonts.css",
+          "assets/print/source/Board A - Parchment Heritage.html",
+          "assets/print/source/Sovereignty Print Pack - print.html",
+          "assets/print/source/Sovereignty Print Pack.html"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "assets/print/source/print-bundle.js is now also read by assets/print/source/Board A - Parchment Heritage.html, assets/print/source/Sovereignty Print Pack - print.html and assets/print/source/Sovereignty Print Pack.html.",
+        "subjects": [
+          "assets/print/source/print-bundle.js",
+          "assets/print/source/Board A - Parchment Heritage.html",
+          "assets/print/source/Sovereignty Print Pack - print.html",
+          "assets/print/source/Sovereignty Print Pack.html"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "assets/print/source/print-entry.js is now read by assets/print/source/Sovereignty Print Pack - print.html.",
+        "subjects": [
+          "assets/print/source/print-entry.js",
+          "assets/print/source/Sovereignty Print Pack - print.html"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "And 4 more new writers and readers of places.",
+        "subjects": []
+      },
+      {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-09-30; 22 files changed content.",
+        "sentence": "1 file changed content, across 1 part.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "3e00fd38dc17b6687a253d55c7e9c1ee16d88a8b",
-      "generatedAt": "2026-09-30T06:00:47.710Z"
+      "commit": "9a1df32495cfcba48f2f4851ff4f29f6b5324a1f",
+      "generatedAt": "2026-09-30T06:11:09.421Z"
     },
-    "unchanged": true
+    "unchanged": false
   },
   "changesTogether": [
     {
@@ -166,9 +232,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 4 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "9a1df32495cfcba48f2f4851ff4f29f6b5324a1f",
+  "commit": "83f9b40eba1ef98f18c978316208899b5e450860",
   "defaultBranch": "main",
-  "derived": "14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
+  "derived": "14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.",
   "doors": [
     {
       "checks": [],
@@ -176,6 +242,16 @@
       "checksMore": 0,
       "file": ".github/workflows/ci.yml",
       "held": [
+        {
+          "checks": [],
+          "checksMore": 0,
+          "lead": "on a schedule or by hand",
+          "runs": [
+            "sov_daemon/__init__.py"
+          ],
+          "runsMore": 0,
+          "when": "on a schedule or by hand"
+        },
         {
           "checks": [
             ".pip-audit-ignore",
@@ -273,7 +349,10 @@
       "runs": [],
       "runsCount": 0,
       "runsMore": 0,
-      "sends": [],
+      "sends": [
+        "uploads coverage to Codecov",
+        "scans for secrets with TruffleHog"
+      ],
       "stages": [],
       "triggers": [
         "on a pull request",
@@ -281,25 +360,27 @@
         "on a schedule (`0 14 * * *`)",
         "or by hand"
       ],
-      "untracked": ".sov/games/ and app/src-tauri/gen/schemas, which are not tracked"
+      "untracked": "app/src-tauri/gen/schemas, which is not tracked"
     },
     {
       "checks": [
-        "LICENSE",
-        "README.md",
-        "docker/healthcheck.py",
-        "pyproject.toml",
         "sov_cli/",
         "sov_daemon/",
         "sov_engine/",
         "sov_transport/"
       ],
-      "checksCount": 8,
-      "checksMore": 34,
+      "checksCount": 4,
+      "checksMore": 7,
       "file": ".github/workflows/docker.yml",
       "id": ".github/workflows/docker.yml",
       "landings": [],
       "name": "Container image",
+      "packs": [
+        "LICENSE",
+        "README.md",
+        "docker/healthcheck.py",
+        "pyproject.toml"
+      ],
       "pushes": false,
       "reach": [
         {
@@ -347,21 +428,22 @@
       "triggers": [
         "when a release is published",
         "or by hand"
-      ],
-      "untracked": ".sov/games/, which is not tracked"
+      ]
     },
     {
       "builds": [
-        "sov_cli/__main__.py"
+        "sov_cli/__main__.py",
+        "app/src-tauri/src/main.rs"
       ],
       "checks": [
         "sov_cli/",
         "sov_daemon/",
         "sov_engine/",
-        "sov_transport/"
+        "sov_transport/",
+        "app/src-tauri/src/lib.rs"
       ],
-      "checksCount": 4,
-      "checksMore": 7,
+      "checksCount": 5,
+      "checksMore": 8,
       "file": ".github/workflows/publish.yml",
       "id": ".github/workflows/publish.yml",
       "landings": [],
@@ -372,6 +454,11 @@
           "boundary": ".github",
           "depth": 0,
           "files": 2
+        },
+        {
+          "boundary": "app",
+          "depth": 0,
+          "files": 81
         },
         {
           "boundary": "sov_cli",
@@ -396,19 +483,23 @@
       ],
       "runs": [
         ".github/scripts/generate-latest-json.py",
-        ".github/scripts/stage-tauri-artifacts.sh"
+        ".github/scripts/stage-tauri-artifacts.sh",
+        "app/src-tauri/build.rs",
+        "app/src/",
+        "app/vite.config.ts"
       ],
-      "runsCount": 2,
-      "runsMore": 0,
+      "runsCount": 5,
+      "runsMore": 59,
       "sends": [
         "publishes to PyPI",
-        "builds sov_cli/__main__.py into binaries for darwin-arm64, linux-x64 and win-x64 and uploads them to the release"
+        "builds app/src-tauri/src/main.rs and sov_cli/__main__.py into binaries for darwin-arm64, darwin-universal, linux-x64 and win-x64 and uploads them to the release"
       ],
       "stages": [],
       "triggers": [
         "when a release is published",
         "or by hand"
-      ]
+      ],
+      "untracked": "app/src-tauri/gen/schemas, which is not tracked"
     },
     {
       "checks": [],
@@ -423,7 +514,7 @@
         {
           "boundary": "site",
           "depth": 0,
-          "files": 3
+          "files": 6
         }
       ],
       "runs": [
@@ -433,7 +524,7 @@
       "runsCount": 2,
       "runsMore": 0,
       "sends": [
-        "deploys the site except on a pull request"
+        "deploys the site on a push to main or by hand"
       ],
       "stages": [],
       "triggers": [
@@ -464,7 +555,7 @@
       "runsCount": 1,
       "runsMore": 0,
       "sends": [
-        "publishes @mcptoolshop/sovereignty (npm) to npm"
+        "publishes @mcptoolshop/sovereignty to npm"
       ],
       "stages": [],
       "triggers": [
@@ -491,7 +582,7 @@
         {
           "boundary": "sov_daemon",
           "depth": 1,
-          "files": 6
+          "files": 7
         },
         {
           "boundary": "sov_engine",
@@ -511,12 +602,10 @@
       "runsMore": 0,
       "sends": [],
       "stages": [],
-      "triggers": [],
-      "untracked": ".sov/games/, which is not tracked"
+      "triggers": []
     },
     {
       "app": "desktop",
-      "builtFrom": "app/src-tauri",
       "checks": [],
       "checksCount": 0,
       "checksMore": 0,
@@ -540,8 +629,33 @@
       "runsMore": 0,
       "sends": [],
       "stages": [],
-      "triggers": [],
-      "unshipped": true
+      "triggers": []
+    },
+    {
+      "checks": [],
+      "checksCount": 0,
+      "checksMore": 0,
+      "file": "npm/package.json",
+      "id": "npm/package.json#sovereignty",
+      "kind": "command",
+      "landings": [],
+      "name": "sovereignty",
+      "pushes": false,
+      "reach": [
+        {
+          "boundary": "npm",
+          "depth": 0,
+          "files": 1
+        }
+      ],
+      "runs": [
+        "npm/bin/sovereignty.js"
+      ],
+      "runsCount": 1,
+      "runsMore": 0,
+      "sends": [],
+      "stages": [],
+      "triggers": []
     }
   ],
   "duplicates": [],
@@ -589,6 +703,7 @@
       "to": "sov_transport"
     }
   ],
+  "engine": "1.24.0",
   "generated": [
     {
       "place": "assets/print/source/print-bundle.js",
@@ -597,12 +712,14 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T06:11:09.421Z",
+  "generatedAt": "2026-09-30T20:13:11.703Z",
   "limits": [
-    "39 import sites could not be resolved.",
-    "3 writes and 49 reads use paths built at run time and are not named here.",
-    "2 writes go to places this repository does not track, so they are not listed as generated.",
-    "7 reads go to a path their caller passes, not to this repository.",
+    "35 import sites name a declared dependency that shares its name with a local module (xrpl); they are read as the dependency, which is not in this repository.",
+    "3 imports could not be resolved: `assets/print/source/render.mjs` imports `puppeteer-core`, which is not declared; `assets/print/source/vendor/react-dom.production.min.js` imports `react`, which is not declared; `sov_cli/main.py` imports a path built at run time.",
+    "1 write and 32 reads use paths built at run time and are not named here.",
+    "1 write goes to places this repository does not track, so it is not listed as generated.",
+    "3 writes and 42 reads go to a path their caller passes, not to this repository.",
+    "1 write and 2 reads go to the directory the command is run in (.sov/, README.md and docs/), not to this repository.",
     "1 command is built at run time and not followed.",
     "There is a compose.yaml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
@@ -631,7 +748,11 @@
   "startDoor": ".github/workflows/ci.yml",
   "startHere": [
     ".github/workflows/ci.yml",
-    ".github/scripts/check-publish-yml.py"
+    "sov_daemon/__init__.py",
+    "sov_daemon/lifecycle.py",
+    "sov_engine/io_utils.py",
+    "sov_engine/schemas.py",
+    "sov_engine/proof.py"
   ],
   "summary": null,
   "summaryFrom": null,
@@ -639,21 +760,21 @@
   "testedBy": {
     "app": 32,
     "assets": 0,
-    "npm": 0,
+    "npm": 1,
     "sov_cli": 43,
-    "sov_daemon": 39,
-    "sov_engine": 60,
-    "sov_transport": 54
+    "sov_daemon": 40,
+    "sov_engine": 62,
+    "sov_transport": 56
   },
-  "unnamedWrites": 3,
-  "unread": [
-    {
-      "place": "assets/print/source/print-bundle.js",
-      "writers": [
-        "assets/print/source/compile-jsx.mjs"
-      ]
-    }
+  "testedByScript": [
+    "npm"
   ],
+  "unnamedWrites": 1,
+  "unread": [],
+  "unreadCode": [
+    "scripts"
+  ],
+  "unreadCodeUses": "scripts holds only shell files, which this map does not read, so what uses it cannot be seen.",
   "unreadFiles": 0,
   "unreadNote": [],
   "untested": [
@@ -661,13 +782,11 @@
       "part": "assets",
       "partLabel": "assets",
       "testedBy": 0
-    },
-    {
-      "part": "npm",
-      "partLabel": "npm",
-      "testedBy": 0
     }
   ],
-  "untestedNote": [],
+  "untestedNote": [
+    "npm is tested only by its package's own test script, which a workflow runs.",
+    "scripts holds only shell files, which this map does not read, so whether a test touches it cannot be seen."
+  ],
   "written": 1
 }
