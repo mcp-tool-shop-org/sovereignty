@@ -303,12 +303,14 @@ describe("Settings — network switcher guardrails (spec §4)", () => {
     );
 
     renderSettings();
-    await waitFor(() => {
+    // The error text can render a tick before the mode button; wait for both
+    // (the one-shot getByRole after the text raced on CI runners).
+    const modeApply = await waitFor(() => {
       expect(screen.getByText(/sov daemon status --json/)).toBeTruthy();
+      return screen.getByRole("button", {
+        name: /Switch to full mode/i,
+      }) as HTMLButtonElement;
     });
-    const modeApply = screen.getByRole("button", {
-      name: /Switch to full mode/i,
-    }) as HTMLButtonElement;
     expect(modeApply.disabled).toBe(true);
   });
 

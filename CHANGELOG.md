@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - **The PyPI wheel now ships `sov_daemon`.** Every wheel through 2.3.1 left the package out, so `pip install 'sovereignty-game[daemon]'` followed by `sov daemon start` failed with an import error. The release smoke gate missed it because it imported `sov_daemon` from the repo root, where the source tree sat on `sys.path`; it now runs from a temp directory.
+- `Settings.test.tsx` "pending-anchors 500" waited for the error text, then queried the mode button once; on slower CI runners the button rendered a tick later. The lookup now sits inside the `waitFor`.
 - `sov status` and `sov play` say "Your turn next." and "You win the game." for the default human seat instead of "You's turn next." and "You wins the game."
 
 - CI `tauri-and-frontend` no longer restores a stale Cargo `target/` cache (floating `stable` rustc + lockfile-only cache key) that left `cargo test` running until the 30m job kill — required check cancelled, red X on main. Registry/git still cached under a new key; `cargo test` is step-bounded at 10m.
