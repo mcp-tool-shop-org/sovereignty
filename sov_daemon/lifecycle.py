@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import secrets
 import signal
@@ -159,7 +160,7 @@ def _pid_alive_windows(pid: int) -> bool:
 
     PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
     STILL_ACTIVE = 259
-    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined,unused-ignore]
     handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
     if not handle:
         return False
@@ -265,6 +266,10 @@ def daemon_info() -> dict[str, Any] | None:
     ``daemon_status``.
     """
     return _read_handshake()
+
+
+# Bind addresses that keep the daemon on the local machine.
+_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "localhost"})
 
 
 def _claim_free_port() -> int:
@@ -405,8 +410,7 @@ def _spawn_detached(env: dict[str, str]) -> int:
     }
     if sys.platform == "win32":
         popen_kwargs["creationflags"] = (
-            subprocess.DETACHED_PROCESS  # type: ignore[attr-defined]
-            | subprocess.CREATE_NEW_PROCESS_GROUP
+            subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP
         )
     else:
         popen_kwargs["start_new_session"] = True
@@ -596,7 +600,7 @@ def stop_daemon() -> bool:
             # the spec-aligned signal. Fall back to terminate() if the
             # break event raises (e.g. detached without a console).
             try:
-                os.kill(pid, signal.CTRL_BREAK_EVENT)  # type: ignore[attr-defined]
+                os.kill(pid, signal.CTRL_BREAK_EVENT)
             except (OSError, AttributeError):
                 _terminate_windows(pid)
         else:
@@ -808,7 +812,7 @@ def _terminate_windows(pid: int) -> None:
     except ImportError:
         return
     PROCESS_TERMINATE = 0x0001
-    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+    kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined,unused-ignore]
     handle = kernel32.OpenProcess(PROCESS_TERMINATE, False, pid)
     if not handle:
         return
@@ -827,6 +831,7 @@ def run_foreground(
     port: int | None = None,
     token: str | None = None,
     log_format: str = "human",
+    host: str = "127.0.0.1",
 ) -> None:
     """Run uvicorn in the current process. Blocks until SIGINT / SIGTERM.
 
@@ -846,6 +851,12 @@ def run_foreground(
     - ``"human"`` (default) keeps the legacy human-readable form.
     - ``"json"`` swaps in ``JsonLineFormatter`` so each emit is one
       structured JSON line (DAEMON-B-013 / Target D).
+
+    ``host`` is the bind address. It stays ``127.0.0.1`` for every
+    CLI and desktop spawn. The container image is the one caller that
+    widens it (``SOV_DAEMON_HOST=0.0.0.0`` inside the container's own
+    network namespace; the operator publishes the port to the host's
+    loopback). The bearer token still gates every request.
     """
     import logging
 
@@ -935,7 +946,7 @@ def run_foreground(
 
     config = uvicorn.Config(
         MaxBodySizeMiddleware(app, max_bytes=1_048_576),  # 1 MiB body cap
-        host="127.0.0.1",
+        host=host,
         port=port,
         log_level=os.environ.get("SOV_LOG_LEVEL", "warning").lower(),
         access_log=False,
@@ -983,6 +994,16 @@ def run_foreground_from_env() -> None:
     network = os.environ.get("SOV_DAEMON_NETWORK", "testnet")
     readonly = os.environ.get("SOV_DAEMON_READONLY", "0") == "1"
     log_format = os.environ.get("SOV_DAEMON_LOG_FORMAT", "human").lower()
+    # Container-only knob. Deliberately absent from
+    # ``_SUBPROCESS_ENV_ALLOWLIST`` so ``sov daemon start`` spawns can never
+    # inherit a widened bind from the operator's shell.
+    host = os.environ.get("SOV_DAEMON_HOST", "127.0.0.1") or "127.0.0.1"
+    if host not in _LOOPBACK_HOSTS:
+        logging.getLogger("sov_daemon").warning(
+            "SOV_DAEMON_HOST=%s binds beyond loopback; publish the port to "
+            "127.0.0.1 on the host (e.g. `-p 127.0.0.1:47823:47823`).",
+            host,
+        )
 
     port = int(port_env) if port_env else None
     token = token_env if token_env else None
@@ -1005,6 +1026,7 @@ def run_foreground_from_env() -> None:
         port=port,
         token=token,
         log_format=log_format,
+        host=host,
     )
 
 

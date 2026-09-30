@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sovereignty-game"
-version = "2.3.1"
+version = "2.3.2"
 description = "A strategy game about governance, trust, and trade — offline tabletop + XRPL online verification."
 readme = "README.md"
 license = "MIT"
@@ -89,4 +89,4 @@ filterwarnings = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["sov_engine", "sov_transport", "sov_cli"]
+packages = ["sov_engine", "sov_transport", "sov_cli", "sov_daemon"]

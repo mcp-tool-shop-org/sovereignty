@@ -3951,9 +3951,15 @@ def _print_status(state: GameState) -> None:
 
     console.print(table)
     if state.game_over:
-        console.print(f"  [bold green]{state.winner} wins the game.[/bold green]")
+        winner_line = (
+            "You win the game." if state.winner == "You" else f"{state.winner} wins the game."
+        )
+        console.print(f"  [bold green]{winner_line}[/bold green]")
     else:
-        console.print(f"  [dim]{state.current_player.name}'s turn next.[/dim]")
+        # `sov play` names the human seat "You"; "You's turn" reads as a bug.
+        name = state.current_player.name
+        turn_line = "Your turn next." if name == "You" else f"{name}'s turn next."
+        console.print(f"  [dim]{turn_line}[/dim]")
     if is_town_hall:
         console.print()
         _print_market(state)

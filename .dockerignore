@@ -1,0 +1,13 @@
+# Only the Python package sources and build metadata enter the image.
+*
+!pyproject.toml
+!README.md
+!LICENSE
+!sov_engine/
+!sov_transport/
+!sov_cli/
+!sov_daemon/
+!docker/
+
+**/__pycache__
+**/*.py[cod]

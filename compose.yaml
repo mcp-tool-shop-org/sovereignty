@@ -1,0 +1,61 @@
+# Sovereignty daemon in a container.
+#
+#   docker compose up -d                   # readonly audit daemon on 127.0.0.1:47823
+#   docker compose run --rm sov doctor     # any `sov` command, same persistent state
+#   docker compose run --rm sov tutorial   # interactive (compose run allocates a TTY)
+#
+# Persistent state: everything under /data/.sov (games, proofs, anchors.json,
+# season.json, wallet_seed.txt, daemon.json). By default it lives in the
+# named volume `sov-data`. To let the desktop app on this machine attach to
+# the containerized daemon, point SOV_DATA at the project folder the app
+# opens, so the handshake (.sov/daemon.json) lands where the app looks:
+#
+#   SOV_DATA=./ docker compose up -d
+#
+# Anchoring to XRPL (writes transactions) is off by default. To enable it:
+#   1. docker compose run --rm sov wallet          # creates .sov/wallet_seed.txt (testnet)
+#   2. SOV_DAEMON_READONLY=0 docker compose up -d
+# Or supply the seed as a secret instead of a file in the volume: uncomment
+# the `secrets` blocks below and set SOV_DAEMON_SIGNER_FILE.
+
+name: sovereignty
+
+services:
+  sov:
+    image: ghcr.io/mcp-tool-shop-org/sovereignty:${SOV_IMAGE_TAG:-latest}
+    build: .
+    init: true
+    restart: unless-stopped
+    command: ["daemon"]
+    environment:
+      SOV_DAEMON_PORT: ${SOV_DAEMON_PORT:-47823}
+      SOV_DAEMON_NETWORK: ${SOV_DAEMON_NETWORK:-testnet}
+      SOV_DAEMON_READONLY: ${SOV_DAEMON_READONLY:-1}
+      # Fixed token keeps clients connected across restarts. Leave unset to
+      # get a fresh random token per start (read it from .sov/daemon.json).
+      SOV_DAEMON_TOKEN: ${SOV_DAEMON_TOKEN:-}
+      SOV_DAEMON_LOG_FORMAT: ${SOV_DAEMON_LOG_FORMAT:-human}
+      SOV_LOG_LEVEL: ${SOV_LOG_LEVEL:-WARNING}
+      # SOV_DAEMON_SIGNER_FILE: /run/secrets/xrpl_seed
+    ports:
+      # Host loopback only. Host port must equal the container port: the
+      # handshake records one port and clients dial 127.0.0.1:<that port>.
+      - "127.0.0.1:${SOV_DAEMON_PORT:-47823}:${SOV_DAEMON_PORT:-47823}"
+    volumes:
+      - ${SOV_DATA:-sov-data}:/data
+    # secrets:
+    #   - xrpl_seed
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  sov-data:
+
+# secrets:
+#   xrpl_seed:
+#     file: ./xrpl_seed.txt

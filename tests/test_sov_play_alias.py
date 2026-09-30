@@ -120,3 +120,15 @@ def test_sov_play_help_lists_ruleset_argument() -> None:
     # Ruleset argument is documented; default is campfire_v1.
     assert "ruleset" in result.output.lower() or "RULESET" in result.output
     assert "campfire_v1" in result.output
+
+
+def test_sov_play_status_addresses_the_human_seat(monkeypatch, tmp_path: Path) -> None:
+    """The human seat is "You", so the turn line reads "Your turn next."."""
+    monkeypatch.chdir(tmp_path)
+    assert runner.invoke(app, ["play", "campfire_v1"]).exit_code == 0
+
+    result = runner.invoke(app, ["status"])
+
+    assert result.exit_code == 0
+    assert "Your turn next." in result.output
+    assert "You's turn" not in result.output
