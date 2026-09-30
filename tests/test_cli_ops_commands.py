@@ -1625,13 +1625,8 @@ def test_daemon_commands_explain_missing_extra(
     assert "Install the daemon extra:" in out
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: daemon_not_installed_error hint 'pip install sovereignty-game[daemon]' is "
-    "rendered through Rich markup, which swallows '[daemon]' and tells the operator to "
-    "install the bare package (fix: rich.markup.escape the hint/message in _fail, or "
-    "write '\\[daemon]' in the factory as the doctor hint does).",
-)
+# Regression: Rich read `[daemon]` as a markup tag and dropped it from the
+# hint; _fail now escapes factory text (fixed 2.3.3).
 def test_daemon_missing_extra_hint_shows_the_extra_name(
     cwd: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

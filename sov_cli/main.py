@@ -12,6 +12,7 @@ from typing import Annotated, Any, Never
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 from rich.panel import Panel
 from rich.table import Table
 
@@ -711,9 +712,12 @@ def _fail(err: SovError) -> Never:
     Pin B's AST contract still sees raw backticks at factory level — the
     transform is render-layer only.
     """
-    console.print(f"  [red]{err.message}[/red]")
+    # Escape before styling: factory text is literal. Unescaped, Rich read
+    # `sovereignty-game[daemon]` as a tag and dropped `[daemon]` from the
+    # install hint (and a player named "[red]" would restyle the line).
+    console.print(f"  [red]{escape(err.message)}[/red]")
     if err.hint:
-        console.print(f"  [dim]{_render_backticks(err.hint)}[/dim]")
+        console.print(f"  [dim]{_render_backticks(escape(err.hint))}[/dim]")
     raise typer.Exit(1)
 
 
@@ -1831,8 +1835,8 @@ def tutorial() -> None:
     proof = make_round_proof(state)
     h = proof["envelope_hash"][:16]
     console.print(f"  Receipt: [dim]{h}...[/dim]")
-    console.print("  [dim]This hash is your game's fingerprint.")
-    console.print("  If anyone changes the score later, the hash won't match.[/dim]\n")
+    console.print("  [dim]This hash is your game's fingerprint.[/dim]")
+    console.print("  [dim]If anyone changes the score later, the hash won't match.[/dim]\n")
     sleep(1)
 
     # Save the demo state (including the post-tutorial RNG stream).
@@ -3818,7 +3822,7 @@ def _postcard_highlights(
             ("helps", "[green]Kind:[/green]"),
             ("offers", "[cyan]Trade:[/cyan]"),
             ("toasts", "[yellow]Toast:[/yellow]"),
-            ("Treaty.*honored", "[green]Treaty kept:[/green]"),
+            ("honored", "[green]Treaty kept:[/green]"),  # only treaties log "honored"
             ("BROKEN", "[red]Treaty broken:[/red]"),
             ("wins", "[bold green]"),
         ]
@@ -4750,7 +4754,7 @@ def resume_cmd(
             f"  Switched to game [bold]{game_id}[/bold] "
             f"(round {rnd}/{max_rounds}, ruleset {ruleset})."
         )
-    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, AttributeError):
         # Pointer was set even if the read failed — operator can still
         # dig into the per-game directory by hand. Keep the surface honest.
         console.print(f"  Switched to game [bold]{game_id}[/bold].")

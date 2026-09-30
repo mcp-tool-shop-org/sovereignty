@@ -98,7 +98,7 @@ The Audit Viewer visualizes XRPL-anchored proofs as collapsible per-game lists w
 - `/game` — passive real-time state display for the active game
 - `/settings` — daemon config + network switcher (testnet / mainnet / devnet) with mainnet-confirmation guardrail
 
-**v2.3.2** is the current release. GitHub Release **v2.3.0** did not publish wheels or desktop assets, so do not pin `==2.3.0`.
+**v2.3.3** is the current release. GitHub Release **v2.3.0** did not publish wheels or desktop assets, so do not pin `==2.3.0`.
 
 Python/daemon: `pip install 'sovereignty-game[daemon]'`. Desktop: the [latest GitHub Release](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) when CI has attached files, otherwise `npm --prefix app run tauri dev`.
 

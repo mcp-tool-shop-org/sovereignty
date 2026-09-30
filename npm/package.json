@@ -1,6 +1,6 @@
 {
   "name": "@mcptoolshop/sovereignty",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "description": "Sovereignty — a board game about trust, trade, and keeping your word. Zero-prerequisite npx install (verified binary launcher).",
   "type": "commonjs",
   "license": "MIT",

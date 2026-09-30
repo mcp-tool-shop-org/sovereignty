@@ -311,11 +311,9 @@ def test_postcard_highlights_label_per_pattern(style: str, line: str, label: str
     assert cli_main._postcard_highlights(state, 1, style) == [f"{label} {line}"]
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason='BUG: "Treaty.*honored" is matched with `in` (substring), never as a regex',
-)
 def test_postcard_highlights_all_style_labels_honored_treaties() -> None:
+    # Regression: the matcher was the regex "Treaty.*honored" compared with
+    # `in`, so "Treaty kept" never appeared (fixed 2.3.3).
     state = _make_state()
     state.log = ["R1T0: Treaty t_0001 honored"]
     assert cli_main._postcard_highlights(state, 1, "all") == [
@@ -1312,11 +1310,9 @@ def test_resume_with_unreadable_state_still_switches_pointer(tmp_path: Path) -> 
     assert active_game_pointer_path().read_text(encoding="utf-8").strip() == "s5"
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: resume catches TypeError but not AttributeError; non-object state.json crashes",
-)
 def test_resume_with_non_object_state_still_switches_pointer(tmp_path: Path) -> None:
+    # Regression: a list-shaped state.json raised AttributeError on .get()
+    # and crashed resume after the pointer moved (fixed 2.3.3).
     game_id = _plant_v2(6)
     state_file(game_id).write_text("[]", encoding="utf-8")
     result = runner.invoke(app, ["resume", game_id])

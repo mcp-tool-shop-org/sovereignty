@@ -179,11 +179,11 @@
           "path": "app/index.html"
         },
         {
-          "hash": "a87eea337e03a47e5b667cfdd537bb0a8eefae86c5dff466cfc91dfb818c8713",
+          "hash": "71c2ce43cf1ff8a9937ca168480704571605e03c02f84355303840a66b6822f0",
           "path": "app/package-lock.json"
         },
         {
-          "hash": "59c2e6b8a3840656bff178213ca5a6f971b026314d0e7645bac1859554434db8",
+          "hash": "d071c75db892bae75406b8f0b2d4a97833f0bff46189c0846c065a5e5de13fd3",
           "path": "app/package.json"
         },
         {
@@ -526,7 +526,7 @@
           ]
         },
         {
-          "hash": "bda2b6fa61adc381f1059be2c0f14a0ca988e1b2635f05817af24cb93e37f13e",
+          "hash": "cea3b8f866ed8ff78325351f005f46ab71b7961f6fad16dddbfa4af59f6ab481",
           "path": "app/src-tauri/tauri.conf.json"
         },
         {
@@ -1500,7 +1500,7 @@
           "path": "docs/cli-json-output.md"
         },
         {
-          "hash": "9f9ddcbb87f4eb5429651e921d33480207ab55daa464ee5deaa656de76b55a0d",
+          "hash": "72aad6b0ca63c7994ddec9c7388fbd41188e42259e86036a81459246bbf808f7",
           "path": "docs/handoffs/coverage-90.md"
         },
         {
@@ -1544,7 +1544,7 @@
           "path": "docs/print-and-play.md"
         },
         {
-          "hash": "628a7c1e0d3309f7c15efbd98c70d4801437b4e12688697ab8cf44ec466e0964",
+          "hash": "adcaeeff9677c7582b60a242b86c4f9d0c426661bce110c5994b4155f5552e53",
           "path": "docs/roadmap.md"
         },
         {
@@ -1657,11 +1657,11 @@
           "path": "npm/bin/sovereignty.js"
         },
         {
-          "hash": "e0f1aab95af1beceaaf7c32f551e2e52f4ce24976c8dbd26470de7d94d02d26e",
+          "hash": "13a9b7c8e9990372e1b6f742802fd18b6de6084341cc4886ee01768f224c7f22",
           "path": "npm/package-lock.json"
         },
         {
-          "hash": "00fb45813577e5cc5e3f12b082ac6d30d9de1b5995338dd5b41c903cb5b8bb20",
+          "hash": "1d5a63cf964ef49be0e1caae233d634779a61b46c5d551689910ef1102c32e57",
           "path": "npm/package.json"
         },
         {
@@ -1708,11 +1708,11 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "d432c219ea8cb030b5546c7f51056aa2d038a4294e466c17a72b8f9d9147a887",
+          "hash": "82ed1a9a30eb87296616282041a9cedff739de4461c20750f7d37a27514ac781",
           "path": "CHANGELOG.md"
         },
         {
-          "hash": "10efcfabad490861b74f72f96a8f80875dc1bd678db4928934ed834f91d18c3a",
+          "hash": "7069f9b0e6c55e2d1e24a4b7efb012388d2f19e68de63b790fdc0005c1d591dc",
           "path": "CLAUDE.md"
         },
         {
@@ -1728,35 +1728,35 @@
           "path": "LICENSE"
         },
         {
-          "hash": "1f0bd7e8af63ffe34454818043ffac7b0024a7bff14d05912892f4e81661b2d1",
+          "hash": "7751388e637943a88f36b9952332917d8d485452be887a669fe49bc95883c76e",
           "path": "README.es.md"
         },
         {
-          "hash": "d87a1f7b99f8517e6aef0bb2e48cb5bd5fbfbc8bf8b8f9451536e4328888e374",
+          "hash": "322aab14a9b54bb5a5fdf0d7d93f299e99422bc5ea6bc91c704a47d2ef40da17",
           "path": "README.fr.md"
         },
         {
-          "hash": "b6444ec8af4b02af18510e41c14f0c58fe85af91cae806ecd3a0e9dca1d1c3b3",
+          "hash": "a4cab04206083a1e4d48cd946efec5a83a5601b398f6fcd02cff609c581ac463",
           "path": "README.hi.md"
         },
         {
-          "hash": "4df8595acce5a658a7cb36d6b6da9f89a445b471e87d5bd5dc390994c41b9910",
+          "hash": "c5bece0dcb197b6ed9c9291596e92e50fc2a336f3e8369d010ee28948b13fd5b",
           "path": "README.it.md"
         },
         {
-          "hash": "7ac54c03ed118fd5e48f40274cdf480e0ddb2788ad2cca0f570878a74e5ca522",
+          "hash": "c48c00b0126f969b836191b2fea441216476c53c0301cbfb7b22c9758827fdfc",
           "path": "README.ja.md"
         },
         {
-          "hash": "76beab7c7f93666ce369de68569b4785d90323713d07ea853352bf2d580363e1",
+          "hash": "0c51a5f809984a1f415a698248567aa15ede66d4ef8924d501f0ad4b907afc1b",
           "path": "README.md"
         },
         {
-          "hash": "dfefa21a5b96bb2fde6159be76e31f2f56b8d89fe91794a8ef1da801c6989ea3",
+          "hash": "54873e90fa53bcde14720bc40e6ace9487cb14ce1e97fc09bba915bee312a3ac",
           "path": "README.pt-BR.md"
         },
         {
-          "hash": "2ca43bea21109a6eef53e99b3f459b330ab3b53b1e7afe666ce6ee2cb9803444",
+          "hash": "ce7eae789824d55a34f10012235a8975a48bb075029d388af1cae711e614cee8",
           "path": "README.zh.md"
         },
         {
@@ -1780,11 +1780,11 @@
           "path": "compose.yaml"
         },
         {
-          "hash": "b39225c24d5b0d4e9feaa8e87edee4ccd05ac911c9ff735527cf313b0f770930",
+          "hash": "6a5d077b3eefb6535d894a5414bc51ad8bab8d0d286361df1837872237ace391",
           "path": "pyproject.toml"
         },
         {
-          "hash": "238e60b5123980d7ea7c0d4c64aa0ed0378d77c9d99308a9725e93da14425bd9",
+          "hash": "4fa8633f463321b82e05ceb34befc51d46598ecad1eb31fe825ff0bf3b597f9e",
           "path": "uv.lock"
         }
       ],
@@ -1890,11 +1890,11 @@
           "path": "site/src/content/docs/handbook/diary-mode.md"
         },
         {
-          "hash": "ce3ffdd31824be7395631e4934d2ce74f894285584edc21529e4600ce858f03b",
+          "hash": "a69a78df1c171bd585184eaaeb002e38cf468512a7e08d96313af39f6984d449",
           "path": "site/src/content/docs/handbook/docker.md"
         },
         {
-          "hash": "011c24a11f746ba2c6098562a912f99467009e01e14be19a740b20a890b8b500",
+          "hash": "296e8aa3ced6ba743000e3eb1601630117427048b2d9619852685c0de77d578e",
           "path": "site/src/content/docs/handbook/getting-started.md"
         },
         {
@@ -1922,7 +1922,7 @@
           "path": "site/src/pages/index.astro"
         },
         {
-          "hash": "6d46c9d2872123a552ba641736ca61c49dccd21738cb06255b49b9179efc5ab2",
+          "hash": "b111a77d20b7fdbfc36dc6c3c3b5c5562102f60ddca7deab1b565a9944da1ffb",
           "path": "site/src/site-config.ts"
         },
         {
@@ -2120,7 +2120,7 @@
             "vote",
             "wallet"
           ],
-          "hash": "d0bb936177ce9d4419083f90b11492316df124e3ef079cc67109f53be0faecce",
+          "hash": "12f2a05b625d062ef36ea7114616583da6b0cbc703b3a3d60aa8dc543010df05",
           "importsFiles": [
             "sov_cli/errors.py",
             "sov_daemon/__init__.py",
@@ -2146,14 +2146,14 @@
             {
               "calls": [
                 {
-                  "line": 242,
+                  "line": 243,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 244,
+                  "line": 245,
                   "name": "invalid_game_id_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -2168,14 +2168,14 @@
             {
               "calls": [
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2183,7 +2183,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2191,14 +2191,14 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2206,14 +2206,14 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -2228,14 +2228,14 @@
             {
               "calls": [
                 {
-                  "line": 298,
+                  "line": 299,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2250,7 +2250,7 @@
             {
               "calls": [
                 {
-                  "line": 317,
+                  "line": 318,
                   "name": "game_state_snapshot",
                   "target": {
                     "file": "sov_engine/serialize.py"
@@ -2265,7 +2265,7 @@
             {
               "calls": [
                 {
-                  "line": 341,
+                  "line": 342,
                   "name": "Deck",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2280,14 +2280,14 @@
             {
               "calls": [
                 {
-                  "line": 352,
+                  "line": 353,
                   "name": "card_catalog",
                   "target": {
                     "file": "sov_engine/content.py"
                   }
                 },
                 {
-                  "line": 341,
+                  "line": 342,
                   "name": "Deck",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2303,28 +2303,28 @@
             {
               "calls": [
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
                   }
                 },
                 {
-                  "line": 387,
+                  "line": 388,
                   "name": "Voucher",
                   "target": {
                     "file": "sov_engine/models.py"
                   }
                 },
                 {
-                  "line": 415,
+                  "line": 416,
                   "name": "DealStatus",
                   "target": {
                     "file": "sov_engine/models.py"
                   }
                 },
                 {
-                  "line": 410,
+                  "line": 411,
                   "name": "ActiveDeal",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2339,14 +2339,14 @@
             {
               "calls": [
                 {
-                  "line": 431,
+                  "line": 432,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 317,
+                  "line": 318,
                   "name": "game_state_snapshot",
                   "target": {
                     "file": "sov_engine/serialize.py"
@@ -2354,21 +2354,21 @@
                   "via": "_disk_snapshot"
                 },
                 {
-                  "line": 434,
+                  "line": 435,
                   "name": "canonical_json",
                   "target": {
                     "file": "sov_engine/serialize.py"
                   }
                 },
                 {
-                  "line": 434,
+                  "line": 435,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 451,
+                  "line": 452,
                   "name": "undo_state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2384,14 +2384,14 @@
             {
               "calls": [
                 {
-                  "line": 443,
+                  "line": 444,
                   "name": "undo_state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 317,
+                  "line": 318,
                   "name": "game_state_snapshot",
                   "target": {
                     "file": "sov_engine/serialize.py"
@@ -2399,14 +2399,14 @@
                   "via": "_disk_snapshot"
                 },
                 {
-                  "line": 445,
+                  "line": 446,
                   "name": "canonical_json",
                   "target": {
                     "file": "sov_engine/serialize.py"
                   }
                 },
                 {
-                  "line": 445,
+                  "line": 446,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2421,7 +2421,7 @@
             {
               "calls": [
                 {
-                  "line": 451,
+                  "line": 452,
                   "name": "undo_state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2436,14 +2436,14 @@
             {
               "calls": [
                 {
-                  "line": 482,
+                  "line": 483,
                   "name": "XRPLNetwork",
                   "target": {
                     "file": "sov_transport/xrpl_internals.py"
                   }
                 },
                 {
-                  "line": 484,
+                  "line": 485,
                   "name": "invalid_network_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -2458,7 +2458,7 @@
             {
               "calls": [
                 {
-                  "line": 495,
+                  "line": 496,
                   "name": "read_anchors_file",
                   "target": {
                     "file": "sov_engine/proof.py"
@@ -2473,7 +2473,7 @@
             {
               "calls": [
                 {
-                  "line": 506,
+                  "line": 507,
                   "name": "record_anchors",
                   "target": {
                     "file": "sov_engine/proof.py"
@@ -2488,7 +2488,7 @@
             {
               "calls": [
                 {
-                  "line": 532,
+                  "line": 533,
                   "name": "_MAX_MEMOS_PER_TX",
                   "passed": true,
                   "target": {
@@ -2496,12 +2496,12 @@
                   }
                 },
                 {
-                  "line": 534,
+                  "line": 535,
                   "name": "anchor_batch",
                   "target": null
                 },
                 {
-                  "line": 539,
+                  "line": 540,
                   "name": "record_anchors_and_clear_pending",
                   "target": {
                     "file": "sov_engine/proof.py"
@@ -2516,14 +2516,14 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2531,7 +2531,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2539,7 +2539,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2548,7 +2548,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2557,7 +2557,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -2565,7 +2565,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2574,7 +2574,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2582,7 +2582,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -2590,27 +2590,27 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -2618,7 +2618,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -2626,7 +2626,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -2635,7 +2635,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2643,7 +2643,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -2651,7 +2651,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -2659,7 +2659,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -2667,7 +2667,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -2675,7 +2675,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2683,7 +2683,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2691,7 +2691,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2699,7 +2699,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2716,26 +2716,26 @@
             {
               "calls": [
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
                   }
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -2743,63 +2743,63 @@
                   }
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
                   }
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
                   }
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
                   }
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
                   }
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
                   }
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
                   }
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
                   }
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2807,7 +2807,7 @@
                   "via": "_restore_vouchers_and_deals"
                 },
                 {
-                  "line": 387,
+                  "line": 388,
                   "name": "Voucher",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2815,7 +2815,7 @@
                   "via": "_restore_vouchers_and_deals"
                 },
                 {
-                  "line": 415,
+                  "line": 416,
                   "name": "DealStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2823,7 +2823,7 @@
                   "via": "_restore_vouchers_and_deals"
                 },
                 {
-                  "line": 410,
+                  "line": 411,
                   "name": "ActiveDeal",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2831,7 +2831,7 @@
                   "via": "_restore_vouchers_and_deals"
                 },
                 {
-                  "line": 352,
+                  "line": 353,
                   "name": "card_catalog",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -2839,7 +2839,7 @@
                   "via": "_restore_decks"
                 },
                 {
-                  "line": 341,
+                  "line": 342,
                   "name": "Deck",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2847,7 +2847,7 @@
                   "via": "_deck_from_ids"
                 },
                 {
-                  "line": 692,
+                  "line": 693,
                   "name": "MarketBoard",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -2862,35 +2862,35 @@
             {
               "calls": [
                 {
-                  "line": 827,
+                  "line": 831,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 828,
+                  "line": 832,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 829,
+                  "line": 833,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 835,
+                  "line": 839,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2898,7 +2898,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2906,7 +2906,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2914,7 +2914,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2923,7 +2923,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2932,7 +2932,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -2940,7 +2940,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2949,7 +2949,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2957,7 +2957,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -2965,7 +2965,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2973,7 +2973,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -2981,13 +2981,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -2995,7 +2995,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -3003,7 +3003,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -3012,7 +3012,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3020,7 +3020,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -3028,7 +3028,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -3036,7 +3036,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -3044,7 +3044,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -3061,35 +3061,35 @@
             {
               "calls": [
                 {
-                  "line": 1323,
+                  "line": 1327,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1326,
+                  "line": 1330,
                   "name": "read_versioned",
                   "target": {
                     "file": "sov_engine/schemas.py"
                   }
                 },
                 {
-                  "line": 1335,
+                  "line": 1339,
                   "name": "pending_anchors_path",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1338,
+                  "line": 1342,
                   "name": "read_versioned",
                   "target": {
                     "file": "sov_engine/schemas.py"
                   }
                 },
                 {
-                  "line": 1352,
+                  "line": 1356,
                   "name": "anchors_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3104,56 +3104,56 @@
             {
               "calls": [
                 {
-                  "line": 1554,
+                  "line": 1558,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1555,
+                  "line": 1559,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1557,
+                  "line": 1561,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1560,
+                  "line": 1564,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1581,
+                  "line": 1585,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1582,
+                  "line": 1586,
                   "name": "game_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1589,
+                  "line": 1593,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1590,
+                  "line": 1594,
                   "name": "proofs_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3168,63 +3168,63 @@
             {
               "calls": [
                 {
-                  "line": 1663,
+                  "line": 1667,
                   "name": "share_code_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 1671,
+                  "line": 1675,
                   "name": "player_count_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 1677,
+                  "line": 1681,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1679,
+                  "line": 1683,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1685,
+                  "line": 1689,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
                   }
                 },
                 {
-                  "line": 1689,
+                  "line": 1693,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
                   }
                 },
                 {
-                  "line": 1693,
+                  "line": 1697,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
                   }
                 },
                 {
-                  "line": 1697,
+                  "line": 1701,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 3763,
+                  "line": 3767,
                   "name": "Deck",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3232,34 +3232,34 @@
                   "via": "_apply_recipe"
                 },
                 {
-                  "line": 3777,
+                  "line": 3781,
                   "name": "add_log",
                   "target": null,
                   "via": "_apply_recipe"
                 },
                 {
-                  "line": 1708,
+                  "line": 1712,
                   "name": "game_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1709,
+                  "line": 1713,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1709,
+                  "line": 1713,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 431,
+                  "line": 432,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3267,7 +3267,7 @@
                   "via": "_save_state"
                 },
                 {
-                  "line": 317,
+                  "line": 318,
                   "name": "game_state_snapshot",
                   "target": {
                     "file": "sov_engine/serialize.py"
@@ -3275,7 +3275,7 @@
                   "via": "_disk_snapshot"
                 },
                 {
-                  "line": 434,
+                  "line": 435,
                   "name": "canonical_json",
                   "target": {
                     "file": "sov_engine/serialize.py"
@@ -3283,7 +3283,7 @@
                   "via": "_save_state"
                 },
                 {
-                  "line": 434,
+                  "line": 435,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3291,7 +3291,7 @@
                   "via": "_save_state"
                 },
                 {
-                  "line": 451,
+                  "line": 452,
                   "name": "undo_state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3299,14 +3299,14 @@
                   "via": "_clear_undo"
                 },
                 {
-                  "line": 1712,
+                  "line": 1716,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 3885,
+                  "line": 3889,
                   "name": "market_status",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -3322,7 +3322,7 @@
             {
               "calls": [
                 {
-                  "line": 1663,
+                  "line": 1667,
                   "name": "share_code_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3330,7 +3330,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1671,
+                  "line": 1675,
                   "name": "player_count_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3338,7 +3338,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1677,
+                  "line": 1681,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3346,7 +3346,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1679,
+                  "line": 1683,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3354,7 +3354,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1685,
+                  "line": 1689,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -3362,7 +3362,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1689,
+                  "line": 1693,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -3370,7 +3370,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1693,
+                  "line": 1697,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -3378,7 +3378,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1697,
+                  "line": 1701,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -3386,7 +3386,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 3763,
+                  "line": 3767,
                   "name": "Deck",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3394,13 +3394,13 @@
                   "via": "_apply_recipe"
                 },
                 {
-                  "line": 3777,
+                  "line": 3781,
                   "name": "add_log",
                   "target": null,
                   "via": "_apply_recipe"
                 },
                 {
-                  "line": 1708,
+                  "line": 1712,
                   "name": "game_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3408,7 +3408,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1709,
+                  "line": 1713,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3416,7 +3416,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1709,
+                  "line": 1713,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3424,7 +3424,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 431,
+                  "line": 432,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3432,7 +3432,7 @@
                   "via": "_save_state"
                 },
                 {
-                  "line": 317,
+                  "line": 318,
                   "name": "game_state_snapshot",
                   "target": {
                     "file": "sov_engine/serialize.py"
@@ -3440,7 +3440,7 @@
                   "via": "_disk_snapshot"
                 },
                 {
-                  "line": 434,
+                  "line": 435,
                   "name": "canonical_json",
                   "target": {
                     "file": "sov_engine/serialize.py"
@@ -3448,7 +3448,7 @@
                   "via": "_save_state"
                 },
                 {
-                  "line": 434,
+                  "line": 435,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3456,7 +3456,7 @@
                   "via": "_save_state"
                 },
                 {
-                  "line": 451,
+                  "line": 452,
                   "name": "undo_state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3464,7 +3464,7 @@
                   "via": "_clear_undo"
                 },
                 {
-                  "line": 1712,
+                  "line": 1716,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3472,7 +3472,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 3885,
+                  "line": 3889,
                   "name": "market_status",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -3488,91 +3488,91 @@
             {
               "calls": [
                 {
-                  "line": 1785,
+                  "line": 1789,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1786,
+                  "line": 1790,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1788,
+                  "line": 1792,
                   "name": "game_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1789,
+                  "line": 1793,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1789,
+                  "line": 1793,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1791,
+                  "line": 1795,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1799,
+                  "line": 1803,
                   "name": "roll_and_move",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1803,
+                  "line": 1807,
                   "name": "resolve_space",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1810,
+                  "line": 1814,
                   "name": "make_promise",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1819,
+                  "line": 1823,
                   "name": "roll_and_move",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1822,
+                  "line": 1826,
                   "name": "resolve_space",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1831,
+                  "line": 1835,
                   "name": "make_round_proof",
                   "target": {
                     "file": "sov_engine/hashing.py"
                   }
                 },
                 {
-                  "line": 431,
+                  "line": 432,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3580,7 +3580,7 @@
                   "via": "_save_state"
                 },
                 {
-                  "line": 317,
+                  "line": 318,
                   "name": "game_state_snapshot",
                   "target": {
                     "file": "sov_engine/serialize.py"
@@ -3588,7 +3588,7 @@
                   "via": "_disk_snapshot"
                 },
                 {
-                  "line": 434,
+                  "line": 435,
                   "name": "canonical_json",
                   "target": {
                     "file": "sov_engine/serialize.py"
@@ -3596,7 +3596,7 @@
                   "via": "_save_state"
                 },
                 {
-                  "line": 434,
+                  "line": 435,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3604,7 +3604,7 @@
                   "via": "_save_state"
                 },
                 {
-                  "line": 451,
+                  "line": 452,
                   "name": "undo_state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3620,7 +3620,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3628,7 +3628,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3636,7 +3636,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3644,7 +3644,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3653,7 +3653,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3662,7 +3662,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3670,7 +3670,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3679,7 +3679,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3687,7 +3687,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3695,7 +3695,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3703,7 +3703,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3711,13 +3711,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3725,7 +3725,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -3733,7 +3733,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -3742,7 +3742,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3750,7 +3750,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -3758,7 +3758,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -3766,7 +3766,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -3774,7 +3774,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -3782,7 +3782,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3790,7 +3790,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3798,7 +3798,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3806,7 +3806,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3823,7 +3823,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3831,7 +3831,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3839,7 +3839,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3847,7 +3847,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3856,7 +3856,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3865,7 +3865,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3873,7 +3873,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3882,7 +3882,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3890,7 +3890,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3898,7 +3898,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3906,7 +3906,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3914,13 +3914,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3928,7 +3928,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -3936,7 +3936,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -3945,7 +3945,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3953,7 +3953,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -3961,7 +3961,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -3969,7 +3969,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -3977,7 +3977,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -3985,7 +3985,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3993,7 +3993,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4001,7 +4001,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4009,7 +4009,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4026,14 +4026,14 @@
             {
               "calls": [
                 {
-                  "line": 1991,
+                  "line": 1995,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4041,14 +4041,14 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 1993,
+                  "line": 1997,
                   "name": "no_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4056,7 +4056,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4065,7 +4065,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4074,7 +4074,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4082,7 +4082,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4091,7 +4091,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4099,7 +4099,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4107,35 +4107,35 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 1996,
+                  "line": 2000,
                   "name": "undo_state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1998,
+                  "line": 2002,
                   "name": "nothing_to_undo_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2000,
+                  "line": 2004,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 2002,
+                  "line": 2006,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 451,
+                  "line": 452,
                   "name": "undo_state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4143,7 +4143,7 @@
                   "via": "_clear_undo"
                 },
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4151,7 +4151,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4159,7 +4159,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4167,13 +4167,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4181,7 +4181,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -4189,7 +4189,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -4198,7 +4198,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4206,7 +4206,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -4223,7 +4223,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4231,7 +4231,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4239,7 +4239,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4247,7 +4247,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4256,7 +4256,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4265,7 +4265,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4273,7 +4273,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4282,7 +4282,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4290,7 +4290,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4298,7 +4298,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4306,7 +4306,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4314,13 +4314,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4328,7 +4328,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -4336,7 +4336,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -4345,7 +4345,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4353,7 +4353,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -4361,7 +4361,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -4369,7 +4369,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -4377,7 +4377,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -4385,7 +4385,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4393,7 +4393,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4401,7 +4401,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4409,7 +4409,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4426,26 +4426,26 @@
             {
               "calls": [
                 {
-                  "line": 2084,
+                  "line": 2088,
                   "name": "verify_proof",
                   "target": {
                     "file": "sov_engine/hashing.py"
                   }
                 },
                 {
-                  "line": 2087,
+                  "line": 2091,
                   "name": "proof_invalid_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2095,
+                  "line": 2099,
                   "name": "read_text",
                   "target": null
                 },
                 {
-                  "line": 482,
+                  "line": 483,
                   "name": "XRPLNetwork",
                   "target": {
                     "file": "sov_transport/xrpl_internals.py"
@@ -4453,7 +4453,7 @@
                   "via": "_resolve_network"
                 },
                 {
-                  "line": 484,
+                  "line": 485,
                   "name": "invalid_network_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4461,14 +4461,14 @@
                   "via": "_resolve_network"
                 },
                 {
-                  "line": 2101,
+                  "line": 2105,
                   "name": "XRPLTransport",
                   "target": {
                     "file": "sov_transport/xrpl.py"
                   }
                 },
                 {
-                  "line": 2108,
+                  "line": 2112,
                   "name": "is_anchored_on_chain",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4476,7 +4476,7 @@
                   }
                 },
                 {
-                  "line": 2110,
+                  "line": 2114,
                   "name": "get_memo_text",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4484,7 +4484,7 @@
                   }
                 },
                 {
-                  "line": 2114,
+                  "line": 2118,
                   "name": "explorer_tx_url",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4492,21 +4492,21 @@
                   }
                 },
                 {
-                  "line": 2117,
+                  "line": 2121,
                   "name": "chain_lookup_failed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2119,
+                  "line": 2123,
                   "name": "anchor_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2125,
+                  "line": 2129,
                   "name": "anchor_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4521,7 +4521,7 @@
             {
               "calls": [
                 {
-                  "line": 482,
+                  "line": 483,
                   "name": "XRPLNetwork",
                   "target": {
                     "file": "sov_transport/xrpl_internals.py"
@@ -4529,7 +4529,7 @@
                   "via": "_resolve_network"
                 },
                 {
-                  "line": 484,
+                  "line": 485,
                   "name": "invalid_network_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4537,7 +4537,7 @@
                   "via": "_resolve_network"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4545,7 +4545,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4554,7 +4554,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4563,7 +4563,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4571,7 +4571,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4580,7 +4580,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4588,7 +4588,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4596,26 +4596,26 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 2198,
+                  "line": 2202,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 2212,
+                  "line": 2216,
                   "name": "exists",
                   "target": null
                 },
                 {
-                  "line": 2210,
+                  "line": 2214,
                   "name": "resolve_wallet_seed",
                   "target": {
                     "file": "sov_engine/wallet_seed.py"
                   }
                 },
                 {
-                  "line": 2217,
+                  "line": 2221,
                   "name": "no_wallet_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4623,13 +4623,13 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2232,
+                  "line": 2236,
                   "name": "exists",
                   "target": null
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2233,
+                  "line": 2237,
                   "name": "proof_file_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4637,13 +4637,13 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2235,
+                  "line": 2239,
                   "name": "read_text",
                   "target": null
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2240,
+                  "line": 2244,
                   "name": "_round_key_from_proof",
                   "target": {
                     "file": "sov_engine/proof.py"
@@ -4651,7 +4651,7 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2257,
+                  "line": 2261,
                   "name": "XRPLTransport",
                   "target": {
                     "file": "sov_transport/xrpl.py"
@@ -4659,7 +4659,7 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2258,
+                  "line": 2262,
                   "name": "anchor",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4668,7 +4668,7 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2265,
+                  "line": 2269,
                   "name": "record_anchors_and_clear_pending",
                   "target": {
                     "file": "sov_engine/proof.py"
@@ -4676,7 +4676,7 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2268,
+                  "line": 2272,
                   "name": "explorer_tx_url",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4685,21 +4685,21 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2287,
+                  "line": 2291,
                   "name": "anchor_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2304,
+                  "line": 2308,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4716,7 +4716,7 @@
             {
               "calls": [
                 {
-                  "line": 482,
+                  "line": 483,
                   "name": "XRPLNetwork",
                   "target": {
                     "file": "sov_transport/xrpl_internals.py"
@@ -4724,7 +4724,7 @@
                   "via": "_resolve_network"
                 },
                 {
-                  "line": 484,
+                  "line": 485,
                   "name": "invalid_network_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4733,7 +4733,7 @@
                 },
                 {
                   "branch": "resolved_network == XRPLNetwork.MAINNET",
-                  "line": 2491,
+                  "line": 2495,
                   "name": "mainnet_faucet_rejected_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4741,7 +4741,7 @@
                 },
                 {
                   "branch": "resolved_network == XRPLNetwork.MAINNET",
-                  "line": 2493,
+                  "line": 2497,
                   "name": "set_mainnet_seed",
                   "target": {
                     "file": "sov_engine/wallet_seed.py"
@@ -4749,35 +4749,35 @@
                 },
                 {
                   "branch": "resolved_network == XRPLNetwork.MAINNET",
-                  "line": 2495,
+                  "line": 2499,
                   "name": "keyring_unavailable_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2513,
+                  "line": 2517,
                   "name": "fund_dev_wallet",
                   "target": {
                     "file": "sov_transport/xrpl.py"
                   }
                 },
                 {
-                  "line": 2523,
+                  "line": 2527,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 2538,
+                  "line": 2542,
                   "name": "mainnet_faucet_rejected_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2540,
+                  "line": 2544,
                   "name": "wallet_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4792,7 +4792,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4800,7 +4800,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4808,7 +4808,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4816,7 +4816,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4825,7 +4825,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4834,7 +4834,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4842,7 +4842,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4851,7 +4851,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4859,7 +4859,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4867,7 +4867,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4875,7 +4875,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4883,13 +4883,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4897,7 +4897,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -4905,7 +4905,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -4914,7 +4914,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4922,7 +4922,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -4930,7 +4930,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -4938,7 +4938,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -4946,7 +4946,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -4954,7 +4954,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4962,7 +4962,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4970,7 +4970,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4978,7 +4978,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -4995,7 +4995,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5003,7 +5003,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5011,7 +5011,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5019,7 +5019,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5028,7 +5028,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5037,7 +5037,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5045,7 +5045,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5054,7 +5054,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5062,7 +5062,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5070,7 +5070,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5078,7 +5078,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5086,13 +5086,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5100,7 +5100,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -5108,7 +5108,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -5117,7 +5117,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5125,7 +5125,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -5133,7 +5133,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -5141,7 +5141,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -5149,7 +5149,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -5157,7 +5157,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5165,7 +5165,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5173,7 +5173,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5181,7 +5181,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5198,7 +5198,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5206,7 +5206,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5214,7 +5214,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5222,7 +5222,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5231,7 +5231,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5240,7 +5240,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5248,7 +5248,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5257,7 +5257,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5265,7 +5265,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5273,7 +5273,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5281,7 +5281,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5289,13 +5289,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5303,7 +5303,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -5311,7 +5311,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -5320,7 +5320,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5328,7 +5328,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -5336,7 +5336,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -5344,7 +5344,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -5352,7 +5352,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -5360,7 +5360,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5368,7 +5368,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5376,7 +5376,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5384,7 +5384,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5401,7 +5401,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5409,7 +5409,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5417,7 +5417,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5425,7 +5425,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5434,7 +5434,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5443,7 +5443,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5451,7 +5451,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5460,7 +5460,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5468,7 +5468,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5476,7 +5476,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5484,7 +5484,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5492,13 +5492,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5506,7 +5506,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -5514,7 +5514,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -5523,7 +5523,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5531,7 +5531,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -5539,7 +5539,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -5547,7 +5547,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -5555,7 +5555,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -5563,7 +5563,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5571,7 +5571,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5579,7 +5579,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5587,7 +5587,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5604,7 +5604,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5612,7 +5612,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5620,7 +5620,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5628,7 +5628,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5637,7 +5637,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5646,7 +5646,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5654,7 +5654,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5663,7 +5663,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5671,7 +5671,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5679,7 +5679,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5687,7 +5687,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5695,13 +5695,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5709,7 +5709,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -5717,7 +5717,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -5726,7 +5726,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5734,7 +5734,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -5742,7 +5742,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -5750,7 +5750,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -5758,7 +5758,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -5766,7 +5766,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5774,7 +5774,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5782,7 +5782,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5790,7 +5790,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5807,7 +5807,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5815,7 +5815,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5823,7 +5823,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5831,7 +5831,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5840,7 +5840,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5849,7 +5849,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5857,7 +5857,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5866,7 +5866,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5874,7 +5874,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5882,7 +5882,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5890,7 +5890,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -5898,13 +5898,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -5912,7 +5912,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -5920,7 +5920,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -5929,7 +5929,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5937,7 +5937,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -5945,7 +5945,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -5953,7 +5953,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -5961,7 +5961,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -5969,7 +5969,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5977,7 +5977,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5985,7 +5985,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -5993,7 +5993,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6010,7 +6010,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6018,7 +6018,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6026,7 +6026,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6034,7 +6034,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6043,7 +6043,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6052,7 +6052,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6060,7 +6060,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6069,7 +6069,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6077,7 +6077,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6085,7 +6085,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6093,7 +6093,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6101,13 +6101,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6115,7 +6115,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -6123,7 +6123,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -6132,7 +6132,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6140,7 +6140,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -6148,7 +6148,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -6156,7 +6156,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -6164,7 +6164,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -6172,7 +6172,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6180,7 +6180,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6188,7 +6188,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6196,7 +6196,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6213,7 +6213,7 @@
             {
               "calls": [
                 {
-                  "line": 3117,
+                  "line": 3121,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6228,7 +6228,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6236,7 +6236,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6244,7 +6244,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6252,7 +6252,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6261,7 +6261,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6270,7 +6270,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6278,7 +6278,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6287,7 +6287,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6295,7 +6295,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6303,7 +6303,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6311,7 +6311,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6319,13 +6319,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6333,7 +6333,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -6341,7 +6341,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -6350,7 +6350,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6358,7 +6358,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -6366,7 +6366,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -6374,7 +6374,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -6382,7 +6382,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -6390,7 +6390,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6398,7 +6398,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6406,7 +6406,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6414,7 +6414,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6431,7 +6431,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6439,7 +6439,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6447,7 +6447,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6455,7 +6455,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6464,7 +6464,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6473,7 +6473,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6481,7 +6481,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6490,7 +6490,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6498,7 +6498,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6506,7 +6506,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6514,7 +6514,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6522,13 +6522,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6536,7 +6536,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -6544,7 +6544,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -6553,7 +6553,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6561,7 +6561,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -6569,7 +6569,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -6577,7 +6577,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -6585,7 +6585,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -6593,7 +6593,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6601,7 +6601,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6609,7 +6609,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6617,7 +6617,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6634,7 +6634,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6642,7 +6642,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6650,7 +6650,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6658,7 +6658,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6667,7 +6667,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6676,7 +6676,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6684,7 +6684,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6693,7 +6693,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6701,7 +6701,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6709,7 +6709,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6717,7 +6717,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6725,13 +6725,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6739,7 +6739,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -6747,7 +6747,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -6756,7 +6756,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6764,7 +6764,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -6772,7 +6772,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -6780,7 +6780,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -6788,7 +6788,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -6796,7 +6796,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6804,7 +6804,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6812,7 +6812,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6820,7 +6820,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6837,7 +6837,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6845,7 +6845,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6853,7 +6853,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6861,7 +6861,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6870,7 +6870,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6879,7 +6879,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6887,7 +6887,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6896,7 +6896,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6904,7 +6904,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6912,7 +6912,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6920,7 +6920,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -6928,13 +6928,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6942,7 +6942,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -6950,7 +6950,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -6959,7 +6959,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -6967,7 +6967,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -6975,7 +6975,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -6983,7 +6983,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -6991,7 +6991,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -6999,7 +6999,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7007,7 +7007,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7015,7 +7015,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7023,7 +7023,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7040,14 +7040,14 @@
             {
               "calls": [
                 {
-                  "line": 3656,
+                  "line": 3660,
                   "name": "invalid_action_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7055,7 +7055,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7063,7 +7063,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7071,7 +7071,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7080,7 +7080,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7089,7 +7089,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7097,7 +7097,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7106,7 +7106,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7114,7 +7114,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7122,7 +7122,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7130,7 +7130,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7138,13 +7138,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7152,7 +7152,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -7160,7 +7160,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -7169,7 +7169,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7177,7 +7177,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -7185,7 +7185,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -7193,7 +7193,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -7201,7 +7201,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -7209,7 +7209,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7217,7 +7217,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7225,7 +7225,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7242,14 +7242,14 @@
             {
               "calls": [
                 {
-                  "line": 3763,
+                  "line": 3767,
                   "name": "Deck",
                   "target": {
                     "file": "sov_engine/models.py"
                   }
                 },
                 {
-                  "line": 3777,
+                  "line": 3781,
                   "name": "add_log",
                   "target": null
                 }
@@ -7262,7 +7262,7 @@
             {
               "calls": [
                 {
-                  "line": 3885,
+                  "line": 3889,
                   "name": "market_status",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -7277,7 +7277,7 @@
             {
               "calls": [
                 {
-                  "line": 3885,
+                  "line": 3889,
                   "name": "market_status",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -7293,7 +7293,7 @@
             {
               "calls": [
                 {
-                  "line": 4064,
+                  "line": 4068,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7308,21 +7308,21 @@
             {
               "calls": [
                 {
-                  "line": 4105,
+                  "line": 4109,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4110,
+                  "line": 4114,
                   "name": "anchors_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 495,
+                  "line": 496,
                   "name": "read_anchors_file",
                   "target": {
                     "file": "sov_engine/proof.py"
@@ -7330,21 +7330,21 @@
                   "via": "_read_anchors_entries"
                 },
                 {
-                  "line": 4117,
+                  "line": 4121,
                   "name": "proofs_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4125,
+                  "line": 4129,
                   "name": "_round_key_from_proof",
                   "target": {
                     "file": "sov_engine/proof.py"
                   }
                 },
                 {
-                  "line": 4201,
+                  "line": 4205,
                   "name": "anchor_pending_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7359,14 +7359,14 @@
             {
               "calls": [
                 {
-                  "line": 4443,
+                  "line": 4447,
                   "name": "build_event_deck",
                   "target": {
                     "file": "sov_engine/content.py"
                   }
                 },
                 {
-                  "line": 4444,
+                  "line": 4448,
                   "name": "build_deal_deck",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -7381,14 +7381,14 @@
             {
               "calls": [
                 {
-                  "line": 4527,
+                  "line": 4531,
                   "name": "scenario_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 4443,
+                  "line": 4447,
                   "name": "build_event_deck",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -7396,7 +7396,7 @@
                   "via": "_lint_scenario"
                 },
                 {
-                  "line": 4444,
+                  "line": 4448,
                   "name": "build_deal_deck",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -7404,7 +7404,7 @@
                   "via": "_lint_scenario"
                 },
                 {
-                  "line": 4596,
+                  "line": 4600,
                   "name": "invalid_action_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7419,21 +7419,21 @@
             {
               "calls": [
                 {
-                  "line": 4663,
+                  "line": 4667,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4664,
+                  "line": 4668,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4665,
+                  "line": 4669,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7448,7 +7448,7 @@
             {
               "calls": [
                 {
-                  "line": 242,
+                  "line": 243,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7456,7 +7456,7 @@
                   "via": "_validate_game_id_or_fail"
                 },
                 {
-                  "line": 244,
+                  "line": 245,
                   "name": "invalid_game_id_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7464,21 +7464,21 @@
                   "via": "_validate_game_id_or_fail"
                 },
                 {
-                  "line": 4733,
+                  "line": 4737,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4734,
+                  "line": 4738,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4740,
+                  "line": 4744,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7493,7 +7493,7 @@
             {
               "calls": [
                 {
-                  "line": 569,
+                  "line": 570,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7501,7 +7501,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 299,
+                  "line": 300,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7509,7 +7509,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 262,
+                  "line": 263,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7517,7 +7517,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 266,
+                  "line": 267,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7526,7 +7526,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 273,
+                  "line": 274,
                   "name": "_validate_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7535,7 +7535,7 @@
                 },
                 {
                   "branch": "active",
-                  "line": 279,
+                  "line": 280,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7543,7 +7543,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 282,
+                  "line": 283,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7552,7 +7552,7 @@
                 },
                 {
                   "branch": "len(saved) == 1",
-                  "line": 284,
+                  "line": 285,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7560,7 +7560,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 287,
+                  "line": 288,
                   "name": "no_active_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7568,7 +7568,7 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 574,
+                  "line": 575,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7576,7 +7576,7 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 575,
+                  "line": 576,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7584,13 +7584,13 @@
                   "via": "_load_game"
                 },
                 {
-                  "line": 601,
+                  "line": 602,
                   "name": "read_text",
                   "target": null,
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 606,
+                  "line": 607,
                   "name": "state_version_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7598,7 +7598,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 612,
+                  "line": 613,
                   "name": "GameRng",
                   "target": {
                     "file": "sov_engine/rng.py"
@@ -7606,7 +7606,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 615,
+                  "line": 616,
                   "name": "setstate",
                   "receiver": "GameRng",
                   "target": {
@@ -7615,7 +7615,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 622,
+                  "line": 623,
                   "name": "WinCondition",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7623,7 +7623,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 626,
+                  "line": 627,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -7631,7 +7631,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 628,
+                  "line": 629,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -7639,7 +7639,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 630,
+                  "line": 631,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -7647,7 +7647,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 632,
+                  "line": 633,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -7655,7 +7655,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 660,
+                  "line": 661,
                   "name": "Stake",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7663,7 +7663,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 667,
+                  "line": 668,
                   "name": "TreatyStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7671,7 +7671,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 655,
+                  "line": 656,
                   "name": "Treaty",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7679,7 +7679,7 @@
                   "via": "_load_game_inner"
                 },
                 {
-                  "line": 394,
+                  "line": 395,
                   "name": "VoucherStatus",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -7696,7 +7696,7 @@
             {
               "calls": [
                 {
-                  "line": 4912,
+                  "line": 4916,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7711,7 +7711,7 @@
             {
               "calls": [
                 {
-                  "line": 4912,
+                  "line": 4916,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7719,7 +7719,7 @@
                   "via": "_import_daemon_api"
                 },
                 {
-                  "line": 482,
+                  "line": 483,
                   "name": "XRPLNetwork",
                   "target": {
                     "file": "sov_transport/xrpl_internals.py"
@@ -7727,7 +7727,7 @@
                   "via": "_resolve_network"
                 },
                 {
-                  "line": 484,
+                  "line": 485,
                   "name": "invalid_network_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7743,7 +7743,7 @@
             {
               "calls": [
                 {
-                  "line": 4912,
+                  "line": 4916,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7751,7 +7751,7 @@
                   "via": "_import_daemon_api"
                 },
                 {
-                  "line": 482,
+                  "line": 483,
                   "name": "XRPLNetwork",
                   "target": {
                     "file": "sov_transport/xrpl_internals.py"
@@ -7759,7 +7759,7 @@
                   "via": "_resolve_network"
                 },
                 {
-                  "line": 484,
+                  "line": 485,
                   "name": "invalid_network_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7775,7 +7775,7 @@
             {
               "calls": [
                 {
-                  "line": 4912,
+                  "line": 4916,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7783,14 +7783,14 @@
                   "via": "_import_daemon_api"
                 },
                 {
-                  "line": 5033,
+                  "line": 5037,
                   "name": "daemon_not_running_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 5035,
+                  "line": 5039,
                   "name": "daemon_stop_failed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7805,7 +7805,7 @@
             {
               "calls": [
                 {
-                  "line": 4912,
+                  "line": 4916,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7842,7 +7842,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "07249da9a47f67cb3f624e52351c31df702235b395829c916894bb1fa1397fd9",
+          "hash": "603bc2046f0411071cfd15545c4a8f080de746b9f12e29a2ca431c517cbe68f6",
           "importsFiles": [
             "sov_daemon/lifecycle.py"
           ],
@@ -10885,7 +10885,7 @@
             "test_update_season_migrates_bare_dict_to_wrapped_form",
             "test_update_season_without_games_key_resets_skeleton"
           ],
-          "hash": "0b34425ea3930e12e8f6ed8513facb13e637b546c82170b712b250a1fe9bf0b4",
+          "hash": "236b2e99b331f04620bc807ce1bf4f65576be0e0ec71c385a8639f28e6b8b48a",
           "importsFiles": [
             "sov_cli/__init__.py",
             "sov_cli/main.py",
@@ -11001,7 +11001,7 @@
             "test_vote_categories_are_logged",
             "test_vote_errors"
           ],
-          "hash": "885bdaae4a69b11cb9711ed0f3effc073c04116c5b092e1c13b273d43d32c97b",
+          "hash": "142c53ace3c4deb77b14e38b886656f85ae99eb025dd6992ed42cef3948cd0ad",
           "importsFiles": [
             "sov_cli/__init__.py",
             "sov_cli/errors.py",
@@ -11187,7 +11187,7 @@
             "test_wallet_rejects_unknown_network",
             "test_wallet_testnet_writes_seed_file_and_hides_nothing_but_the_seed"
           ],
-          "hash": "b6df065d732fde91df2a3450cbfa404c6fff4a01eee33ae6adff541183c2087a",
+          "hash": "c0deb83d39ef54a6e70998e8c959b97f77149c1fc16fc1a9559503f99004c037",
           "importsFiles": [
             "sov_cli/main.py",
             "sov_daemon/__init__.py",
@@ -14175,7 +14175,7 @@
     }
   ],
   "generatedFrom": {
-    "commit": "f8e743028deef881de6d14de1a0dc64a50705347",
+    "commit": "895c831639d24c9fd971b7d9be4342c65500b288",
     "tracked": 426
   },
   "landings": [

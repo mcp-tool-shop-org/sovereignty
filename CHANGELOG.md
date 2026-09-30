@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.3.3] - 2026-09-29
+
 ### Added
 
 - **npx launcher source in `npm/`**, published by `.github/workflows/release.yml` after the Release carries the CLI binaries, with npm provenance and a post-publish `npx` smoke. The launcher had been hand-published and stopped at 2.2.1, so `npx @mcptoolshop/sovereignty` served 2.2.1 binaries through all of 2.3.x. It now reads its version from `npm/package.json`, and `tests/test_npm_launcher_in_sync.py` fails CI if that drifts from `pyproject.toml`.
@@ -15,10 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - **`sov --version` crashed in every PyInstaller binary.** The frozen app has no package metadata, and the `--version` fallback read `pyproject.toml` unguarded. `--version` now uses the same guarded resolver as `self-check`, the build bundles the metadata (`--copy-metadata sovereignty-game`), and the release build fails if the binary does not report its own version.
+- **`sov tutorial` always crashed at step 4.** Two lines each carried half of one `[dim]...[/dim]` span and Rich raised `MarkupError`, so the first command a new player runs exited 1. Every CLI print now has balanced markup (checked across `sov_cli/main.py`).
+- **Postcards never showed "Treaty kept".** The matcher `"Treaty.*honored"` was a regex compared as a plain substring. It now matches `honored`, which only treaty completions log.
+- **The missing-`[daemon]` hint told operators to install the wrong thing.** Rich read `sovereignty-game[daemon]` as a markup tag and dropped `[daemon]`. Error messages and hints are now escaped before styling, which also keeps player names with brackets from restyling output.
+- **`sov resume` crashed on a `state.json` that is a list, not an object.** It now switches the pointer and prints the short confirmation, as it already did for other unreadable states.
 
 ### Internal
 
-- **Python line coverage 72.5% → 99.9%**, and CI now fails below 90% (`fail_under = 90` in `pyproject.toml`; `codecov.yml` sets 90% project and patch targets). About 1,070 new tests cover every CLI command, the rules, the daemon server and lifecycle, both XRPL transports and the persistence layer, all offline. Six `xfail(strict=True)` tests pin defects found along the way that are left for a decision; they are listed in `docs/handoffs/coverage-90.md`.
+- **Python line coverage 72.5% → 99.9%**, and CI now fails below 90% (`fail_under = 90` in `pyproject.toml`; `codecov.yml` sets 90% project and patch targets). About 1,070 new tests cover every CLI command, the rules, the daemon server and lifecycle, both XRPL transports and the persistence layer, all offline. The coverage work found six defects; four are fixed above. Two stay pinned as `xfail(strict=True)` pending a design decision (`sov doctor` does not warn on a malformed `season.json`; the daemon body cap answers 500 instead of 413 on a streamed body, latent because no route reads a body). See `docs/handoffs/coverage-90.md`.
 
 ## [2.3.2] - 2026-09-29
 

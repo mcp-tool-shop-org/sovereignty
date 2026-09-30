@@ -312,14 +312,9 @@ def _assert_tutorial_completed(res: Any, cwd: Path) -> None:
     assert "You:" in follow.output
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "BUG: tutorial step 4 splits one [dim]...[/dim] span across two console.print "
-        "calls (main.py ~1826-1827) -> rich MarkupError, `sov tutorial` exits 1"
-    ),
-)
 def test_tutorial_runs_to_completion(_cwd: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Regression: step 4 split one [dim]...[/dim] span across two prints and
+    # Rich raised MarkupError, so `sov tutorial` always exited 1 (fixed 2.3.3).
     monkeypatch.setattr("time.sleep", lambda _s: None)
     _assert_tutorial_completed(_sov("tutorial"), _cwd)
 
@@ -327,7 +322,7 @@ def test_tutorial_runs_to_completion(_cwd: Path, monkeypatch: pytest.MonkeyPatch
 def test_tutorial_flow_with_markup_tolerant_console(
     _cwd: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Exercise the whole walkthrough (save + closing panel) despite the markup bug above."""
+    """The walkthrough also completes on a console with markup off."""
     from rich.console import Console
 
     monkeypatch.setattr("time.sleep", lambda _s: None)

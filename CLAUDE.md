@@ -1,6 +1,6 @@
 # Sovereignty — Repo Instructions
 
-Strategy game about governance, trust, and trade. Offline tabletop play (Python CLI) + XRPL online verification of round proofs. **Currently v2.3.2.** Distribution: `pip install sovereignty-game` (do not pin `==2.3.0` — that tag has no wheels) and `npx @mcptoolshop/sovereignty`. Desktop: latest GitHub Release assets when attached; otherwise run from source. Docker: `ghcr.io/mcp-tool-shop-org/sovereignty` (CLI + daemon, state in `/data/.sov`; see `compose.yaml`).
+Strategy game about governance, trust, and trade. Offline tabletop play (Python CLI) + XRPL online verification of round proofs. **Currently v2.3.3.** Distribution: `pip install sovereignty-game` (do not pin `==2.3.0` — that tag has no wheels) and `npx @mcptoolshop/sovereignty`. Desktop: latest GitHub Release assets when attached; otherwise run from source. Docker: `ghcr.io/mcp-tool-shop-org/sovereignty` (CLI + daemon, state in `/data/.sov`; see `compose.yaml`).
 
 Global instructions in `~/.claude/CLAUDE.md` always apply. This file holds sovereignty-specific context that isn't discoverable from code or git history.
 

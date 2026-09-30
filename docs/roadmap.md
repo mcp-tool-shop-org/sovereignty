@@ -1,6 +1,8 @@
 # Roadmap
 
-## Where we are: v2.3.2
+## Where we are: v2.3.3
+
+**v2.3.3** (2026-09-29) fixes `sov tutorial` (it crashed at step 4), the "Treaty kept" postcard line, the missing-`[daemon]` install hint, `sov resume` on a malformed save, and `sov --version` in the standalone binaries. The npx launcher now publishes from CI with every release, and CI enforces 90%+ test coverage (99.9% at release).
 
 **v2.3.2** (2026-09-29) adds the container image (`ghcr.io/mcp-tool-shop-org/sovereignty`, CLI + daemon, state in a `/data` volume) and fixes the PyPI wheel, which through 2.3.1 omitted `sov_daemon` so the `[daemon]` extra could not start.
 
