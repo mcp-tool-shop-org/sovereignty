@@ -79,7 +79,7 @@ The active-game pointer at `.sov/active-game` tracks which game `sov turn`, `sov
 The daemon is an optional HTTP/JSON server that backs the desktop app and external audit tools. Install with the `[daemon]` extra:
 
 ```bash
-pip install 'sovereignty-game[daemon]'   # 2.3.1; do not pin ==2.3.0
+pip install 'sovereignty-game[daemon]'   # 2.3.2+; earlier wheels lack sov_daemon
 
 sov daemon start --readonly   # for the audit viewer
 sov daemon status             # check pid/port/network/readonly
@@ -87,6 +87,8 @@ sov daemon stop               # clean shutdown
 ```
 
 The daemon binds to `127.0.0.1:<random-port>` with bearer-token auth. It serves audit reads + anchor writes (full mode); readonly mode is sufficient for the audit viewer alone.
+
+Prefer a container? The same daemon ships as a Docker image with its state in a volume. See [Docker](/sovereignty/handbook/docker/).
 
 ## Audit Viewer desktop app (v2.1+)
 
@@ -96,9 +98,9 @@ The Audit Viewer visualizes XRPL-anchored proofs as collapsible per-game lists w
 - `/game` — passive real-time state display for the active game
 - `/settings` — daemon config + network switcher (testnet / mainnet / devnet) with mainnet-confirmation guardrail
 
-**v2.3.1** is the live line. GitHub Release **v2.3.0** did not publish wheels or desktop assets (`publish.yml` run 33118253060). Filenames `sovereignty-app-2.3.0-*` 404. Do not pin `==2.3.0`.
+**v2.3.2** is the current release. GitHub Release **v2.3.0** did not publish wheels or desktop assets, so do not pin `==2.3.0`.
 
-Python/daemon: `pip install 'sovereignty-game[daemon]'`. Desktop: GitHub Release v2.3.1 when CI has attached files, otherwise `npm --prefix app run tauri dev`.
+Python/daemon: `pip install 'sovereignty-game[daemon]'`. Desktop: the [latest GitHub Release](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) when CI has attached files, otherwise `npm --prefix app run tauri dev`.
 
 ### First-launch warning is expected
 

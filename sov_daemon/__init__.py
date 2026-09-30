@@ -33,7 +33,7 @@ from sov_daemon.lifecycle import (
     stop_daemon,
 )
 
-__version__ = "2.3.1"
+__version__ = "2.3.2"
 
 __all__ = [
     "DaemonAlreadyRunningError",

@@ -1390,28 +1390,28 @@
         "path": "assets/print/source/vendor/react.production.min.js"
       },
       {
-        "commits": 1,
-        "lines": 94,
+        "commits": 2,
+        "lines": 124,
         "path": "atlas/README.md"
       },
       {
-        "commits": 1,
-        "lines": 50,
+        "commits": 2,
+        "lines": 54,
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 1,
-        "lines": 527,
+        "commits": 2,
+        "lines": 692,
         "path": "atlas/page.json"
       },
       {
-        "commits": 1,
-        "lines": 2316,
+        "commits": 2,
+        "lines": 2552,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 1,
-        "lines": 13589,
+        "commits": 2,
+        "lines": 14244,
         "path": "atlas/structure.json"
       },
       {
@@ -2125,9 +2125,9 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-09-30T00:26:44.282Z",
+  "generatedAt": "2026-09-30T00:33:58.863Z",
   "generatedFrom": {
-    "commit": "ebba7c7281ddf01eba3e30a41e37493e90e96bdf"
+    "commit": "99955d263b91c86fdd768ab97e21f6dea26bc8cf"
   },
   "pairs": [
     {
@@ -2351,16 +2351,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-09-29T20:26:13-04:00",
-    "inScopeFiles": 410,
+    "headDate": "2026-09-29T20:26:56-04:00",
+    "inScopeFiles": 411,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 97,
+    "qualifyingCommits": 98,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-03T00:26:13.000Z",
+    "since": "2026-04-03T00:26:56.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

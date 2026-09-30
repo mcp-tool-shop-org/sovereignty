@@ -1,6 +1,8 @@
 # Roadmap
 
-## Where we are: v2.3.1
+## Where we are: v2.3.2
+
+**v2.3.2** (2026-09-29) adds the container image (`ghcr.io/mcp-tool-shop-org/sovereignty`, CLI + daemon, state in a `/data` volume) and fixes the PyPI wheel, which through 2.3.1 omitted `sov_daemon` so the `[daemon]` extra could not start.
 
 Git tag **v2.3.1** (2026-08-28) publishes the 2.3.0 feature set (`sov undo`, OS-keychain mainnet seeds, additive `GET /games/{id}/verify/{round}`, Linux AppImage wiring, Tauri updater) plus Health A recovery so PyPI is not blocked by Tauri. Git tag **v2.3.0** remains a source-only tag with empty GitHub Release assets — do not pin `==2.3.0`.
 

@@ -95,60 +95,24 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 8,
-      "changed": 25,
+      "added": 1,
+      "changed": 7,
       "moved": 0,
-      "parts": 9,
+      "parts": 2,
       "removed": 0
     },
     "items": [
       {
-        "kind": "door",
-        "sentence": "CI now also checks docker/.",
-        "subjects": [
-          ".github/workflows/ci.yml",
-          "docker/"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "Release now also runs docker/entrypoint.sh and sov_daemon/__main__.py.",
-        "subjects": [
-          ".github/workflows/publish.yml",
-          "docker/entrypoint.sh",
-          "sov_daemon/__main__.py"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "Release now also checks LICENSE, README.md, docker/healthcheck.py and 2 more.",
-        "subjects": [
-          ".github/workflows/publish.yml",
-          "LICENSE",
-          "README.md",
-          "docker/healthcheck.py",
-          "pyproject.toml",
-          "sov_daemon/"
-        ]
-      },
-      {
-        "kind": "part",
-        "sentence": "docker is a new part, drawn from `docker/**`.",
-        "subjects": [
-          "docker"
-        ]
-      },
-      {
         "kind": "counts",
-        "sentence": "8 files added and 25 changed content, across 9 parts.",
+        "sentence": "Nothing structural changed since 2026-09-30; 1 file added and 7 changed content.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "41fa408b1f2902e4a85293abc44782f76ec8f68e",
-      "generatedAt": "2026-09-25T02:37:23.878Z"
+      "commit": "ebba7c7281ddf01eba3e30a41e37493e90e96bdf",
+      "generatedAt": "2026-09-30T00:26:44.282Z"
     },
-    "unchanged": false
+    "unchanged": true
   },
   "changesTogether": [
     {
@@ -217,7 +181,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "ebba7c7281ddf01eba3e30a41e37493e90e96bdf",
+  "commit": "99955d263b91c86fdd768ab97e21f6dea26bc8cf",
   "defaultBranch": "main",
   "derived": "13 parts, mostly Python (111 files), TypeScript (61), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
@@ -569,7 +533,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T00:26:44.282Z",
+  "generatedAt": "2026-09-30T00:33:58.863Z",
   "limits": [
     "27 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",

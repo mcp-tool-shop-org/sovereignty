@@ -7,10 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-09-29
+
+### Added
+
+- **Container image.** `ghcr.io/mcp-tool-shop-org/sovereignty` (linux/amd64 + linux/arm64) carries the `sov` CLI and the audit/anchor daemon. Game state lives under `/data/.sov`; mount a volume there. The bundled `compose.yaml` runs a readonly testnet daemon on host `127.0.0.1:47823` with a healthcheck, a non-root user, a read-only root filesystem, no capabilities, and restart-unless-stopped. Point `SOV_DATA` at a project folder and the desktop app attaches to the containerized daemon. The release workflow smoke-tests the image (version, `self-check`, authenticated and unauthenticated `/health`) before pushing, then attests its provenance.
+- `SOV_DAEMON_HOST` sets the daemon's bind address for `python -m sov_daemon`. Default stays `127.0.0.1`. It is not forwarded to `sov daemon start` spawns, so a desktop daemon cannot inherit a widened bind.
+- Docker page in the handbook.
+
 ### Fixed
+
+- **The PyPI wheel now ships `sov_daemon`.** Every wheel through 2.3.1 left the package out, so `pip install 'sovereignty-game[daemon]'` followed by `sov daemon start` failed with an import error. The release smoke gate missed it because it imported `sov_daemon` from the repo root, where the source tree sat on `sys.path`; it now runs from a temp directory.
+- `sov status` and `sov play` say "Your turn next." and "You win the game." for the default human seat instead of "You's turn next." and "You wins the game."
 
 - CI `tauri-and-frontend` no longer restores a stale Cargo `target/` cache (floating `stable` rustc + lockfile-only cache key) that left `cargo test` running until the 30m job kill — required check cancelled, red X on main. Registry/git still cached under a new key; `cargo test` is step-bounded at 10m.
 - `test_wallet_seed_writes_mode_0600` stubs `sov_transport.xrpl.fund_dev_wallet` (the symbol `sov wallet` imports) so CI cannot 429 the live XRPL Testnet faucet.
+
+### Changed
+
+- `npm audit signatures` promoted from advisory (`continue-on-error: true`) to hard-gate in CI (CI-TOOLING-B-003). Baseline: 184 verified registry signatures, 53 attestations.
+- `sov_daemon/server.py` `_validate_game_id` now delegates to `sov_engine.io_utils._validate_game_id` so the allowlist regex lives in one place. Removed duplicate `_GAME_ID_PATTERN` and closed the stale TODO from Wave 4.
+- `sov_daemon/lifecycle.py` drops two `# type: ignore` comments that only mattered on Windows (`subprocess.DETACHED_PROCESS`, `signal.CTRL_BREAK_EVENT` are platform-guarded). The two on `ctypes.windll` become `# type: ignore[attr-defined,unused-ignore]`, so mypy strict passes on Linux CI and on Windows.
+
+### Internal
+
+- Eliminated React `act()` warnings across frontend tests (`PanicModal`, `DaemonDisconnectedBanner`, `Audit`, `Settings`).
+- Added `app/src/test/setup.ts` global fetch stub that intercepts `/events` SSE endpoint during vitest runs, preventing `ECONNREFUSED` noise and reducing flakiness risk on slower CI runners.
 
 ## [2.3.1] - 2026-08-28
 

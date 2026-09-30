@@ -1,18 +1,14 @@
 # sovereignty: how it works
 
-Mapped at 2026-09-30 from commit ebba7c7.
+Mapped at 2026-09-30 from commit 99955d2.
 
 ## What this is
 
 13 parts, mostly Python (111 files), TypeScript (61), JavaScript (19) and Rust (6). Work enters through 5 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
 
-## What changed since 2026-09-25 (41fa408)
+## What changed since 2026-09-30 (ebba7c7)
 
-- CI now also checks docker/.
-- Release now also runs docker/entrypoint.sh and sov_daemon/__main__.py.
-- Release now also checks LICENSE, README.md, docker/healthcheck.py and 2 more.
-- docker is a new part, drawn from `docker/**`.
-- 8 files added and 25 changed content, across 9 parts.
+Nothing structural changed since 2026-09-30; 1 file added and 7 changed content.
 
 ## What comes in
 

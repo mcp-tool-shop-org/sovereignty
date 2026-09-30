@@ -25,7 +25,7 @@ export const config: SiteConfig = {
   footerText: 'MIT Licensed — built by <a href="https://mcp-tool-shop.github.io/" style="color:var(--color-muted);text-decoration:underline">MCP Tool Shop</a>',
 
   hero: {
-    badge: 'v2.3.1 — undo · keychain · updater',
+    badge: 'v2.3.2 — now on Docker',
     headline: 'Sovereignty',
     headlineAccent: 'a board game about keeping your word.',
     description: 'Roll, trade, promise, betray. 2-4 players, 30 minutes, no screens required. The console keeps score — you keep your word. Optionally anchor results on the XRPL Testnet.',
@@ -78,7 +78,8 @@ export const config: SiteConfig = {
         { title: 'Quick start', code: 'sov tutorial           # learn in 60 seconds\nsov new -p Alice -p Bob # start a game\nsov turn               # roll, land, resolve\nsov end-round          # generate proof' },
         // DOCS-D-003 (Wave 13 Stage 9-D): desktop-app entry point alongside
         // the CLI cards. Audit Viewer + Game Shell run from source.
-        { title: 'Desktop app', code: 'npm --prefix app run tauri dev\n# Or download attested assets from GitHub Release v2.3.1 when attached.' },
+        { title: 'Desktop app', code: 'npm --prefix app run tauri dev\n# Or download attested assets from the latest GitHub Release.' },
+        { title: 'Docker', code: 'docker compose up -d    # readonly daemon, saves in a volume\ndocker run --rm -it -v sov-data:/data \\\n  ghcr.io/mcp-tool-shop-org/sovereignty tutorial' },
       ],
     },
     {

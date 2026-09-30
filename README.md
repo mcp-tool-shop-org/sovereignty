@@ -67,6 +67,12 @@ No Python? The `npx` path downloads a prebuilt binary:
 npx @mcptoolshop/sovereignty tutorial
 ```
 
+Or run it in Docker, with your saves kept in a named volume:
+
+```bash
+docker run --rm -it -v sov-data:/data ghcr.io/mcp-tool-shop-org/sovereignty tutorial
+```
+
 ## A real session
 
 Once you and 2-3 friends are at the table, the console runs the round and you do the talking. A real session looks like this:
@@ -180,16 +186,59 @@ sov daemon stop
 
 Daemon binds to `127.0.0.1` on a random port; connection details (port + bearer token) live in `.sov/daemon.json`. One daemon per project root. See [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) for the full IPC contract.
 
+> The `[daemon]` extra needs **2.3.2 or later**. Wheels through 2.3.1 left the `sov_daemon` package out, so `sov daemon start` failed on a PyPI install.
+
+## Docker (optional, v2.3.2+)
+
+The image at `ghcr.io/mcp-tool-shop-org/sovereignty` carries the `sov` CLI and the daemon, for `linux/amd64` and `linux/arm64`. Everything the game remembers lives under `/data/.sov`: games, round proofs, `anchors.json`, the season record, the wallet seed, and the daemon handshake. Mount a volume on `/data` or the container forgets it all.
+
+Run the daemon with the bundled [`compose.yaml`](compose.yaml):
+
+```bash
+docker compose up -d                  # readonly audit daemon on 127.0.0.1:47823
+docker compose run --rm sov doctor    # any sov command, same saves
+docker compose run --rm sov play campfire_v1
+docker compose logs -f
+```
+
+The container defaults to a **readonly** daemon on **testnet**. The port is published to the host's loopback only (`127.0.0.1:47823`), and every request still needs the bearer token from `.sov/daemon.json`.
+
+| Setting | Default | What it does |
+|---|---|---|
+| `SOV_DATA` | `sov-data` (named volume) | Where `/data` comes from. Set it to a folder (`SOV_DATA=./`) to keep saves on the host. |
+| `SOV_DAEMON_PORT` | `47823` | Daemon port, inside and on the host. The two must match. |
+| `SOV_DAEMON_NETWORK` | `testnet` | `testnet`, `devnet`, or `mainnet`. |
+| `SOV_DAEMON_READONLY` | `1` | `0` enables the anchor endpoints. |
+| `SOV_DAEMON_TOKEN` | random per start | Fix it so clients stay connected across restarts. |
+| `SOV_DAEMON_LOG_FORMAT` | `human` | `json` for structured log lines. |
+
+**Attach the desktop app.** Point `SOV_DATA` at the project folder the app opens. The daemon writes its handshake there, and the app dials `127.0.0.1:47823` with the token from it:
+
+```bash
+SOV_DATA=./ docker compose up -d
+```
+
+While the container owns the daemon, manage it with `docker compose`, not `sov daemon start|stop|status` on the host. The host CLI can't see a container's process, so it reports the handshake as stale, and `sov daemon start` would clear it.
+
+**Anchor from the container.** Create a testnet wallet in the volume, then turn readonly off:
+
+```bash
+docker compose run --rm sov wallet
+SOV_DAEMON_READONLY=0 docker compose up -d
+```
+
+To keep the seed out of the volume, supply it as a Docker secret instead. The commented `secrets` block in `compose.yaml` shows how.
+
 ## Desktop app (optional, v2.1+)
 
 The Audit Viewer is the v2.1 desktop app — a Tauri shell (Rust + webview) that runs the audit viewer and a read-only game view on top of the daemon.
 
 ### Install (binaries)
 
-**v2.3.1** is the live line this tag publishes. GitHub Release **v2.3.0** did not ship wheels or desktop assets (`publish.yml` run 33118253060; empty assets). Do not pin `pip install …==2.3.0`. Filenames `sovereignty-app-2.3.0-*` still 404.
+**v2.3.2** is the current release. GitHub Release **v2.3.0** did not ship wheels or desktop assets, so do not pin `pip install …==2.3.0`.
 
-- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (this tag is **2.3.1**).
-- **Desktop app:** [GitHub Release v2.3.1](https://github.com/mcp-tool-shop-org/sovereignty/releases/tag/v2.3.1) when CI has attached platform files. If a platform job failed, run from source (below).
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (2.3.2 or later for the daemon).
+- **Desktop app:** [the latest GitHub Release](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) when CI has attached platform files. If a platform job failed, run from source (below).
 
 > **First-launch OS warning is expected** when attested binaries do ship. Those builds carry SLSA build-provenance attestation only — not OS-level Apple Developer ID / Authenticode signing. macOS: control-click the .app → Open. Windows SmartScreen: More info → Run anyway.
 
@@ -297,7 +346,11 @@ sovereignty/
   sov_engine/       # Pure game logic (models, rules, serialization, hashing)
   sov_transport/    # Ledger transport (offline + XRPL Testnet)
   sov_cli/          # Typer CLI (the "Round Console")
-  tests/            # Engine, transport, and CLI tests
+  sov_daemon/       # Localhost HTTP/SSE daemon for the desktop app
+  app/              # Tauri desktop app (Audit Viewer)
+  docker/           # Container entrypoint + healthcheck
+  site/             # Landing page + handbook
+  tests/            # Engine, transport, daemon, and CLI tests
   docs/             # Rules, cards, print-and-play, play-with-strangers
   assets/print/     # Print pack — markdown sources, rendered PDFs, JSX render sources
 ```
@@ -336,6 +389,7 @@ See [SECURITY.md](SECURITY.md).
 | Seed in git | `.sov/` gitignored; `sov wallet` warns |
 | Game state manipulation | Round proofs `envelope_hash` covers `game_id`, `round`, `ruleset`, `rng_seed`, `timestamp_utc`, `players`, and `state`. `sov verify` detects tampering across the full envelope. Proof format v1 is no longer supported in v2.0.0+. |
 | XRPL anchor spoofing | Proof hash anchored on-chain; mismatch detection in verify |
+| Container exposure | Daemon image publishes to host `127.0.0.1` only; bearer token on every request; readonly by default; runs as a non-root user with a read-only root filesystem and no capabilities |
 | Player name privacy | Player names ARE included in proofs (top-level `players` list and inside player snapshots). For private play, do not publish `proof.json` or share postcards. |
 
 ## License
