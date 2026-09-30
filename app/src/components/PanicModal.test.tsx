@@ -75,7 +75,9 @@ describe("PanicModal — shell-panic event consumer", () => {
       location: "src/commands.rs:128:9",
       timestamp_iso: "2026-05-02T12:34:56Z",
     };
-    panicHandler?.({ payload });
+    act(() => {
+      panicHandler?.({ payload });
+    });
     await waitFor(() => {
       expect(screen.getByText(/fatal error/i)).toBeTruthy();
     });
@@ -89,12 +91,14 @@ describe("PanicModal — shell-panic event consumer", () => {
     await waitFor(() => {
       expect(panicHandler).not.toBeNull();
     });
-    panicHandler?.({
-      payload: {
-        message: "boom",
-        location: "src/lib.rs:1:1",
-        timestamp_iso: "2026-05-02T12:00:00Z",
-      },
+    act(() => {
+      panicHandler?.({
+        payload: {
+          message: "boom",
+          location: "src/lib.rs:1:1",
+          timestamp_iso: "2026-05-02T12:00:00Z",
+        },
+      });
     });
     await waitFor(() => {
       expect(screen.getByText(/fatal error/i)).toBeTruthy();

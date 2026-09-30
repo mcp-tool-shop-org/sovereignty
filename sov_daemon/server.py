@@ -35,6 +35,9 @@ from starlette.routing import Route
 from sov_daemon.auth import BearerAuthMiddleware, cors_headers
 from sov_daemon.events import broadcast_shutdown, get_broadcaster, sse_stream
 from sov_engine.io_utils import (
+    _validate_game_id as _engine_validate_game_id,
+)
+from sov_engine.io_utils import (
     add_pending_anchor as engine_add_pending_anchor,
 )
 from sov_engine.io_utils import (
@@ -50,10 +53,10 @@ from sov_engine.io_utils import (
 # DAEMON-001: path-traversal allowlist at the HTTP boundary. Bearer token is
 # the daemon's auth gate, but URL params arriving past auth are still untrusted
 # input — every endpoint that accepts ``{game_id}`` or ``{round}`` must
-# validate the value against these regexes before using it to construct a
-# filesystem path. TODO: switch to ``sov_engine.io_utils._validate_game_id``
-# once the backend agent's BACKEND-001 fix lands the shared helper.
-_GAME_ID_PATTERN = re.compile(r"^s\d{1,19}$")
+# validate the value before using it to construct a filesystem path.  The
+# engine's ``_validate_game_id`` is the canonical check; the daemon layer adds
+# the HTTP-response wrapper.  ``_ROUND_PATTERN`` is daemon-local because the
+# engine never parses round keys.
 _ROUND_PATTERN = re.compile(r"^([1-9]|1[0-5]|FINAL)$")
 
 # IPC version — the daemon's wire-level contract version. Bumped only
@@ -141,20 +144,17 @@ def _sov_error_response(sov_err: Any, *, status_code: int) -> JSONResponse:
 def _validate_game_id(game_id: str) -> JSONResponse | None:
     """Reject malformed ``game_id`` values at the HTTP boundary.
 
-    Returns a 400 ``INVALID_GAME_ID`` response when the value doesn't match
-    the ``s<digits>`` allowlist; returns ``None`` (and lets the caller
-    proceed) on success. The pattern bound matches the engine's persistence
-    convention — game IDs are derived from the seed at creation time and
-    a daemon URL that escapes that shape (``..``, ``/etc/passwd``, NUL bytes,
-    URL-encoded traversal sequences) cannot reach a real save.
-
-    DAEMON-B-005: routes through ``daemon_invalid_game_id_error`` factory.
+    Delegates to ``sov_engine.io_utils._validate_game_id`` (BACKEND-001)
+    so the allowlist regex lives in one place.  Returns a 400
+    ``INVALID_GAME_ID`` response on failure; returns ``None`` on success.
     """
-    if _GAME_ID_PATTERN.match(game_id):
-        return None
-    from sov_cli.errors import daemon_invalid_game_id_error
+    try:
+        _engine_validate_game_id(game_id)
+    except ValueError:
+        from sov_cli.errors import daemon_invalid_game_id_error
 
-    return _sov_error_response(daemon_invalid_game_id_error(game_id), status_code=400)
+        return _sov_error_response(daemon_invalid_game_id_error(game_id), status_code=400)
+    return None
 
 
 def _validate_round_key(round_key: str) -> JSONResponse | None:

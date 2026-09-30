@@ -23,19 +23,19 @@ describe("ProofMeta[] wire-shape regression (WEB-UI-B-004)", () => {
       round: 1,
       envelope_hash: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
       final: false,
-      path: "/Users/op/.sov/games/s42/proofs/round_001.proof.json",
+      path: "/home/player/project/.sov/games/s42/proofs/round_001.proof.json",
     },
     {
       round: 2,
       envelope_hash: "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
       final: false,
-      path: "/Users/op/.sov/games/s42/proofs/round_002.proof.json",
+      path: "/home/player/project/.sov/games/s42/proofs/round_002.proof.json",
     },
     {
       round: "FINAL",
       envelope_hash: "c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4",
       final: true,
-      path: "/Users/op/.sov/games/s42/proofs/FINAL.proof.json",
+      path: "/home/player/project/.sov/games/s42/proofs/FINAL.proof.json",
     },
   ];
 

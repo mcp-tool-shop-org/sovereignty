@@ -199,12 +199,10 @@ jobs:
       - name: Install frontend deps
         run: npm --prefix app ci
 
-      # Sigstore signature verification on the resolved lockfile. WARN-ONLY at
-      # v2.1 — many legitimate npm packages don't ship Sigstore signatures yet.
-      # Tighten to fail-on-error at v2.2 once a one-cycle coverage baseline is
-      # known (which packages support it, which don't). CI-TOOLING-B-003.
-      - name: npm audit signatures (advisory)
-        continue-on-error: true
+      # Sigstore signature verification on the resolved lockfile.
+      # Baseline established: 184 verified registry signatures, 53 attestations.
+      # CI-TOOLING-B-003: promoted from advisory to hard-gate at v2.3.2.
+      - name: npm audit signatures
         working-directory: app
         run: npm audit signatures
 

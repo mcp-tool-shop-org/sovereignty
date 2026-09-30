@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -216,8 +216,10 @@ describe("Audit /audit route", () => {
       expect(screen.getByText("s42")).toBeTruthy();
     });
     const details = container.querySelector("details") as HTMLDetailsElement;
-    details.open = true;
-    fireEvent(details, new Event("toggle"));
+    act(() => {
+      details.open = true;
+      fireEvent(details, new Event("toggle"));
+    });
     await waitFor(() => {
       expect(screen.getByLabelText("anchor status: unreachable")).toBeTruthy();
     });
@@ -255,8 +257,10 @@ describe("Audit /audit route", () => {
       expect(screen.getByText("s42")).toBeTruthy();
     });
     const details = container.querySelector("details") as HTMLDetailsElement;
-    details.open = true;
-    fireEvent(details, new Event("toggle"));
+    act(() => {
+      details.open = true;
+      fireEvent(details, new Event("toggle"));
+    });
 
     await waitFor(() => {
       expect(screen.getByText(/Verify all rounds/i)).toBeTruthy();

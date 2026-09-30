@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the lib/invoke module — Settings reads daemon_status to derive started_by_shell.
@@ -230,7 +230,9 @@ describe("Settings — network switcher guardrails (spec §4)", () => {
     fireEvent.change(select, { target: { value: "devnet" } });
     // WEB-UI-C-018: button copy is "Switch network" (was "Apply (restarts daemon)").
     const apply = screen.getByRole("button", { name: /Switch network/i }) as HTMLButtonElement;
-    fireEvent.click(apply);
+    await act(async () => {
+      fireEvent.click(apply);
+    });
 
     // No modal should open for testnet→devnet.
     expect(showModalSpy).not.toHaveBeenCalled();

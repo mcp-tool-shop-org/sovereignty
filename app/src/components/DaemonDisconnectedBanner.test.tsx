@@ -76,7 +76,7 @@ describe("DaemonDisconnectedBanner (WEB-UI-C-004)", () => {
     expect(screen.getByRole("button", { name: /Reconnect/i })).toBeTruthy();
   });
 
-  it("dismisses on Reconnect click", () => {
+  it("dismisses on Reconnect click", async () => {
     render(
       <DaemonProvider autoStart={false}>
         <DaemonDisconnectedBanner />
@@ -86,13 +86,15 @@ describe("DaemonDisconnectedBanner (WEB-UI-C-004)", () => {
       window.dispatchEvent(new CustomEvent("daemonConnectionLost"));
     });
     expect(screen.getByRole("alert")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Reconnect/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Reconnect/i }));
+    });
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
   // ── Stage 9-D Theme 3 (WEB-UI-D-008/D-009/D-010) ──────────────────────
 
-  it("WEB-UI-D-009: dismisses on explicit × close button", () => {
+  it("WEB-UI-D-009: dismisses on explicit × close button", async () => {
     render(
       <DaemonProvider autoStart={false}>
         <DaemonDisconnectedBanner />
@@ -102,7 +104,9 @@ describe("DaemonDisconnectedBanner (WEB-UI-C-004)", () => {
       window.dispatchEvent(new CustomEvent("daemonConnectionLost"));
     });
     expect(screen.getByRole("alert")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: /Dismiss banner/i }));
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Dismiss banner/i }));
+    });
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
@@ -153,14 +157,18 @@ describe("DaemonDisconnectedBanner (WEB-UI-C-004)", () => {
     expect(screen.getByRole("alert")).toBeTruthy();
 
     mocks.daemonStatus.mockResolvedValue({ state: "none" });
-    fireEvent.click(screen.getByTestId("refresh"));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("refresh"));
+    });
     await waitFor(() => {
       expect(screen.getByTestId("status").textContent).toBe("none");
     });
     expect(screen.getByRole("alert")).toBeTruthy();
 
     mocks.daemonStatus.mockResolvedValue({ state: "running", config: cfg, started_by_shell: true });
-    fireEvent.click(screen.getByTestId("refresh"));
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("refresh"));
+    });
     await waitFor(() => {
       expect(screen.getByTestId("status").textContent).toBe("running");
     });
