@@ -1500,7 +1500,7 @@
           "path": "docs/cli-json-output.md"
         },
         {
-          "hash": "6f21982c2e72f95f5c559c195d94287e01f28ba398f78530e4a5db00eee6d74d",
+          "hash": "05b8836029fe026dc9e4b87f712e0ed898f16742cdc9d70259f8a05c9c1a6ece",
           "path": "docs/handoffs/coverage-90.md"
         },
         {
@@ -7824,7 +7824,7 @@
       "name": "sov_cli",
       "origin": "authored",
       "role": "code",
-      "testedBy": 42,
+      "testedBy": 43,
       "unresolvedSites": 1
     },
     {
@@ -10460,7 +10460,7 @@
       "name": "sov_engine",
       "origin": "authored",
       "role": "code",
-      "testedBy": 58,
+      "testedBy": 59,
       "unresolvedSites": 0
     },
     {
@@ -10560,7 +10560,7 @@
       "name": "sov_transport",
       "origin": "authored",
       "role": "code",
-      "testedBy": 52,
+      "testedBy": 53,
       "unresolvedSites": 18
     },
     {
@@ -11916,6 +11916,94 @@
         },
         {
           "exports": [
+            "broken_keyring",
+            "caplog",
+            "in_tmp",
+            "memory_keyring",
+            "proofs_path",
+            "test_add_pending_quarantines_malformed_file_preserving_bytes",
+            "test_atomic_write_chmod_failure_is_best_effort",
+            "test_atomic_write_cleans_tmp_when_fsync_fails",
+            "test_atomic_write_replace_failure_keeps_target_and_next_write_recovers",
+            "test_bare_dict_anchors_migrate_to_wrapped_on_read",
+            "test_bare_dict_migration_write_failure_still_returns_entries",
+            "test_breadcrumb_read_rejects_bad_content",
+            "test_breadcrumb_roundtrip_and_clear",
+            "test_breadcrumb_write_failure_is_swallowed",
+            "test_canonical_json_is_key_order_independent",
+            "test_chain_lookup_failed_error_retryable_with_and_without_detail",
+            "test_clear_pending_drops_only_named_rows_and_ignores_unknown",
+            "test_clear_pending_on_empty_wrapper_rewrites_clean_wrapper",
+            "test_clear_pending_on_malformed_file_quarantines_and_resets",
+            "test_clear_when_nothing_stored_is_a_quiet_noop",
+            "test_compute_envelope_hash_excludes_the_hash_field_itself",
+            "test_get_active_game_id_poisoned_pointer_is_none",
+            "test_get_active_game_id_unreadable_pointer_is_none",
+            "test_get_treats_blank_entry_as_missing",
+            "test_insufficient_resources_error_empty_maps_say_nothing",
+            "test_insufficient_resources_error_formats_needs_and_haves",
+            "test_keyring_package_missing_paths",
+            "test_keyring_unavailable_error_carries_detail_and_never_a_seed",
+            "test_keyring_unavailable_paths",
+            "test_list_saved_games_no_games_dir_is_empty",
+            "test_list_saved_games_skips_stray_files_junk_dirs_and_bad_state",
+            "test_load_proof_rejects_v1_and_missing_version",
+            "test_load_proof_structural_errors",
+            "test_load_proof_unreadable_and_non_object",
+            "test_locked_pending_index_posix_takes_and_releases_flock",
+            "test_locked_pending_index_releases_lock_when_body_raises",
+            "test_locked_pending_index_windows_is_a_lockless_passthrough",
+            "test_mainnet_faucet_rejected_error",
+            "test_migrate_leaves_unusable_v1_state_alone",
+            "test_migrate_partial_failure_then_recovery_completes",
+            "test_pending_read_filters_ill_typed_rows",
+            "test_pending_read_missing_file_is_tagged_missing",
+            "test_pending_read_treats_bad_documents_as_empty",
+            "test_proof_anchor_status_final_proof_uses_final_key",
+            "test_proof_anchor_status_three_states",
+            "test_quarantine_missing_file_returns_none",
+            "test_quarantine_rename_failure_returns_none",
+            "test_quarantine_success_names_sibling_with_timestamp",
+            "test_read_anchors_absent_and_unparseable",
+            "test_read_anchors_file_missing_and_garbage",
+            "test_read_anchors_file_shapes_without_migrating",
+            "test_read_anchors_shapes",
+            "test_read_versioned_runs_registered_migration_and_warns",
+            "test_record_anchors_and_clear_pending",
+            "test_record_anchors_merges_and_keeps_earlier_rows",
+            "test_recover_partial_migration_failure_retains_breadcrumb",
+            "test_recover_rejects_malformed_breadcrumb_and_clears_it",
+            "test_render_proof_path_falls_back_when_relative_to_fails",
+            "test_render_proof_path_falls_back_when_resolve_fails",
+            "test_render_proof_path_uses_short_form_under_dot_sov",
+            "test_resolve_mainnet_falls_back_to_file_when_keyring_empty",
+            "test_resolve_seed_none_when_every_source_is_empty",
+            "test_resolve_seed_skips_unreadable_and_blank_files",
+            "test_round_key_from_proof",
+            "test_seed_set_get_clear_roundtrip",
+            "test_set_rejects_empty_seed",
+            "test_state_corrupt_error_mentions_leftover_v1_layout",
+            "test_state_corrupt_error_plain",
+            "test_state_version_mismatch_error_names_supported_version",
+            "test_state_version_mismatch_error_survives_missing_main",
+            "test_upgrade_rep_error",
+            "test_user_message_renders_code_message_and_hint",
+            "test_v1_layout_note_swallows_oserror",
+            "test_verify_proof_local_true_for_intact_and_false_for_tampered"
+          ],
+          "hash": "42454e255c786fe646009dd607189e57400645bf4c3251ca256f2209db7332b3",
+          "importsFiles": [
+            "sov_cli/__init__.py",
+            "sov_engine/__init__.py",
+            "sov_engine/io_utils.py",
+            "sov_engine/serialize.py",
+            "sov_engine/wallet_seed.py",
+            "sov_transport/xrpl_internals.py"
+          ],
+          "path": "tests/test_persistence_coverage.py"
+        },
+        {
+          "exports": [
             "test_anchors_json_bare_dict_migrates_to_wrapped",
             "test_anchors_json_unknown_schema_version_treated_as_empty",
             "test_anchors_json_wrapped_form_round_trips",
@@ -12881,7 +12969,7 @@
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 80
+          "files": 81
         }
       ],
       "readers": [],
@@ -14005,8 +14093,8 @@
     }
   ],
   "generatedFrom": {
-    "commit": "9fb4a780d57c47b130c872444b85a0e59df3786e",
-    "tracked": 423
+    "commit": "6a55aa90b18bf118d0724ab9f5adb33c5e1cf4f1",
+    "tracked": 424
   },
   "landings": [
     {
@@ -15061,7 +15149,7 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 117,
+  "testFiles": 118,
   "unassigned": [],
   "unseen": [
     {
