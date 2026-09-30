@@ -90,21 +90,35 @@ jobs:
         working-directory: npm
         run: npm publish --provenance --access public
 
-      # Registry reads can lag a fresh publish by a couple of minutes.
+      # Two waits, kept apart so a failure says which one. Registry reads can
+      # lag a fresh publish by several minutes; the v2.3.4 run gave up after
+      # 5 min with stderr discarded, so its real cause was lost (the package
+      # itself was fine). Wait for the registry first, then run npx and show
+      # its stderr on failure.
       - name: Smoke test npx
         run: |
           VERSION="${RELEASE_TAG#v}"
+          PKG="@mcptoolshop/sovereignty@${VERSION}"
           cd "$(mktemp -d)"
-          for attempt in $(seq 1 20); do
-            if OUT=$(npx --yes "@mcptoolshop/sovereignty@${VERSION}" self-check --json 2>/dev/null); then
-              STATUS=$(jq -r .status <<<"$OUT")
+          for attempt in $(seq 1 40); do
+            if [ "$(npm view "$PKG" version 2>/dev/null)" = "$VERSION" ]; then
+              echo "registry serves $PKG (attempt $attempt)"
+              break
+            fi
+            [ "$attempt" = 40 ] && { echo "::error::registry never served $PKG after 10 min"; exit 1; }
+            sleep 15
+          done
+          for attempt in 1 2 3; do
+            if npx --yes "$PKG" self-check --json > out.json 2> err.txt; then
+              STATUS=$(jq -r .status out.json)
               echo "self-check status: $STATUS"
               case "$STATUS" in ok|warn) exit 0 ;; esac
               echo "::error::npx self-check reported $STATUS"
               exit 1
             fi
-            echo "attempt $attempt: package not readable yet"
-            sleep 15
+            echo "npx attempt $attempt failed:"
+            tail -20 err.txt
+            sleep 20
           done
-          echo "::error::npx @mcptoolshop/sovereignty@${VERSION} never ran"
+          echo "::error::npx $PKG failed three times (stderr above)"
           exit 1

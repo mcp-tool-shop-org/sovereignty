@@ -141,7 +141,7 @@
           "path": ".github/workflows/publish.yml"
         },
         {
-          "hash": "ff433e9a0b0eb119993523bb15de66a870b80bc8bf309a6e7332752724948d7b",
+          "hash": "3c3d533875c94fb9604625f5a4ce8bc4d7cd66713026e21da8ceb01ba69c2df7",
           "path": ".github/workflows/release.yml"
         }
       ],
@@ -13917,7 +13917,7 @@
         {
           "job": "publish",
           "step": "Smoke test npx",
-          "text": "VERSION=\"${RELEASE_TAG#v}\"\ncd \"$(mktemp -d)\"\nfor attempt in $(seq 1 20); do\n  if OUT=$(npx --yes \"@mcptoolshop/sovereignty@${VERSION}\" self-check --json 2>/dev/null); then\n    STATUS=$(jq -r .status <<<\"$OUT\")\n    echo \"self-check status: $STATUS\"\n    case \"$STATUS\" in ok|warn) exit 0 ;; esac\n    echo \"::error::npx self-check reported $STATUS\"\n    exit 1\n  fi\n  echo \"attempt $attempt: package not readable yet\"\n  sleep 15\ndone\necho \"::error::npx @mcptoolshop/sovereignty@${VERSION} never ran\"\nexit 1\n"
+          "text": "VERSION=\"${RELEASE_TAG#v}\"\nPKG=\"@mcptoolshop/sovereignty@${VERSION}\"\ncd \"$(mktemp -d)\"\nfor attempt in $(seq 1 40); do\n  if [ \"$(npm view \"$PKG\" version 2>/dev/null)\" = \"$VERSION\" ]; then\n    echo \"registry serves $PKG (attempt $attempt)\"\n    break\n  fi\n  [ \"$attempt\" = 40 ] && { echo \"::error::registry never served $PKG after 10 min\"; exit 1; }\n  sleep 15\ndone\nfor attempt in 1 2 3; do\n  if npx --yes \"$PKG\" self-check --json > out.json 2> err.txt; then\n    STATUS=$(jq -r .status out.json)\n    echo \"self-check status: $STATUS\"\n    case \"$STATUS\" in ok|warn) exit 0 ;; esac\n    echo \"::error::npx self-check reported $STATUS\"\n    exit 1\n  fi\n  echo \"npx attempt $attempt failed:\"\n  tail -20 err.txt\n  sleep 20\ndone\necho \"::error::npx $PKG failed three times (stderr above)\"\nexit 1\n"
         }
       ],
       "elsewhere": [],
@@ -14180,7 +14180,7 @@
     }
   ],
   "generatedFrom": {
-    "commit": "7d5096a4f89ce3bac9f5ccf861b71d3b80876bf6",
+    "commit": "bf9609cb93b0e46f9c20e40bca9d89f0bad1dace",
     "tracked": 426
   },
   "landings": [
