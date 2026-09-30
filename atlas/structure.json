@@ -1500,7 +1500,7 @@
           "path": "docs/cli-json-output.md"
         },
         {
-          "hash": "af01ceafafa17c34cccd1705c7d2afd8aa289251a4f1f6cd66cd83a29a305b34",
+          "hash": "404f0482ab1e2940d371600de42fa285ad4114b2f275722db729b7d2cd039a4d",
           "path": "docs/handoffs/coverage-90.md"
         },
         {
@@ -7824,7 +7824,7 @@
       "name": "sov_cli",
       "origin": "authored",
       "role": "code",
-      "testedBy": 41,
+      "testedBy": 42,
       "unresolvedSites": 1
     },
     {
@@ -8251,7 +8251,7 @@
       "name": "sov_daemon",
       "origin": "authored",
       "role": "code",
-      "testedBy": 37,
+      "testedBy": 38,
       "unresolvedSites": 5
     },
     {
@@ -10460,7 +10460,7 @@
       "name": "sov_engine",
       "origin": "authored",
       "role": "code",
-      "testedBy": 57,
+      "testedBy": 58,
       "unresolvedSites": 0
     },
     {
@@ -10560,7 +10560,7 @@
       "name": "sov_transport",
       "origin": "authored",
       "role": "code",
-      "testedBy": 50,
+      "testedBy": 51,
       "unresolvedSites": 18
     },
     {
@@ -11405,6 +11405,109 @@
             "sov_transport/xrpl_internals.py"
           ],
           "path": "tests/test_daemon_seed_leak.py"
+        },
+        {
+          "exports": [
+            "test_anchor_checkpoint_endpoint_sets_checkpoint_flag",
+            "test_anchor_endpoint_coerces_legacy_singular_result_shape",
+            "test_anchor_endpoint_invalid_network_is_500",
+            "test_anchor_endpoint_missing_xrpl_is_500",
+            "test_anchor_endpoint_no_seed_is_400_config_no_wallet",
+            "test_anchor_endpoint_submit_failure_is_502_anchor_failed",
+            "test_anchor_endpoint_success_records_broadcasts_and_flags_checkpoint",
+            "test_anchor_endpoints_reject_bad_game_id_unknown_game_and_readonly",
+            "test_anchor_endpoints_with_nothing_pending_return_empty_success",
+            "test_anchor_status_errors_and_unreadable_proof_degrades",
+            "test_anchor_status_recorded_txid_wins_over_pending_and_heals",
+            "test_async_xrpl_client_builds_json_rpc_client_from_url",
+            "test_async_xrpl_client_prefers_transport_client",
+            "test_async_xrpl_client_uses_real_transport_url",
+            "test_async_xrpl_client_without_url_raises",
+            "test_balance_check_account_not_found_is_underfunded_zero",
+            "test_balance_check_fetches_reserve_when_not_given",
+            "test_balance_check_invalid_seed_propagates",
+            "test_balance_check_other_failures_propagate_not_insolvency",
+            "test_balance_check_passes_at_exact_requirement",
+            "test_balance_check_underfunded_carries_drop_counts",
+            "test_broadcast_drops_and_logs_when_a_queue_is_full",
+            "test_build_app_requires_config_or_kwargs",
+            "test_chain_cache_refetches_after_ttl",
+            "test_daemon_version_falls_back_when_package_has_no_version",
+            "test_emit_pending_added_reaches_subscribers",
+            "test_fetch_reserve_base_accepts_response_without_is_successful",
+            "test_fetch_reserve_base_falls_back_when_field_missing",
+            "test_fetch_reserve_base_reads_server_state",
+            "test_fetch_reserve_base_unsuccessful_response_raises",
+            "test_flush_chunks_at_eight_memos_and_commits_each_chunk",
+            "test_flush_empty_txid_list_is_an_error",
+            "test_flush_first_chunk_failure_does_not_log_partial",
+            "test_flush_partial_failure_keeps_committed_prefix_and_logs",
+            "test_flush_testnet_skips_balance_preflight",
+            "test_flush_with_nothing_pending_is_empty_noop",
+            "test_game_detail_returns_404_for_unreadable_state",
+            "test_games_handler_empty_when_no_games_dir",
+            "test_games_handler_fallback_scan_surfaces_hand_rolled_states",
+            "test_games_handler_lists_engine_summaries",
+            "test_get_chain_cache_is_created_once_per_app",
+            "test_get_verify_transport_builds_xrpl_transport_for_network",
+            "test_heal_survives_clear_failure",
+            "test_health_reports_pending_summary_and_skips_noise",
+            "test_health_survives_games_dir_failure",
+            "test_json_formatter_keeps_explicit_exception_fields",
+            "test_json_formatter_surfaces_exception_type_and_detail_from_exc_info",
+            "test_mainnet_anchor_funded_wallet_submits",
+            "test_mainnet_anchor_underfunded_is_402_and_never_submits",
+            "test_mainnet_anchor_unknown_account_is_402_with_zero_balance",
+            "test_mainnet_preflight_infrastructure_failures_are_502_not_402",
+            "test_middleware_content_length_precheck",
+            "test_middleware_ignores_non_http_scopes",
+            "test_middleware_passes_disconnect_through",
+            "test_middleware_streaming_413_through_a_real_starlette_route",
+            "test_middleware_streaming_exactly_at_cap_passes_through",
+            "test_middleware_streaming_over_cap_returns_413",
+            "test_module_level_emitters_are_noops_without_an_app_then_deliver",
+            "test_pending_anchors_unknown_game_404_and_sorted_entries",
+            "test_poll_loop_survives_iteration_failure_and_cancels_cleanly",
+            "test_poll_once_seeds_then_reports_changes_and_new_games",
+            "test_proof_detail_not_found_and_unreadable",
+            "test_proof_path_final_falls_back_to_content_scan",
+            "test_proof_path_final_matches_literal_names",
+            "test_proof_path_final_none_when_no_final_proof",
+            "test_proof_path_never_escapes_for_non_numeric_round_keys",
+            "test_proof_path_none_when_proofs_dir_missing",
+            "test_proof_path_numeric_round_falls_back_to_content_scan",
+            "test_proof_path_numeric_round_matches_each_naming_convention",
+            "test_proof_routes_never_route_encoded_slash_round_tokens",
+            "test_proof_routes_reject_hostile_round_tokens",
+            "test_proofs_list_skips_anchors_malformed_and_non_dict_files",
+            "test_proofs_list_unknown_game_is_404_and_empty_game_is_empty_list",
+            "test_read_state_malformed_json_is_none_and_logged",
+            "test_read_state_missing_file_is_none",
+            "test_read_state_non_dict_payload_is_none",
+            "test_read_state_returns_dict_for_valid_state",
+            "test_read_state_unsupported_schema_version_is_none_and_logged",
+            "test_required_drops_for_batch_is_reserve_plus_per_memo_fee",
+            "test_reserve_base_parser",
+            "test_round_sort_key_orders_numeric_then_final_then_junk",
+            "test_sse_stream_emits_ready_then_ends_after_shutdown_frame",
+            "test_verify_round_error_branches",
+            "test_verify_round_normalises_transport_verdicts",
+            "test_verify_round_transport_exception_becomes_lookup_failed"
+          ],
+          "hash": "4ceebcc32e59f11a4e0a3d7042914d63e255ff011377d1da54a8860a089ef9c9",
+          "importsFiles": [
+            "sov_daemon/__init__.py",
+            "sov_daemon/events.py",
+            "sov_daemon/log_fields.py",
+            "sov_daemon/server.py",
+            "sov_engine/io_utils.py",
+            "sov_engine/proof.py",
+            "sov_engine/schemas.py",
+            "sov_transport/xrpl.py",
+            "sov_transport/xrpl_async.py",
+            "sov_transport/xrpl_internals.py"
+          ],
+          "path": "tests/test_daemon_server_coverage.py"
         },
         {
           "exports": [
@@ -12487,7 +12590,7 @@
       "origin": "authored",
       "role": "test",
       "testedBy": 0,
-      "unresolvedSites": 1
+      "unresolvedSites": 12
     }
   ],
   "doors": [
@@ -12698,7 +12801,7 @@
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 78
+          "files": 79
         }
       ],
       "readers": [],
@@ -13822,8 +13925,8 @@
     }
   ],
   "generatedFrom": {
-    "commit": "84d51cd976f1eb3d5e878ab20e51eb1a34352003",
-    "tracked": 421
+    "commit": "ae1eb42ff3d713ede0f22f9fdc335383374aee99",
+    "tracked": 422
   },
   "landings": [
     {
@@ -14878,7 +14981,7 @@
   "overlaps": [],
   "submodules": [],
   "symlinks": [],
-  "testFiles": 115,
+  "testFiles": 116,
   "unassigned": [],
   "unseen": [
     {

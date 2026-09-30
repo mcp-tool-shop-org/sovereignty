@@ -1,18 +1,18 @@
 # sovereignty: how it works
 
-Mapped at 2026-09-30 from commit 84d51cd.
+Mapped at 2026-09-30 from commit ae1eb42.
 
 ## What this is
 
-14 parts, mostly Python (117 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
+14 parts, mostly Python (118 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
 
-## What changed since 2026-09-30 (65453b5)
+## What changed since 2026-09-30 (84d51cd)
 
 Nothing structural changed since 2026-09-30; 1 file added and 1 changed content.
 
 ## What comes in
 
-1. **CI.** On a pull request; on a push touching 12 paths; on a schedule (`0 14 * * *`); or by hand. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 142 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
+1. **CI.** On a pull request; on a push touching 12 paths; on a schedule (`0 14 * * *`); or by hand. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 143 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
 2. **Container image.** When a release is published; or by hand. Runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py; checks LICENSE, README.md, docker/healthcheck.py and 34 more.
 3. **Release.** When a release is published; or by hand. Runs .github/scripts/generate-latest-json.py and .github/scripts/stage-tauri-artifacts.sh; builds sov_cli/__main__.py; checks sov_cli/, sov_daemon/, sov_engine/ and 7 more.
 4. **Deploy site to GitHub Pages.** On a pull request touching 2 paths; on a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
@@ -22,7 +22,7 @@ Nothing structural changed since 2026-09-30; 1 file added and 1 changed content.
 
 ## What happens through CI
 
-1. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 142 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
+1. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 143 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
 2. It writes to .sov/games/ and app/src-tauri/gen/schemas, which are not tracked.
 
 ## Who reads the results
@@ -93,7 +93,7 @@ Read those in order to follow one pull request end to end.
 
 ## What this map cannot see
 
-- 28 import sites could not be resolved.
+- 39 import sites could not be resolved.
 - 3 writes and 49 reads use paths built at run time and are not named here.
 - 2 writes go to places this repository does not track, so they are not listed as generated.
 - 7 reads go to a path their caller passes, not to this repository.
