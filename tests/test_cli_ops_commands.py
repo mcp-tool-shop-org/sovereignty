@@ -604,17 +604,39 @@ def test_doctor_warns_when_season_games_is_not_a_list(cwd: Path) -> None:
     assert field["message"] == "Delete `.sov/season.json` to start fresh."
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="BUG: doctor never warns on malformed season.json: _read_season_document "
-    "swallows the JSON error and returns an empty skeleton, so the branch at "
-    "main.py:914-918 reports 'Season active (0 games played)' instead of the warning.",
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "{not json",  # unparseable
+        "[]",  # wrong top-level type
+        '{"schema_version": 1, "season": []}',  # wrapped, season not an object
+        '{"games": {}, "standings": {}}',  # games not a list
+        '{"standings": {}}',  # games missing
+    ],
 )
-def test_doctor_warns_when_season_json_is_malformed(cwd: Path) -> None:
+def test_doctor_warns_when_season_json_is_malformed(cwd: Path, raw: str) -> None:
+    # Regression: the tolerant reader turned a corrupt file into an empty
+    # season, so doctor said "Season active (0 games played)" (fixed 2.3.4).
     (cwd / ".sov").mkdir()
-    (cwd / ".sov" / "season.json").write_text("{not json", encoding="utf-8")
+    (cwd / ".sov" / "season.json").write_text(raw, encoding="utf-8")
     payload = _doctor_payload()
     assert _has_field(payload, "Season file exists but can't parse")
+    assert not _has_field(payload, "Season active")
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        '{"games": [], "standings": {}}',
+        '{"schema_version": 1, "season": {"games": [{"id": "s1"}], "standings": {}}}',
+    ],
+)
+def test_doctor_accepts_valid_season_shapes(cwd: Path, raw: str) -> None:
+    (cwd / ".sov").mkdir()
+    (cwd / ".sov" / "season.json").write_text(raw, encoding="utf-8")
+    payload = _doctor_payload()
+    assert _has_field(payload, "Season active")
+    assert not _has_field(payload, "Season file exists but can't parse")
 
 
 def test_doctor_detects_wallet_file(cwd: Path) -> None:

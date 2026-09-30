@@ -1500,7 +1500,7 @@
           "path": "docs/cli-json-output.md"
         },
         {
-          "hash": "72aad6b0ca63c7994ddec9c7388fbd41188e42259e86036a81459246bbf808f7",
+          "hash": "1b581cd247c73f50247978dd004dfaa5099957d945f62589852b717348f93936",
           "path": "docs/handoffs/coverage-90.md"
         },
         {
@@ -1708,7 +1708,7 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "82ed1a9a30eb87296616282041a9cedff739de4461c20750f7d37a27514ac781",
+          "hash": "f48c034da3cd967416b61f68b7491ac1336208a9e969c3974bcce9d79146d9d6",
           "path": "CHANGELOG.md"
         },
         {
@@ -2120,7 +2120,7 @@
             "vote",
             "wallet"
           ],
-          "hash": "12f2a05b625d062ef36ea7114616583da6b0cbc703b3a3d60aa8dc543010df05",
+          "hash": "6f1df474fe2b9260f9b785c8c0d980b6b5ba0d586f655f5f03963977e2a56b28",
           "importsFiles": [
             "sov_cli/errors.py",
             "sov_daemon/__init__.py",
@@ -3061,35 +3061,35 @@
             {
               "calls": [
                 {
-                  "line": 1327,
+                  "line": 1326,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1330,
+                  "line": 1329,
                   "name": "read_versioned",
                   "target": {
                     "file": "sov_engine/schemas.py"
                   }
                 },
                 {
-                  "line": 1339,
+                  "line": 1338,
                   "name": "pending_anchors_path",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1342,
+                  "line": 1341,
                   "name": "read_versioned",
                   "target": {
                     "file": "sov_engine/schemas.py"
                   }
                 },
                 {
-                  "line": 1356,
+                  "line": 1355,
                   "name": "anchors_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3104,56 +3104,56 @@
             {
               "calls": [
                 {
-                  "line": 1558,
+                  "line": 1557,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1559,
+                  "line": 1558,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1561,
+                  "line": 1560,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1564,
+                  "line": 1563,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1585,
+                  "line": 1584,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1586,
+                  "line": 1585,
                   "name": "game_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1593,
+                  "line": 1592,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1594,
+                  "line": 1593,
                   "name": "proofs_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3168,63 +3168,63 @@
             {
               "calls": [
                 {
-                  "line": 1667,
+                  "line": 1666,
                   "name": "share_code_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 1675,
+                  "line": 1674,
                   "name": "player_count_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 1681,
+                  "line": 1680,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1683,
+                  "line": 1682,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1689,
+                  "line": 1688,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
                   }
                 },
                 {
-                  "line": 1693,
+                  "line": 1692,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
                   }
                 },
                 {
-                  "line": 1697,
+                  "line": 1696,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
                   }
                 },
                 {
-                  "line": 1701,
+                  "line": 1700,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 3767,
+                  "line": 3786,
                   "name": "Deck",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3232,27 +3232,27 @@
                   "via": "_apply_recipe"
                 },
                 {
-                  "line": 3781,
+                  "line": 3800,
                   "name": "add_log",
                   "target": null,
                   "via": "_apply_recipe"
                 },
                 {
-                  "line": 1712,
+                  "line": 1711,
                   "name": "game_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1713,
+                  "line": 1712,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1713,
+                  "line": 1712,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3299,14 +3299,14 @@
                   "via": "_clear_undo"
                 },
                 {
-                  "line": 1716,
+                  "line": 1715,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 3889,
+                  "line": 3908,
                   "name": "market_status",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -3322,7 +3322,7 @@
             {
               "calls": [
                 {
-                  "line": 1667,
+                  "line": 1666,
                   "name": "share_code_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3330,7 +3330,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1675,
+                  "line": 1674,
                   "name": "player_count_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -3338,7 +3338,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1681,
+                  "line": 1680,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3346,7 +3346,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1683,
+                  "line": 1682,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3354,7 +3354,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1689,
+                  "line": 1688,
                   "name": "new_treaty_table_game",
                   "target": {
                     "file": "sov_engine/rules/treaty_table.py"
@@ -3362,7 +3362,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1693,
+                  "line": 1692,
                   "name": "new_town_hall_game",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -3370,7 +3370,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1697,
+                  "line": 1696,
                   "name": "new_market_day_game",
                   "target": {
                     "file": "sov_engine/rules/market_day.py"
@@ -3378,7 +3378,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1701,
+                  "line": 1700,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
@@ -3386,7 +3386,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 3767,
+                  "line": 3786,
                   "name": "Deck",
                   "target": {
                     "file": "sov_engine/models.py"
@@ -3394,13 +3394,13 @@
                   "via": "_apply_recipe"
                 },
                 {
-                  "line": 3781,
+                  "line": 3800,
                   "name": "add_log",
                   "target": null,
                   "via": "_apply_recipe"
                 },
                 {
-                  "line": 1712,
+                  "line": 1711,
                   "name": "game_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3408,7 +3408,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1713,
+                  "line": 1712,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3416,7 +3416,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 1713,
+                  "line": 1712,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3464,7 +3464,7 @@
                   "via": "_clear_undo"
                 },
                 {
-                  "line": 1716,
+                  "line": 1715,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -3472,7 +3472,7 @@
                   "via": "new"
                 },
                 {
-                  "line": 3889,
+                  "line": 3908,
                   "name": "market_status",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -3488,84 +3488,84 @@
             {
               "calls": [
                 {
-                  "line": 1789,
+                  "line": 1788,
                   "name": "new_game",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1790,
+                  "line": 1789,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1792,
+                  "line": 1791,
                   "name": "game_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1793,
+                  "line": 1792,
                   "name": "rng_seed_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1793,
+                  "line": 1792,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1795,
+                  "line": 1794,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 1803,
+                  "line": 1802,
                   "name": "roll_and_move",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1807,
+                  "line": 1806,
                   "name": "resolve_space",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1814,
+                  "line": 1813,
                   "name": "make_promise",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1823,
+                  "line": 1822,
                   "name": "roll_and_move",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1826,
+                  "line": 1825,
                   "name": "resolve_space",
                   "target": {
                     "file": "sov_engine/rules/campfire.py"
                   }
                 },
                 {
-                  "line": 1835,
+                  "line": 1834,
                   "name": "make_round_proof",
                   "target": {
                     "file": "sov_engine/hashing.py"
@@ -4026,7 +4026,7 @@
             {
               "calls": [
                 {
-                  "line": 1995,
+                  "line": 1994,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4041,7 +4041,7 @@
                   "via": "_has_any_saved_game"
                 },
                 {
-                  "line": 1997,
+                  "line": 1996,
                   "name": "no_game_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4107,28 +4107,28 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 2000,
+                  "line": 1999,
                   "name": "undo_state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 2002,
+                  "line": 2001,
                   "name": "nothing_to_undo_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2004,
+                  "line": 2003,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 2006,
+                  "line": 2005,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4426,21 +4426,21 @@
             {
               "calls": [
                 {
-                  "line": 2088,
+                  "line": 2087,
                   "name": "verify_proof",
                   "target": {
                     "file": "sov_engine/hashing.py"
                   }
                 },
                 {
-                  "line": 2091,
+                  "line": 2090,
                   "name": "proof_invalid_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2099,
+                  "line": 2098,
                   "name": "read_text",
                   "target": null
                 },
@@ -4461,14 +4461,14 @@
                   "via": "_resolve_network"
                 },
                 {
-                  "line": 2105,
+                  "line": 2104,
                   "name": "XRPLTransport",
                   "target": {
                     "file": "sov_transport/xrpl.py"
                   }
                 },
                 {
-                  "line": 2112,
+                  "line": 2111,
                   "name": "is_anchored_on_chain",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4476,7 +4476,7 @@
                   }
                 },
                 {
-                  "line": 2114,
+                  "line": 2113,
                   "name": "get_memo_text",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4484,7 +4484,7 @@
                   }
                 },
                 {
-                  "line": 2118,
+                  "line": 2117,
                   "name": "explorer_tx_url",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4492,21 +4492,21 @@
                   }
                 },
                 {
-                  "line": 2121,
+                  "line": 2120,
                   "name": "chain_lookup_failed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2123,
+                  "line": 2122,
                   "name": "anchor_mismatch_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2129,
+                  "line": 2128,
                   "name": "anchor_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4596,26 +4596,26 @@
                   "via": "_resolve_active_game_id"
                 },
                 {
-                  "line": 2202,
+                  "line": 2201,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 2216,
+                  "line": 2215,
                   "name": "exists",
                   "target": null
                 },
                 {
-                  "line": 2214,
+                  "line": 2213,
                   "name": "resolve_wallet_seed",
                   "target": {
                     "file": "sov_engine/wallet_seed.py"
                   }
                 },
                 {
-                  "line": 2221,
+                  "line": 2220,
                   "name": "no_wallet_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4623,13 +4623,13 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2236,
+                  "line": 2235,
                   "name": "exists",
                   "target": null
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2237,
+                  "line": 2236,
                   "name": "proof_file_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4637,13 +4637,13 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2239,
+                  "line": 2238,
                   "name": "read_text",
                   "target": null
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2244,
+                  "line": 2243,
                   "name": "_round_key_from_proof",
                   "target": {
                     "file": "sov_engine/proof.py"
@@ -4651,7 +4651,7 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2261,
+                  "line": 2260,
                   "name": "XRPLTransport",
                   "target": {
                     "file": "sov_transport/xrpl.py"
@@ -4659,7 +4659,7 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2262,
+                  "line": 2261,
                   "name": "anchor",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4668,7 +4668,7 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2269,
+                  "line": 2268,
                   "name": "record_anchors_and_clear_pending",
                   "target": {
                     "file": "sov_engine/proof.py"
@@ -4676,7 +4676,7 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2272,
+                  "line": 2271,
                   "name": "explorer_tx_url",
                   "receiver": "XRPLTransport",
                   "target": {
@@ -4685,14 +4685,14 @@
                 },
                 {
                   "branch": "proof_file is not None",
-                  "line": 2291,
+                  "line": 2290,
                   "name": "anchor_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2308,
+                  "line": 2307,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -4733,7 +4733,7 @@
                 },
                 {
                   "branch": "resolved_network == XRPLNetwork.MAINNET",
-                  "line": 2495,
+                  "line": 2494,
                   "name": "mainnet_faucet_rejected_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -4741,7 +4741,7 @@
                 },
                 {
                   "branch": "resolved_network == XRPLNetwork.MAINNET",
-                  "line": 2497,
+                  "line": 2496,
                   "name": "set_mainnet_seed",
                   "target": {
                     "file": "sov_engine/wallet_seed.py"
@@ -4749,35 +4749,35 @@
                 },
                 {
                   "branch": "resolved_network == XRPLNetwork.MAINNET",
-                  "line": 2499,
+                  "line": 2498,
                   "name": "keyring_unavailable_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2517,
+                  "line": 2516,
                   "name": "fund_dev_wallet",
                   "target": {
                     "file": "sov_transport/xrpl.py"
                   }
                 },
                 {
-                  "line": 2527,
+                  "line": 2526,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 2542,
+                  "line": 2541,
                   "name": "mainnet_faucet_rejected_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 2544,
+                  "line": 2543,
                   "name": "wallet_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -6213,7 +6213,7 @@
             {
               "calls": [
                 {
-                  "line": 3121,
+                  "line": 3140,
                   "name": "atomic_write_text",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7040,7 +7040,7 @@
             {
               "calls": [
                 {
-                  "line": 3660,
+                  "line": 3679,
                   "name": "invalid_action_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7242,14 +7242,14 @@
             {
               "calls": [
                 {
-                  "line": 3767,
+                  "line": 3786,
                   "name": "Deck",
                   "target": {
                     "file": "sov_engine/models.py"
                   }
                 },
                 {
-                  "line": 3781,
+                  "line": 3800,
                   "name": "add_log",
                   "target": null
                 }
@@ -7262,7 +7262,7 @@
             {
               "calls": [
                 {
-                  "line": 3889,
+                  "line": 3908,
                   "name": "market_status",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -7277,7 +7277,7 @@
             {
               "calls": [
                 {
-                  "line": 3889,
+                  "line": 3908,
                   "name": "market_status",
                   "target": {
                     "file": "sov_engine/rules/town_hall.py"
@@ -7293,7 +7293,7 @@
             {
               "calls": [
                 {
-                  "line": 4068,
+                  "line": 4087,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7308,14 +7308,14 @@
             {
               "calls": [
                 {
-                  "line": 4109,
+                  "line": 4128,
                   "name": "read_pending_anchors",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4114,
+                  "line": 4133,
                   "name": "anchors_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7330,21 +7330,21 @@
                   "via": "_read_anchors_entries"
                 },
                 {
-                  "line": 4121,
+                  "line": 4140,
                   "name": "proofs_dir",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4129,
+                  "line": 4148,
                   "name": "_round_key_from_proof",
                   "target": {
                     "file": "sov_engine/proof.py"
                   }
                 },
                 {
-                  "line": 4205,
+                  "line": 4224,
                   "name": "anchor_pending_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7359,14 +7359,14 @@
             {
               "calls": [
                 {
-                  "line": 4447,
+                  "line": 4466,
                   "name": "build_event_deck",
                   "target": {
                     "file": "sov_engine/content.py"
                   }
                 },
                 {
-                  "line": 4448,
+                  "line": 4467,
                   "name": "build_deal_deck",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -7381,14 +7381,14 @@
             {
               "calls": [
                 {
-                  "line": 4531,
+                  "line": 4550,
                   "name": "scenario_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 4447,
+                  "line": 4466,
                   "name": "build_event_deck",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -7396,7 +7396,7 @@
                   "via": "_lint_scenario"
                 },
                 {
-                  "line": 4448,
+                  "line": 4467,
                   "name": "build_deal_deck",
                   "target": {
                     "file": "sov_engine/content.py"
@@ -7404,7 +7404,7 @@
                   "via": "_lint_scenario"
                 },
                 {
-                  "line": 4600,
+                  "line": 4619,
                   "name": "invalid_action_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7419,21 +7419,21 @@
             {
               "calls": [
                 {
-                  "line": 4667,
+                  "line": 4686,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4668,
+                  "line": 4687,
                   "name": "list_saved_games",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4669,
+                  "line": 4688,
                   "name": "get_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7464,21 +7464,21 @@
                   "via": "_validate_game_id_or_fail"
                 },
                 {
-                  "line": 4737,
+                  "line": 4756,
                   "name": "migrate_v1_layout",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4738,
+                  "line": 4757,
                   "name": "state_file",
                   "target": {
                     "file": "sov_engine/io_utils.py"
                   }
                 },
                 {
-                  "line": 4744,
+                  "line": 4763,
                   "name": "set_active_game_id",
                   "target": {
                     "file": "sov_engine/io_utils.py"
@@ -7696,7 +7696,7 @@
             {
               "calls": [
                 {
-                  "line": 4916,
+                  "line": 4935,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7711,7 +7711,7 @@
             {
               "calls": [
                 {
-                  "line": 4916,
+                  "line": 4935,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7743,7 +7743,7 @@
             {
               "calls": [
                 {
-                  "line": 4916,
+                  "line": 4935,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7775,7 +7775,7 @@
             {
               "calls": [
                 {
-                  "line": 4916,
+                  "line": 4935,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7783,14 +7783,14 @@
                   "via": "_import_daemon_api"
                 },
                 {
-                  "line": 5037,
+                  "line": 5056,
                   "name": "daemon_not_running_error",
                   "target": {
                     "file": "sov_cli/errors.py"
                   }
                 },
                 {
-                  "line": 5039,
+                  "line": 5058,
                   "name": "daemon_stop_failed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -7805,7 +7805,7 @@
             {
               "calls": [
                 {
-                  "line": 4916,
+                  "line": 4935,
                   "name": "daemon_not_installed_error",
                   "target": {
                     "file": "sov_cli/errors.py"
@@ -10851,6 +10851,10 @@
             "test_read_season_document_bare_v0_form_is_returned_as_is",
             "test_read_season_document_malformed_or_non_dict_is_empty",
             "test_read_season_document_missing_file_is_empty_skeleton",
+            "test_read_season_document_strict_accepts_both_valid_shapes",
+            "test_read_season_document_strict_missing_file_is_still_empty",
+            "test_read_season_document_strict_raises_on_corruption",
+            "test_read_season_document_strict_raises_on_unreadable_path",
             "test_read_season_document_unreadable_path_is_empty",
             "test_read_season_document_wrapped_form_returns_inner_season",
             "test_read_season_document_wrapped_with_bad_inner_is_empty",
@@ -10885,7 +10889,7 @@
             "test_update_season_migrates_bare_dict_to_wrapped_form",
             "test_update_season_without_games_key_resets_skeleton"
           ],
-          "hash": "236b2e99b331f04620bc807ce1bf4f65576be0e0ec71c385a8639f28e6b8b48a",
+          "hash": "437eb712c2d5e136911a25aeea95396c345e24c17c268d39e050b63861fb678a",
           "importsFiles": [
             "sov_cli/__init__.py",
             "sov_cli/main.py",
@@ -11108,6 +11112,7 @@
             "test_deck_from_ids_drops_unknown_and_non_string_ids",
             "test_deck_from_ids_rejects_malformed_shapes",
             "test_disk_snapshot_records_rng_and_decks",
+            "test_doctor_accepts_valid_season_shapes",
             "test_doctor_coherence_silent_for_cli_only_install",
             "test_doctor_completed_game_points_at_game_end",
             "test_doctor_confirms_tauri_shell_with_daemon_extra",
@@ -11187,7 +11192,7 @@
             "test_wallet_rejects_unknown_network",
             "test_wallet_testnet_writes_seed_file_and_hides_nothing_but_the_seed"
           ],
-          "hash": "c0deb83d39ef54a6e70998e8c959b97f77149c1fc16fc1a9559503f99004c037",
+          "hash": "13d01054a7ac8f51a2d4e7fa881ef05591ca03e81350cf9e5669da1c0ce2952f",
           "importsFiles": [
             "sov_cli/main.py",
             "sov_daemon/__init__.py",
@@ -14175,7 +14180,7 @@
     }
   ],
   "generatedFrom": {
-    "commit": "895c831639d24c9fd971b7d9be4342c65500b288",
+    "commit": "8c37b418a2416ecabe0e760c25f6b99bb8d4e6f6",
     "tracked": 426
   },
   "landings": [

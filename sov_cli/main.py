@@ -915,11 +915,10 @@ def doctor(
             # Stage 7-B amend: read via the schema-version-tolerant helper
             # so a wrapped v1 document parses without falling into the
             # "can't parse" branch that the bare-dict-only reader hit.
-            season = _read_season_document()
-            if not isinstance(season.get("games"), list):
-                # The helper logs at WARNING and returns an empty skeleton on
-                # malformed JSON — surface that to the operator as a warning.
-                raise json.JSONDecodeError("malformed season payload", "", 0)
+            # Strict read: the tolerant default turns a corrupt file into an
+            # empty season, which is right for game-end and wrong for a
+            # diagnostic. Doctor has to see the corruption.
+            season = _read_season_document(strict=True)
             game_count = len(season.get("games", []))
             s = "s" if game_count != 1 else ""
             checks.append(
@@ -929,7 +928,7 @@ def doctor(
                     "",
                 )
             )
-        except (json.JSONDecodeError, OSError):
+        except SeasonDocumentError:
             checks.append(
                 (
                     "warn",
@@ -3031,7 +3030,7 @@ def _calc_story_points(state: GameState) -> dict[str, dict[str, int]]:
     return points
 
 
-def _read_season_document() -> dict[str, Any]:
+def _read_season_document(*, strict: bool = False) -> dict[str, Any]:
     """Read ``season.json`` and return the inner season payload.
 
     Stage 7-B amend (CLI-B-002 + CLI-B-003): tolerates both the v0
@@ -3041,6 +3040,11 @@ def _read_season_document() -> dict[str, Any]:
 
     Returns an empty season skeleton on missing / unreadable / malformed
     file so callers can keep tracking even after a corrupt write.
+
+    ``strict=True`` is for diagnostics (``sov doctor``): a present but
+    unreadable, unparseable, or wrongly shaped file raises
+    ``SeasonDocumentError`` instead of reading as an empty season, which
+    made doctor report "Season active (0 games played)" over a corrupt file.
     """
     empty: dict[str, Any] = {"games": [], "standings": {}}
     if not SEASON_FILE.exists():
@@ -3048,6 +3052,8 @@ def _read_season_document() -> dict[str, Any]:
     try:
         raw = json.loads(SEASON_FILE.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
+        if strict:
+            raise SeasonDocumentError(f"{type(exc).__name__}: {exc}") from exc
         logger.warning(
             "season.read.failed path=%s exc=%s detail=%s (treating as empty)",
             SEASON_FILE,
@@ -3056,15 +3062,28 @@ def _read_season_document() -> dict[str, Any]:
         )
         return empty
     if not isinstance(raw, dict):
+        if strict:
+            raise SeasonDocumentError(f"top level is {type(raw).__name__}, not an object")
         return empty
     # Wrapped form: {"schema_version": 1, "season": {games, standings}}.
     if "schema_version" in raw and "season" in raw:
         season = raw.get("season", {})
         if isinstance(season, dict):
-            return season
-        return empty
-    # Bare-dict form (v0): the document IS the season payload.
-    return raw
+            payload: dict[str, Any] = season
+        elif strict:
+            raise SeasonDocumentError("`season` is not an object")
+        else:
+            return empty
+    else:
+        # Bare-dict form (v0): the document IS the season payload.
+        payload = raw
+    if strict and not isinstance(payload.get("games"), list):
+        raise SeasonDocumentError("`games` is missing or not a list")
+    return payload
+
+
+class SeasonDocumentError(ValueError):
+    """``season.json`` exists but cannot be read as a season (strict reads only)."""
 
 
 def _update_season(

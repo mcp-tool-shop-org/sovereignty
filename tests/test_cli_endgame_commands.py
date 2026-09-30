@@ -409,6 +409,44 @@ def test_read_season_document_unreadable_path_is_empty(tmp_path: Path) -> None:
     assert cli_main._read_season_document() == {"games": [], "standings": {}}
 
 
+# strict=True is the doctor's read: corruption raises instead of reading empty.
+
+
+def test_read_season_document_strict_missing_file_is_still_empty() -> None:
+    assert cli_main._read_season_document(strict=True) == {"games": [], "standings": {}}
+
+
+@pytest.mark.parametrize(
+    ("raw", "detail"),
+    [
+        ("{not json", "JSONDecodeError"),
+        ("[1, 2, 3]", "not an object"),
+        ('{"schema_version": 1, "season": []}', "`season` is not an object"),
+        ('{"games": {}, "standings": {}}', "`games` is missing or not a list"),
+        ('{"standings": {}}', "`games` is missing or not a list"),
+    ],
+)
+def test_read_season_document_strict_raises_on_corruption(
+    tmp_path: Path, raw: str, detail: str
+) -> None:
+    _write_season(tmp_path, raw)
+    with pytest.raises(cli_main.SeasonDocumentError, match=re.escape(detail)):
+        cli_main._read_season_document(strict=True)
+
+
+def test_read_season_document_strict_raises_on_unreadable_path(tmp_path: Path) -> None:
+    _season_path(tmp_path).mkdir(parents=True)
+    with pytest.raises(cli_main.SeasonDocumentError):
+        cli_main._read_season_document(strict=True)
+
+
+def test_read_season_document_strict_accepts_both_valid_shapes(tmp_path: Path) -> None:
+    _write_season(tmp_path, {"games": [{"id": "s1"}], "standings": {}})
+    assert cli_main._read_season_document(strict=True)["games"] == [{"id": "s1"}]
+    _write_season(tmp_path, {"schema_version": 1, "season": {"games": [], "standings": {}}})
+    assert cli_main._read_season_document(strict=True) == {"games": [], "standings": {}}
+
+
 def test_read_season_document_wrapped_form_returns_inner_season(tmp_path: Path) -> None:
     inner = {"games": [{"game_id": "s1"}], "standings": {"Alice": 2}}
     _write_season(tmp_path, {"schema_version": 1, "season": inner})
