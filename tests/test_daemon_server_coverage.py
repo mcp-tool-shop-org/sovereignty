@@ -1634,19 +1634,13 @@ async def test_middleware_content_length_precheck(declared: bytes, expected_stat
         assert "total" not in seen  # rejected before the body was read
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason=(
-        "BUG: MaxBodySizeMiddleware streaming path: an inner Starlette app answers the raised "
-        "_BodyTooLarge with a 500 first, so the 413 send is a second http.response.start"
-    ),
-)
 async def test_middleware_streaming_413_through_a_real_starlette_route() -> None:
     """A chunked body with no Content-Length, read by a real Starlette handler.
 
-    The 413 must be the response the client sees. (Starlette's outer error
-    middleware turns an escaping exception into a 500 before our ``except``
-    can answer, so this pins the real end-to-end behaviour.)
+    The 413 must be the response the client sees. Regression (fixed 2.3.5):
+    Starlette's outer error middleware sent a 500 for the escaping
+    _BodyTooLarge before our handler ran, so the 413 was a second
+    http.response.start and the client saw the 500.
     """
     from starlette.applications import Starlette
     from starlette.responses import PlainTextResponse
@@ -1667,6 +1661,54 @@ async def test_middleware_streaming_413_through_a_real_starlette_route() -> None
         r = await c.post("/x", content=chunks())
     assert r.status_code == 413
     assert r.json()["code"] == "PAYLOAD_TOO_LARGE"
+
+
+def _oversized_wire() -> _Wire:
+    return _Wire(
+        [
+            {"type": "http.request", "body": b"x" * 600, "more_body": True},
+            {"type": "http.request", "body": b"x" * 600, "more_body": False},
+        ]
+    )
+
+
+async def test_middleware_streaming_413_when_inner_app_swallows_the_error() -> None:
+    """An inner app that catches the trip and answers 200 still yields one 413."""
+    from sov_daemon.server import MaxBodySizeMiddleware
+
+    async def forgiving(scope: Any, receive: Any, send: Any) -> None:
+        try:
+            while (await receive()).get("more_body", False):
+                pass
+        except Exception:
+            pass
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        await send({"type": "http.response.body", "body": b"ok", "more_body": False})
+
+    wire = _oversized_wire()
+    await MaxBodySizeMiddleware(forgiving, max_bytes=1000)(_http_scope(), wire.receive, wire.send)
+    starts = [m for m in wire.sent if m["type"] == "http.response.start"]
+    assert [m["status"] for m in starts] == [413]
+    assert json.loads(wire.body)["code"] == "PAYLOAD_TOO_LARGE"
+
+
+async def test_middleware_streaming_trip_after_response_started_sends_no_second_start() -> None:
+    """If the inner app already began its reply, the cap cannot replace it.
+
+    The status line is on the wire, so a 413 would be a second
+    http.response.start (an ASGI protocol error). The exchange just ends.
+    """
+    from sov_daemon.server import MaxBodySizeMiddleware
+
+    async def eager(scope: Any, receive: Any, send: Any) -> None:
+        await send({"type": "http.response.start", "status": 200, "headers": []})
+        while (await receive()).get("more_body", False):
+            pass
+
+    wire = _oversized_wire()
+    await MaxBodySizeMiddleware(eager, max_bytes=1000)(_http_scope(), wire.receive, wire.send)
+    starts = [m for m in wire.sent if m["type"] == "http.response.start"]
+    assert [m["status"] for m in starts] == [200]
 
 
 # ---------------------------------------------------------------------------

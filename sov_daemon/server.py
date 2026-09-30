@@ -1597,9 +1597,18 @@ class MaxBodySizeMiddleware:
         # Path 2: streaming counter — wrap receive to count actual bytes.
         body_bytes = 0
         body_done = False
+        # Once the cap trips, the inner app's reply is not the client's
+        # answer. Starlette's ServerErrorMiddleware catches the escaping
+        # _BodyTooLarge and sends a 500 before re-raising, so forwarding it
+        # made our 413 a second http.response.start and the client saw the
+        # 500. After the trip we drop the inner app's messages and answer 413
+        # ourselves, whether the inner app sends a 500, swallows the error
+        # and returns, or re-raises.
+        tripped = False
+        response_started = False
 
         async def counted_receive() -> Any:
-            nonlocal body_bytes, body_done
+            nonlocal body_bytes, body_done, tripped
             if body_done:
                 return {"type": "http.disconnect"}
             msg = await receive()
@@ -1609,14 +1618,25 @@ class MaxBodySizeMiddleware:
                 if not msg.get("more_body", False):
                     body_done = True
                 if body_bytes > self.max_bytes:
+                    tripped = True
                     raise _BodyTooLarge()
             elif msg.get("type") == "http.disconnect":
                 body_done = True
             return msg
 
-        try:
-            await self.app(scope, counted_receive, send)
-        except _BodyTooLarge:
+        async def guarded_send(message: Any) -> None:
+            nonlocal response_started
+            if tripped:
+                return
+            if message.get("type") == "http.response.start":
+                response_started = True
+            await send(message)
+
+        with contextlib.suppress(_BodyTooLarge):
+            await self.app(scope, counted_receive, guarded_send)
+        # A response that began before the trip cannot be replaced (the
+        # status line is already on the wire); the exchange simply ends.
+        if tripped and not response_started:
             await self._send_413(send)
 
 

@@ -1500,7 +1500,7 @@
           "path": "docs/cli-json-output.md"
         },
         {
-          "hash": "1b581cd247c73f50247978dd004dfaa5099957d945f62589852b717348f93936",
+          "hash": "e7de8b1ba9a34b6e7426de18497fdaa6584c73057a952ef862ec8e90661995e2",
           "path": "docs/handoffs/coverage-90.md"
         },
         {
@@ -1708,7 +1708,7 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "249fcf276034732a9e79dd394faef35323ff8d1916715fee38adbe7903304e11",
+          "hash": "ec0aae55b5d157959237316b764412ff173335c5ae0b60f3cbe7cc3e194e9157",
           "path": "CHANGELOG.md"
         },
         {
@@ -8229,7 +8229,7 @@
             "proofs_list_handler",
             "verify_round_handler"
           ],
-          "hash": "cc2b6c51285bfbcf4112d7ad6865a8c38ccdeaddb3e972343809fb78b1fd548c",
+          "hash": "e4d7c4433034adaa7245086c236a41ff08044aa2e1d999c7c9130b9d046b3957",
           "importsFiles": [
             "sov_cli/errors.py",
             "sov_daemon/__init__.py",
@@ -11549,8 +11549,10 @@
             "test_middleware_ignores_non_http_scopes",
             "test_middleware_passes_disconnect_through",
             "test_middleware_streaming_413_through_a_real_starlette_route",
+            "test_middleware_streaming_413_when_inner_app_swallows_the_error",
             "test_middleware_streaming_exactly_at_cap_passes_through",
             "test_middleware_streaming_over_cap_returns_413",
+            "test_middleware_streaming_trip_after_response_started_sends_no_second_start",
             "test_module_level_emitters_are_noops_without_an_app_then_deliver",
             "test_pending_anchors_unknown_game_404_and_sorted_entries",
             "test_poll_loop_survives_iteration_failure_and_cancels_cleanly",
@@ -11580,7 +11582,7 @@
             "test_verify_round_normalises_transport_verdicts",
             "test_verify_round_transport_exception_becomes_lookup_failed"
           ],
-          "hash": "4ceebcc32e59f11a4e0a3d7042914d63e255ff011377d1da54a8860a089ef9c9",
+          "hash": "21b59e7ac422454b487e276ff01e6641b107ecd45c451c99c08df41be82c63d5",
           "importsFiles": [
             "sov_daemon/__init__.py",
             "sov_daemon/events.py",
@@ -14180,7 +14182,7 @@
     }
   ],
   "generatedFrom": {
-    "commit": "bf9609cb93b0e46f9c20e40bca9d89f0bad1dace",
+    "commit": "175d33fe3ac961555a919c1f79bc47b516ddcec8",
     "tracked": 426
   },
   "landings": [

@@ -236,7 +236,7 @@ of the Windows-only pragmas (102 statements) and the `exclude_also` patterns.
 
 ### Defects found
 
-**Update 2026-09-29 (v2.3.3):** #1, #2, #4 and #5 are fixed and their xfail markers removed; the tests now pass as regression tests. #3 was fixed after the release (doctor now reads `season.json` strictly). #6 remains a strict xfail pending a design decision.
+**Update 2026-09-29 (v2.3.3):** #1, #2, #4 and #5 are fixed and their xfail markers removed; the tests now pass as regression tests. #3 was fixed after the release (doctor now reads `season.json` strictly). #6 was fixed after 2.3.4 (the cap drops the inner app's reply once it trips and sends a single 413). All six are resolved; no strict xfails remain.
 
 Each fix changes something a player or operator sees, or touches the daemon's
 trust boundary, so each is left for the Director. A strict xfail turns red
@@ -249,7 +249,7 @@ the moment the fix lands, which is the cue to drop the marker.
 | 3 | **FIXED after 2.3.3 (unreleased).** **`sov doctor` never warns on a malformed `season.json`**: `_read_season_document` swallows the parse error and returns an empty season. | `test_cli_ops_commands.py::test_doctor_warns_when_season_json_is_malformed` | Let doctor probe the parse itself, or have the helper signal failure. |
 | 4 | **FIXED 2.3.3.** **The missing-extra hint drops `[daemon]`**: `sov daemon start` without the extra prints `pip install 'sovereignty-game'` because rich treats `[daemon]` as markup. The hint names the wrong install. | `test_cli_ops_commands.py::test_daemon_missing_extra_hint_shows_the_extra_name` | Escape the hint in `_fail` (`rich.markup.escape`) or write `\[daemon]` in the factory. |
 | 5 | **FIXED 2.3.3.** **`sov resume` crashes on a non-object `state.json`** (e.g. `[]`): the handler catches `TypeError` but not `AttributeError`. | `test_cli_endgame_commands.py::test_resume_with_non_object_state_still_switches_pointer` | Add `AttributeError` to the `except`. |
-| 6 | **Body-size middleware returns 500, not 413, for a chunked over-cap body to a body-reading route**: Starlette's `ServerErrorMiddleware` answers first, then `_send_413` sends a second response start (`sov_daemon/server.py` `MaxBodySizeMiddleware`). Latent: no current route reads a body. Trust boundary. | `test_daemon_server_coverage.py::test_middleware_streaming_413_through_a_real_starlette_route` | Answer the 413 from `counted_receive` before the inner app converts the error, or track "response started". |
+| 6 | **FIXED after 2.3.4 (unreleased).** **Body-size middleware returns 500, not 413, for a chunked over-cap body to a body-reading route**: Starlette's `ServerErrorMiddleware` answers first, then `_send_413` sends a second response start (`sov_daemon/server.py` `MaxBodySizeMiddleware`). Latent: no current route reads a body. Trust boundary. | `test_daemon_server_coverage.py::test_middleware_streaming_413_through_a_real_starlette_route` | Answer the 413 from `counted_receive` before the inner app converts the error, or track "response started". |
 
 ### Lines left uncovered (dead code, not excluded)
 

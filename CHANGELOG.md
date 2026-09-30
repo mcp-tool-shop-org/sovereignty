@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The daemon's body-size cap now answers 413 on a streamed oversized body.** With no `Content-Length`, the cap trips while a handler reads the body; Starlette's error middleware caught that and sent a 500 before the cap could reply, so the client saw 500 and the 413 was a second response start. The middleware now drops the inner app's reply once the cap trips and sends a single 413, whether the inner app sends a 500, swallows the error, or re-raises. If the inner app had already started its response, the exchange ends without a second start. Latent in practice: no current daemon route reads a request body. This clears the last of the six defects from the coverage work.
+
 ## [2.3.4] - 2026-09-30
 
 ### Fixed
