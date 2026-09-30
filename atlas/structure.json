@@ -141,7 +141,7 @@
           "path": ".github/workflows/publish.yml"
         },
         {
-          "hash": "d0f4445ca92be19270bc50733b8001cf0b8a24dd5e928af65d2b0846a929a6fd",
+          "hash": "ff433e9a0b0eb119993523bb15de66a870b80bc8bf309a6e7332752724948d7b",
           "path": ".github/workflows/release.yml"
         }
       ],
@@ -1708,7 +1708,7 @@
           "path": "CHANGELOG.md"
         },
         {
-          "hash": "28a589e55ed7d4ef43ae50a5437a44f07f2649db1241fe4cce3f056b94aaaaf4",
+          "hash": "10efcfabad490861b74f72f96a8f80875dc1bd678db4928934ed834f91d18c3a",
           "path": "CLAUDE.md"
         },
         {
@@ -1724,35 +1724,35 @@
           "path": "LICENSE"
         },
         {
-          "hash": "0d73fdb56147aa9f7a1fa70fcd88262c6972cbfbecd02e0c921506b2db0b203f",
+          "hash": "1f0bd7e8af63ffe34454818043ffac7b0024a7bff14d05912892f4e81661b2d1",
           "path": "README.es.md"
         },
         {
-          "hash": "c103d79135dd56227d3cf3933ba7eedc55a9c840bbf50a6f794e144dd390dc11",
+          "hash": "d87a1f7b99f8517e6aef0bb2e48cb5bd5fbfbc8bf8b8f9451536e4328888e374",
           "path": "README.fr.md"
         },
         {
-          "hash": "21a41ccff0142ce36baaf601de2b12e1239f7b4b1a27fde4427ce2f20514811f",
+          "hash": "b6444ec8af4b02af18510e41c14f0c58fe85af91cae806ecd3a0e9dca1d1c3b3",
           "path": "README.hi.md"
         },
         {
-          "hash": "4c537bf2b4221044e5a7d8e5a6c8b99c97ffb926aa086073198702dae2570987",
+          "hash": "4df8595acce5a658a7cb36d6b6da9f89a445b471e87d5bd5dc390994c41b9910",
           "path": "README.it.md"
         },
         {
-          "hash": "72b6daf0d04fa56b0f5dfe1172ca0275c5905e8124aef2b059fe1b675068be16",
+          "hash": "7ac54c03ed118fd5e48f40274cdf480e0ddb2788ad2cca0f570878a74e5ca522",
           "path": "README.ja.md"
         },
         {
-          "hash": "81e10e03ca448c533743b7d866dea70f4dde5832a10ad97127bc252e1d131270",
+          "hash": "76beab7c7f93666ce369de68569b4785d90323713d07ea853352bf2d580363e1",
           "path": "README.md"
         },
         {
-          "hash": "e75fc1aafc26d00a909a7daeb6f4d94d454c26c59ae9df76c770fce0dc1d4521",
+          "hash": "dfefa21a5b96bb2fde6159be76e31f2f56b8d89fe91794a8ef1da801c6989ea3",
           "path": "README.pt-BR.md"
         },
         {
-          "hash": "80385e15cd174bf90e7e6181d9d659f01648133120465c0893042b6ee19990a6",
+          "hash": "2ca43bea21109a6eef53e99b3f459b330ab3b53b1e7afe666ce6ee2cb9803444",
           "path": "README.zh.md"
         },
         {
@@ -13129,9 +13129,7 @@
         }
       ],
       "runsCount": 1,
-      "secrets": [
-        "NPM_TOKEN"
-      ],
+      "secrets": [],
       "sends": {
         "deploysPages": false,
         "dispatchesTo": [],
@@ -13358,7 +13356,7 @@
     }
   ],
   "generatedFrom": {
-    "commit": "e85b0672c389c2a2e1cc88d3d6226c8a55e99d86",
+    "commit": "30b3925fb718fa4fc8a2808f6c822b257910aa3c",
     "tracked": 416
   },
   "landings": [

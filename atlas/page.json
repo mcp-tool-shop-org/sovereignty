@@ -95,47 +95,24 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 1,
-      "changed": 3,
+      "added": 0,
+      "changed": 10,
       "moved": 0,
-      "parts": 3,
-      "removed": 1
+      "parts": 2,
+      "removed": 0
     },
     "items": [
       {
-        "kind": "door",
-        "sentence": "npm launcher (.github/workflows/npm.yml) is no longer a door.",
-        "subjects": [
-          ".github/workflows/npm.yml"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "npm launcher (.github/workflows/release.yml) is a new door. It starts when a release is published; or by hand. It runs npm/test/.",
-        "subjects": [
-          ".github/workflows/release.yml",
-          "npm/test/"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "npm/package.json is now also read by .github/workflows/release.yml.",
-        "subjects": [
-          "npm/package.json",
-          ".github/workflows/release.yml"
-        ]
-      },
-      {
         "kind": "counts",
-        "sentence": "1 file added, 1 removed and 3 changed content, across 3 parts.",
+        "sentence": "Nothing structural changed since 2026-09-30; 10 files changed content.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "269afcafeb6b38ac1536612828deda2586734664",
-      "generatedAt": "2026-09-30T02:17:03.177Z"
+      "commit": "e85b0672c389c2a2e1cc88d3d6226c8a55e99d86",
+      "generatedAt": "2026-09-30T02:30:53.478Z"
     },
-    "unchanged": false
+    "unchanged": true
   },
   "changesTogether": [
     {
@@ -189,7 +166,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 3 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "e85b0672c389c2a2e1cc88d3d6226c8a55e99d86",
+  "commit": "30b3925fb718fa4fc8a2808f6c822b257910aa3c",
   "defaultBranch": "main",
   "derived": "14 parts, mostly Python (113 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).",
   "doors": [
@@ -620,7 +597,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T02:30:53.478Z",
+  "generatedAt": "2026-09-30T02:36:42.617Z",
   "limits": [
     "28 import sites could not be resolved.",
     "3 writes and 49 reads use paths built at run time and are not named here.",

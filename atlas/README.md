@@ -1,17 +1,14 @@
 # sovereignty: how it works
 
-Mapped at 2026-09-30 from commit e85b067.
+Mapped at 2026-09-30 from commit 30b3925.
 
 ## What this is
 
 14 parts, mostly Python (113 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
 
-## What changed since 2026-09-30 (269afca)
+## What changed since 2026-09-30 (e85b067)
 
-- npm launcher (.github/workflows/npm.yml) is no longer a door.
-- npm launcher (.github/workflows/release.yml) is a new door. It starts when a release is published; or by hand. It runs npm/test/.
-- npm/package.json is now also read by .github/workflows/release.yml.
-- 1 file added, 1 removed and 3 changed content, across 3 parts.
+Nothing structural changed since 2026-09-30; 10 files changed content.
 
 ## What comes in
 

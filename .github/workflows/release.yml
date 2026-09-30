@@ -8,9 +8,10 @@
 # Auth: npm Trusted Publishing (OIDC). The binding on npmjs.com names the
 # filename release.yml (no environment) -- that name is load-bearing; do not
 # rename this file. (publish.yml is the PyPI/binaries workflow; its PyPI
-# Trusted Publisher binds to publish.yml the same way.) NPM_TOKEN stays as the fallback until the first OIDC publish is
-# confirmed (`npm view @mcptoolshop/sovereignty@<v> --json` shows a
-# trustedPublisher block); then delete the secret and the env line below.
+# Trusted Publisher binds to publish.yml the same way.)
+# OIDC only: the first Trusted Publisher publish (2.3.2) is confirmed and the
+# old NPM_TOKEN secret is retired. An E404 on publish means the npmjs.com
+# binding no longer matches this repo/filename, not a missing token.
 #
 # Recovery: Actions -> npm launcher -> Run workflow with tag=vX.Y.Z. The shim
 # derives everything from npm/package.json, so a dispatch from main publishes
@@ -87,8 +88,6 @@ jobs:
 
       - name: Publish
         working-directory: npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --provenance --access public
 
       # Registry reads can lag a fresh publish by a couple of minutes.

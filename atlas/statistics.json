@@ -97,7 +97,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "npm",
-      "qualifyingSourceCommits": 1,
+      "qualifyingSourceCommits": 2,
       "rebaseline": null
     },
     {
@@ -356,13 +356,13 @@
         "path": "BUILD.md"
       },
       {
-        "commits": 30,
-        "lines": 480,
+        "commits": 31,
+        "lines": 482,
         "path": "CHANGELOG.md"
       },
       {
-        "commits": 20,
-        "lines": 246,
+        "commits": 21,
+        "lines": 250,
         "path": "CLAUDE.md"
       },
       {
@@ -1416,8 +1416,8 @@
         "path": "assets/print/source/vendor/react.production.min.js"
       },
       {
-        "commits": 5,
-        "lines": 201,
+        "commits": 6,
+        "lines": 217,
         "path": "atlas/README.md"
       },
       {
@@ -1426,18 +1426,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 5,
-        "lines": 1059,
+        "commits": 6,
+        "lines": 1144,
         "path": "atlas/page.json"
       },
       {
-        "commits": 5,
-        "lines": 2882,
+        "commits": 6,
+        "lines": 3052,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 5,
-        "lines": 16765,
+        "commits": 6,
+        "lines": 16987,
         "path": "atlas/structure.json"
       },
       {
@@ -1551,8 +1551,8 @@
         "path": "npm/package.json"
       },
       {
-        "commits": 1,
-        "lines": 31,
+        "commits": 2,
+        "lines": 33,
         "path": "npm/test/launcher.test.js"
       },
       {
@@ -1564,6 +1564,11 @@
         "commits": 17,
         "lines": 59,
         "path": "pyproject.toml"
+      },
+      {
+        "commits": 1,
+        "lines": 6,
+        "path": "release.yml}"
       },
       {
         "commits": 1,
@@ -2196,9 +2201,9 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-09-30T02:30:53.478Z",
+  "generatedAt": "2026-09-30T02:36:42.617Z",
   "generatedFrom": {
-    "commit": "e85b0672c389c2a2e1cc88d3d6226c8a55e99d86"
+    "commit": "30b3925fb718fa4fc8a2808f6c822b257910aa3c"
   },
   "pairs": [
     {
@@ -2372,43 +2377,43 @@
     {
       "a": "atlas/README.md",
       "b": "atlas/page.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/statistics.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/structure.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/statistics.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/structure.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
       "a": "atlas/statistics.json",
       "b": "atlas/structure.json",
-      "either": 5,
-      "shared": 5,
+      "either": 6,
+      "shared": 6,
       "strength": 1
     },
     {
@@ -2457,16 +2462,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-09-29T22:17:34-04:00",
+    "headDate": "2026-09-29T22:31:06-04:00",
     "inScopeFiles": 421,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 102,
+    "qualifyingCommits": 103,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-03T02:17:34.000Z",
+    "since": "2026-04-03T02:31:06.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",
