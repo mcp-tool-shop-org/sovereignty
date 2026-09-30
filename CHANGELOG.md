@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.3.4] - 2026-09-30
+
 ### Fixed
 
 - **`sov doctor` now warns about a corrupt `season.json`.** The season reader deliberately treats a corrupt file as an empty season so `sov game-end` can keep recording, and doctor used that same reader, so it reported "Season active (0 games played)" over a broken file. Doctor now reads strictly (`_read_season_document(strict=True)`) and warns on unparseable JSON, a non-object document, a wrapped `season` that is not an object, and a missing or mistyped `games` list. Every other caller keeps the tolerant read.

@@ -1,6 +1,8 @@
 # Roadmap
 
-## Where we are: v2.3.3
+## Where we are: v2.3.4
+
+**v2.3.4** (2026-09-30) makes `sov doctor` warn about a corrupt `season.json` instead of reporting an empty season.
 
 **v2.3.3** (2026-09-29) fixes `sov tutorial` (it crashed at step 4), the "Treaty kept" postcard line, the missing-`[daemon]` install hint, `sov resume` on a malformed save, and `sov --version` in the standalone binaries. The npx launcher now publishes from CI with every release, and CI enforces 90%+ test coverage (99.9% at release).
 

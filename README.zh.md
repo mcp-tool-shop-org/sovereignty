@@ -235,7 +235,7 @@ SOV_DAEMON_READONLY=0 docker compose up -d
 
 ### 安装（二进制文件）
 
-**v2.3.3** 是当前的发布版本。GitHub 发布版本 **v2.3.0** 中未包含预编译的二进制包或桌面资源，因此请不要固定使用 `pip install …==2.3.0`。
+**v2.3.4** 是当前的发布版本。GitHub 发布版本 **v2.3.0** 中未包含预编译的 wheel 文件或桌面资源，因此请不要固定使用 `pip install …==2.3.0`。
 
 - **Python / 守护进程：** `pip install 'sovereignty-game[daemon]'`（守护进程的版本为 2.3.2 或更高版本）。
 - **桌面应用程序：** 当 CI 附加了平台文件时，请使用 [最新的 GitHub 发布版](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest)。如果某个平台任务失败，请从源代码运行（如下）。

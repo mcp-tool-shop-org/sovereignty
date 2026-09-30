@@ -179,11 +179,11 @@
           "path": "app/index.html"
         },
         {
-          "hash": "71c2ce43cf1ff8a9937ca168480704571605e03c02f84355303840a66b6822f0",
+          "hash": "bf7ee866ee4229c6414f4faa8013c872fd3a18af0c928bdf3f48cd9f5050e022",
           "path": "app/package-lock.json"
         },
         {
-          "hash": "d071c75db892bae75406b8f0b2d4a97833f0bff46189c0846c065a5e5de13fd3",
+          "hash": "4acfedfb315fe23f6676e3008ee895a49d3aef52239fed0effbf621c7abd7b16",
           "path": "app/package.json"
         },
         {
@@ -526,7 +526,7 @@
           ]
         },
         {
-          "hash": "cea3b8f866ed8ff78325351f005f46ab71b7961f6fad16dddbfa4af59f6ab481",
+          "hash": "804c0a5927786d75122207a2f23affd3c310ef5988e28ac4d6d838723c068c31",
           "path": "app/src-tauri/tauri.conf.json"
         },
         {
@@ -1544,7 +1544,7 @@
           "path": "docs/print-and-play.md"
         },
         {
-          "hash": "adcaeeff9677c7582b60a242b86c4f9d0c426661bce110c5994b4155f5552e53",
+          "hash": "d05cc52d90f18dff6774635bcf87a1539855d7073a9bcaf654fc7f36b1885846",
           "path": "docs/roadmap.md"
         },
         {
@@ -1657,11 +1657,11 @@
           "path": "npm/bin/sovereignty.js"
         },
         {
-          "hash": "13a9b7c8e9990372e1b6f742802fd18b6de6084341cc4886ee01768f224c7f22",
+          "hash": "4fd270d0125e97e8d75fd5d7088f97576624a8281d68ad5a48077d879c81b88e",
           "path": "npm/package-lock.json"
         },
         {
-          "hash": "1d5a63cf964ef49be0e1caae233d634779a61b46c5d551689910ef1102c32e57",
+          "hash": "4511f106f2af7d721f517df8c5175474092c19426b5de71b8796e4a69eaa372a",
           "path": "npm/package.json"
         },
         {
@@ -1708,11 +1708,11 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "f48c034da3cd967416b61f68b7491ac1336208a9e969c3974bcce9d79146d9d6",
+          "hash": "249fcf276034732a9e79dd394faef35323ff8d1916715fee38adbe7903304e11",
           "path": "CHANGELOG.md"
         },
         {
-          "hash": "7069f9b0e6c55e2d1e24a4b7efb012388d2f19e68de63b790fdc0005c1d591dc",
+          "hash": "fca18a63af205f021357e5bde8038ef08de50b94e9ceafd54d31cb153d680c6b",
           "path": "CLAUDE.md"
         },
         {
@@ -1728,35 +1728,35 @@
           "path": "LICENSE"
         },
         {
-          "hash": "7751388e637943a88f36b9952332917d8d485452be887a669fe49bc95883c76e",
+          "hash": "0f1020e11066581a7ed97be3bcbebeaae1a06fe3dc42e20a4df63e753bea5a04",
           "path": "README.es.md"
         },
         {
-          "hash": "322aab14a9b54bb5a5fdf0d7d93f299e99422bc5ea6bc91c704a47d2ef40da17",
+          "hash": "2eee9359de128a9c69ca33b443973ca5660536add5192bdd76103fd443c059e9",
           "path": "README.fr.md"
         },
         {
-          "hash": "a4cab04206083a1e4d48cd946efec5a83a5601b398f6fcd02cff609c581ac463",
+          "hash": "e3959b642cab56a82936ef286cc1cd4a721e624a48a7e9ca5538bed297f30f1d",
           "path": "README.hi.md"
         },
         {
-          "hash": "c5bece0dcb197b6ed9c9291596e92e50fc2a336f3e8369d010ee28948b13fd5b",
+          "hash": "afe994bdf4d03e3879a386f75eb758a35068e485c1ca64dba64c48e9238f7ad9",
           "path": "README.it.md"
         },
         {
-          "hash": "c48c00b0126f969b836191b2fea441216476c53c0301cbfb7b22c9758827fdfc",
+          "hash": "f965e59881dfeddfa42e4e3b88d14fa217969ddb25f8d20242d13e81b84e4de7",
           "path": "README.ja.md"
         },
         {
-          "hash": "0c51a5f809984a1f415a698248567aa15ede66d4ef8924d501f0ad4b907afc1b",
+          "hash": "5d77d02b0f5c47a8e183011f104a2e5f0807d3e552d2069423bc6477cbaa8dfc",
           "path": "README.md"
         },
         {
-          "hash": "54873e90fa53bcde14720bc40e6ace9487cb14ce1e97fc09bba915bee312a3ac",
+          "hash": "70dcee4c85301f6a7372a0d7c9d5409cc8335046ab6a4bceb308cbe4dfb46035",
           "path": "README.pt-BR.md"
         },
         {
-          "hash": "ce7eae789824d55a34f10012235a8975a48bb075029d388af1cae711e614cee8",
+          "hash": "7eab5130730ea7f0506f5e826e66d2a7370cee49cc75278fa53156d6464f0616",
           "path": "README.zh.md"
         },
         {
@@ -1780,11 +1780,11 @@
           "path": "compose.yaml"
         },
         {
-          "hash": "6a5d077b3eefb6535d894a5414bc51ad8bab8d0d286361df1837872237ace391",
+          "hash": "bbe09a62193dc7e176cff3ac3f32e963c0ca2fa25b5a89d5ff6799777498a236",
           "path": "pyproject.toml"
         },
         {
-          "hash": "4fa8633f463321b82e05ceb34befc51d46598ecad1eb31fe825ff0bf3b597f9e",
+          "hash": "595da83fdb3f88dc46bc619113602709f48fa0aad22778472d2fc0d9e84db96d",
           "path": "uv.lock"
         }
       ],
@@ -1890,11 +1890,11 @@
           "path": "site/src/content/docs/handbook/diary-mode.md"
         },
         {
-          "hash": "a69a78df1c171bd585184eaaeb002e38cf468512a7e08d96313af39f6984d449",
+          "hash": "62d536ba89e867a219c316f8eed07ea642f592999163b4752d508a3a31fccc24",
           "path": "site/src/content/docs/handbook/docker.md"
         },
         {
-          "hash": "296e8aa3ced6ba743000e3eb1601630117427048b2d9619852685c0de77d578e",
+          "hash": "8287719584f9694ebbaa72d1f362cbd2014dd4e424e0ef875e63291c655519de",
           "path": "site/src/content/docs/handbook/getting-started.md"
         },
         {
@@ -1922,7 +1922,7 @@
           "path": "site/src/pages/index.astro"
         },
         {
-          "hash": "b111a77d20b7fdbfc36dc6c3c3b5c5562102f60ddca7deab1b565a9944da1ffb",
+          "hash": "b12e25a68a1fc4aaf6bdb4830cbb34f0e8c313d777a584a857c67eeff34afd99",
           "path": "site/src/site-config.ts"
         },
         {
@@ -7842,7 +7842,7 @@
       "externals": 0,
       "files": [
         {
-          "hash": "603bc2046f0411071cfd15545c4a8f080de746b9f12e29a2ca431c517cbe68f6",
+          "hash": "a5f897ce38cd6c806f7d15e1ac5886c39a523478e65c45c662c8ec2d1d1d951d",
           "importsFiles": [
             "sov_daemon/lifecycle.py"
           ],
@@ -14180,7 +14180,7 @@
     }
   ],
   "generatedFrom": {
-    "commit": "8c37b418a2416ecabe0e760c25f6b99bb8d4e6f6",
+    "commit": "7d5096a4f89ce3bac9f5ccf861b71d3b80876bf6",
     "tracked": 426
   },
   "landings": [

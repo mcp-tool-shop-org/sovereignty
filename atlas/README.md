@@ -1,14 +1,14 @@
 # sovereignty: how it works
 
-Mapped at 2026-09-30 from commit 8c37b41.
+Mapped at 2026-09-30 from commit 7d5096a.
 
 ## What this is
 
 14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21) and Rust (6). Work enters through 7 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty (npm) to npm, and a container image. People run sov. sov-tauri-shell is a desktop app built from app/src-tauri (nothing ships it).
 
-## What changed since 2026-09-30 (895c831)
+## What changed since 2026-09-30 (8c37b41)
 
-Nothing structural changed since 2026-09-30; 5 files changed content.
+Nothing structural changed since 2026-09-30; 22 files changed content.
 
 ## What comes in
 

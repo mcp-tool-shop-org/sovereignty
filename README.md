@@ -236,7 +236,7 @@ The Audit Viewer is the v2.1 desktop app — a Tauri shell (Rust + webview) that
 
 ### Install (binaries)
 
-**v2.3.3** is the current release. GitHub Release **v2.3.0** did not ship wheels or desktop assets, so do not pin `pip install …==2.3.0`.
+**v2.3.4** is the current release. GitHub Release **v2.3.0** did not ship wheels or desktop assets, so do not pin `pip install …==2.3.0`.
 
 - **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (2.3.2 or later for the daemon).
 - **Desktop app:** [the latest GitHub Release](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) when CI has attached platform files. If a platform job failed, run from source (below).

@@ -167,7 +167,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "sov_cli",
-      "qualifyingSourceCommits": 22,
+      "qualifyingSourceCommits": 23,
       "rebaseline": null
     },
     {
@@ -248,7 +248,7 @@
       "confidence": "full",
       "highWater": null,
       "name": "tests",
-      "qualifyingSourceCommits": 39,
+      "qualifyingSourceCommits": 40,
       "rebaseline": null
     }
   ],
@@ -356,8 +356,8 @@
         "path": "BUILD.md"
       },
       {
-        "commits": 33,
-        "lines": 494,
+        "commits": 34,
+        "lines": 498,
         "path": "CHANGELOG.md"
       },
       {
@@ -1416,8 +1416,8 @@
         "path": "assets/print/source/vendor/react.production.min.js"
       },
       {
-        "commits": 16,
-        "lines": 322,
+        "commits": 17,
+        "lines": 328,
         "path": "atlas/README.md"
       },
       {
@@ -1426,18 +1426,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 16,
-        "lines": 1453,
+        "commits": 17,
+        "lines": 1467,
         "path": "atlas/page.json"
       },
       {
-        "commits": 16,
-        "lines": 3901,
+        "commits": 17,
+        "lines": 4226,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 16,
-        "lines": 19376,
+        "commits": 17,
+        "lines": 19639,
         "path": "atlas/structure.json"
       },
       {
@@ -1471,8 +1471,8 @@
         "path": "docs/cli-json-output.md"
       },
       {
-        "commits": 9,
-        "lines": 324,
+        "commits": 10,
+        "lines": 328,
         "path": "docs/handoffs/coverage-90.md"
       },
       {
@@ -1701,8 +1701,8 @@
         "path": "sov_cli/errors.py"
       },
       {
-        "commits": 25,
-        "lines": 4506,
+        "commits": 26,
+        "lines": 4547,
         "path": "sov_cli/main.py"
       },
       {
@@ -1896,8 +1896,8 @@
         "path": "tests/test_cli_empty_states.py"
       },
       {
-        "commits": 2,
-        "lines": 1422,
+        "commits": 3,
+        "lines": 1460,
         "path": "tests/test_cli_endgame_commands.py"
       },
       {
@@ -1916,8 +1916,8 @@
         "path": "tests/test_cli_integration.py"
       },
       {
-        "commits": 2,
-        "lines": 1879,
+        "commits": 3,
+        "lines": 1915,
         "path": "tests/test_cli_ops_commands.py"
       },
       {
@@ -2251,9 +2251,9 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-09-30T04:25:16.727Z",
+  "generatedAt": "2026-09-30T04:43:46.823Z",
   "generatedFrom": {
-    "commit": "8c37b418a2416ecabe0e760c25f6b99bb8d4e6f6"
+    "commit": "7d5096a4f89ce3bac9f5ccf861b71d3b80876bf6"
   },
   "pairs": [
     {
@@ -2434,72 +2434,72 @@
     {
       "a": "atlas/README.md",
       "b": "atlas/page.json",
-      "either": 16,
-      "shared": 16,
+      "either": 17,
+      "shared": 17,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/statistics.json",
-      "either": 16,
-      "shared": 16,
+      "either": 17,
+      "shared": 17,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/structure.json",
-      "either": 16,
-      "shared": 16,
+      "either": 17,
+      "shared": 17,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "docs/handoffs/coverage-90.md",
-      "either": 16,
-      "shared": 9,
-      "strength": 0.5625
+      "either": 17,
+      "shared": 10,
+      "strength": 0.588235
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/statistics.json",
-      "either": 16,
-      "shared": 16,
+      "either": 17,
+      "shared": 17,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/structure.json",
-      "either": 16,
-      "shared": 16,
+      "either": 17,
+      "shared": 17,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "docs/handoffs/coverage-90.md",
-      "either": 16,
-      "shared": 9,
-      "strength": 0.5625
+      "either": 17,
+      "shared": 10,
+      "strength": 0.588235
     },
     {
       "a": "atlas/statistics.json",
       "b": "atlas/structure.json",
-      "either": 16,
-      "shared": 16,
+      "either": 17,
+      "shared": 17,
       "strength": 1
     },
     {
       "a": "atlas/statistics.json",
       "b": "docs/handoffs/coverage-90.md",
-      "either": 16,
-      "shared": 9,
-      "strength": 0.5625
+      "either": 17,
+      "shared": 10,
+      "strength": 0.588235
     },
     {
       "a": "atlas/structure.json",
       "b": "docs/handoffs/coverage-90.md",
-      "either": 16,
-      "shared": 9,
-      "strength": 0.5625
+      "either": 17,
+      "shared": 10,
+      "strength": 0.588235
     },
     {
       "a": "pyproject.toml",
@@ -2547,16 +2547,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-09-29T23:27:17-04:00",
+    "headDate": "2026-09-30T00:25:25-04:00",
     "inScopeFiles": 431,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 113,
+    "qualifyingCommits": 114,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-04-03T03:27:17.000Z",
+    "since": "2026-04-03T04:25:25.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",
