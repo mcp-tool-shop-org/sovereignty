@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Build fake credentials at runtime in daemon and client tests so secret scanners do not flag test fixtures.
+
 ## [2.3.5] - 2026-09-30
 
 ### Fixed
