@@ -313,11 +313,18 @@ jobs:
         # or quick-xml 0.39.2→>=0.41.0 (RUSTSEC-2026-0194 / 0195). Ignore
         # those IDs fail-closed so --deny warnings still fails on any NEW
         # advisory. Drop the ignores when tauri-shell bumps the lock.
+        # zip 4.6.1 (RUSTSEC-2026-0367 / 0368 / 0369, extraction symlink and
+        # SUID handling) comes only through tauri-plugin-updater, which still
+        # depends on zip 4 at its newest 2.14.0. Allowlisted 2026-10-20 by the
+        # Director's decision; drop these three when the plugin moves to zip >= 9.
         run: |
           cargo audit --deny warnings \
             --ignore RUSTSEC-2026-0190 \
             --ignore RUSTSEC-2026-0194 \
-            --ignore RUSTSEC-2026-0195
+            --ignore RUSTSEC-2026-0195 \
+            --ignore RUSTSEC-2026-0367 \
+            --ignore RUSTSEC-2026-0368 \
+            --ignore RUSTSEC-2026-0369
 
       - name: Cargo clippy
         working-directory: app/src-tauri
