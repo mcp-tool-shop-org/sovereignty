@@ -71,7 +71,14 @@ def test_security_md_documents_secret_names_only() -> None:
 def test_updater_plugin_is_the_only_new_native_updater_dep() -> None:
     cargo = CARGO_TOML.read_text(encoding="utf-8")
     pkg = json.loads(PACKAGE_JSON.read_text(encoding="utf-8"))
-    assert 'tauri-plugin-updater = "2"' in cargo
+    # The updater runs without its default `zip` feature (v2 artifacts only;
+    # zip 4.x carried RUSTSEC-2026-0367/0368/0369). Keep zip out of the lock.
+    assert (
+        'tauri-plugin-updater = { version = "2", default-features = false, '
+        'features = ["rustls-tls"] }'
+    ) in cargo
+    lock = (CARGO_TOML.parent / "Cargo.lock").read_text(encoding="utf-8")
+    assert 'name = "zip"' not in lock
     assert "@tauri-apps/plugin-updater" in pkg["dependencies"]
     assert "tauri-plugin-process" not in cargo
     assert "@tauri-apps/plugin-process" not in pkg.get("dependencies", {})
