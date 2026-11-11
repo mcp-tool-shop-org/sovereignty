@@ -90,6 +90,7 @@
         "assets"
       ],
       "target": "assets/print/source/print-bundle.js",
+      "tests": 1,
       "writers": [
         "assets"
       ]
@@ -98,85 +99,50 @@
   "changes": {
     "fileCounts": {
       "added": 0,
-      "changed": 1,
+      "changed": 29,
       "moved": 0,
-      "parts": 1,
+      "parts": 7,
       "removed": 0
     },
     "items": [
       {
-        "kind": "door",
-        "sentence": "CI now also runs sov_daemon/__init__.py.",
-        "subjects": [
-          ".github/workflows/ci.yml",
-          "sov_daemon/__init__.py"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "Release now also runs app/src-tauri/build.rs, app/src/ and app/vite.config.ts.",
-        "subjects": [
-          ".github/workflows/publish.yml",
-          "app/src-tauri/build.rs",
-          "app/src/",
-          "app/vite.config.ts"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "Release now also builds app/src-tauri/src/main.rs.",
-        "subjects": [
-          ".github/workflows/publish.yml",
-          "app/src-tauri/src/main.rs"
-        ]
-      },
-      {
-        "kind": "door",
-        "sentence": "And 2 more changes to doors.",
-        "subjects": []
-      },
-      {
         "kind": "landing",
-        "sentence": "assets/print/source/fonts.css is now read by assets/print/source/Board A - Parchment Heritage.html, assets/print/source/Sovereignty Print Pack - print.html and assets/print/source/Sovereignty Print Pack.html.",
+        "sentence": "app/src-tauri/Cargo.lock is now read by tests/test_tauri_updater_secrets.py.",
         "subjects": [
-          "assets/print/source/fonts.css",
-          "assets/print/source/Board A - Parchment Heritage.html",
-          "assets/print/source/Sovereignty Print Pack - print.html",
-          "assets/print/source/Sovereignty Print Pack.html"
+          "app/src-tauri/Cargo.lock",
+          "tests/test_tauri_updater_secrets.py"
         ]
       },
       {
         "kind": "landing",
-        "sentence": "assets/print/source/print-bundle.js is now also read by assets/print/source/Board A - Parchment Heritage.html, assets/print/source/Sovereignty Print Pack - print.html and assets/print/source/Sovereignty Print Pack.html.",
+        "sentence": "app/src-tauri/gen/schemas is now read by tests/test_tauri_updater_secrets.py.",
+        "subjects": [
+          "app/src-tauri/gen/schemas",
+          "tests/test_tauri_updater_secrets.py"
+        ]
+      },
+      {
+        "kind": "landing",
+        "sentence": "assets/print/source/print-bundle.js is now also read by tests/test_tauri_updater_secrets.py.",
         "subjects": [
           "assets/print/source/print-bundle.js",
-          "assets/print/source/Board A - Parchment Heritage.html",
-          "assets/print/source/Sovereignty Print Pack - print.html",
-          "assets/print/source/Sovereignty Print Pack.html"
+          "tests/test_tauri_updater_secrets.py"
         ]
       },
       {
         "kind": "landing",
-        "sentence": "assets/print/source/print-entry.js is now read by assets/print/source/Sovereignty Print Pack - print.html.",
-        "subjects": [
-          "assets/print/source/print-entry.js",
-          "assets/print/source/Sovereignty Print Pack - print.html"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "And 4 more new writers and readers of places.",
+        "sentence": "And 1 more new writer or reader of a place.",
         "subjects": []
       },
       {
         "kind": "counts",
-        "sentence": "1 file changed content, across 1 part.",
+        "sentence": "29 files changed content, across 7 parts.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "9a1df32495cfcba48f2f4851ff4f29f6b5324a1f",
-      "generatedAt": "2026-09-30T06:11:09.421Z"
+      "commit": "83f9b40eba1ef98f18c978316208899b5e450860",
+      "generatedAt": "2026-09-30T20:13:11.703Z"
     },
     "unchanged": false
   },
@@ -232,7 +198,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 4 source files reach 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "83f9b40eba1ef98f18c978316208899b5e450860",
+  "commit": "8fce39e57ea95dd8bd76175cea8a55f4fcda42a0",
   "defaultBranch": "main",
   "derived": "14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.",
   "doors": [
@@ -703,7 +669,7 @@
       "to": "sov_transport"
     }
   ],
-  "engine": "1.24.0",
+  "engine": "1.26.0",
   "generated": [
     {
       "place": "assets/print/source/print-bundle.js",
@@ -712,14 +678,14 @@
       ]
     }
   ],
-  "generatedAt": "2026-09-30T20:13:11.703Z",
+  "generatedAt": "2026-11-11T22:42:46.024Z",
   "limits": [
     "35 import sites name a declared dependency that shares its name with a local module (xrpl); they are read as the dependency, which is not in this repository.",
     "3 imports could not be resolved: `assets/print/source/render.mjs` imports `puppeteer-core`, which is not declared; `assets/print/source/vendor/react-dom.production.min.js` imports `react`, which is not declared; `sov_cli/main.py` imports a path built at run time.",
     "1 write and 32 reads use paths built at run time and are not named here.",
     "1 write goes to places this repository does not track, so it is not listed as generated.",
     "3 writes and 42 reads go to a path their caller passes, not to this repository.",
-    "1 write and 2 reads go to the directory the command is run in (.sov/, README.md and docs/), not to this repository.",
+    "1 write and 4 reads go to the directory the command is run in (.sov/, README.md and docs/), not to this repository.",
     "1 command is built at run time and not followed.",
     "There is a compose.yaml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.",
     "Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window."
@@ -745,13 +711,20 @@
   "readers": [],
   "repo": "mcp-tool-shop-org/sovereignty",
   "sequences": [],
+  "startBeside": [
+    {
+      "files": [
+        "sov_engine/schemas.py"
+      ],
+      "from": "sov_engine/io_utils.py"
+    }
+  ],
   "startDoor": ".github/workflows/ci.yml",
   "startHere": [
     ".github/workflows/ci.yml",
     "sov_daemon/__init__.py",
     "sov_daemon/lifecycle.py",
     "sov_engine/io_utils.py",
-    "sov_engine/schemas.py",
     "sov_engine/proof.py"
   ],
   "summary": null,
@@ -769,6 +742,7 @@
   "testedByScript": [
     "npm"
   ],
+  "testedCodeParts": 7,
   "unnamedWrites": 1,
   "unread": [],
   "unreadCode": [

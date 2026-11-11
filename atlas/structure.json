@@ -152,7 +152,7 @@
           "path": ".github/scripts/stage-tauri-artifacts.sh"
         },
         {
-          "hash": "c86207963ced34c1791c39d985116925edc37f0d24789bb02bbabdbff0cfb322",
+          "hash": "d0f94ccff7e1410bf6d8734bc900c7d2ddf05664da02df2d336cd4054fcb5023",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -164,7 +164,7 @@
           "path": ".github/workflows/pages.yml"
         },
         {
-          "hash": "1ea05c5b1d65e786385d1c95bcec9660e8fef0675a0372a45fd4bc972634c837",
+          "hash": "fd4113f15dc96020614fd0816d7e7839e37cc8666bf3f0258af0902dd48521e2",
           "path": ".github/workflows/publish.yml"
         },
         {
@@ -217,11 +217,11 @@
           "path": "app/index.html"
         },
         {
-          "hash": "2d17740a973d673670d503e4a052c362340af6574c7a2f85dded700893b3a5c7",
+          "hash": "1db64f6c223373a43ccef69cf93f4dfbcd63073af969bd3e107047d01c006781",
           "path": "app/package-lock.json"
         },
         {
-          "hash": "6468efe5091e5532a963e61214adc9ad163287a8926b4b16f7c0d0fb45242350",
+          "hash": "913f44405f909f11ad7dfda634765befff9f2ddffb5c92daf6a648d868c1fb0b",
           "path": "app/package.json"
         },
         {
@@ -229,11 +229,11 @@
           "path": "app/src-tauri/.cargo/audit.toml"
         },
         {
-          "hash": "f7a029677405ff1d62bedf0c59e6afc2b6ba119508fc51f852adbec37ee6eba2",
+          "hash": "4862599232416905b8458f2cc26a39e7fbb7472ffc00175813ccb0755b0ef5ae",
           "path": "app/src-tauri/Cargo.lock"
         },
         {
-          "hash": "777cd6cdda7c8aec4dffd388d8fb46cc5ffe54bf3c9145c29f8cbba49e9ee584",
+          "hash": "15e0315c89153aafce23c9f184b2629927aa6ce6b6e6a6f33c0a3a7b4ad88e36",
           "path": "app/src-tauri/Cargo.toml"
         },
         {
@@ -670,7 +670,7 @@
           ]
         },
         {
-          "hash": "f175a50da009d83e19ed15dc2686a6fda15534f0e0a0fa1702d6738086c0b002",
+          "hash": "cd5bada76bb237907f8f9eaac44623c0b553a1016eec95b970d930cab19fa585",
           "path": "app/src-tauri/tauri.conf.json"
         },
         {
@@ -1182,7 +1182,7 @@
           "path": "app/src/hooks/useVerifyFlow.ts"
         },
         {
-          "hash": "e212f0f12ad09f49da040838b1e9c658bff4822a585b9147a0e92489b81eebae",
+          "hash": "7de66c8158d05fa27080cfdc927e04a1615d20af63db5688a449bd26340fb4ec",
           "importOrder": [
             "app/src/types/daemon.ts",
             "app/src/lib/daemonClient.ts"
@@ -2985,11 +2985,11 @@
           "path": "npm/bin/sovereignty.js"
         },
         {
-          "hash": "b033468daebfc197e15e1a0504d5829ca6a9bd517c316b2a9543dd87d5a91f5b",
+          "hash": "e6e823cafceb150be7a5a14b01dbc2b6dfbd5306cbe674a09bf974e7a48ebbd5",
           "path": "npm/package-lock.json"
         },
         {
-          "hash": "2e7c8550fbd89ff4696ab33b313055a90a332da81dc858fdf82e248309771252",
+          "hash": "a6f5bdd639167863af81c255bff85dc4a3859289367b68d4360ad84d1d6e4408",
           "path": "npm/package.json"
         },
         {
@@ -3044,11 +3044,11 @@
           "path": "BUILD.md"
         },
         {
-          "hash": "c228e986c4efd0308dbaeb561191170d353a2f101e575d4046ac18db4568ad08",
+          "hash": "c28e4a49097205d0967e4fb82cd7c1f5c954fb157639cf1eebf2c0e43880d9e7",
           "path": "CHANGELOG.md"
         },
         {
-          "hash": "f3b85bc2052217127aa5f442b2f0539d48adb4fb7c67ce645871627dbca05c4d",
+          "hash": "a92a79549257fb43b239b2bcd6a9b6347e48184e6077b4015f3f60bb14f2692b",
           "path": "CLAUDE.md"
         },
         {
@@ -3064,35 +3064,35 @@
           "path": "LICENSE"
         },
         {
-          "hash": "0c2dc54f1cb8f24c9c30f3f4e4369321a2d42e17e9b033d15e60156ef676e062",
+          "hash": "9d72b7eec1ddcede7b6159cb7c9b57889eb6b683953069599be972d4777a30ed",
           "path": "README.es.md"
         },
         {
-          "hash": "0cf4ef87f3d02eb2d18049c474402c582d60a93b2dc7bb199b015188b1ea89b6",
+          "hash": "6b6e47e0ea0fe26f847b6165ad9ed07f1b4670c87457344e5b20e0dbc7bd1495",
           "path": "README.fr.md"
         },
         {
-          "hash": "574d794dd8db7cc704cf3d7e753e2a286f5cf1f8301d9c2659409400cb6dc4f9",
+          "hash": "45dfb867d9390bc87768d915bedcad902941fc9934e23cea814271dfce0c065d",
           "path": "README.hi.md"
         },
         {
-          "hash": "5683f4653b0c6f234f992f124a648c73a9fad0020e5db7d4737934d1fe352868",
+          "hash": "dc6d19e6802d62eae6acb6c448fd3a1966c3925336e74e4ed0a7e73ada51e324",
           "path": "README.it.md"
         },
         {
-          "hash": "ef12e9d775d40ec6ac57876faf35637de27bb11ef1af9dd0615321cad3363cc6",
+          "hash": "ad9d6dc517d6de188839d242b681b5be3ed170b5c03823de7feb3ee7776d2966",
           "path": "README.ja.md"
         },
         {
-          "hash": "b8807d2ae0347326cf5cb36f478517e0044b1d15dfa3649c30f9caedcc53736b",
+          "hash": "c718807f1f4193c1fb362ac01d18b64c39d5812be4c2fc2dab94f6154340e9fa",
           "path": "README.md"
         },
         {
-          "hash": "fcef8c803c77bbfeebdf20afd4f06810db0a4b3892b000bba0c69c383ef385a2",
+          "hash": "506a6cbc7f6dc55e3f067e12befa86853049884fbe4477c3253b5b90bb871112",
           "path": "README.pt-BR.md"
         },
         {
-          "hash": "e91aa4c182222f58effbf7f14dc45d828245dd719290df88d14b793d4216def3",
+          "hash": "604f4f0fa417d4c58d4a37fd2a5c3fd95c13c3a5416f8d961126a0a6db5e7528",
           "path": "README.zh.md"
         },
         {
@@ -3116,11 +3116,11 @@
           "path": "compose.yaml"
         },
         {
-          "hash": "65c4ac5a9b18637761218ce3ac5c0e5b737a7543ffc1444a92504fe8b67f5a58",
+          "hash": "102bbb6d96ffbf276a2d4fe1b0e4648cd2d466e28d02a73f9e592415ddc44ea0",
           "path": "pyproject.toml"
         },
         {
-          "hash": "cfd6efd6c04171e00efa2f0f7ec0d89d7e8e87ce3e1407b64dcf5ab50bfe8426",
+          "hash": "e479e5c8a4d8e98c30530b677409ed35e039024473f4a582822b1bb8cd0de074",
           "path": "uv.lock"
         }
       ],
@@ -3178,11 +3178,11 @@
           "path": "site/astro.config.mjs"
         },
         {
-          "hash": "55e0c6cf85195051cecf658fbcb49a1e5015545d3cd1cab8a6d2148c2c41843e",
+          "hash": "79b129c7431d7b4b4357e93170145fa2edcf65f9b8cfb26f08da932e70f7db9e",
           "path": "site/package-lock.json"
         },
         {
-          "hash": "d033cdca0ab3937f50b412c1907a0aa5bbd18bf92a7973cbe9479b9b61056df6",
+          "hash": "226793926caf039b4d9969d918e65ef05b03d139341d37bddbb5487dd1d4679b",
           "path": "site/package.json"
         },
         {
@@ -3231,7 +3231,7 @@
           "path": "site/src/content/docs/handbook/docker.md"
         },
         {
-          "hash": "6b419fa5b564e06a2f39b8700359ddb9f74d49dcbdd44db35ba62baff2c0291c",
+          "hash": "4d65c4f1f6aadc25297a67b095c65446387a66e96ddf0d083bcf0e3a20cb26fe",
           "path": "site/src/content/docs/handbook/getting-started.md"
         },
         {
@@ -9592,14 +9592,14 @@
           "writes": 0
         },
         {
-          "reads": 1,
+          "reads": 2,
           "where": [
             "cwd:docs/"
           ],
           "writes": 0
         }
       ],
-      "outsideReads": 9,
+      "outsideReads": 10,
       "role": "code",
       "testRunners": [
         "pytest"
@@ -9615,7 +9615,7 @@
       "unresolvedSites": 1
     },
     {
-      "dynamicReads": 13,
+      "dynamicReads": 14,
       "dynamicSpawns": 0,
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 0,
@@ -9628,7 +9628,7 @@
       "externals": 5,
       "files": [
         {
-          "hash": "5d1237462dc554ddb2935c8995f7cc7eb59be7dbc3b5fac4eaa3cd5d89b4120f",
+          "hash": "b064afa4d6bf37c6bc3082dc11e99b760ccc349e994fcbd38096574320308c13",
           "importsFiles": [
             "sov_daemon/lifecycle.py"
           ],
@@ -10441,7 +10441,7 @@
       "unresolvedSites": 0
     },
     {
-      "dynamicReads": 2,
+      "dynamicReads": 1,
       "dynamicSpawns": 0,
       "dynamicSpawnsInTests": 0,
       "dynamicWrites": 1,
@@ -12972,14 +12972,14 @@
           "writes": 1
         },
         {
-          "reads": 0,
+          "reads": 1,
           "where": [
             "cwd:.sov/"
           ],
           "writes": 1
         }
       ],
-      "outsideReads": 19,
+      "outsideReads": 20,
       "outsideWrites": 2,
       "role": "code",
       "testRunners": [
@@ -14187,7 +14187,7 @@
             "test_daemon010_subprocess_env_signer_file_does_not_forward_xrpl_seed",
             "test_readonly_subprocess_env_omits_seed_material"
           ],
-          "hash": "ab66ecd77c08d86ad7a7b48636c3f74b2fa1f084309f39b61829f403171a2056",
+          "hash": "532e54a66d4cee5ac8053d628c54889ffc31b7da89b8234cc17705be4c5095f8",
           "importOrder": [
             "sov_daemon/server.py",
             "sov_daemon/lifecycle.py",
@@ -14265,7 +14265,7 @@
             "test_options_preflight_does_not_require_authorization",
             "test_wrong_token_returns_403_with_auth_invalid_code"
           ],
-          "hash": "a783f9d691919e81da09daad7f58ca536baa63ddffc315f0c9eb2c375c26126f",
+          "hash": "a0aed9334a63bef8f4a7576a0c4cea7ec187fc3f36efcd7bd6e14de238bca07c",
           "importsFiles": [
             "sov_daemon/server.py"
           ],
@@ -15457,7 +15457,7 @@
             "test_tauri_conf_has_updater_pubkey",
             "test_updater_plugin_is_the_only_new_native_updater_dep"
           ],
-          "hash": "3558cedd3b5aa265f03597e5cf65369552d4ab5ab13c8344583227a38981d17b",
+          "hash": "b549c78b4a8ef268846a0d616b5935a8a0e9bdac5402a2fb75405b03390c770e",
           "path": "tests/test_tauri_updater_secrets.py"
         },
         {
@@ -17721,6 +17721,13 @@
           "why": "no setup-python step before it"
         }
       ],
+      "unresolvedExpressions": [
+        {
+          "adds": "words",
+          "job": "build-tauri-binaries",
+          "step": "Build Tauri app"
+        }
+      ],
       "untrackedLandings": [
         "app/src-tauri/gen/schemas"
       ],
@@ -18141,9 +18148,9 @@
       "to": "sov_transport"
     }
   ],
-  "engine": "1.24.0",
+  "engine": "1.26.0",
   "generatedFrom": {
-    "commit": "83f9b40eba1ef98f18c978316208899b5e450860",
+    "commit": "8fce39e57ea95dd8bd76175cea8a55f4fcda42a0",
     "tracked": 426
   },
   "landings": [
@@ -18356,6 +18363,18 @@
     {
       "readers": [
         {
+          "by": "tests/test_tauri_updater_secrets.py",
+          "call": "read_text",
+          "confidence": "ast",
+          "fromTests": true
+        }
+      ],
+      "target": "app/src-tauri/Cargo.lock",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
           "by": "CHANGELOG.md",
           "call": "--manifest-path",
           "confidence": "text"
@@ -18416,7 +18435,22 @@
       "writers": []
     },
     {
-      "readers": [],
+      "readers": [
+        {
+          "by": "tests/test_tauri_updater_secrets.py",
+          "call": "read_bytes",
+          "confidence": "ast",
+          "fromTests": true,
+          "pattern": "**/*"
+        },
+        {
+          "by": "tests/test_tauri_updater_secrets.py",
+          "call": "rglob",
+          "confidence": "ast",
+          "fromTests": true,
+          "pattern": "**/*"
+        }
+      ],
       "target": "app/src-tauri/gen/schemas",
       "tracked": false,
       "writers": [
@@ -18794,6 +18828,20 @@
           "by": "assets/print/source/compile-jsx.mjs",
           "call": "statSync",
           "confidence": "ast"
+        },
+        {
+          "by": "tests/test_tauri_updater_secrets.py",
+          "call": "read_bytes",
+          "confidence": "ast",
+          "fromTests": true,
+          "pattern": "**/*"
+        },
+        {
+          "by": "tests/test_tauri_updater_secrets.py",
+          "call": "rglob",
+          "confidence": "ast",
+          "fromTests": true,
+          "pattern": "**/*"
         }
       ],
       "target": "assets/print/source/print-bundle.js",
@@ -19182,6 +19230,18 @@
         }
       ],
       "target": "sov_daemon",
+      "writers": []
+    },
+    {
+      "readers": [
+        {
+          "by": "tests/test_daemon_amend_wave9.py",
+          "call": "read_text",
+          "confidence": "ast",
+          "fromTests": true
+        }
+      ],
+      "target": "sov_daemon/**/*.py",
       "writers": []
     },
     {
