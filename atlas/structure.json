@@ -152,7 +152,7 @@
           "path": ".github/scripts/stage-tauri-artifacts.sh"
         },
         {
-          "hash": "d0f94ccff7e1410bf6d8734bc900c7d2ddf05664da02df2d336cd4054fcb5023",
+          "hash": "38185b86e258da0a2e293e08f9fa0aea5c6f7479f5056449fa7206f4f24e693c",
           "path": ".github/workflows/ci.yml"
         },
         {
@@ -164,7 +164,7 @@
           "path": ".github/workflows/pages.yml"
         },
         {
-          "hash": "fd4113f15dc96020614fd0816d7e7839e37cc8666bf3f0258af0902dd48521e2",
+          "hash": "cb9b263f04ad4ece4507ddd12f2d2a40a62dcaff00e7e89f567f599d20a39811",
           "path": ".github/workflows/publish.yml"
         },
         {
@@ -217,11 +217,11 @@
           "path": "app/index.html"
         },
         {
-          "hash": "db264df923a900d69b01aa036d44797db7305cc693bcbd99e5836792d479d301",
+          "hash": "58c4233f8cbf4f87ca77e7d14fa9a9d6483081aa063a3acba2d252075ee3d4f4",
           "path": "app/package-lock.json"
         },
         {
-          "hash": "913f44405f909f11ad7dfda634765befff9f2ddffb5c92daf6a648d868c1fb0b",
+          "hash": "ed95db3cb5aed76e65fe821c0b1d1e88ca0a852934335af2396daac3ab866e03",
           "path": "app/package.json"
         },
         {
@@ -1652,7 +1652,7 @@
           "path": "app/src/types/game.ts"
         },
         {
-          "hash": "8888298646053e478a1afffdae65412e2bd128e66a2680ae99b63c003ffe43b7",
+          "hash": "b928c69b136f3516e9f42411733b0d97770e67bcde1ced521891c1ee153fb33e",
           "path": "app/tsconfig.json"
         },
         {
@@ -16299,13 +16299,13 @@
             {
               "ranges": [
                 {
-                  "from": "20",
-                  "range": ">=20.0.0 <21.0.0-0"
+                  "from": "24",
+                  "range": ">=24.0.0 <25.0.0-0"
                 }
               ],
               "step": "Setup Node",
               "uses": "actions/setup-node",
-              "version": "20"
+              "version": "24"
             }
           ]
         },
@@ -17494,13 +17494,13 @@
             {
               "ranges": [
                 {
-                  "from": "20",
-                  "range": ">=20.0.0 <21.0.0-0"
+                  "from": "24",
+                  "range": ">=24.0.0 <25.0.0-0"
                 }
               ],
               "step": "Setup Node",
               "uses": "actions/setup-node",
-              "version": "20"
+              "version": "24"
             }
           ]
         },
@@ -18150,7 +18150,7 @@
   ],
   "engine": "1.26.0",
   "generatedFrom": {
-    "commit": "430c549631b8c947028c6959d1803b51c1e30b94",
+    "commit": "e036125535b29ae968f6b6f29867083351918254",
     "tracked": 426
   },
   "landings": [

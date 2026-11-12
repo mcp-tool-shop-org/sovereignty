@@ -390,12 +390,12 @@
       },
       {
         "commits": 12,
-        "lines": 2115,
+        "lines": 608,
         "path": "app/package-lock.json"
       },
       {
-        "commits": 12,
-        "lines": 42,
+        "commits": 11,
+        "lines": 37,
         "path": "app/package.json"
       },
       {
@@ -572,11 +572,6 @@
         "commits": 2,
         "lines": 43,
         "path": "app/src/types/daemon.ts"
-      },
-      {
-        "commits": 1,
-        "lines": 2,
-        "path": "app/tsconfig.json"
       },
       {
         "commits": 1,
@@ -819,8 +814,8 @@
         "path": "assets/print/source/vendor/react.production.min.js"
       },
       {
-        "commits": 26,
-        "lines": 552,
+        "commits": 25,
+        "lines": 538,
         "path": "atlas/README.md"
       },
       {
@@ -829,18 +824,18 @@
         "path": "atlas/boundaries.yaml"
       },
       {
-        "commits": 26,
-        "lines": 2238,
+        "commits": 25,
+        "lines": 2202,
         "path": "atlas/page.json"
       },
       {
-        "commits": 26,
-        "lines": 8291,
+        "commits": 25,
+        "lines": 7930,
         "path": "atlas/statistics.json"
       },
       {
-        "commits": 26,
-        "lines": 29512,
+        "commits": 25,
+        "lines": 29470,
         "path": "atlas/structure.json"
       },
       {
@@ -1229,9 +1224,9 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-11-12T00:51:01.172Z",
+  "generatedAt": "2026-11-12T07:22:48.784Z",
   "generatedFrom": {
-    "commit": "430c549631b8c947028c6959d1803b51c1e30b94"
+    "commit": "e036125535b29ae968f6b6f29867083351918254"
   },
   "pairs": [
     {
@@ -1658,8 +1653,8 @@
       "a": "app/package-lock.json",
       "b": "app/package.json",
       "either": 12,
-      "shared": 12,
-      "strength": 1
+      "shared": 11,
+      "strength": 0.916667
     },
     {
       "a": "app/package-lock.json",
@@ -1678,16 +1673,16 @@
     {
       "a": "app/package.json",
       "b": "app/src-tauri/tauri.conf.json",
-      "either": 12,
+      "either": 11,
       "shared": 8,
-      "strength": 0.666667
+      "strength": 0.727273
     },
     {
       "a": "app/package.json",
       "b": "sov_daemon/__init__.py",
-      "either": 12,
+      "either": 11,
       "shared": 7,
-      "strength": 0.583333
+      "strength": 0.636364
     },
     {
       "a": "app/src-tauri/tauri.conf.json",
@@ -1727,43 +1722,43 @@
     {
       "a": "atlas/README.md",
       "b": "atlas/page.json",
-      "either": 25,
-      "shared": 25,
+      "either": 24,
+      "shared": 24,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/statistics.json",
-      "either": 25,
-      "shared": 25,
+      "either": 24,
+      "shared": 24,
       "strength": 1
     },
     {
       "a": "atlas/README.md",
       "b": "atlas/structure.json",
-      "either": 25,
-      "shared": 25,
+      "either": 24,
+      "shared": 24,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/statistics.json",
-      "either": 25,
-      "shared": 25,
+      "either": 24,
+      "shared": 24,
       "strength": 1
     },
     {
       "a": "atlas/page.json",
       "b": "atlas/structure.json",
-      "either": 25,
-      "shared": 25,
+      "either": 24,
+      "shared": 24,
       "strength": 1
     },
     {
       "a": "atlas/statistics.json",
       "b": "atlas/structure.json",
-      "either": 25,
-      "shared": 25,
+      "either": 24,
+      "shared": 24,
       "strength": 1
     },
     {
@@ -1854,16 +1849,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-11-11T19:49:15-05:00",
+    "headDate": "2026-11-11T20:17:44-05:00",
     "inScopeFiles": 431,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 91,
+    "qualifyingCommits": 90,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-05-16T00:49:15.000Z",
+    "since": "2026-05-16T01:17:44.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

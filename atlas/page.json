@@ -99,21 +99,21 @@
   "changes": {
     "fileCounts": {
       "added": 0,
-      "changed": 3,
+      "changed": 5,
       "moved": 0,
-      "parts": 1,
+      "parts": 2,
       "removed": 0
     },
     "items": [
       {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-11-12; 3 files changed content.",
+        "sentence": "Nothing structural changed since 2026-11-12; 5 files changed content.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "4ab59d60c3f2f9711b0ff854094dd73cfe94ac97",
-      "generatedAt": "2026-11-12T00:49:09.382Z"
+      "commit": "430c549631b8c947028c6959d1803b51c1e30b94",
+      "generatedAt": "2026-11-12T00:51:01.172Z"
     },
     "unchanged": true
   },
@@ -139,7 +139,7 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 1 source file reaches 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "430c549631b8c947028c6959d1803b51c1e30b94",
+  "commit": "e036125535b29ae968f6b6f29867083351918254",
   "defaultBranch": "main",
   "derived": "14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.",
   "doors": [
@@ -619,7 +619,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-11-12T00:51:01.172Z",
+  "generatedAt": "2026-11-12T07:22:48.784Z",
   "limits": [
     "35 import sites name a declared dependency that shares its name with a local module (xrpl); they are read as the dependency, which is not in this repository.",
     "3 imports could not be resolved: `assets/print/source/render.mjs` imports `puppeteer-core`, which is not declared; `assets/print/source/vendor/react-dom.production.min.js` imports `react`, which is not declared; `sov_cli/main.py` imports a path built at run time.",

@@ -1,14 +1,14 @@
 # sovereignty: how it works
 
-Mapped at 2026-11-12 from commit 430c549 by Atlas 1.26.0.
+Mapped at 2026-11-12 from commit e036125 by Atlas 1.26.0.
 
 ## What this is
 
 14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.
 
-## What changed since 2026-11-12 (4ab59d6)
+## What changed since 2026-11-12 (430c549)
 
-Nothing structural changed since 2026-11-12; 3 files changed content.
+Nothing structural changed since 2026-11-12; 5 files changed content.
 
 ## What comes in
 
