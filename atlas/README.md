@@ -1,22 +1,14 @@
 # sovereignty: how it works
 
-Mapped at 2026-09-30 from commit 83f9b40 by Atlas 1.24.0.
+Mapped at 2026-11-12 from commit 430c549 by Atlas 1.26.0.
 
 ## What this is
 
 14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.
 
-## What changed since 2026-09-30 (9a1df32)
+## What changed since 2026-11-12 (4ab59d6)
 
-- CI now also runs sov_daemon/__init__.py.
-- Release now also runs app/src-tauri/build.rs, app/src/ and app/vite.config.ts.
-- Release now also builds app/src-tauri/src/main.rs.
-- And 2 more changes to doors.
-- assets/print/source/fonts.css is now read by assets/print/source/Board A - Parchment Heritage.html, assets/print/source/Sovereignty Print Pack - print.html and assets/print/source/Sovereignty Print Pack.html.
-- assets/print/source/print-bundle.js is now also read by assets/print/source/Board A - Parchment Heritage.html, assets/print/source/Sovereignty Print Pack - print.html and assets/print/source/Sovereignty Print Pack.html.
-- assets/print/source/print-entry.js is now read by assets/print/source/Sovereignty Print Pack - print.html.
-- And 4 more new writers and readers of places.
-- 1 file changed content, across 1 part.
+Nothing structural changed since 2026-11-12; 3 files changed content.
 
 ## What comes in
 
@@ -66,19 +58,17 @@ CI writes only to app/src-tauri/gen/schemas, which is not tracked.
 - **app** is imported by no other part and sits on the path of 3 doors.
 - **.github** is imported by no other part and sits on the path of 2 doors.
 - **docker** is imported by no other part and sits on the path of 2 doors.
-- **assets/print/source/print-bundle.js** is written by assets and read by assets; a hand edit reaches every reader.
+- **assets/print/source/print-bundle.js** is written by assets and read by assets, and by 1 test; a hand edit reaches every reader.
 
 scripts holds only shell files, which this map does not read, so what uses it cannot be seen.
 
 ## What tends to change together
 
-- **sov_engine/hashing.py** and **tests/test_proofs.py** changed together in 6 of 8 commits, and the tests part imports the sov_engine part.
-- **sov_transport/base.py** and **sov_transport/xrpl_testnet.py** changed together in 4 of 6 commits, inside the sov_transport part.
-- **sov_cli/errors.py** and **sov_transport/xrpl_testnet.py** changed together in 5 of 10 commits, and the sov_cli part imports the sov_transport part.
+- **site/src/site-config.ts** and **sov_daemon/__init__.py** changed together in 6 of 9 commits, though neither part imports the other.
 
 Confidence is low: fewer than 25 source files reach 10 revisions in the window.
 
-Window: 180 days; a pair counts from 3 shared commits, since 4 source files reach 10 revisions; the floor rises to 10 when 25 do.
+Window: 180 days; a pair counts from 3 shared commits, since 1 source file reaches 10 revisions; the floor rises to 10 when 25 do.
 
 ## What no test touches
 
@@ -106,9 +96,11 @@ People write .github/, docker/, docs/, the repository root and site/; 1 write wi
 
 ## Where to start
 
-.github/workflows/ci.yml → sov_daemon/__init__.py → sov_daemon/lifecycle.py → sov_engine/io_utils.py → sov_engine/schemas.py → sov_engine/proof.py
+.github/workflows/ci.yml → sov_daemon/__init__.py → sov_daemon/lifecycle.py → sov_engine/io_utils.py → sov_engine/proof.py
 
 Read those in order to follow one pull request end to end.
+
+Beside the path, sov_engine/io_utils.py also calls sov_engine/schemas.py.
 
 ## What this map cannot see
 
@@ -117,7 +109,7 @@ Read those in order to follow one pull request end to end.
 - 1 write and 32 reads use paths built at run time and are not named here.
 - 1 write goes to places this repository does not track, so it is not listed as generated.
 - 3 writes and 42 reads go to a path their caller passes, not to this repository.
-- 1 write and 2 reads go to the directory the command is run in (.sov/, README.md and docs/), not to this repository.
+- 1 write and 4 reads go to the directory the command is run in (.sov/, README.md and docs/), not to this repository.
 - 1 command is built at run time and not followed.
 - There is a compose.yaml that no workflow runs; what deploys from it does so from outside this repository, and is not on this page.
 - Statistics confidence is low: fewer than 25 source files reach 10 revisions in the window.
