@@ -217,11 +217,11 @@
           "path": "app/index.html"
         },
         {
-          "hash": "f2030d97489fd3960632156d088ef3fcd8c05591f4d2be687e4925015615408c",
+          "hash": "db264df923a900d69b01aa036d44797db7305cc693bcbd99e5836792d479d301",
           "path": "app/package-lock.json"
         },
         {
-          "hash": "4aa3d882a1b9d7bea6add97377f2e1d4d0cb560ac7806c09540f9e8efbb13789",
+          "hash": "913f44405f909f11ad7dfda634765befff9f2ddffb5c92daf6a648d868c1fb0b",
           "path": "app/package.json"
         },
         {
@@ -1652,7 +1652,7 @@
           "path": "app/src/types/game.ts"
         },
         {
-          "hash": "b928c69b136f3516e9f42411733b0d97770e67bcde1ced521891c1ee153fb33e",
+          "hash": "8888298646053e478a1afffdae65412e2bd128e66a2680ae99b63c003ffe43b7",
           "path": "app/tsconfig.json"
         },
         {
@@ -16234,38 +16234,6 @@
       ],
       "elsewhere": [],
       "file": ".github/workflows/ci.yml",
-      "findings": [
-        {
-          "job": "tauri-and-frontend",
-          "lines": [
-            {
-              "file": ".github/workflows/ci.yml",
-              "line": 263
-            },
-            {
-              "file": ".github/workflows/ci.yml",
-              "line": 365
-            },
-            {
-              "file": "app/package-lock.json",
-              "line": 3174
-            }
-          ],
-          "package": "vitest",
-          "pinnedBy": {
-            "step": "Setup Node",
-            "version": "20"
-          },
-          "pins": [
-            "20"
-          ],
-          "requires": "^22.12.0 || ^24.0.0 || >=26.0.0",
-          "rule": "D1",
-          "step": "Frontend test",
-          "tool": "vitest run",
-          "version": "5.1.0"
-        }
-      ],
       "jobs": [
         {
           "basis": "declared",
@@ -18182,7 +18150,7 @@
   ],
   "engine": "1.26.0",
   "generatedFrom": {
-    "commit": "4ab59d60c3f2f9711b0ff854094dd73cfe94ac97",
+    "commit": "430c549631b8c947028c6959d1803b51c1e30b94",
     "tracked": 426
   },
   "landings": [
