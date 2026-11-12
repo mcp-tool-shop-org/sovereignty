@@ -217,11 +217,11 @@
           "path": "app/index.html"
         },
         {
-          "hash": "1db64f6c223373a43ccef69cf93f4dfbcd63073af969bd3e107047d01c006781",
+          "hash": "f2030d97489fd3960632156d088ef3fcd8c05591f4d2be687e4925015615408c",
           "path": "app/package-lock.json"
         },
         {
-          "hash": "913f44405f909f11ad7dfda634765befff9f2ddffb5c92daf6a648d868c1fb0b",
+          "hash": "4aa3d882a1b9d7bea6add97377f2e1d4d0cb560ac7806c09540f9e8efbb13789",
           "path": "app/package.json"
         },
         {
@@ -229,7 +229,7 @@
           "path": "app/src-tauri/.cargo/audit.toml"
         },
         {
-          "hash": "4862599232416905b8458f2cc26a39e7fbb7472ffc00175813ccb0755b0ef5ae",
+          "hash": "6389574447e01816f8606468d3921c083b8973b91ecaa583da88fc1614af18fe",
           "path": "app/src-tauri/Cargo.lock"
         },
         {
@@ -1652,7 +1652,7 @@
           "path": "app/src/types/game.ts"
         },
         {
-          "hash": "8888298646053e478a1afffdae65412e2bd128e66a2680ae99b63c003ffe43b7",
+          "hash": "b928c69b136f3516e9f42411733b0d97770e67bcde1ced521891c1ee153fb33e",
           "path": "app/tsconfig.json"
         },
         {
@@ -16234,6 +16234,38 @@
       ],
       "elsewhere": [],
       "file": ".github/workflows/ci.yml",
+      "findings": [
+        {
+          "job": "tauri-and-frontend",
+          "lines": [
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 263
+            },
+            {
+              "file": ".github/workflows/ci.yml",
+              "line": 365
+            },
+            {
+              "file": "app/package-lock.json",
+              "line": 3174
+            }
+          ],
+          "package": "vitest",
+          "pinnedBy": {
+            "step": "Setup Node",
+            "version": "20"
+          },
+          "pins": [
+            "20"
+          ],
+          "requires": "^22.12.0 || ^24.0.0 || >=26.0.0",
+          "rule": "D1",
+          "step": "Frontend test",
+          "tool": "vitest run",
+          "version": "5.1.0"
+        }
+      ],
       "jobs": [
         {
           "basis": "declared",
@@ -18150,7 +18182,7 @@
   ],
   "engine": "1.26.0",
   "generatedFrom": {
-    "commit": "8fce39e57ea95dd8bd76175cea8a55f4fcda42a0",
+    "commit": "4ab59d60c3f2f9711b0ff854094dd73cfe94ac97",
     "tracked": 426
   },
   "landings": [

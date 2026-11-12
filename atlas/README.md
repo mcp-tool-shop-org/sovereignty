@@ -1,18 +1,14 @@
 # sovereignty: how it works
 
-Mapped at 2026-11-11 from commit 8fce39e by Atlas 1.26.0.
+Mapped at 2026-11-12 from commit 4ab59d6 by Atlas 1.26.0.
 
 ## What this is
 
 14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.
 
-## What changed since 2026-09-30 (83f9b40)
+## What changed since 2026-11-11 (8fce39e)
 
-- app/src-tauri/Cargo.lock is now read by tests/test_tauri_updater_secrets.py.
-- app/src-tauri/gen/schemas is now read by tests/test_tauri_updater_secrets.py.
-- assets/print/source/print-bundle.js is now also read by tests/test_tauri_updater_secrets.py.
-- And 1 more new writer or reader of a place.
-- 29 files changed content, across 7 parts.
+Nothing structural changed since 2026-11-11; 4 files changed content.
 
 ## What comes in
 
@@ -68,13 +64,11 @@ scripts holds only shell files, which this map does not read, so what uses it ca
 
 ## What tends to change together
 
-- **sov_engine/hashing.py** and **tests/test_proofs.py** changed together in 6 of 8 commits, and the tests part imports the sov_engine part.
-- **sov_transport/base.py** and **sov_transport/xrpl_testnet.py** changed together in 4 of 6 commits, inside the sov_transport part.
-- **sov_cli/errors.py** and **sov_transport/xrpl_testnet.py** changed together in 5 of 10 commits, and the sov_cli part imports the sov_transport part.
+- **site/src/site-config.ts** and **sov_daemon/__init__.py** changed together in 6 of 9 commits, though neither part imports the other.
 
 Confidence is low: fewer than 25 source files reach 10 revisions in the window.
 
-Window: 180 days; a pair counts from 3 shared commits, since 4 source files reach 10 revisions; the floor rises to 10 when 25 do.
+Window: 180 days; a pair counts from 3 shared commits, since 1 source file reaches 10 revisions; the floor rises to 10 when 25 do.
 
 ## What no test touches
 

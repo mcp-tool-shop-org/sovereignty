@@ -99,106 +99,47 @@
   "changes": {
     "fileCounts": {
       "added": 0,
-      "changed": 29,
+      "changed": 4,
       "moved": 0,
-      "parts": 7,
+      "parts": 1,
       "removed": 0
     },
     "items": [
       {
-        "kind": "landing",
-        "sentence": "app/src-tauri/Cargo.lock is now read by tests/test_tauri_updater_secrets.py.",
-        "subjects": [
-          "app/src-tauri/Cargo.lock",
-          "tests/test_tauri_updater_secrets.py"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "app/src-tauri/gen/schemas is now read by tests/test_tauri_updater_secrets.py.",
-        "subjects": [
-          "app/src-tauri/gen/schemas",
-          "tests/test_tauri_updater_secrets.py"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "assets/print/source/print-bundle.js is now also read by tests/test_tauri_updater_secrets.py.",
-        "subjects": [
-          "assets/print/source/print-bundle.js",
-          "tests/test_tauri_updater_secrets.py"
-        ]
-      },
-      {
-        "kind": "landing",
-        "sentence": "And 1 more new writer or reader of a place.",
-        "subjects": []
-      },
-      {
         "kind": "counts",
-        "sentence": "29 files changed content, across 7 parts.",
+        "sentence": "Nothing structural changed since 2026-11-11; 4 files changed content.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "83f9b40eba1ef98f18c978316208899b5e450860",
-      "generatedAt": "2026-09-30T20:13:11.703Z"
+      "commit": "8fce39e57ea95dd8bd76175cea8a55f4fcda42a0",
+      "generatedAt": "2026-11-11T22:42:46.024Z"
     },
-    "unchanged": false
+    "unchanged": true
   },
   "changesTogether": [
     {
-      "a": "sov_engine/hashing.py",
-      "b": "tests/test_proofs.py",
-      "either": 8,
+      "a": "site/src/site-config.ts",
+      "b": "sov_daemon/__init__.py",
+      "either": 9,
       "partLabels": [
-        "sov_engine",
-        "tests"
+        "the site",
+        "sov_daemon"
       ],
       "parts": [
-        "sov_engine",
-        "tests"
+        "site",
+        "sov_daemon"
       ],
-      "relation": "b-imports-a",
+      "relation": "none",
       "shared": 6
-    },
-    {
-      "a": "sov_transport/base.py",
-      "b": "sov_transport/xrpl_testnet.py",
-      "either": 6,
-      "partLabels": [
-        "sov_transport",
-        "sov_transport"
-      ],
-      "parts": [
-        "sov_transport",
-        "sov_transport"
-      ],
-      "relation": "inside",
-      "shared": 4
-    },
-    {
-      "a": "sov_cli/errors.py",
-      "b": "sov_transport/xrpl_testnet.py",
-      "either": 10,
-      "partLabels": [
-        "sov_cli",
-        "sov_transport"
-      ],
-      "parts": [
-        "sov_cli",
-        "sov_transport"
-      ],
-      "relation": "a-imports-b",
-      "shared": 5
     }
   ],
   "changesTogetherNote": [
     "Confidence is low: fewer than 25 source files reach 10 revisions in the window.",
-    "Window: 180 days; a pair counts from 3 shared commits, since 4 source files reach 10 revisions; the floor rises to 10 when 25 do."
+    "Window: 180 days; a pair counts from 3 shared commits, since 1 source file reaches 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "8fce39e57ea95dd8bd76175cea8a55f4fcda42a0",
+  "commit": "4ab59d60c3f2f9711b0ff854094dd73cfe94ac97",
   "defaultBranch": "main",
   "derived": "14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.",
   "doors": [
@@ -678,7 +619,7 @@
       ]
     }
   ],
-  "generatedAt": "2026-11-11T22:42:46.024Z",
+  "generatedAt": "2026-11-12T00:49:09.382Z",
   "limits": [
     "35 import sites name a declared dependency that shares its name with a local module (xrpl); they are read as the dependency, which is not in this repository.",
     "3 imports could not be resolved: `assets/print/source/render.mjs` imports `puppeteer-core`, which is not declared; `assets/print/source/vendor/react-dom.production.min.js` imports `react`, which is not declared; `sov_cli/main.py` imports a path built at run time.",
