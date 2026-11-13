@@ -1,0 +1,13 @@
+
+  Checked 1 anchored round on XRPL testnet: 0 still on the ledger, 1 gone, 0 not answered.
+  Testnet was reset on 2026-11-25. The wallet from before it is gone too: if sending fails, run `sov wallet` for a new one and try again.
+  Anchoring 1 round again...
+
++------------------------------------------------------------------------------------------ Anchored again -------------------------------------------------------------------------------------------+
+|   1 round anchored again on XRPL testnet.                                                                                                                                                           |
+|                                                                                                                                                                                                     |
+|   Round 1: C4F55C5FD6DE3F1959F4666B69F4BDF6F994FC08A339C3D8F8A8C3FF5902657A                                                                                                                         |
+|     was F00DFACE00000000000000000000000000000000000000000000000000000000                                                                                                                            |
+|                                                                                                                                                                                                     |
+|   Verify one with `sov verify <proof_file> --tx <txid>`.                                                                                                                                            |
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+

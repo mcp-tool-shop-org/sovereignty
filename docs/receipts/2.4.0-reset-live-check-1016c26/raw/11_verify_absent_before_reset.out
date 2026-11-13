@@ -1,0 +1,3 @@
+  Local proof valid. Proof valid. Round 1, envelope hash matches.
+  Anchor mismatch — the on-chain memo doesn't match this proof's hash.
+  Either you passed the wrong --tx (check anchors.json), or the proof file changed after it was anchored. If you re-ran sov end-round after anchoring, the new hash won't match.

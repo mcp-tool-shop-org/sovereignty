@@ -1,0 +1,6 @@
+new: sovereignty 2.4.0
+new module: <worktree>\sov_cli\main.py
+old: sovereignty 2.3.6
+old module: <venv-2.3.6>\Lib\site-packages\sov_cli\main.py
+old has tx_exists: False
+network: testnet (default; SOV_XRPL_NETWORK unset)
