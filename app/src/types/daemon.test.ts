@@ -33,9 +33,20 @@ describe("daemon types — pinned literals", () => {
     expect(s).toContain("anchored");
   });
 
-  it("ChainLookupResult 3-state enum", () => {
-    const s: ChainLookupResult[] = ["found", "not_found", "lookup_failed"];
-    expect(s).toHaveLength(3);
+  it("ChainLookupResult enum, with reset", () => {
+    const s: ChainLookupResult[] = ["found", "not_found", "lookup_failed", "reset"];
+    expect(s).toHaveLength(4);
+    const reset: VerifyRoundResponse = {
+      round: "1",
+      anchor_status: "anchored",
+      envelope_hash: null,
+      txid: "ABC",
+      chain_lookup: "reset",
+      reset_signal: "announced",
+      reset_note: "Testnet was reset on 2026-11-25",
+    };
+    expect(reset.chain_lookup).toBe("reset");
+    expect(reset.reset_signal).toBe("announced");
     const v: VerifyRoundResponse = {
       round: "1",
       anchor_status: "anchored",

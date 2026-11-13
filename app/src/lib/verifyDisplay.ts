@@ -49,6 +49,16 @@ export function verifyFailureDisplay(reason: VerifyFailureReason): VerifyDisplay
   }
 }
 
+/** Display copy for a round whose anchor was lost to a network reset.
+ *  Not a failure and not a pass: the anchor can no longer be checked. */
+export function networkResetDisplay(note?: string): VerifyDisplay {
+  const what = note ?? "The network was reset after this proof was anchored";
+  return {
+    short: "network reset",
+    detail: `${what}. The anchor can no longer be checked; only the local proof hash is left. Run \`sov anchor <proof_file>\` to anchor it again.`,
+  };
+}
+
 export type BrowseAnchorVariant = "success" | "warn" | "error";
 
 export interface BrowseAnchorVisual {

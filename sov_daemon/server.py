@@ -650,7 +650,10 @@ async def verify_round_handler(request: Request) -> JSONResponse:
 
     Same local ``anchor_status`` keys as ``/anchor-status``. When a txid
     is recorded, calls ``transport.is_anchored_on_chain`` and emits
-    ``chain_lookup``: ``found`` / ``not_found`` / ``lookup_failed``.
+    ``chain_lookup``: ``found`` / ``not_found`` / ``lookup_failed`` /
+    ``reset``. ``reset`` means the tx is absent and an announced reset of the
+    network covers the proof's time; it comes with ``reset_signal`` and
+    ``reset_note``, and is never a pass.
     Omits ``chain_lookup`` when pending or no txid (no XRPL round-trip).
     Does not bump ``ipc_version``. Browse ``/anchor-status`` stays local.
     """
@@ -696,7 +699,27 @@ async def verify_round_handler(request: Request) -> JSONResponse:
             result = transport.is_anchored_on_chain(str(txid), str(envelope_hash))
             lookup = getattr(result, "value", result)
             lookup_s = str(lookup)
-            if lookup_s in ("found", "not_found", "lookup_failed"):
+            if lookup_s == "not_found":
+                # Before reporting a miss: was the network reset after this
+                # proof was made, with the tx now absent? Then the anchor
+                # can no longer be checked, which is not a pass and not a
+                # contradiction.
+                from sov_transport.resets import (
+                    RESET_SIGNAL_ANNOUNCED,
+                    reset_explains_missing_anchor,
+                )
+
+                proof_time = (
+                    proof_data.get("timestamp_utc") if isinstance(proof_data, dict) else None
+                )
+                reset = reset_explains_missing_anchor(transport, network, str(txid), proof_time)
+                if reset is not None:
+                    payload["chain_lookup"] = "reset"
+                    payload["reset_signal"] = RESET_SIGNAL_ANNOUNCED
+                    payload["reset_note"] = f"{reset.label()} ({reset.source})"
+                else:
+                    payload["chain_lookup"] = "not_found"
+            elif lookup_s in ("found", "lookup_failed"):
                 payload["chain_lookup"] = lookup_s
             else:
                 # Unknown transport result: fail open as lookup_failed,

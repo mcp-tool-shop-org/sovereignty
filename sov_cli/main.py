@@ -22,6 +22,7 @@ from sov_cli.errors import (
     anchor_error,
     anchor_mismatch_error,
     anchor_pending_error,
+    anchor_reset_error,
     chain_lookup_failed_error,
     daemon_not_installed_error,
     daemon_not_running_error,
@@ -700,7 +701,14 @@ def _load_game_inner(sf: Path, rf: Path) -> tuple[GameState, GameRng] | None:
     return state, rng
 
 
-def _fail(err: SovError) -> Never:
+# `sov verify --tx` exits 3 when the only thing wrong is that the network was
+# reset after the proof was anchored: the local proof is valid and nothing was
+# found false, but the anchor can no longer be checked. Not 0 (it is not
+# verified) and not 1 (nothing was contradicted).
+EXIT_ANCHOR_RESET = 3
+
+
+def _fail(err: SovError, *, exit_code: int = 1) -> Never:
     """Print structured error and exit.
 
     CLI-D-005: 2-space indent matches the dominant CLI rhythm (most
@@ -718,7 +726,7 @@ def _fail(err: SovError) -> Never:
     console.print(f"  [red]{escape(err.message)}[/red]")
     if err.hint:
         console.print(f"  [dim]{_render_backticks(escape(err.hint))}[/dim]")
-    raise typer.Exit(1)
+    raise typer.Exit(exit_code)
 
 
 def _render_backticks(text: str) -> str:
@@ -2068,7 +2076,12 @@ def verify(
         str,
         typer.Option(
             "--tx",
-            help=("XRPL transaction hash (64 hex chars) to verify the proof's anchor against."),
+            help=(
+                "XRPL transaction hash (64 hex chars) to verify the proof's anchor "
+                "against. Exit 0: verified. Exit 1: mismatch, or the lookup failed. "
+                "Exit 3: the anchor is gone because the test network was reset "
+                "after the proof was made (not a pass)."
+            ),
         ),
     ] = "",
     network: Annotated[
@@ -2119,6 +2132,21 @@ def verify(
             elif result is ChainLookupResult.LOOKUP_FAILED:
                 _fail(chain_lookup_failed_error())
             else:
+                # NOT_FOUND. Before calling it a mismatch: was the network
+                # reset after this proof was made, with the tx now absent?
+                from sov_transport.resets import reset_explains_missing_anchor
+
+                reset = reset_explains_missing_anchor(
+                    transport,
+                    resolved_network.value,
+                    tx,
+                    proof_data.get("timestamp_utc"),
+                )
+                if reset is not None:
+                    _fail(
+                        anchor_reset_error(reset.label(), reset.source),
+                        exit_code=EXIT_ANCHOR_RESET,
+                    )
                 _fail(anchor_mismatch_error())
         except typer.Exit:
             # ``_fail`` raises ``typer.Exit``; Click's Exit is a RuntimeError

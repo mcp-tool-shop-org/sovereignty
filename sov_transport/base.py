@@ -31,15 +31,24 @@ class ChainLookupResult(StrEnum):
         with a different reason ("could not reach chain") so callers can
         choose to retry instead of caching the result.
 
+    ``RESET`` — the anchor transaction is absent, and an announced reset of
+        the network covers the time the proof was made. The anchor can no
+        longer be checked. Never a pass: a made-up txid dated before the
+        reset reads the same way. No transport returns this; it is composed
+        above the lookup, from ``NOT_FOUND`` plus
+        ``sov_transport.resets.reset_explains_missing_anchor``, because the
+        lookup itself does not know when a proof was made.
+
     ``StrEnum`` so values round-trip through JSON / SSE events without
     bespoke (de)serialization. Stable string values (``"found"`` /
-    ``"not_found"`` / ``"lookup_failed"``) are part of the audit surface
-    — operators may grep for them in logs and dashboards.
+    ``"not_found"`` / ``"lookup_failed"`` / ``"reset"``) are part of the
+    audit surface — operators may grep for them in logs and dashboards.
     """
 
     FOUND = "found"
     NOT_FOUND = "not_found"
     LOOKUP_FAILED = "lookup_failed"
+    RESET = "reset"
 
 
 # intentional non-mirror: BatchEntry is bridge-internal, no frontend consumer.
