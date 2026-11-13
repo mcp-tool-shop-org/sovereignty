@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-11-13
+
+The release for the 2026-11-25 Testnet and Devnet wipe.
+
 ### Added
 
 - **`sov anchor --reanchor`: put a game's rounds back on the ledger after a
