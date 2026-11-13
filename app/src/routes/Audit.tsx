@@ -23,6 +23,7 @@ import { isSafeExplorerUrl } from "../lib/url";
 import {
   anchorStatusDisplay,
   browseAnchorVisual,
+  networkResetDisplay,
   verifyFailureDisplay,
 } from "../lib/verifyDisplay";
 import type { AnchorStatusResponse, GameSummary, SSEEvent } from "../types/daemon";
@@ -527,6 +528,14 @@ function RoundRowView({
     verifyCell = (
       <Pill variant="warn" title="Pending — not yet submitted to the chain">
         ⊘ Pending
+      </Pill>
+    );
+  } else if (verifyState.kind === "reset") {
+    // Warn, never success: a reset anchor is unverifiable, not verified.
+    const display = networkResetDisplay(verifyState.note);
+    verifyCell = (
+      <Pill variant="warn" title={display.detail}>
+        ↺ {display.short}
       </Pill>
     );
   } else if (verifyState.kind === "failed") {

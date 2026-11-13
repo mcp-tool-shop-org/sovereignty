@@ -280,6 +280,27 @@ def anchor_mismatch_error() -> SovError:
     )
 
 
+def anchor_reset_error(reset_label: str, source: str) -> SovError:
+    """The anchor is gone because the network was reset. Not a pass.
+
+    Distinct from ``NET_ANCHOR_MISMATCH``: nothing was found false. The
+    ledger this anchor was written to no longer exists, so the anchor can
+    no longer be checked. Only the local proof hash is left as evidence.
+    """
+    return SovError(
+        code="NET_ANCHOR_RESET",
+        message=(
+            f"Anchor can no longer be checked — {reset_label}, after this proof "
+            "was made. The transaction is on no ledger now."
+        ),
+        hint=(
+            "The local proof is still valid, and that is all that is left: "
+            "a made-up `--tx` dated before the reset reads the same way. "
+            f"Signal: announced reset ({source})."
+        ),
+    )
+
+
 def chain_lookup_failed_error(detail: str = "") -> SovError:
     """On-chain lookup itself failed (RPC down / 5xx / malformed envelope).
 

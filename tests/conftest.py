@@ -15,6 +15,8 @@ state). The fixture is preserved as a hook for future test isolation needs
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 import pytest
 
 from sov_engine.rules import campfire as _campfire
@@ -32,3 +34,19 @@ def _reset_campfire_counters() -> None:
         _campfire._voucher_counter = 0
     if hasattr(_campfire, "_deal_counter"):
         _campfire._deal_counter = 0
+
+
+# Before every reset listed in ``sov_transport.resets.KNOWN_RESETS``.
+BEFORE_ANY_KNOWN_RESET = datetime(2026, 11, 1, tzinfo=UTC)
+
+
+@pytest.fixture(autouse=True)
+def _pin_reset_clock(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pin the clock the network-reset check reads.
+
+    A chain lookup that answers "not found" is re-judged once a listed
+    network reset has happened. Without a pinned clock, tests that expect a
+    plain mismatch could change their result on the reset day. Tests of the
+    reset behaviour set their own time over this one.
+    """
+    monkeypatch.setattr("sov_transport.resets._now", lambda: BEFORE_ANY_KNOWN_RESET)

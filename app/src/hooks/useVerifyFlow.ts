@@ -24,6 +24,9 @@ export type RoundVerifyState =
   | { kind: "verifying" }
   | { kind: "verified" }
   | { kind: "pending" }
+  // The network was reset after the proof was anchored: the anchor can no
+  // longer be checked. Not verified, and not a failure.
+  | { kind: "reset"; note?: string }
   | {
       kind: "failed";
       reason: "envelope_mismatch" | "not_on_chain" | "daemon_unreachable" | "chain_unreachable";
@@ -230,6 +233,8 @@ export function useVerifyFlow(): UseVerifyFlow {
                 kind: "failed",
                 reason: "chain_unreachable",
               });
+            } else if (status.chain_lookup === "reset") {
+              setRoundState(round, { kind: "reset", note: status.reset_note });
             } else if (status.chain_lookup === "not_found" && status.txid) {
               // Recorded txid, chain says not_found — the only honest
               // not_on_chain. Pending / omitted-without-txid must not

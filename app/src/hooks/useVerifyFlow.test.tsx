@@ -292,6 +292,53 @@ describe("useVerifyFlow", () => {
     }
   });
 
+  it("transitions to reset, never verified, when verify returns reset", async () => {
+    const envelope = { game_id: "s42", round: "1" };
+    const expectedHash = await sha256Hex(canonicalJson(envelope));
+    const proof = { ...envelope, envelope_hash: expectedHash };
+
+    fetchMock.mockImplementation((url: string) => {
+      if (url.includes("/proofs/1")) {
+        return Promise.resolve(
+          new Response(JSON.stringify(proof), {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          }),
+        );
+      }
+      if (url.includes("/verify/1")) {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({
+              round: "1",
+              anchor_status: "anchored",
+              envelope_hash: "a".repeat(64),
+              txid: "ABC",
+              chain_lookup: "reset",
+              reset_signal: "announced",
+              reset_note: "Testnet was reset on 2026-11-25",
+            }),
+            {
+              status: 200,
+              headers: { "content-type": "application/json" },
+            },
+          ),
+        );
+      }
+      return Promise.reject(new Error("unexpected"));
+    });
+
+    const { result } = renderHook(() => useVerifyFlow());
+    await act(async () => {
+      await result.current.start("s42", ["1"]);
+    });
+
+    const state = result.current.perRound.get("1");
+    expect(state).toEqual({ kind: "reset", note: "Testnet was reset on 2026-11-25" });
+    expect(state?.kind).not.toBe("verified");
+    expect(state?.kind).not.toBe("failed");
+  });
+
   it("transitions to failed:chain_unreachable when verify returns lookup_failed", async () => {
     const envelope = { game_id: "s42", round: "1" };
     const expectedHash = await sha256Hex(canonicalJson(envelope));
