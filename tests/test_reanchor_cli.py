@@ -12,6 +12,7 @@ touches a network.
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -30,6 +31,9 @@ from tests.test_cli_ops_commands import _flat, _make_proof, _transport_factory
 runner = CliRunner()
 _TEST_SEED = "sEdXXXXXXXXXXXXXXXXXXXXXXX"
 AFTER_RESET = datetime(2026, 12, 1, tzinfo=UTC)
+# Rich colours the help where the terminal allows it (CI does), and a colour
+# code can split an option name: "-" + ESC[1;36m + "-reanchor".
+_ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
 @pytest.fixture
@@ -311,6 +315,6 @@ def test_plain_anchor_still_ignores_an_anchored_round(cwd: Path) -> None:
 def test_the_help_and_the_reset_hint_name_the_command() -> None:
     result = runner.invoke(app, ["anchor", "--help"])
     assert result.exit_code == 0
-    assert "--reanchor" in result.output
+    assert "--reanchor" in _ANSI.sub("", result.output)
     hint = anchor_reset_error("Testnet was reset on 2026-11-25", "https://x.example").hint
     assert "`sov anchor --reanchor`" in hint
