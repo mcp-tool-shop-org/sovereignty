@@ -296,6 +296,7 @@ def anchor_reset_error(reset_label: str, source: str) -> SovError:
         hint=(
             "The local proof is still valid, and that is all that is left: "
             "a made-up `--tx` dated before the reset reads the same way. "
+            "Run `sov anchor --reanchor` to anchor the game's lost rounds again. "
             f"Signal: announced reset ({source})."
         ),
     )

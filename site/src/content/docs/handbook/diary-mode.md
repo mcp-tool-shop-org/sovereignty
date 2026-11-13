@@ -37,13 +37,15 @@ A proof you anchored before a reset is still valid on its own: its local hash st
 
 Exit code 3 is not a pass. A made-up `--tx` with a proof dated before the reset reads the same way, so the local proof hash is all that is left as evidence. The desktop app shows these rounds with a "network reset" pill, never the verified one.
 
-To put a proof back on the ledger after a reset, anchor that proof again:
+To put a game's rounds back on the ledger after a reset:
 
 ```bash
 sov wallet                          # the old account was deleted; this makes a new funded one
-sov anchor <proof_file>             # anchor this proof again
+sov anchor --reanchor               # anchor again every round whose anchor is gone
 sov verify <proof_file> --tx <new txid>
 ```
+
+`sov anchor --reanchor` asks the ledger about every anchor recorded for the active game. It sends again only the rounds whose transaction is gone, and records the new transaction in place of the old one. A round still on the ledger is left alone, and so is one the ledger gave no answer for. Only a proof whose local hash still checks out is sent.
 
 Plain `sov anchor` only sends rounds that are still pending, so it does nothing for a round already marked anchored.
 

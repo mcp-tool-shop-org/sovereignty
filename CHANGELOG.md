@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **`sov anchor --reanchor`: put a game's rounds back on the ledger after a
+  test network reset.** Plain `sov anchor` only sends pending rounds, so a
+  round already recorded as anchored could not be recovered without the
+  deprecated `sov anchor <proof_file>` form.
+  - It asks the ledger about every anchor recorded for the active game and
+    sends again only the rounds whose transaction is gone. A round still on
+    the ledger is never sent twice, and neither is one the ledger gave no
+    answer for.
+  - Only a proof whose local hash still checks out is sent. The new
+    transaction replaces the old one in `anchors.json`.
+  - Exit code `0` when every lost round is anchored again or nothing was
+    lost; `1` when a round was left out (no valid local proof, or no answer
+    from the ledger).
+  - The `NET_ANCHOR_RESET` hint and the desktop app's "not on chain" and
+    "network reset" messages now name this command.
+
 ### Fixed
 
 - **A proof anchored before a test network reset is no longer reported as an

@@ -34,7 +34,7 @@ export function verifyFailureDisplay(reason: VerifyFailureReason): VerifyDisplay
       return {
         short: "not on chain",
         detail:
-          "anchors.json shows this round as anchored, but the chain lookup didn't find the tx. Run `sov anchor` to retry.",
+          "anchors.json shows this round as anchored, but the chain lookup didn't find the tx. Run `sov anchor --reanchor` to anchor it again.",
       };
     case "daemon_unreachable":
       return {
@@ -55,7 +55,7 @@ export function networkResetDisplay(note?: string): VerifyDisplay {
   const what = note ?? "The network was reset after this proof was anchored";
   return {
     short: "network reset",
-    detail: `${what}. The anchor can no longer be checked; only the local proof hash is left. Run \`sov anchor <proof_file>\` to anchor it again.`,
+    detail: `${what}. The anchor can no longer be checked; only the local proof hash is left. Run \`sov anchor --reanchor\` to anchor it again.`,
   };
 }
 

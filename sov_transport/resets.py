@@ -55,6 +55,8 @@ class KnownReset:
         return f"{self.network.capitalize()} was reset on {self.day.isoformat()}"
 
 
+# The same list is kept in xrpl-lab (xrpl_lab/resets.py, the source) and
+# xrpl-camp (xrpl_camp/resets.py). A new announced reset is added to all three.
 _RESET_2026_11_25 = "https://xrpl.org/blog/2026/testnet-devnet-reset"
 
 KNOWN_RESETS: tuple[KnownReset, ...] = (

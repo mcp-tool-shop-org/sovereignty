@@ -16,7 +16,7 @@ describe("networkResetDisplay", () => {
     expect(d.detail).toContain("Testnet was reset on 2026-11-25");
     expect(d.detail).toContain("can no longer be checked");
     expect(d.detail).toContain("only the local proof hash is left");
-    expect(d.detail).toContain("`sov anchor <proof_file>`");
+    expect(d.detail).toContain("`sov anchor --reanchor`");
   });
 
   it("never reads as verified", () => {
