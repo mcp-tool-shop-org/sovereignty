@@ -461,7 +461,7 @@ jobs:
       # (e.g. tests/test_daemon_amend_wave7.py). Fail-closed on verified hits
       # (F-617cf2ad).
       - name: Secret scan with TruffleHog
-        uses: trufflesecurity/trufflehog@d411fff7b8879a62509f3fa98c07f247ac089a51 # v3.95.5
+        uses: trufflesecurity/trufflehog@ea68ca03c865c5f324e86e849ced20ed3cf9dbbb # v3.99.8
         with:
           extra_args: --results=verified
 
