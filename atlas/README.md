@@ -1,20 +1,20 @@
 # sovereignty: how it works
 
-Mapped at 2026-11-12 from commit 430c549 by Atlas 1.26.0.
+Mapped at 2026-11-13 from commit fc1d042 by Atlas 1.26.0.
 
 ## What this is
 
-14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.
+14 parts, mostly Python (124 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.
 
-## What changed since 2026-11-12 (4ab59d6)
+## What changed since 2026-11-12 (e036125)
 
-Nothing structural changed since 2026-11-12; 3 files changed content.
+Nothing structural changed since 2026-11-12; 3 files added and 18 changed content.
 
 ## What comes in
 
-1. **CI.** On a pull request; on a push touching 12 paths; on a schedule (`0 14 * * *`); or by hand. On a schedule or by hand, it runs sov_daemon/__init__.py. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 146 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
-2. **Container image.** When a release is published; or by hand. Runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py; checks sov_cli/, sov_daemon/, sov_engine/ and 7 more; packs LICENSE, README.md, docker/healthcheck.py and 1 more into an image.
-3. **Release.** When a release is published; or by hand. Runs .github/scripts/generate-latest-json.py, .github/scripts/stage-tauri-artifacts.sh, app/src-tauri/build.rs and 59 more; builds sov_cli/__main__.py and app/src-tauri/src/main.rs; checks sov_cli/, sov_daemon/, sov_engine/ and 8 more.
+1. **CI.** On a pull request; on a push touching 12 paths; on a schedule (`0 14 * * *`); or by hand. On a schedule or by hand, it runs sov_daemon/__init__.py. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 148 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 30 more.
+2. **Container image.** When a release is published; or by hand. Runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py; checks sov_cli/, sov_daemon/, sov_engine/ and 8 more; packs LICENSE, README.md, docker/healthcheck.py and 1 more into an image.
+3. **Release.** When a release is published; or by hand. Runs .github/scripts/generate-latest-json.py, .github/scripts/stage-tauri-artifacts.sh, app/src-tauri/build.rs and 59 more; builds sov_cli/__main__.py and app/src-tauri/src/main.rs; checks sov_cli/, sov_daemon/, sov_engine/ and 9 more.
 4. **Deploy site to GitHub Pages.** On a pull request touching 2 paths; on a push to main touching 2 paths; or by hand. Runs site/astro.config.mjs and site/src/.
 5. **npm launcher.** When a release is published; or by hand. Runs npm/test/.
 6. **sov** (a command people run). Runs sov_cli/main.py.
@@ -24,7 +24,7 @@ Nothing structural changed since 2026-11-12; 3 files changed content.
 ## What happens through CI
 
 1. On a schedule or by hand, it runs sov_daemon/__init__.py.
-2. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 146 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 29 more.
+2. Except on a schedule, it runs .github/scripts/check-publish-yml.py, scripts/check-theme-tokens.sh, scripts/check-voice.sh and 148 more; checks .pip-audit-ignore, sov_cli/, sov_daemon/ and 30 more.
 3. It writes to app/src-tauri/gen/schemas, which is not tracked.
 4. It uploads coverage to Codecov.
 5. It scans for secrets with TruffleHog.
@@ -35,9 +35,9 @@ CI writes only to app/src-tauri/gen/schemas, which is not tracked.
 
 ## The other doors
 
-**Container image** runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py, checks sov_cli/, sov_daemon/, sov_engine/ and 7 more, packs LICENSE, README.md, docker/healthcheck.py and 1 more into an image, and publishes a container image.
+**Container image** runs docker/entrypoint.sh, sov_cli/main.py and sov_daemon/__main__.py, checks sov_cli/, sov_daemon/, sov_engine/ and 8 more, packs LICENSE, README.md, docker/healthcheck.py and 1 more into an image, and publishes a container image.
 
-**Release** runs .github/scripts/generate-latest-json.py, .github/scripts/stage-tauri-artifacts.sh, app/src-tauri/build.rs and 59 more, checks sov_cli/, sov_daemon/, sov_engine/ and 8 more, writes to app/src-tauri/gen/schemas, which is not tracked, publishes to PyPI, and builds app/src-tauri/src/main.rs and sov_cli/__main__.py into binaries for darwin-arm64, darwin-universal, linux-x64 and win-x64 and uploads them to the release.
+**Release** runs .github/scripts/generate-latest-json.py, .github/scripts/stage-tauri-artifacts.sh, app/src-tauri/build.rs and 59 more, checks sov_cli/, sov_daemon/, sov_engine/ and 9 more, writes to app/src-tauri/gen/schemas, which is not tracked, publishes to PyPI, and builds app/src-tauri/src/main.rs and sov_cli/__main__.py into binaries for darwin-arm64, darwin-universal, linux-x64 and win-x64 and uploads them to the release.
 
 **Deploy site to GitHub Pages** runs site/astro.config.mjs and site/src/, and deploys the site on a push to main or by hand.
 
@@ -104,9 +104,9 @@ Beside the path, sov_engine/io_utils.py also calls sov_engine/schemas.py.
 
 ## What this map cannot see
 
-- 35 import sites name a declared dependency that shares its name with a local module (xrpl); they are read as the dependency, which is not in this repository.
+- 37 import sites name a declared dependency that shares its name with a local module (xrpl); they are read as the dependency, which is not in this repository.
 - 3 imports could not be resolved: `assets/print/source/render.mjs` imports `puppeteer-core`, which is not declared; `assets/print/source/vendor/react-dom.production.min.js` imports `react`, which is not declared; `sov_cli/main.py` imports a path built at run time.
-- 1 write and 32 reads use paths built at run time and are not named here.
+- 1 write and 35 reads use paths built at run time and are not named here.
 - 1 write goes to places this repository does not track, so it is not listed as generated.
 - 3 writes and 42 reads go to a path their caller passes, not to this repository.
 - 1 write and 4 reads go to the directory the command is run in (.sov/, README.md and docs/), not to this repository.

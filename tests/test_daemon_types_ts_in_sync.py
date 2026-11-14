@@ -74,7 +74,7 @@ SHELL_ERROR_CODES = {
 # mirror gap on the next pytest run — no manual literal maintenance.
 ANCHOR_STATUS_VALUES = {"anchored", "pending", "missing"}
 XRPL_NETWORK_VALUES = {"testnet", "mainnet", "devnet"}
-CHAIN_LOOKUP_VALUES = {"found", "not_found", "lookup_failed"}
+CHAIN_LOOKUP_VALUES = {"found", "not_found", "lookup_failed", "reset"}
 
 # Union slot for parallel agents: every Python-side string union mirrored to
 # TS lands here. Docs agent extends DAEMON_ERROR_CODES; backend agent extends

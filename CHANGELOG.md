@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-11-13
+
+The release for the 2026-11-25 Testnet and Devnet wipe. Checked live on Testnet on
+the release commit, including a proof made and anchored by 2.3.6:
+[docs/receipts/2.4.0-reset-live-check-1016c26](docs/receipts/2.4.0-reset-live-check-1016c26/README.md).
+
+### Added
+
+- **`sov anchor --reanchor`: put a game's rounds back on the ledger after a
+  test network reset.** Plain `sov anchor` only sends pending rounds, so a
+  round already recorded as anchored could not be recovered without the
+  deprecated `sov anchor <proof_file>` form.
+  - It asks the ledger about every anchor recorded for the active game and
+    sends again only the rounds whose transaction is gone. A round still on
+    the ledger is never sent twice, and neither is one the ledger gave no
+    answer for.
+  - Only a proof whose local hash still checks out is sent. The new
+    transaction replaces the old one in `anchors.json`.
+  - Exit code `0` when every lost round is anchored again or nothing was
+    lost; `1` when a round was left out (no valid local proof, or no answer
+    from the ledger).
+  - The `NET_ANCHOR_RESET` hint and the desktop app's "not on chain" and
+    "network reset" messages now name this command.
+
+### Fixed
+
+- **A proof anchored before a test network reset is no longer reported as an
+  anchor mismatch.** Testnet and Devnet are wiped on 2026-11-25
+  ([xrpl.org notice](https://xrpl.org/blog/2026/testnet-devnet-reset)). A round
+  proof anchored before the wipe keeps a valid local hash, but its anchor
+  transaction is on no ledger afterwards. `sov verify <proof> --tx <txid>`
+  answered "Anchor mismatch", and the desktop app's verify flow answered "not
+  on chain", as if the proof had been changed.
+  - The chain lookup has a new value, `reset`: the anchor transaction is
+    absent, and an announced reset of the network covers the time the proof
+    was made. The anchor can no longer be checked.
+  - **It is never a pass.** A made-up `--tx` with a proof dated before the
+    reset reads the same way, so only the local proof hash is left as
+    evidence. The output says so.
+  - `sov verify --tx` prints `NET_ANCHOR_RESET` and exits with code **3**
+    (new). `0` still means the anchor was verified and `1` still means a
+    mismatch or a failed lookup.
+  - The daemon's `GET /games/{id}/verify/{round}` returns `"chain_lookup":
+    "reset"` with `reset_signal` (`announced`) and `reset_note`. The desktop
+    app shows a "network reset" pill in the warning style, never the verified
+    one.
+  - A reset is only reported when the transaction is really absent. One that
+    exists with a different hash is still a mismatch (new
+    `XRPLTransport.tx_exists`). If the ledger cannot be asked, the result
+    stays as it was.
+  - Mainnet is never reset, and nothing changes there.
+  - The notice gives the reset's day, not its hour, so it covers a proof made
+    before the 25th has ended everywhere, which is 2026-11-26 12:00 UTC.
+  - To put a proof back on the ledger after a reset, anchor that proof again
+    with the single-file form, `sov anchor <proof_file>`. Plain `sov anchor`
+    only sends rounds that are still pending, so it does nothing for a round
+    already marked anchored.
+
 ## [2.3.6] - 2026-10-14
 
 - Build fake credentials at runtime in daemon and client tests so secret scanners do not flag test fixtures.

@@ -34,7 +34,7 @@ export function verifyFailureDisplay(reason: VerifyFailureReason): VerifyDisplay
       return {
         short: "not on chain",
         detail:
-          "anchors.json shows this round as anchored, but the chain lookup didn't find the tx. Run `sov anchor` to retry.",
+          "anchors.json shows this round as anchored, but the chain lookup didn't find the tx. Run `sov anchor --reanchor` to anchor it again.",
       };
     case "daemon_unreachable":
       return {
@@ -47,6 +47,16 @@ export function verifyFailureDisplay(reason: VerifyFailureReason): VerifyDisplay
         detail: "Chain unreachable. Retry, or run `sov verify --tx <hash>`.",
       };
   }
+}
+
+/** Display copy for a round whose anchor was lost to a network reset.
+ *  Not a failure and not a pass: the anchor can no longer be checked. */
+export function networkResetDisplay(note?: string): VerifyDisplay {
+  const what = note ?? "The network was reset after this proof was anchored";
+  return {
+    short: "network reset",
+    detail: `${what}. The anchor can no longer be checked; only the local proof hash is left. Run \`sov anchor --reanchor\` to anchor it again.`,
+  };
 }
 
 export type BrowseAnchorVariant = "success" | "warn" | "error";

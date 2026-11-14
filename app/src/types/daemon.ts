@@ -8,11 +8,16 @@ export type XRPLNetwork = "testnet" | "mainnet" | "devnet";
 // Anchor 3-state per Wave 2 verify split.
 export type AnchorStatus = "anchored" | "pending" | "missing";
 
-// Chain lookup 3-state from sov_transport.base.ChainLookupResult.
+// Chain lookup states from sov_transport.base.ChainLookupResult.
 // Surfaced by GET /games/{game_id}/verify/{round} (JOB-026). Browse
 // GET /anchor-status stays local-index only and never hits XRPL.
 // Omit chain_lookup on the wire when pending / no txid.
-export type ChainLookupResult = "found" | "not_found" | "lookup_failed";
+// "reset": the anchor tx is absent and an announced reset of the network
+// covers the proof's time. The anchor can no longer be checked. Never a pass.
+export type ChainLookupResult = "found" | "not_found" | "lookup_failed" | "reset";
+
+// What a "reset" chain lookup rests on. One value today.
+export type ResetSignal = "announced";
 
 // Daemon process state — what the Tauri shell reports back.
 export type DaemonState = "running" | "stale" | "none";
@@ -220,4 +225,7 @@ export interface VerifyRoundResponse {
   envelope_hash: string | null;
   txid?: string;
   chain_lookup?: ChainLookupResult;
+  // Present only when chain_lookup is "reset".
+  reset_signal?: ResetSignal;
+  reset_note?: string;
 }

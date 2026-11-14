@@ -1,0 +1,12 @@
+
+  Creating a Testnet wallet...
+  This is play money. Testnet XRP has no value.
+
+┌────────────────────────────────────────────────────────────────────────────────────────── Testnet Wallet ───────────────────────────────────────────────────────────────────────────────────────────┐
+│   Address: rpbjsqZwr2bzmwgW9suJDEdEQGhvkPfva4                                                                                                                                                       │
+│   Network: Testnet                                                                                                                                                                                  │
+│   Seed saved to: .sov\wallet_seed.txt                                                                                                                                                               │
+│                                                                                                                                                                                                     │
+│   Use it with `sov anchor --signer-file .sov\wallet_seed.txt`.                                                                                                                                      │
+│   Or set `export XRPL_SEED=<your-seed>`.                                                                                                                                                            │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

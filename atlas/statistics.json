@@ -33,7 +33,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "app",
-      "qualifyingSourceCommits": 15,
+      "qualifyingSourceCommits": 18,
       "rebaseline": null
     },
     {
@@ -167,7 +167,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "sov_cli",
-      "qualifyingSourceCommits": 11,
+      "qualifyingSourceCommits": 14,
       "rebaseline": null
     },
     {
@@ -188,7 +188,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "sov_daemon",
-      "qualifyingSourceCommits": 17,
+      "qualifyingSourceCommits": 19,
       "rebaseline": null
     },
     {
@@ -230,7 +230,7 @@
       "confidence": "low",
       "highWater": null,
       "name": "sov_transport",
-      "qualifyingSourceCommits": 0,
+      "qualifyingSourceCommits": 3,
       "rebaseline": null
     },
     {
@@ -243,10 +243,10 @@
       },
       "cohesion": null,
       "cohesionDropped": false,
-      "confidence": "low",
+      "confidence": "full",
       "highWater": null,
       "name": "tests",
-      "qualifyingSourceCommits": 27,
+      "qualifyingSourceCommits": 30,
       "rebaseline": null
     }
   ],
@@ -289,8 +289,8 @@
         "path": ".github/scripts/stage-tauri-artifacts.sh"
       },
       {
-        "commits": 19,
-        "lines": 319,
+        "commits": 20,
+        "lines": 321,
         "path": ".github/workflows/ci.yml"
       },
       {
@@ -309,8 +309,8 @@
         "path": ".github/workflows/pages.yml"
       },
       {
-        "commits": 16,
-        "lines": 562,
+        "commits": 17,
+        "lines": 564,
         "path": ".github/workflows/publish.yml"
       },
       {
@@ -329,8 +329,8 @@
         "path": "BUILD.md"
       },
       {
-        "commits": 22,
-        "lines": 137,
+        "commits": 26,
+        "lines": 241,
         "path": "CHANGELOG.md"
       },
       {
@@ -389,13 +389,13 @@
         "path": "SECURITY.md"
       },
       {
-        "commits": 12,
-        "lines": 2115,
+        "commits": 13,
+        "lines": 2179,
         "path": "app/package-lock.json"
       },
       {
         "commits": 12,
-        "lines": 42,
+        "lines": 43,
         "path": "app/package.json"
       },
       {
@@ -474,13 +474,13 @@
         "path": "app/src/hooks/useGameState.ts"
       },
       {
-        "commits": 2,
-        "lines": 111,
+        "commits": 4,
+        "lines": 205,
         "path": "app/src/hooks/useVerifyFlow.test.tsx"
       },
       {
-        "commits": 2,
-        "lines": 30,
+        "commits": 4,
+        "lines": 40,
         "path": "app/src/hooks/useVerifyFlow.ts"
       },
       {
@@ -504,13 +504,13 @@
         "path": "app/src/lib/errorFormat.ts"
       },
       {
-        "commits": 1,
-        "lines": 10,
+        "commits": 5,
+        "lines": 54,
         "path": "app/src/lib/verifyDisplay.test.ts"
       },
       {
-        "commits": 1,
-        "lines": 31,
+        "commits": 5,
+        "lines": 59,
         "path": "app/src/lib/verifyDisplay.ts"
       },
       {
@@ -519,8 +519,8 @@
         "path": "app/src/routes/Audit.test.tsx"
       },
       {
-        "commits": 1,
-        "lines": 165,
+        "commits": 3,
+        "lines": 183,
         "path": "app/src/routes/Audit.tsx"
       },
       {
@@ -564,13 +564,13 @@
         "path": "app/src/test/setup.ts"
       },
       {
-        "commits": 1,
-        "lines": 14,
+        "commits": 3,
+        "lines": 48,
         "path": "app/src/types/daemon.test.ts"
       },
       {
-        "commits": 2,
-        "lines": 43,
+        "commits": 4,
+        "lines": 67,
         "path": "app/src/types/daemon.ts"
       },
       {
@@ -820,7 +820,7 @@
       },
       {
         "commits": 26,
-        "lines": 552,
+        "lines": 544,
         "path": "atlas/README.md"
       },
       {
@@ -830,17 +830,17 @@
       },
       {
         "commits": 26,
-        "lines": 2238,
+        "lines": 2216,
         "path": "atlas/page.json"
       },
       {
         "commits": 26,
-        "lines": 8291,
+        "lines": 8003,
         "path": "atlas/statistics.json"
       },
       {
         "commits": 26,
-        "lines": 29512,
+        "lines": 29494,
         "path": "atlas/structure.json"
       },
       {
@@ -884,13 +884,13 @@
         "path": "docs/start_here.md"
       },
       {
-        "commits": 1,
-        "lines": 23,
+        "commits": 3,
+        "lines": 31,
         "path": "docs/v2.1-daemon-ipc.md"
       },
       {
-        "commits": 1,
-        "lines": 5,
+        "commits": 3,
+        "lines": 13,
         "path": "docs/v2.1-views.md"
       },
       {
@@ -965,6 +965,11 @@
       },
       {
         "commits": 4,
+        "lines": 60,
+        "path": "site/src/content/docs/handbook/diary-mode.md"
+      },
+      {
+        "commits": 4,
         "lines": 162,
         "path": "site/src/content/docs/handbook/docker.md"
       },
@@ -999,13 +1004,13 @@
         "path": "site/src/site-config.ts"
       },
       {
-        "commits": 3,
-        "lines": 103,
+        "commits": 7,
+        "lines": 147,
         "path": "sov_cli/errors.py"
       },
       {
-        "commits": 12,
-        "lines": 756,
+        "commits": 16,
+        "lines": 1278,
         "path": "sov_cli/main.py"
       },
       {
@@ -1019,8 +1024,8 @@
         "path": "sov_daemon/lifecycle.py"
       },
       {
-        "commits": 8,
-        "lines": 541,
+        "commits": 10,
+        "lines": 595,
         "path": "sov_daemon/server.py"
       },
       {
@@ -1057,6 +1062,26 @@
         "commits": 2,
         "lines": 144,
         "path": "sov_engine/wallet_seed.py"
+      },
+      {
+        "commits": 2,
+        "lines": 26,
+        "path": "sov_transport/base.py"
+      },
+      {
+        "commits": 4,
+        "lines": 260,
+        "path": "sov_transport/resets.py"
+      },
+      {
+        "commits": 2,
+        "lines": 102,
+        "path": "sov_transport/xrpl.py"
+      },
+      {
+        "commits": 2,
+        "lines": 36,
+        "path": "tests/conftest.py"
       },
       {
         "commits": 1,
@@ -1134,8 +1159,8 @@
         "path": "tests/test_daemon_sse.py"
       },
       {
-        "commits": 1,
-        "lines": 16,
+        "commits": 3,
+        "lines": 20,
         "path": "tests/test_daemon_types_ts_in_sync.py"
       },
       {
@@ -1152,6 +1177,11 @@
         "commits": 2,
         "lines": 31,
         "path": "tests/test_game_end_final_hash.py"
+      },
+      {
+        "commits": 2,
+        "lines": 1066,
+        "path": "tests/test_network_reset_verdict.py"
       },
       {
         "commits": 1,
@@ -1177,6 +1207,11 @@
         "commits": 1,
         "lines": 16,
         "path": "tests/test_publish_linux_bundles.py"
+      },
+      {
+        "commits": 2,
+        "lines": 632,
+        "path": "tests/test_reanchor_cli.py"
       },
       {
         "commits": 1,
@@ -1229,9 +1264,9 @@
     "level": "low",
     "reason": "fewer than 25 source files reach 10 revisions in the window"
   },
-  "generatedAt": "2026-11-12T00:51:01.172Z",
+  "generatedAt": "2026-11-13T16:13:01.413Z",
   "generatedFrom": {
-    "commit": "430c549631b8c947028c6959d1803b51c1e30b94"
+    "commit": "fc1d04269cea3fee90a48b16bcc81cad29067e07"
   },
   "pairs": [
     {
@@ -1657,23 +1692,23 @@
     {
       "a": "app/package-lock.json",
       "b": "app/package.json",
-      "either": 12,
+      "either": 13,
       "shared": 12,
-      "strength": 1
+      "strength": 0.923077
     },
     {
       "a": "app/package-lock.json",
       "b": "app/src-tauri/tauri.conf.json",
-      "either": 12,
+      "either": 13,
       "shared": 8,
-      "strength": 0.666667
+      "strength": 0.615385
     },
     {
       "a": "app/package-lock.json",
       "b": "sov_daemon/__init__.py",
-      "either": 12,
+      "either": 13,
       "shared": 7,
-      "strength": 0.583333
+      "strength": 0.538462
     },
     {
       "a": "app/package.json",
@@ -1854,16 +1889,16 @@
     "floor": "fallen",
     "floorHeld": false,
     "floorTrigger": "revision-depth",
-    "headDate": "2026-11-11T19:49:15-05:00",
-    "inScopeFiles": 431,
+    "headDate": "2026-11-13T11:12:52-05:00",
+    "inScopeFiles": 434,
     "pinnedStart": null,
     "priorFloor": "fallen",
-    "qualifyingCommits": 91,
+    "qualifyingCommits": 94,
     "qualifyingMinimum": 30,
     "revisions": 5,
     "shared": 10,
     "sharedFloorUsed": 3,
-    "since": "2026-05-16T00:49:15.000Z",
+    "since": "2026-05-17T16:12:52.000Z",
     "sourceExtensions": [
       ".js",
       ".mjs",

@@ -1,11 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { anchorStatusDisplay, verifyFailureDisplay } from "./verifyDisplay";
+import { anchorStatusDisplay, networkResetDisplay, verifyFailureDisplay } from "./verifyDisplay";
 
 describe("anchorStatusDisplay (WEB-UI-C-005 / F-7f7091d3)", () => {
   it("maps each AnchorStatus value to local-index vocabulary", () => {
     expect(anchorStatusDisplay("anchored")).toBe("Anchored");
     expect(anchorStatusDisplay("pending")).toBe("Pending");
     expect(anchorStatusDisplay("missing")).toBe("No local anchor");
+  });
+});
+
+describe("networkResetDisplay", () => {
+  it("says the anchor can no longer be checked, and names the reset", () => {
+    const d = networkResetDisplay("Testnet was reset on 2026-11-25");
+    expect(d.short).toBe("network reset");
+    expect(d.detail).toContain("Testnet was reset on 2026-11-25");
+    expect(d.detail).toContain("can no longer be checked");
+    expect(d.detail).toContain("only the local proof hash is left");
+    expect(d.detail).toContain("`sov anchor --reanchor`");
+  });
+
+  it("never reads as verified", () => {
+    const d = networkResetDisplay();
+    expect(d.short).not.toMatch(/verified/i);
+    expect(d.detail).not.toMatch(/verified/i);
+    expect(d.detail).toContain("The network was reset after this proof was anchored");
   });
 });
 
