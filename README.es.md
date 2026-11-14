@@ -237,7 +237,7 @@ Audit Viewer es la aplicación de escritorio v2.1: una carcasa Tauri (Rust + web
 
 ### Instala (binarios)
 
-**v2.4.0** es la versión actual. La versión de GitHub **v2.3.0** no incluyó wheels ni archivos de la aplicación de escritorio, así que no fije `pip install …==2.3.0`.
+**v2.4.1** es la versión actual. La versión de GitHub **v2.3.0** no incluyó wheels ni archivos de la aplicación de escritorio, así que no fije `pip install …==2.3.0`.
 
 - **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (versión 2.3.2 o posterior para el daemon).
 - **Aplicación de escritorio:** [la última versión de GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) cuando CI adjunta archivos de plataforma. Si falla un trabajo de plataforma, ejecute desde el código fuente (a continuación).
