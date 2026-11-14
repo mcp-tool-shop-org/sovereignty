@@ -34,33 +34,33 @@
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## Juega esta noche
+## Juguemos esta noche
 
-Imprime [todo el paquete para imprimir y jugar](assets/print/pdf/Sovereignty-Print-Pack.pdf): el tablero, las alfombrillas de los jugadores, la guía de referencia rápida, el tablero del mercado y tres mazos de cartas en 13 hojas de papel tamaño carta estadounidense. Busca un dado y algunas monedas. Siéntate con dos o tres amigos. Estarás jugando en veinte minutos.
+Imprime [todo el paquete para imprimir y jugar](assets/print/pdf/Sovereignty-Print-Pack.pdf): el tablero, las alfombrillas para los jugadores, la guía de referencia rápida, el tablero del mercado y tres mazos de cartas en 13 hojas de papel tamaño carta estadounidense. Busca un dado y algunas monedas. Siéntate con dos o tres amigos. Estarán jugando en veinte minutos.
 
 Si quieres hojas individuales:
 
-- **[Tablero](assets/print/pdf/board.pdf)**: el tablero con 16 espacios, en una página.
-- **[Alfombrilla de jugador](assets/print/pdf/mat.pdf)**: monedas, reputación, mejoras, promesas. Una por jugador.
+- **[Tablero](assets/print/pdf/board.pdf)**: el circuito de la fogata de 16 espacios, una página.
+- **[Alfombrilla para el jugador](assets/print/pdf/mat.pdf)**: monedas, reputación, mejoras, promesas. Una por jugador.
 - **[Guía de referencia rápida](assets/print/pdf/quickref.pdf)**: espacios del tablero, orden de turno, reglas de las promesas.
-- **[Cartas de evento](assets/print/pdf/events.pdf)**: 28 cartas, cuatro páginas, cortar por las líneas.
-- **[Cartas de acuerdo](assets/print/pdf/deals.pdf)**: 12 cartas, dos páginas.
+- **[Cartas de evento](assets/print/pdf/events.pdf)**: 28 cartas, cuatro páginas, cortar a lo largo de las líneas.
+- **[Cartas de trato](assets/print/pdf/deals.pdf)**: 12 cartas, dos páginas.
 - **[Cartas de vale](assets/print/pdf/vouchers.pdf)**: 10 vales entre los jugadores, dos páginas.
 - **[Tablero del mercado](assets/print/pdf/market.pdf)**: Día de mercado / Ayuntamiento, una página.
 - **[Guía de referencia rápida del tratado](assets/print/pdf/treaty.pdf)**: solo nivel 3.
 
-Los archivos PDF son vectoriales con fuentes incrustadas, por lo que se imprimen con buena calidad en cualquier impresora doméstica. Las instrucciones de configuración están en [Imprimir y jugar](docs/print-and-play.md).
+Los archivos PDF son vectoriales con fuentes incrustadas, por lo que se imprimen con claridad en cualquier impresora doméstica. La guía paso a paso para la configuración está en [Imprimir y jugar](docs/print-and-play.md).
 
-## ¿Quieres una consola para llevar la cuenta de los puntos?
+## ¿Quieres una consola para llevar la cuenta?
 
-Opcional. El juego funciona bien en papel. Pero si alguien tiene una computadora portátil a mano, `sov` registra las monedas, la reputación, las promesas y genera un recibo a prueba de manipulaciones al final:
+Opcional. El juego funciona bien en papel. Pero si alguien tiene una computadora portátil a mano, `sov` rastrea las monedas, la reputación, las promesas y genera un recibo a prueba de manipulaciones al final:
 
 ```bash
 pip install sovereignty-game
 sov play campfire_v1
 ```
 
-`sov play campfire_v1` es la versión rápida de inicio sin necesidad de configuración: un jugador más un oponente predeterminado. Para partidas multijugador en la mesa, usa `sov new -p Alice -p Bob -p Carol`. Para una guía paso a paso de 60 segundos, usa `sov tutorial`.
+`sov play campfire_v1` es el inicio rápido sin configuración: un jugador más un oponente predeterminado. Para jugar entre varios jugadores en la mesa, usa `sov new -p Alice -p Bob -p Carol`. Para una guía paso a paso de 60 segundos, usa `sov tutorial`.
 
 ¿No tienes Python? La opción `npx` descarga un archivo binario precompilado:
 
@@ -74,9 +74,9 @@ O ejecútalo en Docker, con tus partidas guardadas en un volumen con nombre:
 docker run --rm -it -v sov-data:/data ghcr.io/mcp-tool-shop-org/sovereignty tutorial
 ```
 
-## Una partida real
+## Una sesión real
 
-Una vez que tú y 2-3 amigos estén sentados a la mesa, la consola ejecuta la ronda y ustedes hablan. Una partida real se ve así:
+Una vez que tú y 2-3 amigos estén sentados a la mesa, la consola ejecuta la ronda y ustedes hablan. Una sesión real se ve así:
 
 ```bash
 # Start a game with three players
@@ -92,7 +92,7 @@ sov status
 sov end-round
 ```
 
-`sov status` muestra una tabla con formato enriquecido con las monedas, la reputación, las mejoras, la posición y el objetivo de cada jugador. Para una rápida revisión de una sola línea entre turnos:
+`sov status` muestra una tabla con formato enriquecido con las monedas, la reputación, las mejoras, la posición y el objetivo de cada jugador. Para una rápida revisión de una línea entre turnos:
 
 ```bash
 sov status --brief
@@ -107,16 +107,16 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 Repite durante 15 rondas. `sov game-end` imprime las puntuaciones finales.
 
 - **Múltiples partidas guardadas** (v2.1+): `sov games` muestra las partidas guardadas; `sov resume <game-id>` cambia entre ellas.
-- **Anclaje por lotes** (v2.1+): `sov anchor` al final del juego guarda las rondas pendientes en una pequeña constante de transacciones XRPL AccountSet (≤8 memorandos cada una; una partida típica de Campfire de 16 rondas → 2 transacciones) — no una sola transacción / un solo puntero de cadena. Usa `sov anchor --checkpoint` para guardar a mitad del juego.
+- **Anclaje por lotes** (v2.1+): `sov anchor` al final del juego guarda las rondas pendientes en una pequeña constante de AccountSet transacciones de XRPL (≤8 memorandos cada una; un juego típico de Campfire de 16 rondas → 2 transacciones) — no una sola transacción / un solo puntero de cadena. Usa `sov anchor --checkpoint` para guardar a la mitad del juego.
 - **Selección de red** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (o la variable de entorno `SOV_XRPL_NETWORK`; por defecto `testnet`).
-- **Modo daemon** (v2.1+, opcional): `sov daemon start` ejecuta un servidor HTTP/JSON en localhost para la integración con el escritorio y la consulta de la cadena en segundo plano. Consulta [Modo daemon](#daemon-mode-optional-v21) a continuación.
-- **Aplicación de escritorio Audit Viewer** (v2.1+, opcional): `npm --prefix app run tauri dev`. Consulta [Aplicación de escritorio](#desktop-app-optional-v21) a continuación.
+- **Modo daemon** (v2.1+, opcional): `sov daemon start` ejecuta un servidor HTTP/JSON en localhost para la integración con el escritorio y la consulta de la cadena en segundo plano. Consulta [Modo daemon](#modo-daemon-opcional-v21) a continuación.
+- **Aplicación de escritorio Audit Viewer** (v2.1+, opcional): `npm --prefix app run tauri dev`. Consulta [Aplicación de escritorio](#aplicación-de-escritorio-opcional-v21) a continuación.
 
 > ¿Quieres una guía paso a paso dentro de la aplicación primero? Ejecuta `sov tutorial`.
-> ¿Quieres una explicación más detallada de las reglas? Consulta [Comienza aquí](docs/start_here.md) o
+> ¿Quieres un recorrido más profundo de las reglas? Consulta [Comienza aquí](docs/start_here.md) o
 > el [manual completo](https://mcp-tool-shop-org.github.io/sovereignty/handbook/).
 
-El ejemplo en línea de `sov turn` anterior muestra cómo se ve una ronda en la consola; para la visualización de escritorio de la v2.1, consulta [Aplicación de escritorio](#desktop-app-optional-v21) a continuación.
+El ejemplo en línea de `sov turn` anterior muestra cómo se ve una ronda en la consola; para la visualización de escritorio de v2.1, consulta [Aplicación de escritorio](#aplicación-de-escritorio-opcional-v21) a continuación.
 
 **[Comienza aquí](docs/start_here.md)** | **[Imprimir y jugar](docs/print-and-play.md)** | **[Reglas completas](docs/rules/campfire_v1.md)** | **[Jugar con extraños](docs/play-with-strangers.md)**
 
@@ -155,6 +155,7 @@ sov anchor                           # batch pending rounds to XRPL (v2.1+)
 sov anchor --checkpoint              # mid-game flush (v2.1+)
 sov anchor --network mainnet         # network selection (v2.1+)
 sov verify <proof.json> --tx <txid>  # confirm a proof is anchored on chain
+sov anchor --reanchor                # after a test network reset: anchor lost rounds again (v2.4+)
 sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
@@ -171,7 +172,7 @@ sov support-bundle                   # diagnostic zip for bug reports
 
 </details>
 
-La consola lleva la cuenta de los puntos. Tú cumples tu palabra.
+La consola lleva la cuenta. Tú cumples tu palabra.
 
 ## Modo daemon (opcional, v2.1+)
 
@@ -185,9 +186,9 @@ sov daemon status                  # running | stale | none
 sov daemon stop
 ```
 
-El daemon se enlaza a `127.0.0.1` en un puerto aleatorio; los detalles de la conexión (puerto + token de acceso) se encuentran en `.sov/daemon.json`. Un daemon por directorio raíz del proyecto. Consulta [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) para obtener el contrato IPC completo.
+El daemon se enlaza a `127.0.0.1` en un puerto aleatorio; los detalles de la conexión (puerto + token de acceso) se encuentran en `.sov/daemon.json`. Un daemon por directorio raíz del proyecto. Consulta [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) para conocer el contrato IPC completo.
 
-> El extra de `[daemon]` necesita **2.3.2 o posterior**. Las versiones hasta 2.3.1 omitieron el paquete `sov_daemon`, por lo que `sov daemon start` falló al instalarlo desde PyPI.
+> Los extras de `[daemon]` necesitan **2.3.2 o posterior**. Las versiones hasta 2.3.1 no incluyeron el paquete `sov_daemon`, por lo que `sov daemon start` falló en una instalación de PyPI.
 
 ## Docker (opcional, v2.3.2+)
 
@@ -202,18 +203,18 @@ docker compose run --rm sov play campfire_v1
 docker compose logs -f
 ```
 
-El contenedor tiene el daemon en modo **solo lectura** en la **red de prueba** de forma predeterminada. El puerto se publica solo en el bucle invertido del host (`127.0.0.1:47823`), y cada solicitud aún necesita el token de acceso de `.sov/daemon.json`.
+El contenedor tiene un daemon **de solo lectura** en **testnet** de forma predeterminada. El puerto se publica solo en el bucle invertido del host (`127.0.0.1:47823`), y cada solicitud aún necesita el token de acceso de `.sov/daemon.json`.
 
-| Configuración | Predeterminada | Qué hace |
+| Configuración | Predeterminado | Qué hace |
 |---|---|---|
 | `SOV_DATA` | `sov-data` (volumen con nombre) | De dónde proviene `/data`. Establécelo en una carpeta (`SOV_DATA=./`) para guardar las partidas en el host. |
-| `SOV_DAEMON_PORT` | `47823` | Puerto del daemon, dentro del contenedor y en el host. Los dos deben coincidir. |
+| `SOV_DAEMON_PORT` | `47823` | Puerto del daemon, dentro y en el host. Los dos deben coincidir. |
 | `SOV_DAEMON_NETWORK` | `testnet` | `testnet`, `devnet` o `mainnet`. |
-| `SOV_DAEMON_READONLY` | `1` | `0` habilita los puntos de anclaje. |
+| `SOV_DAEMON_READONLY` | `1` | `0` habilita los puntos de conexión de anclaje. |
 | `SOV_DAEMON_TOKEN` | aleatorio en cada inicio | Fíjalo para que los clientes permanezcan conectados entre reinicios. |
 | `SOV_DAEMON_LOG_FORMAT` | `human` | `json` para líneas de registro estructuradas. |
 
-**Adjunta la aplicación de escritorio.** Apunta `SOV_DATA` a la carpeta del proyecto que abre la aplicación. El daemon escribe su apretón de manos allí, y la aplicación se conecta a `127.0.0.1:47823` con el token que contiene:
+**Adjunta la aplicación de escritorio.** Apunta `SOV_DATA` a la carpeta del proyecto que abre la aplicación. El daemon escribe su apretón de manos allí, y la aplicación se comunica con `127.0.0.1:47823` con el token que contiene:
 
 ```bash
 SOV_DATA=./ docker compose up -d
@@ -221,31 +222,31 @@ SOV_DATA=./ docker compose up -d
 
 Mientras el contenedor posee el daemon, gestiona con `docker compose`, no con `sov daemon start|stop|status` en el host. La CLI del host no puede ver el proceso de un contenedor, por lo que informa que el apretón de manos está desactualizado, y `sov daemon start` lo borraría.
 
-**Ancla desde el contenedor.** Crea una billetera de red de prueba en el volumen y luego desactiva el modo de solo lectura:
+**Ancla desde el contenedor.** Crea una billetera de testnet en el volumen y luego desactiva la opción de solo lectura:
 
 ```bash
 docker compose run --rm sov wallet
 SOV_DAEMON_READONLY=0 docker compose up -d
 ```
 
-Para evitar que la semilla se incluya en el volumen, proporciónela como un secreto de Docker. El bloque comentado `secrets` en `compose.yaml` muestra cómo hacerlo.
+Para mantener la semilla fuera del volumen, proporciónala como un secreto de Docker. El bloque comentado `secrets` en `compose.yaml` muestra cómo.
 
 ## Aplicación de escritorio (opcional, v2.1+)
 
-Audit Viewer es la aplicación de escritorio v2.1: una interfaz Tauri (Rust + webview) que ejecuta el visor de auditoría y una vista de juego de solo lectura sobre el daemon.
+Audit Viewer es la aplicación de escritorio v2.1: una carcasa Tauri (Rust + webview) que ejecuta el visor de auditoría y una vista de juego de solo lectura sobre el daemon.
 
-### Instalación (binarios)
+### Instala (binarios)
 
-**v2.3.6** es la versión actual. La versión **v2.3.0** publicada en GitHub no incluía paquetes binarios ni recursos para escritorio, por lo que no se debe fijar la versión a `pip install …==2.3.0`.
+**v2.4.0** es la versión actual. La versión de GitHub **v2.3.0** no incluyó wheels ni archivos de la aplicación de escritorio, así que no fije `pip install …==2.3.0`.
 
-- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (2.3.2 o posterior para el daemon).
-- **Aplicación de escritorio:** [la última versión de GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) cuando CI haya adjuntado los archivos de la plataforma. Si una tarea de la plataforma falló, ejecute desde el código fuente (a continuación).
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (versión 2.3.2 o posterior para el daemon).
+- **Aplicación de escritorio:** [la última versión de GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) cuando CI adjunta archivos de plataforma. Si falla un trabajo de plataforma, ejecute desde el código fuente (a continuación).
 
-> **Se espera la advertencia del sistema operativo al primer inicio** cuando se incluyan los binarios verificados. Estas compilaciones solo incluyen la atestación de la procedencia de la compilación SLSA, no la firma de Apple Developer ID / Authenticode a nivel del sistema operativo. macOS: haga clic con el botón derecho en el archivo .app → Abrir. Windows SmartScreen: Más información → Ejecutar de todos modos.
+> Se espera la **advertencia de inicio del sistema operativo** cuando se distribuyen binarios autenticados. Estas versiones solo incluyen la atestación de la procedencia de la compilación SLSA, no la firma a nivel del sistema operativo de Apple Developer ID / Authenticode. macOS: haga clic con el botón derecho en el archivo .app → Abrir. Windows SmartScreen: Más información → Ejecutar de todos modos.
 
 ### Verificar la procedencia
 
-Cuando una versión realmente adjunte artefactos de escritorio, verifique el archivo que descargó:
+Cuando una versión adjunta realmente artefactos de escritorio, verifique el archivo que descargó:
 
 ```bash
 gh attestation verify \
@@ -271,17 +272,17 @@ cargo build --manifest-path app/src-tauri/Cargo.toml
 npm --prefix app run tauri dev
 ```
 
-La interfaz Tauri inicia automáticamente un daemon de solo lectura al iniciarse y lo detiene automáticamente al salir. Los daemons iniciados externamente (`sov daemon start`) permanecen activos entre reinicios de la interfaz.
+El shell de Tauri inicia automáticamente un daemon de solo lectura al iniciarse y lo detiene automáticamente al salir. Los daemons iniciados externamente (`sov daemon start`) permanecen activos entre reinicios del shell.
 
-Consulte [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) para obtener el contrato completo.
+Consulte [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) para conocer el contrato completo.
 
-Audit Viewer se envía con tres vistas:
+El visor de auditoría se distribuye con tres vistas:
 
-- **`/audit`** — Visor de pruebas anclado a XRPL. Lista de juegos colapsable, estado de anclaje por ronda, "Verificar todas las rondas" ejecuta la recompilación local de pruebas + búsqueda en la cadena en serie. La vista del auditor: confirmar que un juego se ejecutó de manera honesta sin leer el JSON sin procesar.
-- **`/game`** — Pantalla pasiva de estado en tiempo real para el juego activo. Tarjetas de recursos del jugador, línea de tiempo de la ronda, registro de los últimos 20 eventos SSE. Solo lectura; juegue en la CLI en otra terminal.
-- **`/settings`** — Pantalla de configuración del daemon + conmutador de red (testnet / mainnet / devnet) con protección de confirmación de mainnet.
+- **`/audit`** — visor de pruebas ancladas a XRPL. Lista por juego que se puede contraer, estado del ancla por ronda y "Verificar todas las rondas" ejecuta la recompilación local de la prueba + búsqueda en la cadena en serie. La vista del auditor: confirmar que un juego se ejecutó de manera honesta sin leer el JSON sin procesar.
+- **`/game`** — visualización pasiva del estado en tiempo real para el juego activo. Tarjetas de recursos del jugador, línea de tiempo de la ronda, registro de los últimos 20 eventos SSE. Solo lectura; juegue en la CLI en otra terminal.
+- **`/settings`** — visualización de la configuración del daemon + conmutador de red (testnet / mainnet / devnet) con protección de confirmación de mainnet.
 
-Especificación completa de la vista en [docs/v2.1-views.md](docs/v2.1-views.md).
+La especificación completa de la vista en [docs/v2.1-views.md](docs/v2.1-views.md).
 
 ## Cómo funciona
 
@@ -291,9 +292,9 @@ Comienza con **5 monedas** y **3 puntos de reputación**. Lanza un dado, muévet
 
 **12 cartas de acuerdo + 10 cartas de vale** obligan a la conversación: *"¿Me prestas 2 monedas? Te devolveré 3".* o *"Te cubro la espalda si tú me la cubres a mí".* Los acuerdos establecen objetivos con plazos; los vales son pagarés que emites a otros jugadores.
 
-**La regla de la promesa:** Una vez por ronda, di en voz alta "Lo prometo..." y comprométete con algo. Cúmplelo: +1 punto de reputación. Incúmplelo: -2 puntos de reputación. La mesa decide.
+**La regla de la promesa:** Una vez por ronda, di en voz alta "Lo prometo..." y comprométete a algo. Cúmplelo: +1 punto de reputación. Incúmplelo: -2 puntos de reputación. La mesa decide.
 
-**La disculpa:** Una vez por juego, si rompiste una promesa, discúlpate públicamente. Paga 1 moneda a quien hayas perjudicado y recupera +1 punto de reputación.
+**La disculpa:** Una vez por juego, si rompiste una promesa, discúlpate públicamente. Paga 1 moneda a quien perjudicaste y recupera +1 punto de reputación.
 
 **Elige tu objetivo** (secreto o público):
 - **Prosperidad:** alcanza 20 monedas
@@ -317,28 +318,30 @@ sov verify proof.json --tx <txid>    # trust but verify
 
 Solo el anfitrión necesita una billetera. Nadie más toca una pantalla. El juego funciona perfectamente sin anclaje; es solo el diario el que recuerda.
 
+Testnet y Devnet se borran periódicamente (la próxima vez el 25 de noviembre de 2026), y un ancla creado antes de un borrado desaparece después. `sov verify --tx` indica entonces que el ancla ya no se puede verificar (código de salida 3), nunca que pasó la verificación. Ejecute `sov wallet` y `sov anchor --reanchor` para volver a colocar las rondas del juego en el libro mayor. Consulte [el manual](https://mcp-tool-shop-org.github.io/sovereignty/handbook/diary-mode/).
+
 ## Tres niveles
 
-| Nivel | Nombre | Estado | Qué agrega |
+| Nivel | Nombre | Estado | Lo que agrega |
 |------|------|--------|-------------|
 | 1 | **Campfire** | Jugable | Monedas, reputación, promesas, pagarés |
 | 2 | **Town Hall** | Jugable | Mercado compartido, escasez de recursos |
 | 3 | **Treaty Table** | Jugable | Tratados con apuestas: promesas con consecuencias |
 
-Las reglas básicas son estables hasta la v1.x. Consulte [roadmap](docs/roadmap.md).
+Las reglas básicas son estables hasta v1.x. Consulte [la hoja de ruta](docs/roadmap.md).
 
 ## Paquetes de escenarios
 
 Cero reglas nuevas. Solo ambiente. Cada paquete establece un nivel, una receta y un estado de ánimo.
 
-| Escenario | Nivel | Mejor para |
+| Escenario | Nivel | Ideal para |
 |----------|------|----------|
 | [Cozy Night](docs/scenarios/cozy-night.md) | Fogata / Día de mercado | Primer juego, grupos mixtos |
 | [Market Panic](docs/scenarios/market-panic.md) | Ayuntamiento | Drama económico |
 | [Promises Matter](docs/scenarios/promises-matter.md) | Fogata | Confianza y compromiso |
 | [Treaty Night](docs/scenarios/treaty-night.md) | Mesa de tratados | Acuerdos de alto riesgo |
 
-`sov scenario list` para navegar desde la consola.
+`sov scenario list` para explorar desde la consola.
 
 ## Estructura del proyecto
 
@@ -368,9 +371,9 @@ uv run ruff check .
 
 ## Principio de diseño
 
-> "Enseña a través de las consecuencias, no de la terminología".
+> "Enseñar a través de las consecuencias, no de la terminología".
 
-Los jugadores aprenden haciendo: emitiendo pagarés, rompiendo promesas, intercambiando a precios fluctuantes. Los conceptos se corresponden con los primitivos de Web3: billeteras, tokens, líneas de confianza, pero los jugadores no necesitan saber eso para divertirse.
+Los jugadores aprenden haciendo: emitiendo pagarés, rompiendo promesas, intercambiando a precios fluctuantes. Los conceptos se corresponden con los Web3 primitivos: billeteras, tokens, líneas de confianza, pero los jugadores no necesitan saber eso para divertirse.
 
 ## Contribuyendo
 
@@ -378,7 +381,7 @@ La forma más fácil de contribuir es [agregar una carta](CONTRIBUTING.md). No s
 
 ## Seguridad
 
-Claves de la billetera, estado del juego y archivos de prueba: qué compartir y qué no. Sin telemetría, sin análisis, sin comunicación con servidores externos. La única llamada de red opcional es el anclaje a la red de pruebas XRPL.
+Semillas de billetera, estado del juego y archivos de prueba: qué compartir y qué no. Sin telemetría, sin análisis, sin llamadas al servidor. La única llamada de red opcional es el anclaje de XRPL Testnet.
 
 Consulte [SECURITY.md](SECURITY.md).
 
@@ -386,11 +389,11 @@ Consulte [SECURITY.md](SECURITY.md).
 
 | Amenaza | Mitigación |
 |--------|-----------|
-| Fuga de claves a través de las pruebas | Las pruebas contienen solo hashes, nunca las claves |
-| Clave en Git | `.sov/` se ignora en Git; `sov wallet` emite una advertencia |
+| Fuga de semillas a través de pruebas | Las pruebas contienen solo hashes, nunca semillas. |
+| Semilla en Git | `.sov/` ignorado por Git; `sov wallet` muestra advertencias |
 | Manipulación del estado del juego | Las pruebas de ronda `envelope_hash` cubren `game_id`, `round`, `ruleset`, `rng_seed`, `timestamp_utc`, `players` y `state`. `sov verify` detecta manipulaciones en todo el conjunto. El formato de prueba v1 ya no es compatible en v2.0.0+. |
-| Suplantación del anclaje XRPL | Hash de la prueba anclado en la cadena; detección de discrepancias en la verificación |
-| Exposición del contenedor | La imagen del daemon se publica solo en el host `127.0.0.1`; token de acceso en cada solicitud; solo lectura por defecto; se ejecuta como un usuario que no es root con un sistema de archivos raíz de solo lectura y sin capacidades |
+| Suplantación de un nodo ancla de XRPL | Hash de la prueba anclado en la cadena; detección de discrepancias durante la verificación |
+| Exposición del contenedor | La imagen del demonio se publica solo en el host `127.0.0.1`; token de acceso en cada solicitud; solo lectura de forma predeterminada; se ejecuta como un usuario que no es root con un sistema de archivos raíz de solo lectura y sin capacidades |
 | Privacidad del nombre del jugador | Los nombres de los jugadores SÍ se incluyen en las pruebas (lista de nivel superior `players` y dentro de las instantáneas de los jugadores). Para jugar de forma privada, no publique `proof.json` ni comparta postales. |
 
 ## Licencia
