@@ -605,6 +605,57 @@ class XRPLTransport(LedgerTransport):
                 with contextlib.suppress(Exception):  # pragma: no cover
                     close()
 
+    def tx_exists(self, txid: str) -> bool | None:
+        """Whether ``txid`` is on the ledger at all, whatever it carries.
+
+        ``is_anchored_on_chain`` answers ``NOT_FOUND`` both for a
+        transaction that is absent and for one that exists with a different
+        hash. A network reset explains only the first, so the reset check
+        asks this.
+
+        Returns True if the ledger has the transaction, False if it answers
+        ``txnNotFound``, and None when the read failed or the answer could
+        not be told (no verdict; the caller keeps ``NOT_FOUND``).
+        """
+        if not txid:
+            raise ValueError("txid must be non-empty")
+        try:
+            from xrpl.clients import JsonRpcClient
+            from xrpl.models import Tx
+        except ImportError as e:
+            raise RuntimeError(
+                "xrpl-py is not installed. Install with: pip install 'sovereignty-game[xrpl]'"
+            ) from e
+
+        client = JsonRpcClient(self.url)
+        try:
+            try:
+                response = client.request(Tx(transaction=txid))
+            except Exception as e:
+                logger.warning(
+                    "tx_exists.lookup_failed txid=%s exc=%s",
+                    txid,
+                    type(e).__name__,
+                )
+                return None
+            check = getattr(response, "is_successful", None)
+            if callable(check):
+                try:
+                    ok = bool(check())
+                except Exception:
+                    return None
+                if ok:
+                    return True
+                result = getattr(response, "result", None)
+                if isinstance(result, dict) and result.get("error") == "txnNotFound":
+                    return False
+            return None
+        finally:
+            close = getattr(client, "close", None)
+            if callable(close):
+                with contextlib.suppress(Exception):  # pragma: no cover
+                    close()
+
     def get_memo_text(self, txid: str) -> str | None:
         """Retrieve the first decodable memo text from a transaction.
 

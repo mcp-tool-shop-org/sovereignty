@@ -34,22 +34,22 @@
   <a href="https://mcp-tool-shop-org.github.io/sovereignty/"><img src="https://img.shields.io/badge/Landing_Page-live-blue?style=flat&cacheSeconds=86400" alt="Landing Page"></a>
 </p>
 
-## Jogue hoje à noite
+## Vamos jogar hoje à noite
 
-Imprima o pacote completo para impressão e jogo (disponível em assets/print/pdf/Sovereignty-Print-Pack.pdf) — tabuleiro, tapetes para os jogadores, guia de referência rápida, tabuleiro de mercado e três baralhos de cartas em 13 folhas de papel no formato US Letter. Encontre um dado e algumas moedas. Sente-se com dois ou três amigos. Vocês estarão jogando em vinte minutos.
+Imprima [o pacote completo para impressão e jogo](assets/print/pdf/Sovereignty-Print-Pack.pdf) — tabuleiro, tapetes para os jogadores, guia de referência rápida, tabuleiro de mercado e três baralhos de cartas em 13 folhas de papel no formato US Letter. Encontre um dado e algumas moedas. Sente-se com dois ou três amigos. Vocês começarão a jogar em vinte minutos.
 
 Se você quiser folhas individuais:
 
-- **[Tabuleiro](assets/print/pdf/board.pdf)** — o tabuleiro com 16 espaços, representando a fogueira, em uma página.
+- **[Tabuleiro](assets/print/pdf/board.pdf)** — o circuito da fogueira com 16 espaços, uma página.
 - **[Tapete para o jogador](assets/print/pdf/mat.pdf)** — moedas, reputação, melhorias, promessas. Um por jogador.
 - **[Guia de referência rápida](assets/print/pdf/quickref.pdf)** — espaços do tabuleiro, ordem das jogadas, regras das promessas.
 - **[Cartas de evento](assets/print/pdf/events.pdf)** — 28 cartas, quatro páginas, corte ao longo das linhas.
 - **[Cartas de negociação](assets/print/pdf/deals.pdf)** — 12 cartas, duas páginas.
-- **[Cartas de vale](assets/print/pdf/vouchers.pdf)** — 10 vales entre os jogadores, duas páginas.
+- **[Cartas de vale](assets/print/pdf/vouchers.pdf)** — 10 promissórias entre os jogadores, duas páginas.
 - **[Tabuleiro de mercado](assets/print/pdf/market.pdf)** — Dia de mercado / Câmara Municipal, uma página.
-- **[Guia de referência rápida do tratado](assets/print/pdf/treaty.pdf)** — Apenas nível 3.
+- **[Guia de referência rápida do tratado](assets/print/pdf/treaty.pdf)** — apenas nível 3.
 
-Os arquivos PDF são vetoriais com fontes incorporadas — eles imprimem de forma nítida em qualquer impressora doméstica. O guia passo a passo para a configuração está disponível em [Print & Play](docs/print-and-play.md).
+Os arquivos PDF são vetoriais com fontes incorporadas — eles são impressos com boa qualidade em qualquer impressora doméstica. O guia passo a passo para a configuração está em [Print & Play](docs/print-and-play.md).
 
 ## Quer um console para controlar a pontuação?
 
@@ -62,7 +62,7 @@ sov play campfire_v1
 
 `sov play campfire_v1` é o guia de início rápido sem configuração — um jogador mais um oponente padrão. Para jogos com vários jogadores na mesa, use `sov new -p Alice -p Bob -p Carol`. Para um guia passo a passo de 60 segundos, use `sov tutorial`.
 
-Sem Python? O caminho `npx` baixa um binário pré-compilado:
+Não tem Python? O caminho `npx` baixa um binário pré-compilado:
 
 ```bash
 npx @mcptoolshop/sovereignty tutorial
@@ -92,7 +92,7 @@ sov status
 sov end-round
 ```
 
-`sov status` exibe uma tabela formatada em Rich com as moedas, a reputação, as melhorias, a posição e o objetivo de cada jogador. Para uma visualização rápida em uma única linha entre as rodadas:
+`sov status` mostra uma tabela formatada em Rich com as moedas, a reputação, as melhorias, a posição e o objetivo de cada jogador. Para uma visualização rápida em uma única linha entre as rodadas:
 
 ```bash
 sov status --brief
@@ -107,16 +107,16 @@ R3 |  Alice: 7c 4r 0u | >Bob: 4c 3r 0u |  Carol: 6c 5r 0u
 Repita por 15 rodadas. `sov game-end` imprime as pontuações finais.
 
 - **Múltiplos jogos salvos** (v2.1+): `sov games` lista os jogos salvos; `sov resume <game-id>` alterna entre eles.
-- **Ancoragem em lote** (v2.1+): `sov anchor` no final do jogo armazena as rodadas pendentes em uma pequena constante de transações XRPL AccountSet (≤8 memorandos cada; um jogo típico de 16 rodadas → 2 transações) — não uma única transação / único ponteiro de cadeia. Use `sov anchor --checkpoint` para ancoragem no meio do jogo.
+- **Ancoragem em lote** (v2.1+): `sov anchor` no final do jogo armazena as rodadas pendentes em uma pequena constante de transações XRPL AccountSet (≤8 memorandos cada; um jogo típico de Campfire com 16 rodadas → 2 transações) — não uma única transação / único ponteiro de cadeia. Use `sov anchor --checkpoint` para armazenar no meio do jogo.
 - **Seleção de rede** (v2.1+): `sov anchor --network testnet|mainnet|devnet` (ou variável de ambiente `SOV_XRPL_NETWORK`; padrão `testnet`).
-- **Modo daemon** (v2.1+, opcional): `sov daemon start` executa um servidor HTTP/JSON em localhost para integração com o desktop e polling de cadeia em segundo plano. Consulte [Modo daemon](#daemon-mode-optional-v21) abaixo.
-- **Aplicativo de desktop Audit Viewer** (v2.1+, opcional): `npm --prefix app run tauri dev`. Consulte [Aplicativo de desktop](#desktop-app-optional-v21) abaixo.
+- **Modo daemon** (v2.1+, opcional): `sov daemon start` executa um servidor HTTP/JSON localhost para integração com a área de trabalho e coleta de dados em segundo plano. Consulte [Modo daemon](#modo-daemon-opcional-v21) abaixo.
+- **Aplicativo de desktop Audit Viewer** (v2.1+, opcional): `npm --prefix app run tauri dev`. Consulte [Aplicativo de desktop](#aplicativo-de-desktop-opcional-v21) abaixo.
 
 > Quer um guia passo a passo no aplicativo primeiro? Execute `sov tutorial`.
 > Quer um guia mais detalhado das regras? Consulte [Comece aqui](docs/start_here.md) ou
 > o [manual completo](https://mcp-tool-shop-org.github.io/sovereignty/handbook/).
 
-O exemplo `sov turn` acima mostra como uma rodada se parece no console; para a visualização do desktop v2.1, consulte [Aplicativo de desktop](#desktop-app-optional-v21) abaixo.
+O exemplo `sov turn` acima mostra como uma rodada se parece no console; para a visualização v2.1 no desktop, consulte [Aplicativo de desktop](#aplicativo-de-desktop-opcional-v21) abaixo.
 
 **[Comece aqui](docs/start_here.md)** | **[Print & Play](docs/print-and-play.md)** | **[Regras completas](docs/rules/campfire_v1.md)** | **[Jogue com estranhos](docs/play-with-strangers.md)**
 
@@ -155,6 +155,7 @@ sov anchor                           # batch pending rounds to XRPL (v2.1+)
 sov anchor --checkpoint              # mid-game flush (v2.1+)
 sov anchor --network mainnet         # network selection (v2.1+)
 sov verify <proof.json> --tx <txid>  # confirm a proof is anchored on chain
+sov anchor --reanchor                # after a test network reset: anchor lost rounds again (v2.4+)
 sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
@@ -175,7 +176,7 @@ O console controla a pontuação. Você cumpre sua palavra.
 
 ## Modo daemon (opcional, v2.1+)
 
-Para integração com o desktop (Audit Viewer, Tauri shell) ou polling de cadeia em segundo plano, execute o Sovereignty como um daemon HTTP em localhost:
+Para integração com a área de trabalho (Audit Viewer, Tauri shell) ou coleta de dados em segundo plano, execute o sovereignty como um daemon HTTP localhost:
 
 ```bash
 pip install 'sovereignty-game[daemon]'
@@ -187,13 +188,13 @@ sov daemon stop
 
 O daemon é vinculado a `127.0.0.1` em uma porta aleatória; os detalhes da conexão (porta + token de portador) estão em `.sov/daemon.json`. Um daemon por raiz do projeto. Consulte [docs/v2.1-daemon-ipc.md](docs/v2.1-daemon-ipc.md) para o contrato IPC completo.
 
-> O extra `[daemon]` precisa de **2.3.2 ou posterior**. As versões até 2.3.1 deixaram o pacote `sov_daemon` de fora, então `sov daemon start` falhou na instalação do PyPI.
+> Os extras `[daemon]` precisam de **2.3.2 ou posterior**. As versões até 2.3.1 não incluíam o pacote `sov_daemon`, então `sov daemon start` falhou na instalação de PyPI.
 
 ## Docker (opcional, v2.3.2+)
 
-A imagem em `ghcr.io/mcp-tool-shop-org/sovereignty` contém a CLI `sov` e o daemon, para `linux/amd64` e `linux/arm64`. Tudo o que o jogo lembra está em `/data/.sov`: jogos, provas de rodada, `anchors.json`, o registro da temporada, a semente da carteira e o handshake do daemon. Monte um volume em `/data` ou o contêiner esquece tudo.
+A imagem em `ghcr.io/mcp-tool-shop-org/sovereignty` contém a CLI `sov` e o daemon, para `linux/amd64` e `linux/arm64`. Tudo o que o jogo armazena fica em `/data/.sov`: jogos, provas de rodada, `anchors.json`, o registro da temporada, a semente da carteira e o handshake do daemon. Monte um volume em `/data` ou o contêiner esquecerá tudo.
 
-Execute o daemon com o [`compose.yaml`](compose.yaml) incluído:
+Execute o daemon com o programa incluído [`compose.yaml`](compose.yaml):
 
 ```bash
 docker compose up -d                  # readonly audit daemon on 127.0.0.1:47823
@@ -202,15 +203,15 @@ docker compose run --rm sov play campfire_v1
 docker compose logs -f
 ```
 
-O contêiner tem como padrão um daemon **somente leitura** na **testnet**. A porta é publicada apenas para o loopback do host (`127.0.0.1:47823`), e cada solicitação ainda precisa do token de portador de `.sov/daemon.json`.
+O contêiner usa o daemon em modo **somente leitura** na **testnet** por padrão. A porta é publicada apenas para o loopback do host (`127.0.0.1:47823`), e cada solicitação ainda precisa do token de portador de `.sov/daemon.json`.
 
 | Configuração | Padrão | O que faz |
 |---|---|---|
 | `SOV_DATA` | `sov-data` (volume nomeado) | De onde `/data` vem. Defina-o para uma pasta (`SOV_DATA=./`) para manter os jogos salvos no host. |
 | `SOV_DAEMON_PORT` | `47823` | Porta do daemon, dentro e no host. Os dois devem corresponder. |
 | `SOV_DAEMON_NETWORK` | `testnet` | `testnet`, `devnet` ou `mainnet`. |
-| `SOV_DAEMON_READONLY` | `1` | `0` habilita os endpoints de ancoragem. |
-| `SOV_DAEMON_TOKEN` | aleatório a cada início | Corrija para que os clientes permaneçam conectados entre as reinicializações. |
+| `SOV_DAEMON_READONLY` | `1` | `0` habilita os pontos de extremidade de ancoragem. |
+| `SOV_DAEMON_TOKEN` | aleatório a cada início | Corrija para que os clientes permaneçam conectados após as reinicializações. |
 | `SOV_DAEMON_LOG_FORMAT` | `human` | `json` para linhas de log estruturadas. |
 
 **Anexe o aplicativo de desktop.** Aponte `SOV_DATA` para a pasta do projeto que o aplicativo abre. O daemon grava seu handshake lá, e o aplicativo disca `127.0.0.1:47823` com o token dele:
@@ -221,27 +222,27 @@ SOV_DATA=./ docker compose up -d
 
 Enquanto o contêiner possui o daemon, gerencie-o com `docker compose`, não `sov daemon start|stop|status` no host. A CLI do host não consegue ver o processo de um contêiner, então ela relata o handshake como obsoleto, e `sov daemon start` o limparia.
 
-**Ancore a partir do contêiner.** Crie uma carteira testnet no volume e, em seguida, desative a proteção contra gravação:
+**Ancore a partir do contêiner.** Crie uma carteira testnet no volume e, em seguida, desative o modo somente leitura:
 
 ```bash
 docker compose run --rm sov wallet
 SOV_DAEMON_READONLY=0 docker compose up -d
 ```
 
-Para evitar que a semente seja incluída no volume, forneça-a como um segredo do Docker. O bloco comentado `secrets` em `compose.yaml` mostra como.
+Para manter a semente fora do volume, forneça-a como um segredo do Docker. O bloco `secrets` comentado em `compose.yaml` mostra como.
 
-## Aplicativo para desktop (opcional, v2.1+)
+## Aplicativo de desktop (opcional, v2.1+)
 
-O Audit Viewer é o aplicativo para desktop v2.1 — um shell Tauri (Rust + webview) que executa o visualizador de auditoria e uma visualização de jogo somente leitura sobre o daemon.
+O Audit Viewer é o aplicativo de desktop v2.1 — um Tauri shell (Rust + webview) que executa o visualizador de auditoria e uma visualização de jogo somente leitura sobre o daemon.
 
-### Instalação (binários)
+### Instale (binários)
 
-**v2.3.6** é a versão atual. A versão **v2.3.0** lançada no GitHub não incluía pacotes pré-compilados (wheels) nem recursos para aplicações de ambiente de trabalho, portanto, não defina `pip install …==2.3.0` como versão.
+**v2.4.1** é a versão atual. A versão GitHub Release **v2.3.0** não incluiu binários ou recursos de desktop, portanto, não defina `pip install …==2.3.0`.
 
-- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (2.3.2 ou posterior para o daemon).
-- **Aplicativo para desktop:** [a versão mais recente do GitHub Release](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) quando o CI tiver anexado os arquivos da plataforma. Se uma tarefa da plataforma falhar, execute a partir do código-fonte (abaixo).
+- **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (versão 2.3.2 ou posterior para o daemon).
+- **Aplicativo para desktop:** [a versão mais recente de GitHub](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) quando o CI anexar arquivos de plataforma. Se uma tarefa de plataforma falhar, execute a partir do código-fonte (abaixo).
 
-> **O aviso do sistema operacional no primeiro lançamento é esperado** quando os binários autenticados forem disponibilizados. Essas versões contêm apenas a atestação de proveniência da construção SLSA — não a assinatura do Apple Developer ID / Authenticode no nível do sistema operacional. macOS: clique com o botão direito no .app → Abrir. Windows SmartScreen: Mais informações → Executar de qualquer forma.
+> **É esperado um aviso do sistema operacional no primeiro lançamento** quando os binários verificados forem enviados. Essas versões contêm apenas a atestação de proveniência da construção SLSA — não a assinatura do Apple Developer ID / Authenticode em nível do sistema operacional. macOS: clique com o botão direito no arquivo .app → Abrir. Windows SmartScreen: Mais informações → Executar de qualquer forma.
 
 ### Verificar a proveniência
 
@@ -253,7 +254,7 @@ gh attestation verify \
   ./<downloaded-artifact>
 ```
 
-Uma verificação limpa prova que o binário foi construído a partir de um commit específico, pelo fluxo de trabalho da versão, neste repositório. Uma camada diferente de confiança em relação à assinatura de código no nível do sistema operacional — o binário ainda aciona o aviso do sistema operacional, mas sua proveniência da cadeia de suprimentos é criptograficamente fixada.
+Uma verificação limpa comprova que o binário foi construído a partir de um commit específico, pelo fluxo de trabalho da versão, neste repositório. Uma camada diferente de confiança em relação à assinatura de código em nível do sistema operacional — o binário ainda aciona o aviso do sistema operacional, mas sua proveniência da cadeia de suprimentos é criptograficamente fixada.
 
 ### Executar a partir do código-fonte
 
@@ -275,29 +276,29 @@ O shell Tauri inicia automaticamente um daemon somente leitura no lançamento e 
 
 Consulte [docs/v2.1-tauri-shell.md](docs/v2.1-tauri-shell.md) para obter o contrato completo.
 
-O Audit Viewer é fornecido com três visualizações:
+O Visualizador de Auditoria é fornecido com três visualizações:
 
-- **`/audit`** — visualizador de prova ancorada ao XRPL. Lista por jogo expansível, status do âncora por rodada, "Verificar todas as rodadas" executa a recomputação local da prova + pesquisa na cadeia em série. A visualização do auditor: confirma que um jogo foi executado de forma honesta sem ler o JSON bruto.
-- **`/game`** — exibição passiva do estado em tempo real para o jogo ativo. Cartões de recursos do jogador, linha do tempo da rodada, registro dos últimos 20 eventos SSE. Somente leitura; jogue no CLI em outro terminal.
+- **`/audit`** — visualizador de prova ancorada no XRPL. Lista por jogo expansível, status do âncora por rodada, "Verificar todas as rodadas" executa a recomputação local da prova + pesquisa na cadeia em série. A visualização do auditor: confirma que um jogo foi executado de forma honesta sem ler o JSON bruto.
+- **`/game`** — exibição passiva do estado em tempo real para o jogo ativo. Cartões de recursos do jogador, linha do tempo da rodada, registro das últimas 20 ocorrências SSE. Somente leitura; jogue no CLI em outro terminal.
 - **`/settings`** — exibição da configuração do daemon + alternador de rede (testnet / mainnet / devnet) com proteção de confirmação da mainnet.
 
 Especificação completa da visualização em [docs/v2.1-views.md](docs/v2.1-views.md).
 
 ## Como funciona
 
-Você começa com **5 moedas** e **3 reputações**. Jogue um dado, mova-se em um tabuleiro de 16 espaços e pare em espaços que lhe dão opções: negociar, ajudar alguém, correr um risco ou comprar uma carta.
+Você começa com **5 moedas** e **3 pontos de reputação**. Lance um dado, mova-se em um tabuleiro de 16 espaços e pare em espaços que lhe dão opções: negociar, ajudar alguém, correr um risco ou comprar uma carta.
 
-**28 cartas de evento** são como momentos: *"Alguém viu uma pequena bolsa de couro?"* (Carteira perdida) ou *"Ninguém viu... certo?"* (Encontrou um atalho). Inclui eventos de mudança de mercado para jogos da Câmara Municipal.
+**28 cartas de evento** são como momentos: *"Alguém viu uma pequena bolsa de couro?"* (Carteira perdida) ou *"Ninguém viu... certo?"* (Encontrou um atalho). Inclui eventos de mudança de mercado para jogos de Câmara Municipal.
 
-**12 cartas de acordo + 10 cartas de vale** forçam a conversa: *"Me empresta 2 moedas? Eu te pago 3 de volta."* ou *"Eu te apoio se você me apoiar."* Os acordos definem metas com prazos; os vales são promissórias que você emite para outros jogadores.
+**12 cartas de acordo + 10 cartas de vale** forçam a conversa: *"Me empresta 2 moedas? Eu te pago 3 de volta."* ou *"Eu te ajudo se você me ajudar."* Os acordos definem metas com prazos; os vales são promissas de pagamento que você emite para outros jogadores.
 
-**A regra da Promessa:** Uma vez por rodada, diga "Eu prometo..." em voz alta e se comprometa com algo. Cumpra: +1 reputação. Quebre: -2 reputação. A mesa decide.
+**A regra da Promessa:** Uma vez por rodada, diga em voz alta "Eu prometo..." e comprometa-se com algo. Cumpra: +1 ponto de reputação. Quebre: -2 pontos de reputação. A mesa decide.
 
-**O Pedido de Desculpas:** Uma vez por jogo, se você quebrou uma promessa, peça desculpas publicamente. Pague 1 moeda para quem você prejudicou, recupere +1 reputação.
+**O Pedido de Desculpas:** Uma vez por jogo, se você quebrou uma promessa, peça desculpas publicamente. Pague 1 moeda para quem você prejudicou, recupere +1 ponto de reputação.
 
 **Escolha seu objetivo** (secreto ou público):
 - **Prosperidade** — alcance 20 moedas
-- **Amado** — alcance 10 reputações
+- **Amado** — alcance 10 pontos de reputação
 - **Construtor** — complete 4 atualizações
 
 Após 15 rodadas, a pontuação combinada mais alta vence.
@@ -317,23 +318,25 @@ sov verify proof.json --tx <txid>    # trust but verify
 
 Apenas o host precisa de uma carteira. Ninguém mais toca em uma tela. O jogo funciona perfeitamente sem ancoragem — é apenas o diário que se lembra.
 
+Testnet e Devnet são apagados de tempos em tempos (próximo em 25/11/2026), e uma âncora feita antes de um apagamento desaparece depois. `sov verify --tx` então diz que a âncora não pode mais ser verificada (código de saída 3), nunca que ela foi aprovada. Execute `sov wallet` e `sov anchor --reanchor` para colocar as rodadas do jogo de volta no livro-razão. Consulte [o manual](https://mcp-tool-shop-org.github.io/sovereignty/handbook/diary-mode/).
+
 ## Três níveis
 
 | Nível | Nome | Status | O que ele adiciona |
 |------|------|--------|-------------|
-| 1 | **Campfire** | Jogável | Moedas, reputação, promessas, promissórias |
+| 1 | **Campfire** | Jogável | Moedas, reputação, promessas, promissas de pagamento |
 | 2 | **Town Hall** | Jogável | Mercado compartilhado, escassez de recursos |
 | 3 | **Treaty Table** | Jogável | Tratados com apostas — promessas com consequências |
 
-As regras básicas são estáveis até a v1.x. Consulte [roteiro](docs/roadmap.md).
+As regras básicas são estáveis até v1.x. Consulte [o roteiro](docs/roadmap.md).
 
 ## Pacotes de cenário
 
-Nenhuma nova regra. Apenas vibrações. Cada pacote define um nível, receita e humor.
+Nenhuma nova regra. Apenas a atmosfera. Cada pacote define um nível, receita e humor.
 
 | Cenário | Nível | Melhor para |
 |----------|------|----------|
-| [Cozy Night](docs/scenarios/cozy-night.md) | Fogueira / Dia de mercado | Primeiro jogo, grupos mistos |
+| [Cozy Night](docs/scenarios/cozy-night.md) | Fogueira / Dia de Mercado | Primeiro jogo, grupos mistos |
 | [Market Panic](docs/scenarios/market-panic.md) | Câmara Municipal | Drama econômico |
 | [Promises Matter](docs/scenarios/promises-matter.md) | Fogueira | Confiança e compromisso |
 | [Treaty Night](docs/scenarios/treaty-night.md) | Mesa de Tratados | Acordos de alto risco |
@@ -370,7 +373,7 @@ uv run ruff check .
 
 > "Ensine através das consequências, não da terminologia."
 
-Os jogadores aprendem fazendo: emitindo promissórias, quebrando promessas, negociando a preços variáveis. Os conceitos se relacionam com os primitivos da Web3 — carteiras, tokens, linhas de confiança — mas os jogadores não precisam saber disso para se divertir.
+Os jogadores aprendem fazendo: emitindo promessas de pagamento, quebrando promessas, negociando a preços variáveis. Os conceitos se mapeiam para Web3 primitivos — carteiras, tokens, linhas de confiança — mas os jogadores não precisam saber disso para se divertirem.
 
 ## Contribuindo
 
@@ -378,7 +381,7 @@ A maneira mais fácil de contribuir é [adicionar uma carta](CONTRIBUTING.md). N
 
 ## Segurança
 
-Sementes da carteira, estado do jogo e arquivos de prova — o que compartilhar e o que não. Sem telemetria, sem análise de dados, sem comunicação com servidores externos. A única chamada de rede opcional é a ancoragem na XRPL Testnet.
+Sementes da carteira, estado do jogo e arquivos de prova — o que compartilhar e o que não compartilhar. Sem telemetria, sem análises, sem comunicação com o servidor. A única chamada de rede opcional é a ancoragem do XRPL Testnet.
 
 Consulte [SECURITY.md](SECURITY.md).
 
@@ -386,12 +389,12 @@ Consulte [SECURITY.md](SECURITY.md).
 
 | Ameaça | Mitigação |
 |--------|-----------|
-| Vazamento de sementes por meio de provas | As provas contêm apenas hashes, nunca sementes |
-| Semente no Git | `.sov/` ignorado no Git; `sov wallet` emite um aviso |
-| Manipulação do estado do jogo | As provas da rodada `envelope_hash` abrangem `game_id`, `round`, `ruleset`, `rng_seed`, `timestamp_utc`, `players` e `state`. `sov verify` detecta adulterações em todo o envelope. O formato de prova v1 não é mais suportado na v2.0.0+. |
-| Falsificação da âncora XRPL | Hash da prova ancorado na cadeia; detecção de incompatibilidade na verificação |
-| Exposição do contêiner | A imagem do daemon é publicada apenas para o host `127.0.0.1`; token de portador em cada solicitação; somente leitura por padrão; executa como um usuário não root com um sistema de arquivos raiz somente leitura e sem privilégios |
-| Privacidade do nome do jogador | Os nomes dos jogadores SÃO incluídos nas provas (lista de nível superior `players` e dentro dos snapshots dos jogadores). Para jogos privados, não publique `proof.json` nem compartilhe cartões postais. |
+| Vazamento de sementes através de provas | As provas contêm apenas hashes, nunca sementes. |
+| Semente no Git | `.sov/` ignorado pelo Git; `sov wallet` emite avisos |
+| Manipulação do estado do jogo | As provas de rodada `envelope_hash` abrangem `game_id`, `round`, `ruleset`, `rng_seed`, `timestamp_utc`, `players` e `state`. `sov verify` deteta adulterações em todo o envelope. O formato de prova v1 não é mais suportado em v2.0.0+. |
+| Falsificação de âncora XRPL | Hash da prova ancorado na cadeia; deteção de incompatibilidade na verificação |
+| Exposição do contêiner | A imagem do daemon é publicada apenas para o host `127.0.0.1`; token de autenticação em cada pedido; apenas leitura por padrão; executa como um utilizador não root com um sistema de ficheiros root de apenas leitura e sem capacidades |
+| Privacidade do nome do jogador | Os nomes dos jogadores SÃO incluídos nas provas (lista de nível superior `players` e dentro dos instantâneos dos jogadores). Para jogos privados, não publique `proof.json` nem partilhe postais. |
 
 ## Licença
 

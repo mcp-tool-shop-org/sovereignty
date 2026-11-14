@@ -1,0 +1,4 @@
+  Local proof valid. Proof valid. Round 1, envelope hash matches.
+  Anchor can no longer be checked — Testnet was reset on 2026-11-25, after this proof was made. The transaction is on no ledger now.
+  The local proof is still valid, and that is all that is left: a made-up --tx dated before the reset reads the same way. Run sov anchor --reanchor to anchor the game's lost rounds again. Signal: 
+announced reset (https://xrpl.org/blog/2026/testnet-devnet-reset).

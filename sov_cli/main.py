@@ -22,6 +22,7 @@ from sov_cli.errors import (
     anchor_error,
     anchor_mismatch_error,
     anchor_pending_error,
+    anchor_reset_error,
     chain_lookup_failed_error,
     daemon_not_installed_error,
     daemon_not_running_error,
@@ -555,6 +556,196 @@ def _commit_anchor_chunks(
     return txids
 
 
+def _round_sort_key(round_key: str) -> tuple[int, int]:
+    """Numeric rounds in numeric order, FINAL after them, anything else last."""
+    if round_key == "FINAL":
+        return (1, 0)
+    try:
+        return (0, int(round_key))
+    except ValueError:
+        # Unknown / non-numeric / non-FINAL key — bucket after FINAL so
+        # forward-compat content surfaces at the tail rather than mixing
+        # into the numeric range.
+        return (2, 0)
+
+
+def _proofs_by_round_key(game_id: str) -> dict[str, Path]:
+    """Map each round key to its proof file, read from the proofs themselves.
+
+    The key comes from the proof's own ``round`` / ``final`` fields, not the
+    file name, so every writer's naming is covered. An unreadable file is
+    skipped: the round then has no proof to anchor.
+    """
+    found: dict[str, Path] = {}
+    for path in sorted(proofs_dir(game_id).glob("*.proof.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if isinstance(data, dict):
+            found.setdefault(_round_key_from_proof(data), path)
+    return found
+
+
+def _reanchor_lost_rounds(
+    resolved_network: Any,
+    *,
+    seed_env: str,
+    signer_file: Path | None,
+) -> None:
+    """`sov anchor --reanchor`: send again the rounds whose anchor is gone.
+
+    A test network reset deletes every transaction, so a round recorded as
+    anchored has a txid that is on no ledger. The normal flush skips it (a
+    recorded txid means "already sent"). This path asks the ledger about each
+    recorded txid and anchors again only the rounds whose transaction is
+    really absent. One still on the ledger, or one the ledger could not
+    answer for, is never sent twice.
+
+    Each round's hash is read from its local proof file, and only a proof
+    whose local hash still checks out is sent. The new txid replaces the old
+    one in anchors.json once its chunk is on the ledger.
+    """
+    from sov_engine.proof import record_anchors, verify_proof_local
+    from sov_transport.base import BatchEntry
+    from sov_transport.resets import announced_reset_after
+    from sov_transport.xrpl import XRPLTransport
+    from sov_transport.xrpl_internals import _MAX_MEMOS_PER_TX
+
+    game_id = _resolve_active_game_id()
+    recorded = {
+        key: txid
+        for key, txid in _read_anchors_entries(anchors_file(game_id)).items()
+        if txid.strip()
+    }
+    if not recorded:
+        console.print("  [dim]◯ No anchored rounds to check.[/dim]")
+        console.print("  [yellow]Run `sov anchor` to send pending rounds.[/yellow]")
+        raise typer.Exit(0)
+
+    transport = XRPLTransport(network=resolved_network)
+    on_ledger: dict[str, bool | None] = {}
+    try:
+        for txid in sorted(set(recorded.values())):
+            on_ledger[txid] = transport.tx_exists(txid)
+    except RuntimeError as e:
+        _fail(chain_lookup_failed_error(str(e)))
+
+    keys = sorted(recorded, key=_round_sort_key)
+    lost = [k for k in keys if on_ledger[recorded[k]] is False]
+    unknown = [k for k in keys if on_ledger[recorded[k]] is None]
+    kept = len(keys) - len(lost) - len(unknown)
+
+    console.print(
+        f"\n  Checked {len(keys)} anchored round{'s' if len(keys) != 1 else ''} "
+        f"on XRPL {resolved_network.value}: "
+        f"{kept} still on the ledger, {len(lost)} gone, {len(unknown)} not answered."
+    )
+    if unknown:
+        console.print(
+            "  [yellow]The ledger gave no answer for: "
+            f"{', '.join(unknown)}. Left alone; run `sov anchor --reanchor` again later.[/yellow]"
+        )
+    if not lost:
+        if unknown:
+            raise typer.Exit(1)
+        console.print("  [dim]◯ Nothing to anchor again.[/dim]")
+        raise typer.Exit(0)
+
+    # Only a proof whose local hash still checks out goes back on the ledger.
+    proofs = _proofs_by_round_key(game_id)
+    rounds: list[BatchEntry] = []
+    skipped: list[str] = []
+    for key in lost:
+        path = proofs.get(key)
+        try:
+            if path is None or not verify_proof_local(path):
+                raise ValueError("no valid local proof")
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            skipped.append(key)
+            continue
+        rounds.append(
+            BatchEntry(
+                round_key=key,
+                ruleset=str(data.get("ruleset", "campfire_v1")),
+                game_id=game_id,
+                envelope_hash=str(data["envelope_hash"]),
+            )
+        )
+    if skipped:
+        console.print(
+            "  [yellow]No valid local proof for: "
+            f"{', '.join(skipped)}. These cannot be anchored again.[/yellow]"
+        )
+    if not rounds:
+        raise typer.Exit(1)
+
+    seed = resolve_wallet_seed(
+        network=resolved_network.value,
+        signer_file=signer_file if signer_file and signer_file.exists() else None,
+        seed_env=seed_env,
+        wallet_file=SAVE_DIR / "wallet_seed.txt",
+    )
+    if not seed:
+        _fail(no_wallet_error(seed_env))
+
+    reset = announced_reset_after(resolved_network.value, None)
+    if reset is not None:
+        console.print(
+            f"  [dim]{reset.label()}. The wallet from before it is gone too: "
+            "if sending fails, run `sov wallet` for a new one and try again.[/dim]"
+        )
+
+    n = len(rounds)
+    console.print(f"  Anchoring {n} round{'s' if n != 1 else ''} again...\n")
+    lines: list[str] = []
+    try:
+        for start in range(0, n, _MAX_MEMOS_PER_TX):
+            chunk = rounds[start : start + _MAX_MEMOS_PER_TX]
+            chunk_txids = transport.anchor_batch(chunk, seed)
+            if not chunk_txids:
+                raise RuntimeError("anchor_batch returned no txids")
+            new_txid = str(chunk_txids[0])
+            # Recorded before the next chunk is sent, so a later failure
+            # cannot lose a txid that is already on the ledger.
+            record_anchors(game_id, {entry["round_key"]: new_txid for entry in chunk})
+            for entry in chunk:
+                rk = entry["round_key"]
+                lines.append(
+                    f"  {'FINAL' if rk == 'FINAL' else f'Round {rk}'}: [bold]{new_txid}[/bold]\n"
+                    f"    [dim]was {recorded[rk]}[/dim]"
+                )
+            logger.info(
+                "reanchor.success game_id=%s rounds=%s txid=%s",
+                game_id,
+                ",".join(entry["round_key"] for entry in chunk),
+                new_txid,
+            )
+    except Exception as e:
+        logger.error(
+            "reanchor.failed game_id=%s exc=%s detail=%s "
+            "(rounds already sent are recorded; re-run `sov anchor --reanchor` for the rest)",
+            game_id,
+            type(e).__name__,
+            e,
+        )
+        if lines:
+            console.print("\n".join(lines))
+        _fail(anchor_error(str(e)))
+
+    console.print(
+        Panel(
+            f"  {n} round{'s' if n != 1 else ''} anchored again on XRPL "
+            f"{resolved_network.value}.\n\n" + "\n".join(lines) + "\n\n"
+            "  [dim]Verify one with `sov verify <proof_file> --tx <txid>`.[/dim]",
+            title="Anchored again",
+        )
+    )
+    if skipped or unknown:
+        raise typer.Exit(1)
+
+
 def _load_game() -> tuple[GameState, GameRng] | None:
     """Load game state from disk.
 
@@ -700,7 +891,14 @@ def _load_game_inner(sf: Path, rf: Path) -> tuple[GameState, GameRng] | None:
     return state, rng
 
 
-def _fail(err: SovError) -> Never:
+# `sov verify --tx` exits 3 when the only thing wrong is that the network was
+# reset after the proof was anchored: the local proof is valid and nothing was
+# found false, but the anchor can no longer be checked. Not 0 (it is not
+# verified) and not 1 (nothing was contradicted).
+EXIT_ANCHOR_RESET = 3
+
+
+def _fail(err: SovError, *, exit_code: int = 1) -> Never:
     """Print structured error and exit.
 
     CLI-D-005: 2-space indent matches the dominant CLI rhythm (most
@@ -718,7 +916,7 @@ def _fail(err: SovError) -> Never:
     console.print(f"  [red]{escape(err.message)}[/red]")
     if err.hint:
         console.print(f"  [dim]{_render_backticks(escape(err.hint))}[/dim]")
-    raise typer.Exit(1)
+    raise typer.Exit(exit_code)
 
 
 def _render_backticks(text: str) -> str:
@@ -2068,7 +2266,12 @@ def verify(
         str,
         typer.Option(
             "--tx",
-            help=("XRPL transaction hash (64 hex chars) to verify the proof's anchor against."),
+            help=(
+                "XRPL transaction hash (64 hex chars) to verify the proof's anchor "
+                "against. Exit 0: verified. Exit 1: mismatch, or the lookup failed. "
+                "Exit 3: the anchor is gone because the test network was reset "
+                "after the proof was made (not a pass)."
+            ),
         ),
     ] = "",
     network: Annotated[
@@ -2119,6 +2322,21 @@ def verify(
             elif result is ChainLookupResult.LOOKUP_FAILED:
                 _fail(chain_lookup_failed_error())
             else:
+                # NOT_FOUND. Before calling it a mismatch: was the network
+                # reset after this proof was made, with the tx now absent?
+                from sov_transport.resets import reset_explains_missing_anchor
+
+                reset = reset_explains_missing_anchor(
+                    transport,
+                    resolved_network.value,
+                    tx,
+                    proof_data.get("timestamp_utc"),
+                )
+                if reset is not None:
+                    _fail(
+                        anchor_reset_error(reset.label(), reset.source),
+                        exit_code=EXIT_ANCHOR_RESET,
+                    )
                 _fail(anchor_mismatch_error())
         except typer.Exit:
             # ``_fail`` raises ``typer.Exit``; Click's Exit is a RuntimeError
@@ -2168,8 +2386,23 @@ def anchor(
             ),
         ),
     ] = None,
+    reanchor: Annotated[
+        bool,
+        typer.Option(
+            "--reanchor",
+            help=(
+                "Anchor again every round of the active game whose recorded "
+                "anchor is no longer on the ledger, for example after a test "
+                "network reset. Rounds still on the ledger are left alone."
+            ),
+        ),
+    ] = False,
 ) -> None:
     """Anchor round-proof hashes on XRPL. The ledger remembers.
+
+    ``--reanchor`` is the recovery path after a test network reset: it asks
+    the ledger about every recorded anchor of the active game and sends
+    again only the rounds whose transaction is gone.
 
     With no proof_file argument, batches all pending anchors for the active
     game into a single multi-memo Payment — one verifiable chain pointer per
@@ -2181,6 +2414,15 @@ def anchor(
     removed in v2.2.
     """
     resolved_network = _resolve_network(network)
+
+    if reanchor:
+        if proof_file is not None:
+            raise typer.BadParameter(
+                "--reanchor works on the active game and takes no proof file.",
+                param_hint="--reanchor",
+            )
+        _reanchor_lost_rounds(resolved_network, seed_env=seed_env, signer_file=signer_file)
+        return
 
     # CLI-003: idempotent no-op fast-path.
     # When the operator runs `sov anchor` (batch path, no proof_file) and
@@ -2342,18 +2584,7 @@ def anchor(
     # Build the BatchEntry list. Sort the round-keys so the on-wire order is
     # deterministic: numeric rounds in numeric order, FINAL last. anchors.json
     # uses the same convention so this matches the verifier's natural read order.
-    def _sort_key(round_key: str) -> tuple[int, int]:
-        if round_key == "FINAL":
-            return (1, 0)
-        try:
-            return (0, int(round_key))
-        except ValueError:
-            # Unknown / non-numeric / non-FINAL key — bucket after FINAL so
-            # forward-compat content surfaces at the tail rather than mixing
-            # into the numeric range.
-            return (2, 0)
-
-    sorted_keys = sorted(pending.keys(), key=_sort_key)
+    sorted_keys = sorted(pending.keys(), key=_round_sort_key)
 
     # Ruleset for the memo. Pull from the active game state when available;
     # fall back to the ruleset recorded in any proof file we can find for

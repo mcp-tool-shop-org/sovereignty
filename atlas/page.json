@@ -98,22 +98,22 @@
   ],
   "changes": {
     "fileCounts": {
-      "added": 0,
-      "changed": 5,
+      "added": 3,
+      "changed": 18,
       "moved": 0,
-      "parts": 2,
+      "parts": 8,
       "removed": 0
     },
     "items": [
       {
         "kind": "counts",
-        "sentence": "Nothing structural changed since 2026-11-12; 5 files changed content.",
+        "sentence": "Nothing structural changed since 2026-11-12; 3 files added and 18 changed content.",
         "subjects": []
       }
     ],
     "since": {
-      "commit": "430c549631b8c947028c6959d1803b51c1e30b94",
-      "generatedAt": "2026-11-12T00:51:01.172Z"
+      "commit": "e036125535b29ae968f6b6f29867083351918254",
+      "generatedAt": "2026-11-12T07:22:48.784Z"
     },
     "unchanged": true
   },
@@ -139,9 +139,9 @@
     "Window: 180 days; a pair counts from 3 shared commits, since 1 source file reaches 10 revisions; the floor rises to 10 when 25 do."
   ],
   "changesTogetherWithTests": 0,
-  "commit": "e036125535b29ae968f6b6f29867083351918254",
+  "commit": "fc1d04269cea3fee90a48b16bcc81cad29067e07",
   "defaultBranch": "main",
-  "derived": "14 parts, mostly Python (121 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.",
+  "derived": "14 parts, mostly Python (124 files), TypeScript (61), JavaScript (21), CSS (19), Rust (6), shell (5), HTML (4) and Astro (2). Work enters through 8 doors; the busiest is CI, which reaches 11 parts. It publishes to PyPI, @mcptoolshop/sovereignty to npm, and a container image. It deploys a site to GitHub Pages. People run sov and sovereignty. People install the sov-tauri-shell desktop app.",
   "doors": [
     {
       "checks": [],
@@ -173,7 +173,7 @@
             "assets/print/source/inline-fonts.py",
             "docker/"
           ],
-          "checksMore": 29,
+          "checksMore": 30,
           "lead": "except on a schedule",
           "runs": [
             ".github/scripts/check-publish-yml.py",
@@ -188,7 +188,7 @@
             "app/src/",
             "app/vite.config.ts"
           ],
-          "runsMore": 146,
+          "runsMore": 148,
           "when": "except on a schedule"
         }
       ],
@@ -245,12 +245,12 @@
         {
           "boundary": "sov_transport",
           "depth": 0,
-          "files": 7
+          "files": 8
         },
         {
           "boundary": "tests",
           "depth": 0,
-          "files": 82
+          "files": 84
         }
       ],
       "runs": [],
@@ -277,7 +277,7 @@
         "sov_transport/"
       ],
       "checksCount": 4,
-      "checksMore": 7,
+      "checksMore": 8,
       "file": ".github/workflows/docker.yml",
       "id": ".github/workflows/docker.yml",
       "landings": [],
@@ -318,7 +318,7 @@
         {
           "boundary": "sov_transport",
           "depth": 0,
-          "files": 7
+          "files": 8
         }
       ],
       "runs": [
@@ -350,7 +350,7 @@
         "app/src-tauri/src/lib.rs"
       ],
       "checksCount": 5,
-      "checksMore": 8,
+      "checksMore": 9,
       "file": ".github/workflows/publish.yml",
       "id": ".github/workflows/publish.yml",
       "landings": [],
@@ -385,7 +385,7 @@
         {
           "boundary": "sov_transport",
           "depth": 0,
-          "files": 7
+          "files": 8
         }
       ],
       "runs": [
@@ -499,7 +499,7 @@
         {
           "boundary": "sov_transport",
           "depth": 1,
-          "files": 5
+          "files": 6
         }
       ],
       "runs": [
@@ -619,11 +619,11 @@
       ]
     }
   ],
-  "generatedAt": "2026-11-12T07:22:48.784Z",
+  "generatedAt": "2026-11-13T16:13:01.413Z",
   "limits": [
-    "35 import sites name a declared dependency that shares its name with a local module (xrpl); they are read as the dependency, which is not in this repository.",
+    "37 import sites name a declared dependency that shares its name with a local module (xrpl); they are read as the dependency, which is not in this repository.",
     "3 imports could not be resolved: `assets/print/source/render.mjs` imports `puppeteer-core`, which is not declared; `assets/print/source/vendor/react-dom.production.min.js` imports `react`, which is not declared; `sov_cli/main.py` imports a path built at run time.",
-    "1 write and 32 reads use paths built at run time and are not named here.",
+    "1 write and 35 reads use paths built at run time and are not named here.",
     "1 write goes to places this repository does not track, so it is not listed as generated.",
     "3 writes and 42 reads go to a path their caller passes, not to this repository.",
     "1 write and 4 reads go to the directory the command is run in (.sov/, README.md and docs/), not to this repository.",
@@ -670,15 +670,15 @@
   ],
   "summary": null,
   "summaryFrom": null,
-  "testFiles": 119,
+  "testFiles": 121,
   "testedBy": {
     "app": 32,
     "assets": 0,
     "npm": 1,
-    "sov_cli": 43,
-    "sov_daemon": 40,
-    "sov_engine": 62,
-    "sov_transport": 56
+    "sov_cli": 45,
+    "sov_daemon": 42,
+    "sov_engine": 64,
+    "sov_transport": 58
   },
   "testedByScript": [
     "npm"

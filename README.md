@@ -155,6 +155,7 @@ sov anchor                           # batch pending rounds to XRPL (v2.1+)
 sov anchor --checkpoint              # mid-game flush (v2.1+)
 sov anchor --network mainnet         # network selection (v2.1+)
 sov verify <proof.json> --tx <txid>  # confirm a proof is anchored on chain
+sov anchor --reanchor                # after a test network reset: anchor lost rounds again (v2.4+)
 sov daemon start [--readonly]        # localhost HTTP/JSON daemon (v2.1+)
 sov daemon status                    # running | stale | none
 sov daemon stop                      # SIGTERM + cleanup
@@ -236,7 +237,7 @@ The Audit Viewer is the v2.1 desktop app — a Tauri shell (Rust + webview) that
 
 ### Install (binaries)
 
-**v2.3.6** is the current release. GitHub Release **v2.3.0** did not ship wheels or desktop assets, so do not pin `pip install …==2.3.0`.
+**v2.4.1** is the current release. GitHub Release **v2.3.0** did not ship wheels or desktop assets, so do not pin `pip install …==2.3.0`.
 
 - **Python / daemon:** `pip install 'sovereignty-game[daemon]'` (2.3.2 or later for the daemon).
 - **Desktop app:** [the latest GitHub Release](https://github.com/mcp-tool-shop-org/sovereignty/releases/latest) when CI has attached platform files. If a platform job failed, run from source (below).
@@ -316,6 +317,8 @@ sov verify proof.json --tx <txid>    # trust but verify
 ```
 
 Only the host needs a wallet. Nobody else touches a screen. The game works perfectly without anchoring — it's just the diary that remembers.
+
+Testnet and Devnet are wiped from time to time (next on 2026-11-25), and an anchor made before a wipe is gone afterwards. `sov verify --tx` then says the anchor can no longer be checked (exit code 3), never that it passed. Run `sov wallet` and `sov anchor --reanchor` to put the game's rounds back on the ledger. See [the handbook](https://mcp-tool-shop-org.github.io/sovereignty/handbook/diary-mode/).
 
 ## Three tiers
 
