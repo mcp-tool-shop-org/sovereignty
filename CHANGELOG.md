@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-11-14
+
+Brings 2.4.0's network-reset handling to the desktop app.
+
+### Fixed
+
+- **The desktop app builds again.** The v2.4.0 release built no desktop
+  installers: `tauri build` refused, because the `tauri` crate was 2.11.0
+  while `@tauri-apps/api` was 2.12.3, and Tauri needs both on one
+  major.minor. The crate is now 2.12.5 (#92). The CLI, PyPI, npm and
+  container releases of 2.4.0 were not affected.
+- **A pull request now catches this.** CI's Tauri job runs `cargo check`,
+  `clippy` and `cargo test`, never `tauri build`, so the mismatch was first
+  seen in the release run. A new test compares the Tauri crates in
+  `app/src-tauri/Cargo.lock` with their npm packages in
+  `app/package-lock.json` (`tests/test_tauri_versions_in_step.py`).
+
 ## [2.4.0] - 2026-11-13
 
 The release for the 2026-11-25 Testnet and Devnet wipe. Checked live on Testnet on
