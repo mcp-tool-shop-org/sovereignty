@@ -32,6 +32,11 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: "development"
+        # Majors get a PR each (2026-11-14): grouped majors made #98, five
+        # breaking upgrades in one PR that could only be closed.
+        update-types:
+          - "minor"
+          - "patch"
 
   # Astro/Starlight handbook site lives under /site with its own package.json.
   - package-ecosystem: "npm"
@@ -47,6 +52,11 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: "development"
+        # Majors get a PR each (2026-11-14): grouped majors made #98, five
+        # breaking upgrades in one PR that could only be closed.
+        update-types:
+          - "minor"
+          - "patch"
 
   # Desktop app (React 19 + Vite 6 + @tauri-apps/*) lives under /app.
   - package-ecosystem: "npm"
@@ -62,6 +72,11 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: "development"
+        # Majors get a PR each (2026-11-14): grouped majors made #98, five
+        # breaking upgrades in one PR that could only be closed.
+        update-types:
+          - "minor"
+          - "patch"
 
   # Tauri shell crate at /app/src-tauri.
   - package-ecosystem: "cargo"
