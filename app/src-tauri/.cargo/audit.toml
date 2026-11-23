@@ -56,4 +56,14 @@ ignore = [
     "RUSTSEC-2025-0081",  # unic-char-property unmaintained
     "RUSTSEC-2025-0098",  # unic-ucd-version unmaintained
     "RUSTSEC-2025-0100",  # unic-ucd-ident unmaintained
+
+    # chrono unmaintained (2026-11-23) — informational notice, not a
+    # vulnerability. chrono 0.4.44 is listed in Cargo.lock only as an
+    # unenabled optional dependency (chrono_0_4) of serde_with 3.18.0,
+    # pulled in with default features (alloc, default, macros, std) via
+    # tauri-utils 2.10.2 (tauri, tauri-build, tauri-codegen, tauri-macros,
+    # tauri-plugin, tauri-runtime, tauri-runtime-wry). sov-tauri-shell
+    # uses std::time directly (format_iso_utc) and does nothing with dates
+    # or times through chrono; chrono is not compiled or linked on any target.
+    "RUSTSEC-2026-0543",  # chrono unmaintained
 ]
