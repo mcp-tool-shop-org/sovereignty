@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Dependency lockfile bump (`Cargo.lock`): `url` 2.5.8 -> 2.5.9 (with `form_urlencoded` 1.2.2 -> 1.2.3) for RUSTSEC-2026-0592, and `cookie` -> 0.18.3 for RUSTSEC-2026-0594.
+
 ## [2.4.1] - 2026-11-14
 
 Brings 2.4.0's network-reset handling to the desktop app.
